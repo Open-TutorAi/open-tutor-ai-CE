@@ -140,6 +140,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+tutor-ai-env/
 
 # Spyder project settings
 .spyderproject
