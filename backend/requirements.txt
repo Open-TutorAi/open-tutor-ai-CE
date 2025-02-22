@@ -48,7 +48,7 @@ opensearch-py==2.8.0
 playwright==1.49.1 # Caution: version must match docker-compose.playwright.yaml
 
 transformers
-sentence-transformers==3.3.1
+sentence-transformers==3.4.1
 colbert-ai==0.2.21
 einops==0.8.0
 
