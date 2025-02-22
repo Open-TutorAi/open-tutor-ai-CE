@@ -53,7 +53,7 @@ colbert-ai==0.2.21
 einops==0.8.0
 
 
-ftfy==6.2.3
+ftfy==6.3.1
 pypdf==4.3.1
 fpdf2==2.8.2
 pymdown-extensions==10.14.2
