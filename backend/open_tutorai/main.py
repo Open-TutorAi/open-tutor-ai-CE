@@ -1,4 +1,4 @@
-#TODO Add 
+
 print(
     rf"""
  ██████╗ ██████╗ ███████╗███╗   ██╗    ████████╗██╗   ██╗████████╗ ██████╗ ██████╗    █████╗ ██╗
@@ -14,3 +14,6 @@ v{VERSION} - building the best open-source AI user interface.
 https://github.com/open-tutor-ai/open-tutor-ai
 """
 )
+
+#TODO Add  FastAPI
+
