@@ -2,7 +2,7 @@
 
 🚀 **Welcome, Contributors!** 🚀
 
-Your interest in contributing to Open TutorAI is greatly appreciated. This document is here to guide you through the process, ensuring your contributions enhance the project effectively. Let's make Open WebUI even better, together!
+Your interest in contributing to Open TutorAI is greatly appreciated. This document is here to guide you through the process, ensuring your contributions enhance the project effectively. Let's make Open TutorAI even better, together!
 
 ### 🚨 Reporting Issues
 
