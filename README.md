@@ -6,9 +6,8 @@
 ![GitHub repo size](https://img.shields.io/github/repo-size/pr-elhajji/open-tutor-ai-CE)
 ![GitHub language count](https://img.shields.io/github/languages/count/pr-elhajji/open-tutor-ai-CE)
 ![GitHub top language](https://img.shields.io/github/languages/top/pr-elhajji/open-tutor-ai-CE)
-![GitHub last commit](https://img.shields.io/github/last-commit/pr-elhajji/open-tutor-ai-CE))
-
-![Discord](https://discord.gg/86cVbJBy)
+![GitHub last commit](https://img.shields.io/github/last-commit/pr-elhajji/open-tutor-ai-CE)
+[![Discord](https://img.shields.io/badge/Discord-Open_WebUI-blue?logo=discord&logoColor=white)](https://discord.gg/86cVbJBy)
 
 
 
