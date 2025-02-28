@@ -7,9 +7,9 @@
 ![GitHub language count](https://img.shields.io/github/languages/count/pr-elhajji/open-tutor-ai-CE)
 ![GitHub top language](https://img.shields.io/github/languages/top/pr-elhajji/open-tutor-ai-CE)
 ![GitHub last commit](https://img.shields.io/github/last-commit/pr-elhajji/open-tutor-ai-CE))
-![Hits]()
-[![Discord](https://discord.gg/86cVbJBy)
-[![]()
+
+![Discord](https://discord.gg/86cVbJBy)
+
 
 
 **OpenTutorAI-CE** (Community Edition) is an open-source project designed to provide an educational and collaborative AI-powered platform. This public edition is the foundation for a proprietary Enterprise Edition (EE) and is built to encourage community contributions.
