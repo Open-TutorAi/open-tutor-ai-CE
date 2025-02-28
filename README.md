@@ -1,17 +1,18 @@
 # Open TutorAI 👋
 
-![GitHub stars]()
-![GitHub forks]()
-![GitHub watchers]()
-![GitHub repo size]()
-![GitHub language count]()
-![GitHub top language]()
-![GitHub last commit]()
+![GitHub stars](https://img.shields.io/github/stars/pr-elhajji/open-tutor-ai-CE?style=social)
+![GitHub forks](https://img.shields.io/github/forks/pr-elhajji/open-tutor-ai-CE?style=social)
+![GitHub watchers](https://img.shields.io/github/watchers/pr-elhajji/open-tutor-ai-CE?style=social)
+![GitHub repo size](https://img.shields.io/github/repo-size/pr-elhajji/open-tutor-ai-CE)
+![GitHub language count](https://img.shields.io/github/languages/count/pr-elhajji/open-tutor-ai-CE)
+![GitHub top language](https://img.shields.io/github/languages/top/pr-elhajji/open-tutor-ai-CE)
+![GitHub last commit](https://img.shields.io/github/last-commit/pr-elhajji/open-tutor-ai-CE))
 ![Hits]()
-[![Discord]()
+[![Discord](https://discord.gg/86cVbJBy)
 [![]()
 
-**Open TutorAI is an 
+
+**OpenTutorAI-CE** (Community Edition) is an open-source project designed to provide an educational and collaborative AI-powered platform. This public edition is the foundation for a proprietary Enterprise Edition (EE) and is built to encourage community contributions.
 
 > [!TIP]  
 > **Looking for an [Enterprise Plan](https://docs.########.com/enterprise)?** – **[Speak with Our Sales Team Today!](mailto:sales@########.com)**
@@ -151,11 +152,11 @@ After installation, you can access Open TutorAI at [http://localhost:3000](http:
 
 ### Other Installation Methods
 
-We offer various installation alternatives, including non-Docker native installation methods, Docker Compose, Kustomize, and Helm. Visit our [Open TutorAI Documentation](https://docs.########.com/getting-started/) or join our [Discord community](https://discord.gg/5rJgQTnV4s) for comprehensive guidance.
+We offer various installation alternatives, including non-Docker native installation methods, Docker Compose, Kustomize, and Helm. Visit our [Open TutorAI Documentation](https://docs.########.com/getting-started/) or join our [Discord community](https://discord.gg/86cVbJBy) for comprehensive guidance.
 
 ### Troubleshooting
 
-Encountering connection issues? Our [Open TutorAI Documentation](https://docs.########.com/troubleshooting/) has got you covered. For further assistance and to join our vibrant community, visit the [Open TutorAI Discord](https://discord.gg/5rJgQTnV4s).
+Encountering connection issues? Our [Open TutorAI Documentation](https://docs.########.com/troubleshooting/) has got you covered. For further assistance and to join our vibrant community, visit the [Open TutorAI Discord](https://discord.gg/86cVbJBy).
 
 #### Open TutorAI: Server Connection Error
 
