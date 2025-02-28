@@ -1,4 +1,4 @@
-# Contributing to OpenTutorAI-CE 🌟
+# Contributing to Open TutorAI 🌟
 
 🚀 **Welcome, Contributors!** 🚀
 
