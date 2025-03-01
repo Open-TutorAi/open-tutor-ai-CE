@@ -18,7 +18,7 @@
 >
 > Get **enhanced capabilities**, including **custom theming and branding**, **Service Level Agreement (SLA) support**, **Long-Term Support (LTS) versions**, and **more!**
 
-For more information, be sure to check out our [Open TutorAI Documentation](https://docs.########.com/).
+For more information, be sure to check out our [Open TutorAI Documentation](https://tarekai.github.io/OpenTutorAI/).
 
 ## Key Features of Open TutorAI ⭐
 
@@ -58,11 +58,11 @@ For more information, be sure to check out our [Open TutorAI Documentation](http
 
 - 🌟 **Continuous Updates**: We are committed to improving Open TutorAI with regular updates, fixes, and new features.
 
-Want to learn more about Open TutorAI's features? Check out our [Open TutorAI documentation](https://docs.########.com/features) for a comprehensive overview!
+Want to learn more about Open TutorAI's features? Check out our [Open TutorAI documentation](https://tarekai.github.io/OpenTutorAI/) for a comprehensive overview!
 
 ## 🔗 Also Check Out Open TutorAI Community!
 
-Don't forget to explore our sibling project, [Open TutorAI Community](https://########.com/), where you can discover, download, and explore customized Modelfiles. Open TutorAI Community offers a wide range of exciting possibilities for enhancing your chat interactions with Open TutorAI! 🚀
+Don't forget to explore our sibling project, [Open TutorAI Community](https://tarekai.github.io/OpenTutorAI/), where you can discover, download, and explore customized Modelfiles. Open TutorAI Community offers a wide range of exciting possibilities for enhancing your chat interactions with Open TutorAI! 🚀
 
 ## How to Install 🚀
 
@@ -209,7 +209,7 @@ This project is licensed under the [BSD-3-Clause License](LICENSE) - see the [LI
 ## Support 💬
 
 If you have any questions, suggestions, or need assistance, please open an issue or join our
-[Open TutorAI Discord community](https://discord.gg/########) to connect with us! 🤝
+[Open TutorAI Discord community](https://discord.gg/86cVbJBy) to connect with us! 🤝
 
 ## Star History
 
