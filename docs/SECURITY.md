@@ -37,8 +37,8 @@ Reports not submitted through our designated GitHub repository will be disregard
 
 We regularly audit our internal processes and system architecture for vulnerabilities using a combination of automated and manual testing techniques. We are also planning to implement SAST and SCA scans in our project soon.
 
-For immediate concerns or detailed reports that meet our guidelines, please create an issue in our [issue tracker](/open-webui/open-webui/issues) or contact us on [Discord](https://discord.gg/5rJgQTnV4s).
+For immediate concerns or detailed reports that meet our guidelines, please create an issue in our [issue tracker](/pr-elhajji/open-tutor-ai-CE/issues) or contact us on [Discord](https://discord.gg/KJHC5PcT).
 
 ---
 
-_Last updated on **2024-08-19**._
+_Last updated on **2025-03-02**._
