@@ -7,18 +7,18 @@
 ![GitHub language count](https://img.shields.io/github/languages/count/pr-elhajji/open-tutor-ai-CE)
 ![GitHub top language](https://img.shields.io/github/languages/top/pr-elhajji/open-tutor-ai-CE)
 ![GitHub last commit](https://img.shields.io/github/last-commit/pr-elhajji/open-tutor-ai-CE)
-[![Discord](https://img.shields.io/badge/Discord-Open_TutorAI-blue?logo=discord&logoColor=white)](https://discord.gg/86cVbJBy)
+[![Discord](https://img.shields.io/badge/Discord-Open_TutorAI-blue?logo=discord&logoColor=white)](https://discord.gg/KJHC5PcT)
 
 
 
 **OpenTutorAI-CE** (Community Edition) is an open-source project designed to provide an educational and collaborative AI-powered platform. This public edition is the foundation for a proprietary Enterprise Edition (EE) and is built to encourage community contributions.
 
 > [!TIP]  
-> **Looking for an [Enterprise Plan](https://docs.########.com/enterprise)?** – **[Speak with Our Sales Team Today!](mailto:sales@########.com)**
+> **Looking for an [Enterprise Plan](https://docs.opentutorai.com/enterprise)?** – **[Speak with Our Sales Team Today!](mailto:sales@oepntutorai.com)**
 >
 > Get **enhanced capabilities**, including **custom theming and branding**, **Service Level Agreement (SLA) support**, **Long-Term Support (LTS) versions**, and **more!**
 
-For more information, be sure to check out our [Open TutorAI Documentation](https://tarekai.github.io/OpenTutorAI/).
+For more information, be sure to check out our [Open TutorAI Documentation](https://opentutorai.github.io/OpenTutorAI/).
 
 ## Key Features of Open TutorAI ⭐
 
@@ -36,7 +36,7 @@ For more information, be sure to check out our [Open TutorAI Documentation](http
 
 - 🎤📹 **Hands-Free Voice/Video Call**: Experience seamless communication with integrated hands-free voice and video call features, allowing for a more dynamic and interactive chat environment.
 
-- 🛠️ **Model Builder**: Easily create Ollama models via the Web UI. Create and add custom characters/agents, customize chat elements, and import models effortlessly through [Open TutorAI Community](https://########.com/) integration.
+- 🛠️ **Model Builder**: Easily create Ollama models via the Web UI. Create and add custom characters/agents, customize chat elements, and import models effortlessly through [Open TutorAI Community](https://oepntutorai.com.com/) integration.
 
 - 🐍 **Native Python Function Calling Tool**: Enhance your LLMs with built-in code editor support in the tools workspace. Bring Your Own Function (BYOF) by simply adding your pure Python functions, enabling seamless integration with LLMs.
 
@@ -58,11 +58,11 @@ For more information, be sure to check out our [Open TutorAI Documentation](http
 
 - 🌟 **Continuous Updates**: We are committed to improving Open TutorAI with regular updates, fixes, and new features.
 
-Want to learn more about Open TutorAI's features? Check out our [Open TutorAI documentation](https://tarekai.github.io/OpenTutorAI/) for a comprehensive overview!
+Want to learn more about Open TutorAI's features? Check out our [Open TutorAI documentation](https://opentutorai.github.io/OpenTutorAI/) for a comprehensive overview!
 
 ## 🔗 Also Check Out Open TutorAI Community!
 
-Don't forget to explore our sibling project, [Open TutorAI Community](https://tarekai.github.io/OpenTutorAI/), where you can discover, download, and explore customized Modelfiles. Open TutorAI Community offers a wide range of exciting possibilities for enhancing your chat interactions with Open TutorAI! 🚀
+Don't forget to explore our sibling project, [Open TutorAI Community](https://opentutorai.github.io/OpenTutorAI/), where you can discover, download, and explore customized Modelfiles. Open TutorAI Community offers a wide range of exciting possibilities for enhancing your chat interactions with Open TutorAI! 🚀
 
 ## How to Install 🚀
 
@@ -151,11 +151,11 @@ After installation, you can access Open TutorAI at [http://localhost:3000](http:
 
 ### Other Installation Methods
 
-We offer various installation alternatives, including non-Docker native installation methods, Docker Compose, Kustomize, and Helm. Visit our [Open TutorAI Documentation](https://docs.########.com/getting-started/) or join our [Discord community](https://discord.gg/86cVbJBy) for comprehensive guidance.
+We offer various installation alternatives, including non-Docker native installation methods, Docker Compose, Kustomize, and Helm. Visit our [Open TutorAI Documentation](https://docs.########.com/getting-started/) or join our [Discord community](https://discord.gg/KJHC5PcT) for comprehensive guidance.
 
 ### Troubleshooting
 
-Encountering connection issues? Our [Open TutorAI Documentation](https://docs.########.com/troubleshooting/) has got you covered. For further assistance and to join our vibrant community, visit the [Open TutorAI Discord](https://discord.gg/86cVbJBy).
+Encountering connection issues? Our [Open TutorAI Documentation](https://docs.opentutorai.com/troubleshooting/) has got you covered. For further assistance and to join our vibrant community, visit the [Open TutorAI Discord](https://discord.gg/KJHC5PcT).
 
 #### Open TutorAI: Server Connection Error
 
@@ -177,7 +177,7 @@ docker run --rm --volume /var/run/docker.sock:/var/run/docker.sock containrrr/wa
 
 In the last part of the command, replace `open-tutorai` with your container name if it is different.
 
-Check our Updating Guide available in our [Open TutorAI Documentation](https://docs.########.com/getting-started/updating).
+Check our Updating Guide available in our [Open TutorAI Documentation](https://docs.opentutorai.com/getting-started/updating).
 
 ### Using the Dev Branch 🌙
 
@@ -200,7 +200,7 @@ export HF_HUB_OFFLINE=1
 
 ## What's Next? 🌟
 
-Discover upcoming features on our roadmap in the [Open TutorAI Documentation](https://docs.########.com/roadmap/).
+Discover upcoming features on our roadmap in the [Open TutorAI Documentation](https://docs.opentutorai.com/roadmap/).
 
 ## License 📜
 
@@ -209,7 +209,7 @@ This project is licensed under the [BSD-3-Clause License](LICENSE) - see the [LI
 ## Support 💬
 
 If you have any questions, suggestions, or need assistance, please open an issue or join our
-[Open TutorAI Discord community](https://discord.gg/86cVbJBy) to connect with us! 🤝
+[Open TutorAI Discord community](https://discord.gg/KJHC5PcT) to connect with us! 🤝
 
 ## Star History
 
