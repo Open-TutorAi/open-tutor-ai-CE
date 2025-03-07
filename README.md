@@ -11,7 +11,7 @@
 
 
 
-**OpenTutorAI-CE** (Community Edition) is an open-source project designed to provide an educational and collaborative AI-powered platform. This public edition is the foundation for a proprietary Enterprise Edition (EE) and is built to encourage community contributions.
+**OpenTutorAI-CE ** (Community Edition) is an open-source project designed to provide an educational and collaborative AI-powered platform. This public edition is the foundation for a proprietary Enterprise Edition (EE) and is built to encourage community contributions.
 
 > [!TIP]  
 > **Looking for an [Enterprise Plan](https://docs.opentutorai.com/enterprise)?** – **[Speak with Our Sales Team Today!](mailto:sales@oepntutorai.com)**
