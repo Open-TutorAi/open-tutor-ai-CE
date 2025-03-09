@@ -1,6 +1,5 @@
 <script>
 	import { toast } from 'svelte-sonner';
-
 	import { onMount, getContext } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
@@ -20,11 +19,15 @@
 
 	let loaded = false;
 
-	let mode = $config?.features.enable_ldap ? 'ldap' : 'signin';
+	let mode = $config?.features.enable_ldap ? 'ldap' : 'signup'; // Changed default to signup
 
-	let name = '';
+	let firstName = '';
+	let lastName = '';
 	let email = '';
 	let password = '';
+	let showPassword = false;
+	let role = '';
+	let rememberMe = false;
 
 	let ldapUsername = '';
 
@@ -61,6 +64,7 @@
 	};
 
 	const signUpHandler = async () => {
+		const name = `${firstName} ${lastName}`.trim();
 		const sessionUser = await userSignUp(name, email, password, generateInitialsImage(name)).catch(
 			(error) => {
 				toast.error(`${error}`);
@@ -113,6 +117,21 @@
 		await setSessionUser(sessionUser);
 	};
 
+	// Function to toggle password visibility
+	const togglePasswordVisibility = () => {
+		showPassword = !showPassword;
+	};
+
+	function togglePassword(node) {
+		node.type = false ? 'text' : 'password';
+
+		return {
+		update(showPassword) {
+			node.type = showPassword ? 'text' : 'password';
+		}
+		};
+	};
+
 	let onboarding = false;
 
 	onMount(async () => {
@@ -132,7 +151,7 @@
 
 <svelte:head>
 	<title>
-		{`${$WEBUI_NAME}`}
+		{mode === 'signup' ? 'Create Account' : 'Sign In'} | {`${$WEBUI_NAME}`}
 	</title>
 </svelte:head>
 
@@ -144,202 +163,313 @@
 	}}
 />
 
-<div class="w-full h-screen max-h-[100dvh] text-white relative">
-	<div class="w-full h-full absolute top-0 left-0 bg-white dark:bg-black"></div>
+<div class="w-full h-screen max-h-[100dvh] relative">
+	<div class="w-full h-full absolute top-0 left-0 bg-gray-50 dark:bg-gray-900"></div>
 
 	<div class="w-full absolute top-0 left-0 right-0 h-8 drag-region" />
 
 	{#if loaded}
-		<div class="fixed m-10 z-50">
-			<div class="flex space-x-2">
-				<div class=" self-center">
-					<img
-						crossorigin="anonymous"
-						src="{WEBUI_BASE_URL}/static/splash.png"
-						class=" w-6 rounded-full dark:invert"
-						alt="logo"
-					/>
+		<div class="fixed flex w-full h-full">
+			<!-- Left panel with branding and features -->
+			<div class="w-2/5 bg-blue-50 dark:bg-gray-800 p-8 flex flex-col">
+				<div class="flex items-center mb-6">
+					<p class="text-4xl font-semibold text-black dark:text-white font-jersey">
+						Open <span style="color: #57CED8;">TutorAI</span>
+					</p>
 				</div>
-			</div>
-		</div>
-
-		<div
-			class="fixed bg-transparent min-h-screen w-full flex justify-center font-primary z-50 text-black dark:text-white"
-		>
-			<div class="w-full sm:max-w-md px-10 min-h-screen flex flex-col text-center">
-				{#if ($config?.features.auth_trusted_header ?? false) || $config?.features.auth === false}
-					<div class=" my-auto pb-10 w-full">
-						<div
-							class="flex items-center justify-center gap-3 text-xl sm:text-2xl text-center font-semibold dark:text-gray-200"
-						>
-							<div>
-								{$i18n.t('Signing in to {{WEBUI_NAME}}', { WEBUI_NAME: $WEBUI_NAME })}
+				
+				<p class="text-3xl font-semibold mb-1 text-black dark:text-white font-jersey">
+					Welcome to Open <span style="color: #57CED8;">TutorAI</span>
+				</p>
+				<p class="text-l text-gray-600 dark:text-gray-300 mb-10 font-jersey">Your Path to Smarter Learning</p>
+				
+				{#if mode === 'signup'}
+					<!-- Features in card layout with fixed icon positioning -->
+					<div class="space-y-4">
+						<div class="bg-white dark:bg-gray-700 rounded-lg p-4 flex items-center shadow-sm">
+							<div class="w-10 h-10 min-w-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center mr-4">
+								<svg xmlns="http://www.w3.org/2000/svg" style="color: #57CED8;" class="h-5 w-5 dark:text-blue-300" viewBox="0 0 20 20" fill="currentColor">
+									<path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+									<path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+								</svg>
 							</div>
-
-							<div>
-								<Spinner />
+							<span class="text-gray-800 dark:text-gray-100">Personalized learning experience</span>
+						</div>
+						
+						<div class="bg-white dark:bg-gray-700 rounded-lg p-4 flex items-center shadow-sm">
+							<div class="w-10 h-10 min-w-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center mr-4">
+								<svg xmlns="http://www.w3.org/2000/svg" style="color: #57CED8;" class="h-5 w-5 dark:text-blue-300" viewBox="0 0 20 20" fill="currentColor">
+									<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd" />
+								</svg>
 							</div>
+							<span class="text-gray-800 dark:text-gray-100">AI-powered assistance</span>
+						</div>
+						
+						<div class="bg-white dark:bg-gray-700 rounded-lg p-4 flex items-center shadow-sm">
+							<div class="w-10 h-10 min-w-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center mr-4">
+								<svg xmlns="http://www.w3.org/2000/svg" style="color: #57CED8;" class="h-5 w-5 dark:text-blue-300" viewBox="0 0 20 20" fill="currentColor">
+									<path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+								</svg>
+							</div>
+							<span class="text-gray-800 dark:text-gray-100">Track your progress</span>
+						</div>
+						
+						<div class="bg-white dark:bg-gray-700 rounded-lg p-4 flex items-center shadow-sm">
+							<div class="w-10 h-10 min-w-10 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center mr-4">
+								<svg xmlns="http://www.w3.org/2000/svg" style="color: #57CED8;" class="h-5 w-5 dark:text-blue-300" viewBox="0 0 20 20" fill="currentColor">
+									<path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+								</svg>
+							</div>
+							<span class="text-gray-800 dark:text-gray-100">Access to premium content</span>
 						</div>
 					</div>
 				{:else}
-					<div class="  my-auto pb-10 w-full dark:text-gray-100">
-						<form
-							class=" flex flex-col justify-center"
-							on:submit={(e) => {
-								e.preventDefault();
-								submitHandler();
-							}}
-						>
-							<div class="mb-1">
-								<div class=" text-2xl font-medium">
-									{#if $config?.onboarding ?? false}
-										{$i18n.t(`Get started with {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
-									{:else if mode === 'ldap'}
-										{$i18n.t(`Sign in to {{WEBUI_NAME}} with LDAP`, { WEBUI_NAME: $WEBUI_NAME })}
-									{:else if mode === 'signin'}
-										{$i18n.t(`Sign in to {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
-									{:else}
-										{$i18n.t(`Sign up to {{WEBUI_NAME}}`, { WEBUI_NAME: $WEBUI_NAME })}
-									{/if}
-								</div>
-
-								{#if $config?.onboarding ?? false}
-									<div class=" mt-1 text-xs font-medium text-gray-500">
-										ⓘ {$WEBUI_NAME}
-										{$i18n.t(
-											'does not make any external connections, and your data stays securely on your locally hosted server.'
-										)}
-									</div>
-								{/if}
+					<!-- Login illustration placeholder - kept unchanged -->
+					<div class="flex justify-center items-center my-8">
+						<img src="/log-illust.png" alt="Learning illustration" class="w-60 md:w-76" />
+					</div>
+					
+					<!-- Feature list for login - kept unchanged -->
+					<div class="mt-auto space-y-4">
+						<div class="flex items-center">
+							<div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center mr-3">
+								<svg xmlns="http://www.w3.org/2000/svg" style="color: #57CED8;" class="h-4 w-4 dark:text-blue-300" viewBox="0 0 20 20" fill="currentColor">
+									<path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+									<path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+								</svg>
 							</div>
+							<span class="text-gray-700 dark:text-gray-200">Personalized Learning</span>
+						</div>
+						<div class="flex items-center">
+							<div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center mr-3">
+								<svg xmlns="http://www.w3.org/2000/svg" style="color: #57CED8;" class="h-4 w-4 dark:text-blue-300" viewBox="0 0 20 20" fill="currentColor">
+									<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd" />
+								</svg>
+							</div>
+							<span class="text-gray-700 dark:text-gray-200">AI Assistant</span>
+						</div>
+						<div class="flex items-center">
+							<div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center mr-3">
+								<svg xmlns="http://www.w3.org/2000/svg" style="color: #57CED8;" class="h-4 w-4 dark:text-blue-300" viewBox="0 0 20 20" fill="currentColor">
+									<path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+								</svg>
+							</div>
+							<span class="text-gray-700 dark:text-gray-200">Progress Tracking</span>
+						</div>
+					</div>
+				{/if}
+			</div>
 
-							{#if $config?.features.enable_login_form || $config?.features.enable_ldap}
-								<div class="flex flex-col mt-4">
-									{#if mode === 'signup'}
-										<div class="mb-2">
-											<div class=" text-sm font-medium text-left mb-1">{$i18n.t('Name')}</div>
-											<input
-												bind:value={name}
-												type="text"
-												class="my-0.5 w-full text-sm outline-hidden bg-transparent"
-												autocomplete="name"
-												placeholder={$i18n.t('Enter Your Full Name')}
-												required
-											/>
-										</div>
-									{/if}
+			<!-- Right panel with authentication form -->
+			<div class="w-3/5 flex justify-center items-center p-8 bg-white dark:bg-gray-900">
+				<div class="w-full max-w-md">
+					{#if ($config?.features.auth_trusted_header ?? false) || $config?.features.auth === false}
+						<div class="text-center mb-6">
+							<div class="flex items-center justify-center gap-3 text-xl sm:text-2xl font-semibold dark:text-gray-200">
+								<div>
+									{$i18n.t('Signing in to {{WEBUI_NAME}}', { WEBUI_NAME: $WEBUI_NAME })}
+								</div>
+								<div>
+									<Spinner />
+								</div>
+							</div>
+						</div>
+					{:else}
+						<div class="mb-8">
+							<h2 class="text-2xl font-semibold mb-2 text-black dark:text-white">
+								{#if mode === 'signup'}
+									Create Account
+								{:else}
+									Sign In
+								{/if}
+							</h2>
+							{#if mode === 'signup'}
+								<p class="text-gray-600 dark:text-gray-400 text-sm">
+									Fill in your information to get started
+								</p>
+							{:else}
+								<p class="text-gray-600 dark:text-gray-400 text-sm">
+									Sign in to access your account
+								</p>
+							{/if}
+						</div>
 
-									{#if mode === 'ldap'}
-										<div class="mb-2">
-											<div class=" text-sm font-medium text-left mb-1">{$i18n.t('Username')}</div>
-											<input
-												bind:value={ldapUsername}
-												type="text"
-												class="my-0.5 w-full text-sm outline-hidden bg-transparent"
-												autocomplete="username"
-												name="username"
-												placeholder={$i18n.t('Enter Your Username')}
-												required
-											/>
-										</div>
-									{:else}
-										<div class="mb-2">
-											<div class=" text-sm font-medium text-left mb-1">{$i18n.t('Email')}</div>
-											<input
-												bind:value={email}
-												type="email"
-												class="my-0.5 w-full text-sm outline-hidden bg-transparent"
-												autocomplete="email"
-												name="email"
-												placeholder={$i18n.t('Enter Your Email')}
-												required
-											/>
-										</div>
-									{/if}
-
+						<form class="space-y-5" on:submit|preventDefault={submitHandler}>
+							{#if mode === 'signup'}
+								<div class="grid grid-cols-2 gap-4">
 									<div>
-										<div class=" text-sm font-medium text-left mb-1">{$i18n.t('Password')}</div>
-
+										<label for="firstName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+											First Name
+										</label>
 										<input
-											bind:value={password}
-											type="password"
-											class="my-0.5 w-full text-sm outline-hidden bg-transparent"
-											placeholder={$i18n.t('Enter Your Password')}
-											autocomplete="current-password"
-											name="current-password"
+											id="firstName"
+											bind:value={firstName}
+											type="text"
+											class="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-black dark:text-white"
+											required
+										/>
+									</div>
+									<div>
+										<label for="lastName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+											Last Name
+										</label>
+										<input
+											id="lastName"
+											bind:value={lastName}
+											type="text"
+											class="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-black dark:text-white"
 											required
 										/>
 									</div>
 								</div>
 							{/if}
-							<div class="mt-5">
-								{#if $config?.features.enable_login_form || $config?.features.enable_ldap}
-									{#if mode === 'ldap'}
-										<button
-											class="bg-gray-700/5 hover:bg-gray-700/10 dark:bg-gray-100/5 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition w-full rounded-full font-medium text-sm py-2.5"
-											type="submit"
-										>
-											{$i18n.t('Authenticate')}
-										</button>
-									{:else}
-										<button
-											class="bg-gray-700/5 hover:bg-gray-700/10 dark:bg-gray-100/5 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition w-full rounded-full font-medium text-sm py-2.5"
-											type="submit"
-										>
-											{mode === 'signin'
-												? $i18n.t('Sign in')
-												: ($config?.onboarding ?? false)
-													? $i18n.t('Create Admin Account')
-													: $i18n.t('Create Account')}
-										</button>
 
-										{#if $config?.features.enable_signup && !($config?.onboarding ?? false)}
-											<div class=" mt-4 text-sm text-center">
-												{mode === 'signin'
-													? $i18n.t("Don't have an account?")
-													: $i18n.t('Already have an account?')}
+							{#if mode === 'ldap'}
+								<div>
+									<label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+										Username
+									</label>
+									<input
+										id="username"
+										bind:value={ldapUsername}
+										type="text"
+										autocomplete="username"
+										name="username"
+										class="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-black dark:text-white"
+										placeholder="example@domain.com"
+										required
+									/>
+								</div>
+							{:else}
+								<div>
+									<label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+										Email Address
+									</label>
+									<input
+										id="email"
+										bind:value={email}
+										type="email"
+										autocomplete="email"
+										name="email"
+										class="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-black dark:text-white"
+										placeholder="example@email.com"
+										required
+									/>
+								</div>
+							{/if}
 
-												<button
-													class=" font-medium underline"
-													type="button"
-													on:click={() => {
-														if (mode === 'signin') {
-															mode = 'signup';
-														} else {
-															mode = 'signin';
-														}
-													}}
-												>
-													{mode === 'signin' ? $i18n.t('Sign up') : $i18n.t('Sign in')}
-												</button>
-											</div>
-										{/if}
+							<div>
+								<div class="flex justify-between items-center mb-1">
+									<label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+										Password
+									</label>
+									{#if mode === 'signin'}
+										<a href="#" class="text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400">
+											Forgot password?
+										</a>
 									{/if}
-								{/if}
+								</div>
+								<div class="relative">
+									<input
+										id="password"
+										bind:value={password}
+										use:togglePassword={showPassword}
+										class="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-black dark:text-white pr-16"
+										placeholder="Enter your password"
+										autocomplete="current-password"
+										name="current-password"
+										required
+									/>
+									<button
+										type="button"
+										class="absolute inset-y-0 right-0 pr-3 flex items-center text-sm text-blue-500 hover:text-blue-600"
+										on:click={togglePasswordVisibility}
+									>
+										{showPassword ? 'Hide' : 'Show'}
+									</button>
+								</div>
 							</div>
+
+							{#if mode === 'signup'}
+								<div>
+									<label for="role" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+										Account Type
+									</label>
+									<div class="relative">
+										<select
+											id="role"
+											bind:value={role}
+											class="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-black dark:text-white appearance-none"
+											style="-webkit-appearance: none; -moz-appearance: none;"
+										>
+											<option value="" disabled selected>Select your role</option>
+											<option value="teacher">Teacher</option>
+											<option value="student">Student</option>
+											<option value="admin">Administrator</option>
+										</select>
+									</div>
+								</div>
+
+								<div class="flex items-center">
+									<input
+										id="terms"
+										type="checkbox"
+										class="h-4 w-4 text-blue-500 border-gray-300 rounded focus:ring-blue-500"
+										required
+									/>
+									<label for="terms" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+										I agree to the
+										<a href="#" class="text-blue-500 hover:text-blue-600 dark:text-blue-400"> Terms of Service </a>
+										and
+										<a href="#" class="text-blue-500 hover:text-blue-600 dark:text-blue-400"> Privacy Policy </a>
+									</label>
+								</div>
+							{/if}
+
+							{#if mode === 'signin'}
+								<div class="flex items-center justify-between">
+									<div class="flex items-center">
+										<input
+											id="remember-me"
+											bind:checked={rememberMe}
+											type="checkbox"
+											class="h-4 w-4 text-blue-500 border-gray-300 rounded focus:ring-blue-500"
+										/>
+										<label for="remember-me" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+											Remember me
+										</label>
+									</div>
+								</div>
+							{/if}
+
+							<button
+								type="submit"
+								class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2.5 px-4 rounded-md transition duration-150 ease-in-out"
+							>
+								{#if mode === 'signup'}
+									Create Account
+								{:else}
+									Sign In
+								{/if}
+							</button>
 						</form>
 
-						{#if Object.keys($config?.oauth?.providers ?? {}).length > 0}
-							<div class="inline-flex items-center justify-center w-full">
-								<hr class="w-32 h-px my-4 border-0 dark:bg-gray-100/10 bg-gray-700/10" />
-								{#if $config?.features.enable_login_form || $config?.features.enable_ldap}
-									<span
-										class="px-3 text-sm font-medium text-gray-900 dark:text-white bg-transparent"
-										>{$i18n.t('or')}</span
-									>
-								{/if}
-
-								<hr class="w-32 h-px my-4 border-0 dark:bg-gray-100/10 bg-gray-700/10" />
+						{#if Object.keys($config?.oauth?.providers ?? {}).length > 0 || true}
+							<div class="my-6 flex items-center">
+								<div class="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
+								<span class="flex-shrink mx-4 text-gray-500 dark:text-gray-400">OR</span>
+								<div class="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
 							</div>
-							<div class="flex flex-col space-y-2">
-								{#if $config?.oauth?.providers?.google}
+
+							<div class="space-y-3">
+								{#if $config?.oauth?.providers?.google || true}
 									<button
-										class="flex justify-center items-center bg-gray-700/5 hover:bg-gray-700/10 dark:bg-gray-100/5 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition w-full rounded-full font-medium text-sm py-2.5"
+										class="w-full flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md py-2.5 px-4 text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
 										on:click={() => {
 											window.location.href = `${WEBUI_BASE_URL}/oauth/google/login`;
 										}}
 									>
-										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="size-6 mr-3">
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="h-5 w-5 mr-3">
 											<path
 												fill="#EA4335"
 												d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
@@ -352,105 +482,39 @@
 											/><path
 												fill="#34A853"
 												d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
-											/><path fill="none" d="M0 0h48v48H0z" />
-										</svg>
-										<span>{$i18n.t('Continue with {{provider}}', { provider: 'Google' })}</span>
-									</button>
-								{/if}
-								{#if $config?.oauth?.providers?.microsoft}
-									<button
-										class="flex justify-center items-center bg-gray-700/5 hover:bg-gray-700/10 dark:bg-gray-100/5 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition w-full rounded-full font-medium text-sm py-2.5"
-										on:click={() => {
-											window.location.href = `${WEBUI_BASE_URL}/oauth/microsoft/login`;
-										}}
-									>
-										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 21 21" class="size-6 mr-3">
-											<rect x="1" y="1" width="9" height="9" fill="#f25022" /><rect
-												x="1"
-												y="11"
-												width="9"
-												height="9"
-												fill="#00a4ef"
-											/><rect x="11" y="1" width="9" height="9" fill="#7fba00" /><rect
-												x="11"
-												y="11"
-												width="9"
-												height="9"
-												fill="#ffb900"
 											/>
 										</svg>
-										<span>{$i18n.t('Continue with {{provider}}', { provider: 'Microsoft' })}</span>
-									</button>
-								{/if}
-								{#if $config?.oauth?.providers?.github}
-									<button
-										class="flex justify-center items-center bg-gray-700/5 hover:bg-gray-700/10 dark:bg-gray-100/5 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition w-full rounded-full font-medium text-sm py-2.5"
-										on:click={() => {
-											window.location.href = `${WEBUI_BASE_URL}/oauth/github/login`;
-										}}
-									>
-										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="size-6 mr-3">
-											<path
-												fill="currentColor"
-												d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.92 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57C20.565 21.795 24 17.31 24 12c0-6.63-5.37-12-12-12z"
-											/>
-										</svg>
-										<span>{$i18n.t('Continue with {{provider}}', { provider: 'GitHub' })}</span>
-									</button>
-								{/if}
-								{#if $config?.oauth?.providers?.oidc}
-									<button
-										class="flex justify-center items-center bg-gray-700/5 hover:bg-gray-700/10 dark:bg-gray-100/5 dark:hover:bg-gray-100/10 dark:text-gray-300 dark:hover:text-white transition w-full rounded-full font-medium text-sm py-2.5"
-										on:click={() => {
-											window.location.href = `${WEBUI_BASE_URL}/oauth/oidc/login`;
-										}}
-									>
-										<svg
-											xmlns="http://www.w3.org/2000/svg"
-											fill="none"
-											viewBox="0 0 24 24"
-											stroke-width="1.5"
-											stroke="currentColor"
-											class="size-6 mr-3"
-										>
-											<path
-												stroke-linecap="round"
-												stroke-linejoin="round"
-												d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z"
-											/>
-										</svg>
-
-										<span
-											>{$i18n.t('Continue with {{provider}}', {
-												provider: $config?.oauth?.providers?.oidc ?? 'SSO'
-											})}</span
-										>
+										<span>Continue with Google</span>
 									</button>
 								{/if}
 							</div>
 						{/if}
 
-						{#if $config?.features.enable_ldap && $config?.features.enable_login_form}
-							<div class="mt-2">
-								<button
-									class="flex justify-center items-center text-xs w-full text-center underline"
-									type="button"
-									on:click={() => {
-										if (mode === 'ldap')
-											mode = ($config?.onboarding ?? false) ? 'signup' : 'signin';
-										else mode = 'ldap';
-									}}
-								>
-									<span
-										>{mode === 'ldap'
-											? $i18n.t('Continue with Email')
-											: $i18n.t('Continue with LDAP')}</span
+						<div class="mt-6 text-center">
+							{#if mode === 'signin'}
+								<p class="text-gray-600 dark:text-gray-400 text-sm">
+									Don't have an account?
+									<button
+										class="text-blue-500 hover:text-blue-600 dark:text-blue-400 font-medium ml-1"
+										on:click={() => (mode = 'signup')}
 									>
-								</button>
-							</div>
-						{/if}
-					</div>
-				{/if}
+										Sign Up
+									</button>
+								</p>
+							{:else}
+								<p class="text-gray-600 dark:text-gray-400 text-sm">
+									Already have an account?
+									<button
+										class="text-blue-500 hover:text-blue-600 dark:text-blue-400 font-medium ml-1"
+										on:click={() => (mode = 'signin')}
+									>
+										Sign In
+									</button>
+								</p>
+							{/if}
+						</div>
+					{/if}
+				</div>
 			</div>
 		</div>
 	{/if}
