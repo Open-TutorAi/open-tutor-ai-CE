@@ -173,15 +173,15 @@
 			<!-- Left panel with branding and features -->
 			<div class="w-2/5 bg-blue-50 dark:bg-gray-800 p-8 flex flex-col">
 				<div class="flex items-center mb-6">
-					<p class="text-4xl font-semibold text-black dark:text-white font-jersey">
+					<p class="text-2xl font-semibold text-black dark:text-white font-InstrumentSerif">
 						Open <span style="color: #57CED8;">TutorAI</span>
 					</p>
 				</div>
 				
-				<p class="text-3xl font-semibold mb-1 text-black dark:text-white font-jersey">
+				<p class="text-3xl font-semibold mb-1 text-black dark:text-white font-InstrumentSerif">
 					Welcome to Open <span style="color: #57CED8;">TutorAI</span>
 				</p>
-				<p class="text-l text-gray-600 dark:text-gray-300 mb-10 font-jersey">Your Path to Smarter Learning</p>
+				<p class="text-l text-gray-600 dark:text-gray-300 mb-10 font-InstrumentSerif">Your Path to Smarter Learning</p>
 				
 				{#if mode === 'signup'}
 					<!-- Features in card layout with fixed icon positioning -->
@@ -226,7 +226,7 @@
 				{:else}
 					<!-- Login illustration placeholder - kept unchanged -->
 					<div class="flex justify-center items-center my-8">
-						<img src="/log-illust.png" alt="Learning illustration" class="w-60 md:w-76" />
+						<img src="/grad-students.png" alt="Learning illustration" class="w-75 md:w-87" />
 					</div>
 					
 					<!-- Feature list for login - kept unchanged -->

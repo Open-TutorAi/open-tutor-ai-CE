@@ -19,15 +19,6 @@
 }
 
 @font-face {
-	font-family: 'Jersey';
-	src: url('/assets/fonts/Jersey25-Regular.ttf') format('woff2'),
-		 url('/assets/fonts/Jersey25-Regular.ttf') format('woff');
-	font-weight: normal;
-	font-style: normal;
-	font-display: swap;
-  }
-
-@font-face {
 	font-family: 'InstrumentSerif';
 	src: url('/assets/fonts/InstrumentSerif-Regular.ttf');
 	font-display: swap;
