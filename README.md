@@ -9,8 +9,6 @@
 ![GitHub last commit](https://img.shields.io/github/last-commit/pr-elhajji/open-tutor-ai-CE)
 [![Discord](https://img.shields.io/badge/Discord-Open_TutorAI-blue?logo=discord&logoColor=white)](https://discord.gg/KJHC5PcT)
 
-
-
 **OpenTutorAI-CE ** (Community Edition) is an open-source project designed to provide an educational and collaborative AI-powered platform. This public edition is the foundation for a proprietary Enterprise Edition (EE) and is built to encourage community contributions.
 
 > [!TIP]  
