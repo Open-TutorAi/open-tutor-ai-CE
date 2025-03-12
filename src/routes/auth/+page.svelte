@@ -151,7 +151,7 @@
 
 <svelte:head>
 	<title>
-	  {mode === 'signup' ? $i18n.t('Create Account') : $i18n.t('Sign In')} | OpenTutorAI
+	  {mode === 'signup' ? $i18n.t('Create Account') : $i18n.t('Sign in')} | OpenTutorAI
 	</title>
 	  <!-- Standard favicon for most browsers -->
 	  <link rel="icon" href="favicon/favicon.ico" type="image/x-icon">
@@ -286,7 +286,7 @@
 								{#if mode === 'signup'}
 									{$i18n.t('Create Account')}
 								{:else}
-									{$i18n.t('Sign In')}
+									{$i18n.t('Sign in')}
 								{/if}
 							</h2>
 							{#if mode === 'signup'}
@@ -342,14 +342,14 @@
 										autocomplete="username"
 										name="username"
 										class="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-black dark:text-white"
-										placeholder={$i18n.t('example@domain.com')}
+										placeholder={$i18n.t('Enter Your Email')}
 										required
 									/>
 								</div>
 							{:else}
 								<div>
 									<label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-										{$i18n.t('Email Address')}
+										{$i18n.t('Email')}
 									</label>
 									<input
 										id="email"
@@ -358,7 +358,7 @@
 										autocomplete="email"
 										name="email"
 										class="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-black dark:text-white"
-										placeholder={$i18n.t('example@email.com')}
+										placeholder={$i18n.t('Enter Your Email')}
 										required
 									/>
 								</div>
@@ -381,7 +381,7 @@
 										bind:value={password}
 										use:togglePassword={showPassword}
 										class="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-black dark:text-white pr-16"
-										placeholder={$i18n.t('Enter your password')}
+										placeholder={$i18n.t('Enter Your Password')}
 										autocomplete="current-password"
 										name="current-password"
 										required
@@ -411,7 +411,7 @@
 											<option value="" disabled selected>{$i18n.t('Select your role')}</option>
 											<option value="teacher">{$i18n.t('Teacher')}</option>
 											<option value="student">{$i18n.t('Student')}</option>
-											<option value="admin">{$i18n.t('Administrator')}</option>
+											<option value="admin">{$i18n.t('Admin')}</option>
 										</select>
 									</div>
 								</div>
@@ -455,7 +455,7 @@
 								{#if mode === 'signup'}
 									{$i18n.t('Create Account')}
 								{:else}
-									{$i18n.t('Sign In')}
+									{$i18n.t('Sign in')}
 								{/if}
 							</button>
 						</form>
@@ -514,7 +514,7 @@
 										class="text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200 font-medium ml-1"
 										on:click={() => (mode = 'signin')}
 									>
-										{$i18n.t('Sign In')}
+										{$i18n.t('Sign in')}
 									</button>
 								</p>
 								<div class="h-16"></div> 
