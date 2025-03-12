@@ -43,6 +43,17 @@
     }
 </script>
 
+<svelte:head>
+	<title>
+		OpenTutorAI
+	</title>
+	  <link rel="icon" href="favicon/favicon.ico" type="image/x-icon">
+	  <link rel="icon" href="favicon/favicon-96x96.png" type="image/png">
+	  <link rel="apple-touch-icon" href="favicon/apple-touch-icon.png">
+	  <link rel="manifest" href="favicon/site.webmanifest">
+
+</svelte:head>
+
 {#if show}
     <div 
         class="w-full h-screen max-h-[100dvh] text-white relative flex flex-col items-center justify-center overflow-hidden"
@@ -102,16 +113,16 @@
                 <Marquee
                     duration={4000}
                     words={[
-                        $i18n.t('Explore the cosmos'),
-                        $i18n.t('Unlock mysteries'),
-                        $i18n.t('Chart new frontiers'),
-                        $i18n.t('Dive into knowledge'),
-                        $i18n.t('Discover wonders'),
-                        $i18n.t('Ignite curiosity'),
-                        $i18n.t('Forge new paths'),
-                        $i18n.t('Unravel secrets'),
-                        $i18n.t('Pioneer insights'),
-                        $i18n.t('Embark on adventures')
+                        $i18n.t('Explore new concepts'),
+                        $i18n.t('Unlock understanding'),
+                        $i18n.t('Chart learning pathways'),
+                        $i18n.t('Engage deeply with content'),
+                        $i18n.t('Discover insights'),
+                        $i18n.t('Ignite student curiosity'),
+                        $i18n.t('Create new learning opportunities'),
+                        $i18n.t('Unravel complex ideas'),
+                        $i18n.t('Advance educational knowledge'),
+                        $i18n.t('Embark on learning journeys')
                     ]}
                 />
             </h1>
