@@ -259,6 +259,7 @@
 											bind:value={firstName}
 											type="text"
 											class="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-black dark:text-white"
+											placeholder={$i18n.t('Enter Your First Name')}
 											required
 										/>
 									</div>
@@ -271,6 +272,7 @@
 											bind:value={lastName}
 											type="text"
 											class="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-black dark:text-white"
+											placeholder={$i18n.t('Enter Your Last Name')}
 											required
 										/>
 									</div>
