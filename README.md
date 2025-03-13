@@ -206,7 +206,7 @@ This project is licensed under the [BSD-3-Clause License](LICENSE) - see the [LI
 
 ## Support 💬
 
-If you have any questions, suggestions, or need assistance, please open an issue or join our [Open TutorAI Discord community (https://discord.gg/KJHC5PcT) to connect with us! 🤝
+If you have any questions, suggestions, or need assistance, please open an issue or join our [Open TutorAI Discord community](https://discord.gg/KJHC5PcT) to connect with us! 🤝
 
 ## Star History
 
