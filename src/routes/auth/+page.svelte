@@ -177,92 +177,39 @@
 	{#if loaded}
 		<div class="flex flex-col md:flex-row w-full" style="min-height: calc(100vh - 8px);">
 			<!-- Left panel with branding and features -->
-			<div class="w-full md:w-2/5 bg-blue-50 dark:bg-gray-800 p-8 flex flex-col md:h-screen overflow-y-auto" style="max-height: 100vh;" role="complementary">
-				<div class="flex items-center mb-6">
-					<p class="text-2xl font-semibold text-black dark:text-white font-InstrumentSerif">
-						{$i18n.t('Open')} <span style="color: #57CED8;">{$i18n.t('TutorAI')}</span>
-					</p>
+			<div 
+				class="w-full md:w-2/5 p-6 flex flex-col justify-center items-center min-h-screen" 
+				style="background: linear-gradient(135deg, #1e3a8a, #6d28d9); color: white; border-radius: 0px; overflow: hidden;"
+				role="complementary"
+			>
+				<!-- Logo -->
+				<div class="flex items-center justify-center mb-3">
+					<img
+						crossorigin="anonymous"
+						src="{WEBUI_BASE_URL}/static/splash.png"
+						class="w-28 h-28 rounded-full bg-white p-3 shadow-lg"
+						alt="logo"
+					/>
 				</div>
+
+				<!-- Title Section -->
 				
-				<p class="text-3xl font-semibold mb-1 text-black dark:text-white font-InstrumentSerif">
-					{$i18n.t('Welcome to Open')} <span style="color: #57CED8;">{$i18n.t('TutorAI')}</span>
-				</p>
-				<p class="text-l text-gray-800 dark:text-gray-200 mb-10 font-InstrumentSerif">{$i18n.t('Your Path to Smarter Learning')}</p>
-				
-				{#if mode === 'signup'}
-					<div class="space-y-4">
-						<div class="bg-white dark:bg-gray-700 rounded-lg p-4 flex items-center shadow-sm">
-							<div class="w-10 h-10 min-w-10 rounded-full bg-blue-100 dark:bg-gray-100 flex items-center justify-center mr-4">
-								<svg xmlns="http://www.w3.org/2000/svg" style="color: #57CED8;" class="h-5 w-5 dark:text-blue-300" viewBox="0 0 20 20" fill="currentColor">
-									<path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-									<path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
-								</svg>
-							</div>
-							<span class="text-gray-900 dark:text-gray-50">{$i18n.t('Personalized learning experience')}</span>
-						</div>
-						
-						<div class="bg-white dark:bg-gray-700 rounded-lg p-4 flex items-center shadow-sm">
-							<div class="w-10 h-10 min-w-10 rounded-full bg-blue-100 dark:bg-gray-100 flex items-center justify-center mr-4">
-								<svg xmlns="http://www.w3.org/2000/svg" style="color: #57CED8;" class="h-5 w-5 dark:text-blue-300" viewBox="0 0 20 20" fill="currentColor">
-									<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd" />
-								</svg>
-							</div>
-							<span class="text-gray-900 dark:text-gray-50">{$i18n.t('AI-powered assistance')}</span>
-						</div>
-						
-						<div class="bg-white dark:bg-gray-700 rounded-lg p-4 flex items-center shadow-sm">
-							<div class="w-10 h-10 min-w-10 rounded-full bg-blue-100 dark:bg-gray-100 flex items-center justify-center mr-4">
-								<svg xmlns="http://www.w3.org/2000/svg" style="color: #57CED8;" class="h-5 w-5 dark:text-blue-300" viewBox="0 0 20 20" fill="currentColor">
-									<path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-								</svg>
-							</div>
-							<span class="text-gray-900 dark:text-gray-50">{$i18n.t('Track your progress')}</span>
-						</div>
-						
-						<div class="bg-white dark:bg-gray-700 rounded-lg p-4 flex items-center shadow-sm">
-							<div class="w-10 h-10 min-w-10 rounded-full bg-blue-100 dark:bg-gray-100 flex items-center justify-center mr-4">
-								<svg xmlns="http://www.w3.org/2000/svg" style="color: #57CED8;" class="h-5 w-5 dark:text-blue-300" viewBox="0 0 20 20" fill="currentColor">
-								<path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
-								</svg>
-							</div>
-							<span class="text-gray-900 dark:text-gray-50">{$i18n.t('Access to premium content')}</span>
-						</div>
-					</div>
-				{:else}
-					<!-- Login illustration placeholder - kept unchanged -->
-					<div class="flex justify-center items-center my-8">
-						<img src="/grad-students.png" alt={$i18n.t('Learning illustration')} class="w-75 md:w-87" />
-					</div>
-					
-					<!-- Feature list for login - kept unchanged -->
-					<div class="mt-auto space-y-4">
-						<div class="flex items-center">
-							<div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-gray-100 flex items-center justify-center mr-3">
-								<svg xmlns="http://www.w3.org/2000/svg" style="color: #57CED8;" class="h-4 w-4 dark:text-blue-300" viewBox="0 0 20 20" fill="currentColor">
-									<path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-									<path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
-								</svg>
-							</div>
-							<span class="text-gray-700 dark:text-gray-200">{$i18n.t('Personalized Learning')}</span>
-						</div>
-						<div class="flex items-center">
-							<div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-gray-100 flex items-center justify-center mr-3">
-								<svg xmlns="http://www.w3.org/2000/svg" style="color: #57CED8;" class="h-4 w-4 dark:text-blue-300" viewBox="0 0 20 20" fill="currentColor">
-									<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd" />
-								</svg>
-							</div>
-							<span class="text-gray-700 dark:text-gray-200">{$i18n.t('AI Assistant')}</span>
-						</div>
-						<div class="flex items-center">
-							<div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-gray-100 flex items-center justify-center mr-3">
-								<svg xmlns="http://www.w3.org/2000/svg" style="color: #57CED8;" class="h-4 w-4 dark:text-blue-300" viewBox="0 0 20 20" fill="currentColor">
-									<path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-								</svg>
-							</div>
-							<span class="text-gray-700 dark:text-gray-200">{$i18n.t('Progress Tracking')}</span>
-						</div>
-					</div>
-				{/if}
+					<p class="text-3xl font-extrabold font-InstrumentSerif text-center leading-snug">
+						{$i18n.t('Bienvenue sur')} 
+						<span class="text-cyan-300">OpenTutorAI</span>
+					</p>
+					<p class="text-md opacity-95 font-InstrumentSerif text-center italic mt-2">
+						{$i18n.t('Ton chemin vers un apprentissage plus intelligent')}
+					</p>
+
+				<!-- Illustration -->
+				<div class="flex justify-center items-center mt-5">
+					<img 
+						src="/grad-students.png" 
+						alt="{$i18n.t('Graduation illustration')}" 
+						class="w-60 md:w-72 rounded-xl "
+					/>
+				</div>
 			</div>
 
 			<!-- Right panel with authentication form -->
@@ -504,7 +451,7 @@
 										class="text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200 font-medium ml-1"
 										on:click={() => (mode = 'signup')}
 									>
-										{$i18n.t('Sign Up')}
+										{$i18n.t('Sign up')}
 									</button>
 								</p>
 							{:else}
