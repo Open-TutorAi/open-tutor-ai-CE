@@ -1,23 +1,12 @@
-# Contributing to Open WebUI
+# Contributing to Open TutorAI 🌟
 
 🚀 **Welcome, Contributors!** 🚀
 
-Your interest in contributing to Open WebUI is greatly appreciated. This document is here to guide you through the process, ensuring your contributions enhance the project effectively. Let's make Open WebUI even better, together!
-
-## 📌 Key Points
-
-### 🦙 Ollama vs. Open WebUI
-
-It's crucial to distinguish between Ollama and Open WebUI:
-
-- **Open WebUI** focuses on providing an intuitive and responsive web interface for chat interactions.
-- **Ollama** is the underlying technology that powers these interactions.
-
-If your issue or contribution pertains directly to the core Ollama technology, please direct it to the appropriate [Ollama project repository](https://ollama.com/). Open WebUI's repository is dedicated to the web interface aspect only.
+Your interest in contributing to Open TutorAI is greatly appreciated. This document is here to guide you through the process, ensuring your contributions enhance the project effectively. Let's make Open TutorAI even better, together!
 
 ### 🚨 Reporting Issues
 
-Noticed something off? Have an idea? Check our [Issues tab](https://github.com/open-webui/open-webui/issues) to see if it's already been reported or suggested. If not, feel free to open a new issue. When reporting an issue, please follow our issue templates. These templates are designed to ensure that all necessary details are provided from the start, enabling us to address your concerns more efficiently.
+Noticed something off? Have an idea? Check our [Issues tab](https://github.com/pr-elhajji/open-tutor-ai-CE/issues) to see if it's already been reported or suggested. If not, feel free to open a new issue. When reporting an issue, please follow our issue templates. These templates are designed to ensure that all necessary details are provided from the start, enabling us to address your concerns more efficiently.
 
 > [!IMPORTANT]
 >
@@ -26,7 +15,7 @@ Noticed something off? Have an idea? Check our [Issues tab](https://github.com/o
 
 ### 🧭 Scope of Support
 
-We've noticed an uptick in issues not directly related to Open WebUI but rather to the environment it's run in, especially Docker setups. While we strive to support Docker deployment, understanding Docker fundamentals is crucial for a smooth experience.
+We've noticed an uptick in issues not directly related to Open TutorAI but rather to the environment it's run in, especially Docker setups. While we strive to support Docker deployment, understanding Docker fundamentals is crucial for a smooth experience.
 
 - **Docker Deployment Support**: Open WebUI supports Docker deployment. Familiarity with Docker is assumed. For Docker basics, please refer to the [official Docker documentation](https://docs.docker.com/get-started/overview/).
 
@@ -40,7 +29,7 @@ Looking to contribute? Great! Here's how you can help:
 
 We welcome pull requests. Before submitting one, please:
 
-1. Open a discussion regarding your ideas [here](https://github.com/open-webui/open-webui/discussions/new/choose).
+1. Open a discussion regarding your ideas [here](https://github.com/pr-elhajji/open-tutor-ai-CE/discussions/new/choose).
 2. Follow the project's coding standards and include tests for new features.
 3. Update documentation as necessary.
 4. Write clear, descriptive commit messages.
@@ -48,7 +37,7 @@ We welcome pull requests. Before submitting one, please:
 
 ### 📚 Documentation & Tutorials
 
-Help us make Open WebUI more accessible by improving documentation, writing tutorials, or creating guides on setting up and optimizing the web UI.
+Help us make Open TutorAI more accessible by improving documentation, writing tutorials, or creating guides on setting up and optimizing the Tutor AI.
 
 ### 🌐 Translations and Internationalization
 
@@ -64,7 +53,7 @@ To add a new language:
 
 ### 🤔 Questions & Feedback
 
-Got questions or feedback? Join our [Discord community](https://discord.gg/5rJgQTnV4s) or open an issue. We're here to help!
+Got questions or feedback? Join our [Discord community](https://discord.gg/86cVbJBy) or open an issue. We're here to help!
 
 ## 🙏 Thank You!
 
