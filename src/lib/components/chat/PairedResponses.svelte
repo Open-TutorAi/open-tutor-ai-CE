@@ -5,18 +5,72 @@
     import type { i18n as i18nType } from 'i18next';
     import type { Writable } from 'svelte/store';
     import { getContext } from 'svelte';
+    import { toast } from 'svelte-sonner';
+    import { createResponseFeedback } from '$lib/apis/response-feedbacks';
 
     const i18n = getContext<Writable<i18nType>>('i18n');
 
-    const MAX_PREVIEW_LENGTH = 300; // characters to show before truncation
+    const MAX_PREVIEW_LENGTH = 300;
     let expandedId: string | null = null;
+    let selectedPair: PairedMessage | null = null;
+    let selectedResponse: Message | null = null;
+    let preferredResponseId: string | null = null;
+    let comparisonReason = '';
+    let currentQuestionId: string | null = null;
+    let showComparisonModal = false;
 
     function toggleResponse(responseId: string) {
         expandedId = expandedId === responseId ? null : responseId;
     }
 
-    function isExpanded(responseId: string): boolean {
-        return expandedId === responseId;
+    function handleEvaluate(pair: PairedMessage) {
+        selectedPair = pair;
+        currentQuestionId = pair.question.id;
+    }
+
+    function handleResponseSelect(responseId: string) {
+        preferredResponseId = responseId;
+    }
+
+    async function handleComparisonSubmit() {
+        if (!preferredResponseId || !comparisonReason) {
+            toast.error('Please select a preferred response and provide a reason');
+            return;
+        }
+
+        if (!currentQuestionId) {
+            toast.error('No question selected');
+            return;
+        }
+
+        const token = localStorage.getItem('token');
+        if (!token) {
+            toast.error('Authentication required');
+            return;
+        }
+
+        try {
+            const feedback = {
+                preferredResponseId,
+                reason: comparisonReason,
+                timestamp: Date.now(),
+                questionId: currentQuestionId,
+                responses: selectedPair?.responses.map(r => ({
+                    id: r.id,
+                    content: r.content,
+                    modelName: r.modelName
+                })) || []
+            };
+
+            await createResponseFeedback(token, feedback);
+            toast.success('Feedback submitted successfully');
+            showComparisonModal = false;
+            preferredResponseId = null;
+            comparisonReason = '';
+        } catch (error) {
+            console.error('Error submitting feedback:', error);
+            toast.error('Failed to submit feedback');
+        }
     }
 
     function getTruncatedContent(content: string, responseId: string): string {
@@ -24,6 +78,10 @@
             return content;
         }
         return content.slice(0, MAX_PREVIEW_LENGTH) + '...';
+    }
+
+    function isExpanded(responseId: string): boolean {
+        return expandedId === responseId;
     }
 
     interface Message {
@@ -150,10 +208,16 @@
         <div class="space-y-6">
             {#each pairedMessages as pair}
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-                    <div class="mb-2">
+                    <div class="flex justify-between items-start mb-2">
                         <a href="/chat/{pair.chatId}" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">
                             {pair.chatTitle || 'Untitled Chat'}
                         </a>
+                        <button
+                            on:click={() => handleEvaluate(pair)}
+                            class="px-3 py-1 text-sm bg-emerald-600 hover:bg-emerald-700 dark:bg-[#4ADE80] dark:hover:bg-[#22C55E] text-white rounded-lg transition-colors"
+                        >
+                            {$i18n.t('Compare Responses')}
+                        </button>
                     </div>
                     <div class="mb-4">
                         <h3 class="font-medium text-gray-900 dark:text-white mb-2">
@@ -201,6 +265,100 @@
                     </div>
                 </div>
             {/each}
+        </div>
+    {/if}
+
+    {#if selectedPair}
+        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="p-4">
+                    <div class="flex justify-between items-start mb-4">
+                        <h2 class="text-lg font-medium text-gray-900 dark:text-white">
+                            {$i18n.t('Compare Responses')}
+                        </h2>
+                        <button
+                            on:click={() => {
+                                selectedPair = null;
+                                preferredResponseId = null;
+                                comparisonReason = '';
+                            }}
+                            class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="mb-4">
+                        <h3 class="font-medium text-gray-900 dark:text-white mb-2">
+                            {$i18n.t('Question')}:
+                        </h3>
+                        <p class="text-gray-700 dark:text-gray-300">{selectedPair.question.content}</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        {#each selectedPair.responses as response, index}
+                            <div class="border rounded-lg p-4 {preferredResponseId === response.id ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-gray-200 dark:border-gray-700'}">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                        {$i18n.t('Response')} {index + 1}
+                                    </span>
+                                    {#if response.modelName}
+                                        <span class="text-xs text-gray-400 dark:text-gray-500">
+                                            ({response.modelName})
+                                        </span>
+                                    {/if}
+                                </div>
+                                <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap mb-4">
+                                    {response.content}
+                                </p>
+                                <button
+                                    on:click={() => handleResponseSelect(response.id)}
+                                    class="w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors
+                                        {preferredResponseId === response.id
+                                            ? 'bg-emerald-600 hover:bg-emerald-700 dark:bg-[#4ADE80] dark:hover:bg-[#22C55E] text-white'
+                                            : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'}"
+                                >
+                                    {preferredResponseId === response.id ? $i18n.t('Selected') : $i18n.t('Select this response')}
+                                </button>
+                            </div>
+                        {/each}
+                    </div>
+
+                    <div class="mb-6">
+                        <label for="comparisonReason" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            {$i18n.t('Why do you prefer this response?')}
+                        </label>
+                        <textarea
+                            id="comparisonReason"
+                            bind:value={comparisonReason}
+                            rows="4"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            placeholder={$i18n.t('Please explain your preference...')}
+                        ></textarea>
+                    </div>
+
+                    <div class="flex justify-end gap-4">
+                        <button
+                            on:click={() => {
+                                selectedPair = null;
+                                preferredResponseId = null;
+                                comparisonReason = '';
+                            }}
+                            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                        >
+                            {$i18n.t('Cancel')}
+                        </button>
+                        <button
+                            on:click={handleComparisonSubmit}
+                            class="px-4 py-2 text-sm font-medium bg-emerald-600 hover:bg-emerald-700 dark:bg-[#4ADE80] dark:hover:bg-[#22C55E] text-white rounded-lg transition-colors"
+                        >
+                            {$i18n.t('Submit Feedback')}
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     {/if}
 </div>
