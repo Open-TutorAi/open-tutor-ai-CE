@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { getAllChats } from '$lib/apis/chats';
+    import { getAllChatsInDB } from '$lib/apis/chats';
     import dayjs from '$lib/dayjs';
     import type { i18n as i18nType } from 'i18next';
     import type { Writable } from 'svelte/store';
@@ -168,7 +168,7 @@
             if (!token) {
                 throw new Error('No authentication token found');
             }
-            const chats = await getAllChats(token);
+            const chats = await getAllChatsInDB(token);
             console.log('Chats received:', chats);
 
             if (!Array.isArray(chats)) {
