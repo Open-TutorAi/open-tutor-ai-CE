@@ -6,7 +6,7 @@
     import type { Writable } from 'svelte/store';
     import { getContext } from 'svelte';
     import { toast } from 'svelte-sonner';
-    import { createResponseFeedback } from '$lib/apis/response-feedbacks';
+    import { createResponseFeedback, getAllResponseFeedbacks } from '$lib/apis/response-feedbacks';
 
     const i18n = getContext<Writable<i18nType>>('i18n');
 
@@ -67,10 +67,12 @@
             
             // Remove the submitted pair from the list
             if (selectedPair) {
+                const questionId = selectedPair.question.id;
                 pairedMessages = pairedMessages.filter(pair => 
-                    !(pair.chatId === selectedPair?.chatId && 
-                      pair.question.id === selectedPair?.question.id)
+                    pair.question.id !== questionId
                 );
+                console.log('Removed pair:', questionId);
+                console.log('Remaining pairs:', pairedMessages.length);
             }
             
             toast.success('Feedback submitted successfully');
@@ -189,8 +191,19 @@
 
             console.log('Found pairs:', allPairs);
 
+            // Get all evaluated feedbacks
+            const feedbacks = await getAllResponseFeedbacks(token);
+            const evaluatedQuestionIds = new Set(
+                (feedbacks || []).map((feedback: any) => feedback.data.questionId)
+            );
+
+            // Filter out already evaluated pairs
+            const unevaluatedPairs = allPairs.filter(pair => 
+                !evaluatedQuestionIds.has(pair.question.id)
+            );
+
             // Sort by timestamp, newest first
-            pairedMessages = allPairs.sort((a, b) => b.timestamp - a.timestamp);
+            pairedMessages = unevaluatedPairs.sort((a, b) => b.timestamp - a.timestamp);
         } catch (err) {
             console.error('Error loading paired responses:', err);
             error = err instanceof Error 
