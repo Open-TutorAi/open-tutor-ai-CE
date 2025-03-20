@@ -5,6 +5,7 @@ export interface ResponseComparisonFeedback {
     reason: string;
     timestamp: number;
     questionId: string;
+    question: string;
     responses: {
         id: string;
         content: string;

@@ -55,6 +55,7 @@
                 reason: comparisonReason,
                 timestamp: Date.now(),
                 questionId: currentQuestionId,
+                question: selectedPair?.question.content || '',
                 responses: selectedPair?.responses.map(r => ({
                     id: r.id,
                     content: r.content,
@@ -63,8 +64,18 @@
             };
 
             await createResponseFeedback(token, feedback);
+            
+            // Remove the submitted pair from the list
+            if (selectedPair) {
+                pairedMessages = pairedMessages.filter(pair => 
+                    !(pair.chatId === selectedPair?.chatId && 
+                      pair.question.id === selectedPair?.question.id)
+                );
+            }
+            
             toast.success('Feedback submitted successfully');
             showComparisonModal = false;
+            selectedPair = null;
             preferredResponseId = null;
             comparisonReason = '';
         } catch (error) {
@@ -367,4 +378,4 @@
     .container {
         max-width: 1200px;
     }
-</style> 
+</style>

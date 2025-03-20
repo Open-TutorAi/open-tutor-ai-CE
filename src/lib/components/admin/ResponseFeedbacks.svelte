@@ -29,14 +29,20 @@
 
             const response = await getAllResponseFeedbacks(token);
             if (response) {
-                feedbacks = (response as FeedbackResponse[]).map(feedback => ({
-                    id: feedback.id,
-                    preferredResponseId: feedback.data.preferredResponseId,
-                    reason: feedback.data.reason,
-                    timestamp: feedback.data.timestamp,
-                    questionId: feedback.data.questionId,
-                    responses: feedback.data.responses
-                }));
+                console.log('API Response:', response);
+                feedbacks = (response as FeedbackResponse[]).map(feedback => {
+                    console.log('Processing feedback:', feedback);
+                    return {
+                        id: feedback.id,
+                        preferredResponseId: feedback.data.preferredResponseId,
+                        reason: feedback.data.reason,
+                        timestamp: feedback.data.timestamp,
+                        questionId: feedback.data.questionId,
+                        question: feedback.data.question,
+                        responses: feedback.data.responses,
+                        userId: feedback.user_id
+                    };
+                });
             }
         } catch (err) {
             console.error('Error loading feedbacks:', err);
@@ -45,6 +51,49 @@
             loading = false;
         }
     });
+
+    const exportRLHFData = () => {
+        try {
+            const rlhfData = feedbacks.map((feedback) => {
+                const responses = feedback.responses.map((response) => ({
+                    text: response.content,
+                    model: response.modelName || 'unknown',
+                    id: response.id
+                }));
+
+                const chosenResponse = responses.find((r) => r.id === feedback.preferredResponseId);
+                const rejectedResponse = responses.find((r) => r.id !== feedback.preferredResponseId);
+
+                return {
+                    prompt: {
+                        Id: feedback.questionId,
+                        text: feedback.question || feedback.questionId
+                    },
+                    responses,
+                    chosen: chosenResponse?.id,
+                    rejected: rejectedResponse?.id,
+                    reason: feedback.reason,
+                    metadata: {
+                        timestamp: new Date(feedback.timestamp).getTime()
+                    }
+                };
+            });
+
+            const blob = new Blob([JSON.stringify(rlhfData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `rlhf_data_${dayjs().format('YYYY-MM-DD_HH-mm')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            toast.success($i18n.t('Data exported successfully'));
+        } catch (e) {
+            toast.error($i18n.t('Failed to export data'));
+        }
+    };
 </script>
 
 <div class="flex flex-col gap-4">
@@ -55,6 +104,12 @@
         <div class="text-sm text-gray-500 dark:text-gray-400">
             {$i18n.t('Total feedbacks')}: {feedbacks.length}
         </div>
+        <button
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            on:click={exportRLHFData}
+        >
+            {$i18n.t('Export RLHF Data')}
+        </button>
     </div>
 
     {#if loading}
