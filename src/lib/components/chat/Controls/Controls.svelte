@@ -13,6 +13,8 @@
 	export let models = [];
 	export let chatFiles = [];
 	export let params = {};
+	export let avatarActive = false;
+	export let onAvatarToggle = () => {};
 
 	let showValves = false;
 </script>
@@ -32,6 +34,19 @@
 
 	{#if $user.role === 'admin' || $user?.permissions.chat?.controls}
 		<div class=" dark:text-gray-200 text-sm font-primary py-0.5 px-0.5">
+			<!-- Avatar Toggle -->
+			<Collapsible title={$i18n.t('Avatar Settings')} open={true} buttonClassName="w-full">
+				<div class="flex items-center justify-between mt-1.5" slot="content">
+					<div class="text-sm">{$i18n.t('Show Avatar')}</div>
+					<label class="relative inline-flex items-center cursor-pointer">
+						<input type="checkbox" class="sr-only peer" checked={avatarActive} on:change={onAvatarToggle} />
+						<div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+					</label>
+				</div>
+			</Collapsible>
+
+			<hr class="my-2 border-gray-50 dark:border-gray-700/10" />
+
 			{#if chatFiles.length > 0}
 				<Collapsible title={$i18n.t('Files')} open={true} buttonClassName="w-full">
 					<div class="flex flex-col gap-1 mt-1.5" slot="content">

@@ -140,6 +140,8 @@ type Settings = {
 	title?: TitleSettings;
 	splitLargeDeltas?: boolean;
 	chatDirection: 'LTR' | 'RTL';
+	avatarEnabled?: boolean;
+	selectedAvatarId?: string;
 
 	system?: string;
 	requestFormat?: string;

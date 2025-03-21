@@ -1,226 +1,222 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
-	import { marked } from 'marked';
-
 	import { onMount, getContext, tick, createEventDispatcher } from 'svelte';
-	import { blur, fade } from 'svelte/transition';
-
+	import { fade, scale } from 'svelte/transition';
+	
 	const dispatch = createEventDispatcher();
+	const i18n: any = getContext('i18n');
 
-	import { config, user, models as _models, temporaryChatEnabled } from '$lib/stores';
-	import { sanitizeResponseContent, findWordIndices } from '$lib/utils';
-	import { WEBUI_BASE_URL } from '$lib/constants';
+	import { settings, user } from '$lib/stores';
+	import { goto } from '$app/navigation';
+	import AvatarSelection from './AvatarSelection.svelte';
 
-	import Suggestions from './Suggestions.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	import EyeSlash from '$lib/components/icons/EyeSlash.svelte';
-	import MessageInput from './MessageInput.svelte';
-
-	const i18n = getContext('i18n');
-
-	export let transparentBackground = false;
-
+	// Props that must be kept for component compatibility
 	export let createMessagePair: Function;
 	export let stopResponse: Function;
-
 	export let autoScroll = false;
-
-	export let atSelectedModel: Model | undefined;
+	export let atSelectedModel: any | undefined;
 	export let selectedModels: [''];
-
-	export let history;
-
+	export let history: any;
 	export let prompt = '';
-	export let files = [];
-
-	export let selectedToolIds = [];
+	export let files: any[] = [];
+	export let selectedToolIds: any[] = [];
 	export let imageGenerationEnabled = false;
 	export let codeInterpreterEnabled = false;
 	export let webSearchEnabled = false;
+	export let transparentBackground = false;
 
-	let models = [];
+	// State for chat type selection - use type assertion to avoid TS errors
+	let selectedChatType = ($settings as any)?.avatarEnabled !== undefined ? 
+		(($settings as any).avatarEnabled ? 'avatar' : 'text') : 'text';
+	
+	// Add state to track if we're showing avatar selection
+	let showingAvatarSelection = false;
 
-	const selectSuggestionPrompt = async (p) => {
-		let text = p;
-
-		if (p.includes('{{CLIPBOARD}}')) {
-			const clipboardText = await navigator.clipboard.readText().catch((err) => {
-				toast.error($i18n.t('Failed to read clipboard contents'));
-				return '{{CLIPBOARD}}';
+	// Function to set chat type preference and start chat
+	const startChat = async (type: 'text' | 'avatar') => {
+		selectedChatType = type;
+		
+		if (type === 'text') {
+			// For text chat, update settings and start immediately
+			settings.update(s => {
+				const updatedSettings = {...s};
+				(updatedSettings as any).avatarEnabled = false;
+				return updatedSettings;
 			});
 
-			text = p.replaceAll('{{CLIPBOARD}}', clipboardText);
-
-			console.log('Clipboard text:', clipboardText, text);
+			// Save settings to localStorage for persistence
+			localStorage.setItem('settings', JSON.stringify($settings));
+			
+			// Notify user of the selection
+			toast.success('Text-only chat enabled');
+			
+			// Force UI update before submitting
+			await tick();
+			
+			// Send a default prompt to initialize the chat
+			const initialPrompt = "Hello";
+			dispatch('submit', initialPrompt);
+		} else {
+			// For avatar chat, show the avatar selection screen
+			showingAvatarSelection = true;
 		}
-
-		prompt = text;
-
-		console.log(prompt);
-		await tick();
-
-		const chatInputContainerElement = document.getElementById('chat-input-container');
-		const chatInputElement = document.getElementById('chat-input');
-
-		if (chatInputContainerElement) {
-			chatInputContainerElement.style.height = '';
-			chatInputContainerElement.style.height =
-				Math.min(chatInputContainerElement.scrollHeight, 200) + 'px';
-		}
-
-		await tick();
-		if (chatInputElement) {
-			chatInputElement.focus();
-			chatInputElement.dispatchEvent(new Event('input'));
-		}
-
-		await tick();
 	};
 
-	let selectedModelIdx = 0;
+	// Handle avatar selection completion
+	const handleAvatarSelected = async (event: { detail: { avatarId: string } }) => {
+		// Avatar selection already updated settings, now initialize chat
+		await tick();
+		
+		// Send a default prompt to initialize the chat with the selected avatar
+		const initialPrompt = "Hello";
+		dispatch('submit', initialPrompt);
+		
+		// Fallback navigation if chat doesn't initialize
+		setTimeout(() => {
+			if (history && !history.currentId) {
+				goto('/');
+			}
+		}, 300);
+	};
 
-	$: if (selectedModels.length > 0) {
-		selectedModelIdx = models.length - 1;
-	}
+	// Handle going back from avatar selection to chat type selection
+	const handleAvatarSelectionBack = () => {
+		showingAvatarSelection = false;
+	};
 
-	$: models = selectedModels.map((id) => $_models.find((m) => m.id === id));
-
-	onMount(() => {});
+	// Handle keyboard navigation
+	const handleKeydown = (event: KeyboardEvent, type: 'text' | 'avatar') => {
+		if (event.key === 'Enter' || event.key === ' ') {
+			startChat(type);
+		}
+	};
 </script>
 
-<div class="m-auto w-full max-w-6xl px-2 @2xl:px-20 translate-y-6 py-24 text-center">
-	{#if $temporaryChatEnabled}
-		<Tooltip
-			content="This chat won't appear in history and your messages will not be saved."
-			className="w-full flex justify-center mb-0.5"
-			placement="top"
-		>
-			<div class="flex items-center gap-2 text-gray-500 font-medium text-lg my-2 w-fit">
-				<EyeSlash strokeWidth="2.5" className="size-5" /> Temporary Chat
+{#if showingAvatarSelection}
+	<!-- Show avatar selection screen -->
+	<AvatarSelection 
+		on:select={handleAvatarSelected} 
+		on:back={handleAvatarSelectionBack} 
+	/>
+{:else}
+	<!-- Chat type selection screen -->
+	<div class="relative h-full w-full flex items-center justify-center bg-white dark:bg-gray-900">
+		<div class="max-w-4xl w-full px-4 py-10" in:scale={{ duration: 400, start: 0.95, opacity: 0 }}>
+			<div class="text-center mb-8">
+				<h1 class="text-4xl font-bold mb-4 text-gray-800 dark:text-white tracking-tight">Choose Your Experience</h1>
+				<p class="text-gray-600 dark:text-gray-300 max-w-lg mx-auto">Select the type of chat experience you prefer. You can change this anytime from the settings.</p>
 			</div>
-		</Tooltip>
-	{/if}
-
-	<div
-		class="w-full text-3xl text-gray-800 dark:text-gray-100 font-medium text-center flex items-center gap-4 font-primary"
-	>
-		<div class="w-full flex flex-col justify-center items-center">
-			<div class="flex flex-row justify-center gap-3 @sm:gap-3.5 w-fit px-5">
-				<div class="flex shrink-0 justify-center">
-					<div class="flex -space-x-4 mb-0.5" in:fade={{ duration: 100 }}>
-						{#each models as model, modelIdx}
-							<Tooltip
-								content={(models[modelIdx]?.info?.meta?.tags ?? [])
-									.map((tag) => tag.name.toUpperCase())
-									.join(', ')}
-								placement="top"
+			
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+				<!-- Text Chat Option -->
+				<div 
+					class="relative bg-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900 rounded-xl overflow-hidden border-2 transition-all duration-300 
+							{selectedChatType === 'text' ? 'border-blue-500 shadow-lg shadow-blue-500/20' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'}"
+					on:click={() => startChat('text')}
+					on:keydown={(e) => handleKeydown(e, 'text')}
+					tabindex="0"
+					role="button"
+					aria-label="Start text chat"
+				>
+					<div class="absolute inset-0 bg-cover bg-center opacity-10" style="background-image: url('https://cdn-icons-png.flaticon.com/512/2665/2665038.png')"></div>
+					
+					<div class="relative p-8 flex flex-col items-center text-center h-full">
+						<div class="mb-6 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 p-5 w-20 h-20 flex items-center justify-center">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+							</svg>
+						</div>
+						<h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Text Chat</h2>
+						<p class="text-gray-600 dark:text-gray-300 mb-6">Standard text-based conversation with advanced AI capabilities</p>
+						<ul class="text-left text-gray-600 dark:text-gray-300 space-y-2 mt-auto">
+							<li class="flex items-center">
+								<svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+								</svg>
+								Fast responses
+							</li>
+							<li class="flex items-center">
+								<svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+								</svg>
+								Resource-efficient
+							</li>
+							<li class="flex items-center">
+								<svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+								</svg>
+								Code blocks support
+							</li>
+						</ul>
+						<div class="mt-6 w-full">
+							<button 
+								class="w-full py-3 px-6 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium transition-all hover:shadow-lg hover:shadow-blue-500/30 focus:outline-none focus:ring-2 focus:ring-blue-500"
 							>
-								<button
-									on:click={() => {
-										selectedModelIdx = modelIdx;
-									}}
-								>
-									<img
-										crossorigin="anonymous"
-										src={model?.info?.meta?.profile_image_url ??
-											($i18n.language === 'dg-DG'
-												? `/doge.png`
-												: `${WEBUI_BASE_URL}/static/favicon.png`)}
-										class=" size-9 @sm:size-10 rounded-full border-[1px] border-gray-200 dark:border-none"
-										alt="logo"
-										draggable="false"
-									/>
-								</button>
-							</Tooltip>
-						{/each}
+								Start Text Chat
+							</button>
+						</div>
 					</div>
 				</div>
-
-				<div class=" text-3xl @sm:text-4xl line-clamp-1" in:fade={{ duration: 100 }}>
-					{#if models[selectedModelIdx]?.name}
-						{models[selectedModelIdx]?.name}
-					{:else}
-						{$i18n.t('Hello, {{name}}', { name: $user.name })}
-					{/if}
-				</div>
-			</div>
-
-			<div class="flex mt-1 mb-2">
-				<div in:fade={{ duration: 100, delay: 50 }}>
-					{#if models[selectedModelIdx]?.info?.meta?.description ?? null}
-						<Tooltip
-							className=" w-fit"
-							content={marked.parse(
-								sanitizeResponseContent(models[selectedModelIdx]?.info?.meta?.description ?? '')
-							)}
-							placement="top"
-						>
-							<div
-								class="mt-0.5 px-2 text-sm font-normal text-gray-500 dark:text-gray-400 line-clamp-2 max-w-xl markdown"
+				
+				<!-- Avatar Chat Option -->
+				<div 
+					class="relative bg-gray-50 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900 rounded-xl overflow-hidden border-2 transition-all duration-300 
+							{selectedChatType === 'avatar' ? 'border-purple-500 shadow-lg shadow-purple-500/20' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'}"
+					on:click={() => startChat('avatar')}
+					on:keydown={(e) => handleKeydown(e, 'avatar')}
+					tabindex="0"
+					role="button"
+					aria-label="Start avatar chat"
+				>
+					<div class="absolute inset-0 bg-cover bg-center opacity-10" style="background-image: url('https://cdn-icons-png.flaticon.com/512/4712/4712037.png')"></div>
+					
+					<div class="relative p-8 flex flex-col items-center text-center h-full">
+						<div class="mb-6 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 p-5 w-20 h-20 flex items-center justify-center">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<path d="M12 2a5 5 0 0 0-5 5v2a5 5 0 0 0 10 0V7a5 5 0 0 0-5-5zm-9 16v-1a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v1"></path>
+								<circle cx="12" cy="10" r="3"></circle>
+							</svg>
+						</div>
+						<h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Avatar Chat</h2>
+						<p class="text-gray-600 dark:text-gray-300 mb-6">Interactive 3D avatar with speech and dynamic animations</p>
+						<ul class="text-left text-gray-600 dark:text-gray-300 space-y-2 mt-auto">
+							<li class="flex items-center">
+								<svg class="w-5 h-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+								</svg>
+								Realistic animations
+							</li>
+							<li class="flex items-center">
+								<svg class="w-5 h-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+								</svg>
+								Natural voice synthesis
+							</li>
+							<li class="flex items-center">
+								<svg class="w-5 h-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+								</svg>
+								Immersive experience
+							</li>
+						</ul>
+						<div class="mt-6 w-full">
+							<button 
+								class="w-full py-3 px-6 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 text-white font-medium transition-all hover:shadow-lg hover:shadow-purple-500/30 focus:outline-none focus:ring-2 focus:ring-purple-500"
 							>
-								{@html marked.parse(
-									sanitizeResponseContent(models[selectedModelIdx]?.info?.meta?.description)
-								)}
-							</div>
-						</Tooltip>
-
-						{#if models[selectedModelIdx]?.info?.meta?.user}
-							<div class="mt-0.5 text-sm font-normal text-gray-400 dark:text-gray-500">
-								By
-								{#if models[selectedModelIdx]?.info?.meta?.user.community}
-									<a
-										href="https://openwebui.com/m/{models[selectedModelIdx]?.info?.meta?.user
-											.username}"
-										>{models[selectedModelIdx]?.info?.meta?.user.name
-											? models[selectedModelIdx]?.info?.meta?.user.name
-											: `@${models[selectedModelIdx]?.info?.meta?.user.username}`}</a
-									>
-								{:else}
-									{models[selectedModelIdx]?.info?.meta?.user.name}
-								{/if}
-							</div>
-						{/if}
-					{/if}
+								Start Avatar Chat
+							</button>
+						</div>
+					</div>
 				</div>
 			</div>
 
-			<div class="text-base font-normal @md:max-w-3xl w-full py-3 {atSelectedModel ? 'mt-2' : ''}">
-				<MessageInput
-					{history}
-					{selectedModels}
-					bind:files
-					bind:prompt
-					bind:autoScroll
-					bind:selectedToolIds
-					bind:imageGenerationEnabled
-					bind:codeInterpreterEnabled
-					bind:webSearchEnabled
-					bind:atSelectedModel
-					{transparentBackground}
-					{stopResponse}
-					{createMessagePair}
-					placeholder={$i18n.t('How can I help you today?')}
-					on:upload={(e) => {
-						dispatch('upload', e.detail);
-					}}
-					on:submit={(e) => {
-						dispatch('submit', e.detail);
-					}}
-				/>
+			<!-- Footer text -->
+			<div class="mt-8 text-center">
+				<p class="text-gray-500 dark:text-gray-400 text-sm">
+					Your chat selection will determine how the AI presents information to you. 
+					You can switch between these modes at any time using the settings panel.
+				</p>
 			</div>
 		</div>
 	</div>
-	<div class="mx-auto max-w-2xl font-primary" in:fade={{ duration: 200, delay: 200 }}>
-		<div class="mx-5">
-			<Suggestions
-				suggestionPrompts={models[selectedModelIdx]?.info?.meta?.suggestion_prompts ??
-					$config?.default_prompt_suggestions ??
-					[]}
-				inputValue={prompt}
-				on:select={(e) => {
-					selectSuggestionPrompt(e.detail);
-				}}
-			/>
-		</div>
-	</div>
-</div>
+{/if}

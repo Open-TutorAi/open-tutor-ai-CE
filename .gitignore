@@ -6,6 +6,7 @@ node_modules
 .env
 .env.*
 !.env.example
+.cursor
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 # Byte-compiled / optimized / DLL files
@@ -308,3 +309,4 @@ dist
 cypress/videos
 cypress/screenshots
 .vscode/settings.json
+.gitignore

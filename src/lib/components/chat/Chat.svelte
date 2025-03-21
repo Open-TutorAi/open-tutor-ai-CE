@@ -85,6 +85,7 @@
 	import Placeholder from './Placeholder.svelte';
 	import NotificationToast from '../NotificationToast.svelte';
 	import Spinner from '../common/Spinner.svelte';
+	import AvatarChat from './AvatarChat.svelte';
 
 	export let chatIdProp = '';
 
@@ -134,6 +135,12 @@
 	let chatFiles = [];
 	let files = [];
 	let params = {};
+
+	// Make avatarActive reactive to settings changes
+	// This ensures avatarActive updates whenever settings.avatarEnabled changes
+	$: avatarActive = ($settings as any)?.avatarEnabled !== undefined ? ($settings as any).avatarEnabled : true;
+	let avatarSpeaking = false;
+	let currentAvatarMessage = '';
 
 	$: if (chatIdProp) {
 		(async () => {
@@ -187,15 +194,20 @@
 		setToolIds();
 	}
 
+	$: if (atSelectedModel || selectedModels) {
+		setToolIds();
+	}
+
 	const setToolIds = async () => {
 		if (!$tools) {
 			tools.set(await getTools(localStorage.token));
 		}
 
-		if (selectedModels.length !== 1) {
+		if (selectedModels.length !== 1 && !atSelectedModel) {
 			return;
 		}
-		const model = $models.find((m) => m.id === selectedModels[0]);
+
+		const model = atSelectedModel ?? $models.find((m) => m.id === selectedModels[0]);
 		if (model) {
 			selectedToolIds = (model?.info?.meta?.toolIds ?? []).filter((id) =>
 				$tools.find((t) => t.id === id)
@@ -755,12 +767,20 @@
 			$models.map((m) => m.id).includes(modelId) ? modelId : ''
 		);
 
+		// Preserve avatar settings and only update other settings
+		const currentAvatarEnabled = ($settings as any)?.avatarEnabled;
 		const userSettings = await getUserSettings(localStorage.token);
 
 		if (userSettings) {
-			settings.set(userSettings.ui);
+			// Preserve avatarEnabled setting from the user's selection
+			const mergedSettings = {...userSettings.ui};
+			(mergedSettings as any).avatarEnabled = currentAvatarEnabled;
+			await settings.set(mergedSettings);
 		} else {
-			settings.set(JSON.parse(localStorage.getItem('settings') ?? '{}'));
+			// Keep current avatarEnabled value when updating from localStorage
+			const storedSettings = JSON.parse(localStorage.getItem('settings') ?? '{}');
+			storedSettings.avatarEnabled = currentAvatarEnabled;
+			await settings.set(storedSettings);
 		}
 
 		const chatInput = document.getElementById('chat-input');
@@ -836,6 +856,7 @@
 				content: m.content,
 				info: m.info ? m.info : undefined,
 				timestamp: m.timestamp,
+				...(m.usage ? { usage: m.usage } : {}),
 				...(m.sources ? { sources: m.sources } : {})
 			})),
 			model_item: $models.find((m) => m.id === modelId),
@@ -1211,6 +1232,15 @@
 		if (autoScroll) {
 			scrollToBottom();
 		}
+
+		// When text is received and avatarActive is true, pass it to the avatar component
+		if (message.content && avatarActive) {
+			// IMPORTANT: Just pass the message content directly to AvatarChat
+			// The new processAndSpeak function in AvatarChat will handle JSON parsing
+			// and extract the response field
+			currentAvatarMessage = message.content;
+			avatarSpeaking = true;
+		}
 	};
 
 	//////////////////////////
@@ -1273,7 +1303,9 @@
 		const chatInputElement = document.getElementById('chat-input');
 
 		if (chatInputElement) {
+			await tick();
 			chatInputElement.style.height = '';
+			chatInputElement.style.height = Math.min(chatInputElement.scrollHeight, 320) + 'px';
 		}
 
 		const _files = JSON.parse(JSON.stringify(files));
@@ -1480,28 +1512,65 @@
 			params?.stream_response ??
 			true;
 
+		// Get avatar personality data if in avatar mode
+		let avatarPersonality = '';
+		if (avatarActive && ($settings as any)?.selectedAvatarId) {
+			const selectedAvatarId = ($settings as any).selectedAvatarId;
+			
+			// Map of avatar personalities
+			const avatarPersonalities = {
+				'The Scholar': 'You are The Scholar: analytical, detail-oriented, methodical, and patient. You emphasize deep understanding of fundamental concepts and provide comprehensive explanations with historical context and precise terminology. Your communication style is clear, formal, and structured with thoughtful pauses. You use academic language and reference research when appropriate. If someone asks if you are a different avatar (like The Mentor, The Coach, or The Innovator), clearly state that you are The Scholar.',
+				'The Mentor': 'You are The Mentor: encouraging, warm, supportive, and insightful. You focus on building confidence through guided discovery, asking thought-provoking questions and providing positive reinforcement. Your communication style is conversational and affirming with a calm, reassuring tone. You use relatable examples and analogies to help explain concepts. If someone asks if you are a different avatar (like The Scholar, The Coach, or The Innovator), clearly state that you are The Mentor.',
+				'The Coach': 'You are The Coach: energetic, motivational, direct, and goal-oriented. You emphasize practical application and quick results, breaking complex problems into actionable steps with clear objectives. Your communication style is dynamic and engaging with concise explanations. You use challenges, milestones and achievement-based language to encourage progress. If someone asks if you are a different avatar (like The Scholar, The Mentor, or The Innovator), clearly state that you are The Coach.',
+				'The Innovator': 'You are The Innovator: creative, adaptable, curious, and thought-provoking. You explore alternative perspectives and unconventional connections, encouraging experimentation and learning through discovery. Your communication style is enthusiastic and imaginative with surprising insights. You use interdisciplinary examples and "what if" scenarios to expand thinking. If someone asks if you are a different avatar (like The Scholar, The Mentor, or The Coach), clearly state that you are The Innovator.'
+			};
+			
+			// Get the personality for the selected avatar
+			avatarPersonality = avatarPersonalities[selectedAvatarId] || '';
+		}
+
 		let messages = [
-			params?.system || $settings.system || (responseMessage?.userContext ?? null)
-				? {
-						role: 'system',
-						content: `${promptTemplate(
+			{
+				role: 'system',
+				content: avatarActive && avatarPersonality
+					? `${avatarPersonality}\n\n${
+						params?.system || $settings.system 
+						? `Additional instructions: ${promptTemplate(
 							params?.system ?? $settings?.system ?? '',
 							$user.name,
 							$settings?.userLocation
-								? await getAndUpdateUserLocation(localStorage.token)
+								? await getAndUpdateUserLocation(localStorage.token).catch((err) => {
+										console.error(err);
+										return undefined;
+									})
 								: undefined
-						)}${
-							(responseMessage?.userContext ?? null)
-								? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
-								: ''
-						}`
-					}
-				: undefined,
+						)}`
+						: ''
+					}${
+						(responseMessage?.userContext ?? null)
+							? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
+							: ''
+					}`
+					: `${promptTemplate(
+						params?.system ?? $settings?.system ?? '',
+						$user.name,
+						$settings?.userLocation
+							? await getAndUpdateUserLocation(localStorage.token).catch((err) => {
+									console.error(err);
+									return undefined;
+								})
+							: undefined
+					)}${
+						(responseMessage?.userContext ?? null)
+							? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
+							: ''
+					}`
+			},
 			...createMessagesList(_history, responseMessageId).map((message) => ({
 				...message,
 				content: removeDetails(message.content, ['reasoning', 'code_interpreter'])
 			}))
-		].filter((message) => message);
+		].filter((message) => message && message.content && message.content.trim() !== '');
 
 		messages = messages
 			.map((message, idx, arr) => ({
@@ -1553,6 +1622,13 @@
 				files: (files?.length ?? 0) > 0 ? files : undefined,
 				tool_ids: selectedToolIds.length > 0 ? selectedToolIds : undefined,
 
+				// Include the avatar personality type in requests when avatar mode is active
+				// This tells the Gemini API which personality traits to adopt in its responses
+				// Naming convention: "The Scholar" becomes just "scholar" (removes "the " prefix)
+				...(avatarActive && ($settings as any)?.selectedAvatarId ? {
+					avatar_type: ($settings as any).selectedAvatarId.toLowerCase().replace('the ', '')
+				} : {}),
+
 				features: {
 					image_generation:
 						$config?.features?.enable_image_generation &&
@@ -1573,7 +1649,12 @@
 				variables: {
 					...getPromptVariables(
 						$user.name,
-						$settings?.userLocation ? await getAndUpdateUserLocation(localStorage.token) : undefined
+						$settings?.userLocation
+							? await getAndUpdateUserLocation(localStorage.token).catch((err) => {
+									console.error(err);
+									return undefined;
+								})
+							: undefined
 					)
 				},
 				model_item: $models.find((m) => m.id === model.id),
@@ -1849,6 +1930,15 @@
 			}
 		}
 	};
+
+	function toggleAvatar() {
+		avatarActive = !avatarActive;
+		// Save preference to settings
+		settings.update(s => ({
+			...s,
+			avatarEnabled: avatarActive
+		}));
+	}
 </script>
 
 <svelte:head>
@@ -1921,9 +2011,33 @@
 
 		<PaneGroup direction="horizontal" class="w-full h-full">
 			<Pane defaultSize={50} class="h-full flex w-full relative">
-				{#if $banners.length > 0 && !history.currentId && !$chatId && selectedModels.length <= 1}
+				{#if !history.currentId && !$chatId && selectedModels.length <= 1 && ($banners.length > 0 || ($config?.license_metadata?.type ?? null) === 'trial' || (($config?.license_metadata?.seats ?? null) !== null && $config?.user_count > $config?.license_metadata?.seats))}
 					<div class="absolute top-12 left-0 right-0 w-full z-30">
 						<div class=" flex flex-col gap-1 w-full">
+							{#if ($config?.license_metadata?.type ?? null) === 'trial'}
+								<Banner
+									banner={{
+										type: 'info',
+										title: 'Trial License',
+										content: $i18n.t(
+											'You are currently using a trial license. Please contact support to upgrade your license.'
+										)
+									}}
+								/>
+							{/if}
+
+							{#if ($config?.license_metadata?.seats ?? null) !== null && $config?.user_count > $config?.license_metadata?.seats}
+								<Banner
+									banner={{
+										type: 'error',
+										title: 'License Error',
+										content: $i18n.t(
+											'Exceeded the number of seats in your license. Please contact support to increase the number of seats.'
+										)
+									}}
+								/>
+							{/if}
+
 							{#each $banners.filter( (b) => (b.dismissible ? !JSON.parse(localStorage.getItem('dismissedBannerIds') ?? '[]').includes(b.id) : true) ) as banner}
 								<Banner
 									{banner}
@@ -1948,87 +2062,104 @@
 
 				<div class="flex flex-col flex-auto z-10 w-full @container">
 					{#if $settings?.landingPageMode === 'chat' || createMessagesList(history, history.currentId).length > 0}
-						<div
-							class=" pb-2.5 flex flex-col justify-between w-full flex-auto overflow-auto h-0 max-w-full z-10 scrollbar-hidden"
-							id="messages-container"
-							bind:this={messagesContainerElement}
-							on:scroll={(e) => {
-								autoScroll =
-									messagesContainerElement.scrollHeight - messagesContainerElement.scrollTop <=
-									messagesContainerElement.clientHeight + 5;
-							}}
-						>
-							<div class=" h-full w-full flex flex-col">
-								<Messages
-									chatId={$chatId}
-									bind:history
-									bind:autoScroll
-									bind:prompt
-									{selectedModels}
-									{sendPrompt}
-									{showMessage}
-									{submitMessage}
-									{continueResponse}
-									{regenerateResponse}
-									{mergeResponses}
-									{chatActionHandler}
-									{addMessages}
-									bottomPadding={files.length > 0}
-								/>
+						{#if avatarActive}
+							<div class="flex flex-col w-full h-full flex-auto relative">
+								<div class="flex-1 overflow-hidden bg-transparent">
+									<AvatarChat
+										className="h-full flex"
+										{history}
+										currentMessage={currentAvatarMessage}
+										speaking={avatarSpeaking}
+										on:speechend={() => avatarSpeaking = false}
+									/>
+								</div>
+								<div class="w-full pt-2 bg-white dark:bg-gray-900 relative z-20">
+									<MessageInput
+										{history}
+										{selectedModels}
+										bind:files
+										bind:prompt
+										bind:autoScroll
+										bind:selectedToolIds
+										bind:imageGenerationEnabled
+										bind:codeInterpreterEnabled
+										bind:webSearchEnabled
+										bind:atSelectedModel
+										transparentBackground={$settings?.backgroundImageUrl ?? false}
+										{stopResponse}
+										on:submit={async (e) => {
+											if (e.detail || files.length > 0) {
+												await tick();
+												submitPrompt(
+													($settings?.richTextInput ?? true)
+														? e.detail.replaceAll('\n\n', '\n')
+														: e.detail
+												);
+											}
+										}}
+									/>
+								</div>
 							</div>
-						</div>
-
-						<div class=" pb-[1rem]">
-							<MessageInput
-								{history}
-								{selectedModels}
-								bind:files
-								bind:prompt
-								bind:autoScroll
-								bind:selectedToolIds
-								bind:imageGenerationEnabled
-								bind:codeInterpreterEnabled
-								bind:webSearchEnabled
-								bind:atSelectedModel
-								transparentBackground={$settings?.backgroundImageUrl ?? false}
-								{stopResponse}
-								{createMessagePair}
-								onChange={(input) => {
-									if (input.prompt) {
-										localStorage.setItem(`chat-input-${$chatId}`, JSON.stringify(input));
-									} else {
-										localStorage.removeItem(`chat-input-${$chatId}`);
-									}
-								}}
-								on:upload={async (e) => {
-									const { type, data } = e.detail;
-
-									if (type === 'web') {
-										await uploadWeb(data);
-									} else if (type === 'youtube') {
-										await uploadYoutubeTranscription(data);
-									} else if (type === 'google-drive') {
-										await uploadGoogleDriveFile(data);
-									}
-								}}
-								on:submit={async (e) => {
-									if (e.detail || files.length > 0) {
-										await tick();
-										submitPrompt(
-											($settings?.richTextInput ?? true)
-												? e.detail.replaceAll('\n\n', '\n')
-												: e.detail
-										);
-									}
-								}}
-							/>
-
-							<div
-								class="absolute bottom-1 text-xs text-gray-500 text-center line-clamp-1 right-0 left-0"
-							>
-								<!-- {$i18n.t('LLMs can make mistakes. Verify important information.')} -->
+						{:else}
+							<div class="flex flex-col w-full h-full flex-auto relative">
+								<div
+									class="pb-2.5 flex-1 flex flex-col w-full overflow-auto max-w-full z-10 scrollbar-hidden"
+									id="messages-container"
+									bind:this={messagesContainerElement}
+									on:scroll={(e) => {
+										autoScroll =
+											messagesContainerElement.scrollHeight - messagesContainerElement.scrollTop <=
+											messagesContainerElement.clientHeight + 5;
+									}}
+								>
+									<div class="h-full w-full flex flex-col">
+										<Messages
+											chatId={$chatId}
+											bind:history
+											bind:autoScroll
+											bind:prompt
+											{selectedModels}
+											{atSelectedModel}
+											{sendPrompt}
+											{showMessage}
+											{submitMessage}
+											{continueResponse}
+											{regenerateResponse}
+											{mergeResponses}
+											{chatActionHandler}
+											{addMessages}
+											bottomPadding={files.length > 0}
+										/>
+									</div>
+								</div>
+								<div class="w-full pt-2 bg-white dark:bg-gray-900 relative z-20">
+									<MessageInput
+										{history}
+										{selectedModels}
+										bind:files
+										bind:prompt
+										bind:autoScroll
+										bind:selectedToolIds
+										bind:imageGenerationEnabled
+										bind:codeInterpreterEnabled
+										bind:webSearchEnabled
+										bind:atSelectedModel
+										transparentBackground={$settings?.backgroundImageUrl ?? false}
+										{stopResponse}
+										on:submit={async (e) => {
+											if (e.detail || files.length > 0) {
+												await tick();
+												submitPrompt(
+													($settings?.richTextInput ?? true)
+														? e.detail.replaceAll('\n\n', '\n')
+														: e.detail
+												);
+											}
+										}}
+									/>
+								</div>
 							</div>
-						</div>
+						{/if}
 					{:else}
 						<div class="overflow-auto w-full h-full flex items-center">
 							<Placeholder
@@ -2055,6 +2186,8 @@
 									}
 								}}
 								on:submit={async (e) => {
+									// This is triggered when the user selects a chat type
+									// Force chat creation even with empty/minimal content
 									if (e.detail || files.length > 0) {
 										await tick();
 										submitPrompt(
@@ -2062,6 +2195,15 @@
 												? e.detail.replaceAll('\n\n', '\n')
 												: e.detail
 										);
+									} else {
+										// Even with no prompt, create a new chat with default state
+										await initNewChat();
+										// After a moment, navigate to ensure the chat interface appears
+										setTimeout(() => {
+											const initialMessage = "Hello";
+											prompt = initialMessage;
+											submitPrompt(initialMessage);
+										}, 300);
 									}
 								}}
 							/>
@@ -2090,6 +2232,8 @@
 				{stopResponse}
 				{showMessage}
 				{eventTarget}
+				avatarActive={avatarActive}
+				onAvatarToggle={toggleAvatar}
 			/>
 		</PaneGroup>
 	{:else if loading}

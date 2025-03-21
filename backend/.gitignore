@@ -6,7 +6,9 @@ uploads
 *.db
 _test
 Pipfile
+.cursor
 !/data
 /data/*
 /open_webui/data/*
 .webui_secret_key
+.gitignore

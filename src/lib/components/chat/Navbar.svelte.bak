@@ -1,0 +1,231 @@
+<script lang="ts">
+	import Fa from 'svelte-fa';
+	import {
+		faAi,
+		faAward,
+		faFlagSwallowtail,
+		faGlobeStand,
+		faInfoCircle,
+		faKeyboard,
+		faPeople,
+		faRepeat
+	} from '@fortawesome/pro-solid-svg-icons';
+	import {
+		faBookmark,
+		faFloppyDisk,
+		faShareNodes
+	} from '@fortawesome/pro-regular-svg-icons';
+	import { faPlus } from '@fortawesome/pro-duotone-svg-icons';
+	import {
+		faCog,
+		faPerson,
+		faShareAlt,
+		faSignOut,
+		faTags
+	} from '@fortawesome/pro-light-svg-icons';
+	import { faBarsSort } from '@fortawesome/pro-thin-svg-icons';
+
+	import { faVolumeXmark, faX } from '@fortawesome/pro-solid-svg-icons';
+	import { faBarsProgress, faVolume } from '@fortawesome/pro-regular-svg-icons';
+	import { getContext, onMount } from 'svelte';
+	import type { i18n as i18nType, TFunction } from 'i18next';
+	const i18n: i18nType = getContext('i18n');
+
+	import { slide } from 'svelte/transition';
+	import { page } from '$app/stores';
+	import {
+		chatId,
+		config,
+		settings,
+		showCallOverlay,
+		showSidebar,
+		temporaryChatEnabled,
+		user
+	} from '$lib/stores';
+
+	// Add type for selectedModels
+	let selectedModels: any = [];
+	let titleEditing = false;
+	let showTagChatModal = false;
+	let showShareChatModal = false;
+	let showShortcutsModal = false;
+	let showSettingsModal = false;
+
+	export let title = 'New Chat';
+	export let scrollDown = () => {};
+
+	export let toggleOverview = () => {};
+	export let toggleAvatar = () => {};
+	export let toggleArtifacts = () => {};
+	export let showOverviewValue = false;
+	export let showArtifactsValue = false;
+
+	const handleUpdateTitle = () => {
+		titleEditing = false;
+	};
+
+	// For Avatar mode
+	let avatar = !!($settings && ($settings as any).avatarEnabled);
+
+	onMount(() => {
+		// Additional initialization if needed
+	});
+</script>
+
+<nav class="flex no-print mb-0">
+	<div
+		class="mx-auto flex items-center justify-between space-x-1 w-full responsive-container-chat relative"
+	>
+		<div class="flex items-center">
+			<button
+				type="button"
+				class="sidebar-toggler xl:hidden text-sidebar h-10 w-10 m-2 mr-0 rounded-lg dark:text-sidebar-dark hover:bg-sidebar/20 hover:dark:bg-sidebar-dark/20 flex justify-center items-center"
+				on:click={() => {
+					showSidebar.set(!$showSidebar);
+				}}
+			>
+				<Fa icon={faBarsSort} size="lg" />
+			</button>
+			<button
+				aria-label={i18n.t('chat.new') as string}
+				type="button"
+				class="text-sidebar h-10 w-10 m-2 rounded-lg dark:text-sidebar-dark
+				hover:bg-sidebar/20 hover:dark:bg-sidebar-dark/20 flex justify-center items-center"
+				on:click={() => {
+					const isArchive = $page.url.pathname?.includes('/archive');
+					const base = isArchive ? '/archive' : '';
+					window.location.href = `${base}/c/new`;
+				}}
+				data-tooltip-content={i18n.t('chat.new') as string}
+				id="tooltip-host"
+			>
+				<Fa icon={faPlus} size="lg" />
+			</button>
+			{#if false}
+				<button
+					type="button"
+					class="text-sidebar h-10 w-10 m-2 rounded-lg dark:text-sidebar-dark
+					hover:bg-sidebar/20 hover:dark:bg-sidebar-dark/20 flex justify-center items-center"
+					on:click={() => (showTagChatModal = true)}
+					data-tooltip-content={i18n.t('chat.tag') as string}
+					id="tooltip-host"
+				>
+					<Fa icon={faTags} size="lg" />
+				</button>
+			{/if}
+
+			{#if $user && ($user as any).permissions?.can_share_chats}
+				<button
+					type="button"
+					class="text-sidebar h-10 w-10 m-2 rounded-lg dark:text-sidebar-dark
+					hover:bg-sidebar/20 hover:dark:bg-sidebar-dark/20 flex justify-center items-center"
+					on:click={() => (showShareChatModal = true)}
+					data-tooltip-content={i18n.t('chat.share') as string}
+					id="tooltip-host"
+				>
+					<Fa icon={faShareAlt} size="lg" />
+				</button>
+			{/if}
+
+			<button
+				type="button"
+				class="text-sidebar h-10 w-10 m-2 rounded-lg dark:text-sidebar-dark hover:bg-sidebar/20
+					hover:dark:bg-sidebar-dark/20 flex justify-center items-center"
+				on:click={() => scrollDown()}
+				data-tooltip-content={i18n.t('chat.scroll_to_bottom') as string}
+				id="tooltip-host"
+			>
+				<Fa icon={faSignOut} size="lg" rotation={270} />
+			</button>
+
+			<button
+				type="button"
+				class="text-sidebar h-10 w-10 m-2 rounded-lg dark:text-sidebar-dark hover:bg-sidebar/20
+					hover:dark:bg-sidebar-dark/20 flex justify-center items-center"
+				on:click={toggleOverview}
+				data-tooltip-content={i18n.t('chat.overview') as string}
+				id="tooltip-host"
+			>
+				<div class="relative">
+					<Fa icon={faInfoCircle} size="lg" />
+					{#if showOverviewValue}
+						<div
+							class="w-2 h-2 rounded-full bg-primary absolute -top-0.5 -right-0.5"
+						></div>
+					{/if}
+				</div>
+			</button>
+
+			<button
+				type="button"
+				class="text-sidebar h-10 w-10 m-2 rounded-lg dark:text-sidebar-dark hover:bg-sidebar/20
+					hover:dark:bg-sidebar-dark/20 flex justify-center items-center"
+				on:click={toggleArtifacts}
+				data-tooltip-content={i18n.t('chat.artifacts') as string}
+				id="tooltip-host"
+			>
+				<div class="relative">
+					<Fa icon={faFloppyDisk} size="lg" />
+					{#if showArtifactsValue}
+						<div
+							class="w-2 h-2 rounded-full bg-primary absolute -top-0.5 -right-0.5"
+						></div>
+					{/if}
+				</div>
+			</button>
+
+			<button
+				type="button"
+				class="text-sidebar h-10 w-10 m-2 rounded-lg dark:text-sidebar-dark hover:bg-sidebar/20
+					hover:dark:bg-sidebar-dark/20 flex justify-center items-center"
+				on:click={toggleAvatar}
+				data-tooltip-content={avatar ? (i18n.t('chat.disable_avatar') as string) : (i18n.t('chat.enable_avatar') as string)}
+				id="tooltip-host"
+			>
+				{#if avatar}
+					<Fa icon={faPerson} size="lg" />
+				{:else}
+					<Fa icon={faAi} size="lg" />
+				{/if}
+			</button>
+
+			<button
+				type="button"
+				class="text-sidebar h-10 w-10 m-2 rounded-lg dark:text-sidebar-dark
+					hover:bg-sidebar/20 hover:dark:bg-sidebar-dark/20 flex justify-center items-center"
+				on:click={() => (showShortcutsModal = true)}
+				data-tooltip-content={i18n.t('chat.shortcuts') as string}
+				id="tooltip-host"
+			>
+				<Fa icon={faKeyboard} size="lg" />
+			</button>
+
+			<button
+				type="button"
+				class="text-sidebar h-10 w-10 m-2 rounded-lg dark:text-sidebar-dark
+					hover:bg-sidebar/20 hover:dark:bg-sidebar-dark/20 flex justify-center items-center"
+				on:click={() => (showSettingsModal = true)}
+				data-tooltip-content={i18n.t('common.settings') as string}
+				id="tooltip-host"
+			>
+				<Fa icon={faCog} size="lg" />
+			</button>
+		</div>
+		<div class="flex items-center">
+			{#if $config.enable_audio_support && !$showCallOverlay}
+				<button
+					type="button"
+					class="text-sidebar h-10 w-10 m-2 rounded-lg dark:text-sidebar-dark
+					hover:bg-sidebar/20 hover:dark:bg-sidebar-dark/20 flex justify-center items-center"
+					on:click={() => {
+						showCallOverlay.set(!$showCallOverlay);
+					}}
+					data-tooltip-content={i18n.t('chat.voice') as string}
+					id="tooltip-host"
+				>
+					<Fa icon={faVolume} size="lg" />
+				</button>
+			{/if}
+		</div>
+	</div>
+</nav>
