@@ -7,6 +7,8 @@
     import { getContext } from 'svelte';
     import { toast } from 'svelte-sonner';
     import { createResponseFeedback, getAllResponseFeedbacks } from '$lib/apis/response-feedbacks';
+    import { getAllFeedbacks, type Feedback } from '$lib/apis/feedbacks';
+    import { user } from '$lib/stores';
 
     const i18n = getContext<Writable<i18nType>>('i18n');
 
@@ -105,6 +107,12 @@
         timestamp: number;
         model?: string;
         modelName?: string;
+        studentFeedback?: {
+            rating: number;
+            reason: string;
+            comment: string;
+            timestamp: number;
+        }[];
     }
 
     interface Chat {
@@ -124,6 +132,13 @@
         question: Message;
         responses: Message[];
         timestamp: number;
+        studentFeedbacks?: {
+            responseId: string;
+            rating: number;
+            reason: string;
+            comment: string;
+            timestamp: number;
+        }[];
     }
 
     let pairedMessages: PairedMessage[] = [];
@@ -171,9 +186,34 @@
             const chats = await getAllChatsInDB(token);
             console.log('Chats received:', chats);
 
-            if (!Array.isArray(chats)) {
-                throw new Error('Invalid response format: expected an array of chats');
-            }
+            // Fetch all feedbacks (both student ratings and teacher comparisons)
+            const [responseFeedbacks, studentFeedbacks] = await Promise.all([
+                getAllResponseFeedbacks(token),
+                getAllFeedbacks(token)
+            ]);
+
+            // Process student feedbacks
+            const feedbacksByMessageId = new Map<string, Array<{
+                rating: number;
+                reason: string;
+                comment: string;
+                timestamp: number;
+            }>>();
+            
+            studentFeedbacks?.forEach((feedback: Feedback) => {
+                if (feedback.type === 'rating' && feedback.data?.rating) {
+                    const messageId = feedback.meta?.message_id;
+                    if (!feedbacksByMessageId.has(messageId)) {
+                        feedbacksByMessageId.set(messageId, []);
+                    }
+                    feedbacksByMessageId.get(messageId)?.push({
+                        rating: feedback.data.rating,
+                        reason: feedback.data.reason || '',
+                        comment: feedback.data.comment || '',
+                        timestamp: feedback.created_at
+                    });
+                }
+            });
 
             const allPairs: PairedMessage[] = [];
 
@@ -185,25 +225,30 @@
 
                 if (chat.chat?.history?.messages) {
                     const pairs = findPairedResponses(chat);
+                    // Attach student feedbacks to responses
+                    pairs.forEach(pair => {
+                        pair.responses.forEach(response => {
+                            response.studentFeedback = feedbacksByMessageId.get(response.id) || [];
+                        });
+                    });
                     allPairs.push(...pairs);
                 }
             }
 
             console.log('Found pairs:', allPairs);
 
-            // Get all evaluated feedbacks
-            const feedbacks = await getAllResponseFeedbacks(token);
+            // Get all evaluated feedbacks from teachers
             const evaluatedQuestionIds = new Set(
-                (feedbacks || []).map((feedback: any) => feedback.data.questionId)
+                (responseFeedbacks || []).map((feedback: any) => feedback.data.questionId)
             );
 
-            // Filter out already evaluated pairs
-            const unevaluatedPairs = allPairs.filter(pair => 
-                !evaluatedQuestionIds.has(pair.question.id)
-            );
-
-            // Sort by timestamp, newest first
-            pairedMessages = unevaluatedPairs.sort((a, b) => b.timestamp - a.timestamp);
+            // If user is a teacher, show all pairs including evaluated ones
+            // If user is a student, only show unevaluated pairs
+            const isTeacher = $user?.role === 'teacher';
+            pairedMessages = isTeacher 
+                ? allPairs.sort((a, b) => b.timestamp - a.timestamp)
+                : allPairs.filter(pair => !evaluatedQuestionIds.has(pair.question.id))
+                         .sort((a, b) => b.timestamp - a.timestamp);
         } catch (err) {
             console.error('Error loading paired responses:', err);
             error = err instanceof Error 
@@ -280,6 +325,38 @@
                                         </button>
                                     {/if}
                                 </div>
+
+                                {#if response.studentFeedback && response.studentFeedback.length > 0}
+                                    <div class="mt-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+                                        <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                                            {$i18n.t('Student Feedback')}
+                                        </h4>
+                                        <div class="space-y-3">
+                                            {#each response.studentFeedback as feedback}
+                                                <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                                                    <div class="flex items-center gap-2 mb-1">
+                                                        <span class="text-sm font-medium">
+                                                            {$i18n.t('Rating')}: {feedback.rating}
+                                                        </span>
+                                                        <span class="text-xs text-gray-500">
+                                                            ({dayjs(feedback.timestamp).fromNow()})
+                                                        </span>
+                                                    </div>
+                                                    {#if feedback.reason}
+                                                        <p class="text-sm text-gray-600 dark:text-gray-300 mb-1">
+                                                            {$i18n.t('Reason')}: {feedback.reason}
+                                                        </p>
+                                                    {/if}
+                                                    {#if feedback.comment}
+                                                        <p class="text-sm text-gray-600 dark:text-gray-300">
+                                                            {$i18n.t('Comment')}: {feedback.comment}
+                                                        </p>
+                                                    {/if}
+                                                </div>
+                                            {/each}
+                                        </div>
+                                    </div>
+                                {/if}
                             </div>
                         {/each}
                     </div>
@@ -337,6 +414,49 @@
                                 <p class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap mb-4">
                                     {response.content}
                                 </p>
+
+                                {#if response.studentFeedback && response.studentFeedback.length > 0}
+                                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mb-4">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <h4 class="text-sm font-medium text-gray-900 dark:text-white">
+                                                {$i18n.t('Student Feedback')}
+                                            </h4>
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-xs text-gray-500">
+                                                    {$i18n.t('Average Rating')}:
+                                                </span>
+                                                <span class="text-sm font-medium">
+                                                    {(response.studentFeedback.reduce((acc, f) => acc + f.rating, 0) / response.studentFeedback.length).toFixed(1)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="space-y-2 max-h-40 overflow-y-auto">
+                                            {#each response.studentFeedback as feedback}
+                                                <div class="bg-gray-50 dark:bg-gray-800 rounded p-2 text-sm">
+                                                    <div class="flex items-center justify-between mb-1">
+                                                        <span class="font-medium">
+                                                            {$i18n.t('Rating')}: {feedback.rating}
+                                                        </span>
+                                                        <span class="text-xs text-gray-500">
+                                                            {dayjs(feedback.timestamp).fromNow()}
+                                                        </span>
+                                                    </div>
+                                                    {#if feedback.reason}
+                                                        <p class="text-gray-600 dark:text-gray-300 text-xs">
+                                                            {feedback.reason}
+                                                        </p>
+                                                    {/if}
+                                                    {#if feedback.comment}
+                                                        <p class="text-gray-600 dark:text-gray-300 text-xs mt-1">
+                                                            {feedback.comment}
+                                                        </p>
+                                                    {/if}
+                                                </div>
+                                            {/each}
+                                        </div>
+                                    </div>
+                                {/if}
+
                                 <button
                                     on:click={() => handleResponseSelect(response.id)}
                                     class="w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors
@@ -352,14 +472,14 @@
 
                     <div class="mb-6">
                         <label for="comparisonReason" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            {$i18n.t('Why do you prefer this response?')}
+                            {$i18n.t('Why do you prefer this response? (Pedagogical perspective)')}
                         </label>
                         <textarea
                             id="comparisonReason"
                             bind:value={comparisonReason}
                             rows="4"
                             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                            placeholder={$i18n.t('Please explain your preference...')}
+                            placeholder={$i18n.t('Please explain your preference from a pedagogical perspective...')}
                         ></textarea>
                     </div>
 
