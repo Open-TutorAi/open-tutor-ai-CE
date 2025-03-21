@@ -36,18 +36,18 @@
 
     async function handleComparisonSubmit() {
         if (!preferredResponseId || !comparisonReason) {
-            toast.error('Please select a preferred response and provide a reason');
+            toast.error($i18n.t('Please select a preferred response and provide a reason'));
             return;
         }
 
         if (!currentQuestionId) {
-            toast.error('No question selected');
+            toast.error($i18n.t('No question selected'));
             return;
         }
 
         const token = localStorage.getItem('token');
         if (!token) {
-            toast.error('Authentication required');
+            toast.error($i18n.t('Authentication required'));
             return;
         }
 
@@ -181,7 +181,7 @@
             console.log('Fetching all chats...');
             const token = localStorage.getItem('token');
             if (!token) {
-                throw new Error('No authentication token found');
+                throw new Error($i18n.t('No authentication token found'));
             }
             const chats = await getAllChatsInDB(token);
             console.log('Chats received:', chats);
