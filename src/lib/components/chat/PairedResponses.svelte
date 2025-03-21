@@ -339,7 +339,7 @@
                                                             {$i18n.t('Rating')}: {feedback.rating}
                                                         </span>
                                                         <span class="text-xs text-gray-500">
-                                                            ({dayjs(feedback.timestamp).fromNow()})
+                                                            ({dayjs(feedback.timestamp * 1000).fromNow()})
                                                         </span>
                                                     </div>
                                                     {#if feedback.reason}
@@ -362,7 +362,7 @@
                     </div>
 
                     <div class="mt-4 text-sm text-gray-500 dark:text-gray-400">
-                        {dayjs(pair.timestamp).format('YYYY-MM-DD HH:mm:ss')}
+                        {dayjs(pair.timestamp * 1000).format('YYYY-MM-DD HH:mm:ss')}
                     </div>
                 </div>
             {/each}
@@ -438,7 +438,7 @@
                                                             {$i18n.t('Rating')}: {feedback.rating}
                                                         </span>
                                                         <span class="text-xs text-gray-500">
-                                                            {dayjs(feedback.timestamp).fromNow()}
+                                                            ({dayjs(feedback.timestamp * 1000).fromNow()})
                                                         </span>
                                                     </div>
                                                     {#if feedback.reason}
