@@ -1,6 +1,6 @@
 {
-  "name": "MyWebSite",
-  "short_name": "MySite",
+  "name": "OpenTutorAI",
+  "short_name": "OpenTutorAI",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",

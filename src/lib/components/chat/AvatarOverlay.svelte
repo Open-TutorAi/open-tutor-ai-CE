@@ -108,7 +108,7 @@
     controls.update();
 
     // Load avatar model
-    await loadAvatar('backend/glb/Masculine_TPose.glb');
+    await loadAvatar('backend/avatar/glb/Masculine_TPose.glb');
 
     // Start animation loop
     animate();

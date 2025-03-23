@@ -125,38 +125,38 @@
     glbAnimations: {
       // Map human-readable names to file paths
       expression: {
-        "talking_neutral": "/backend/glb/expression/M_Talking_Variations_001.glb",
-        "talking_happy": "/backend/glb/expression/M_Talking_Variations_002.glb",
-        "talking_excited": "/backend/glb/expression/M_Talking_Variations_005.glb",
-        "talking_thoughtful": "/backend/glb/expression/M_Talking_Variations_007.glb",
-        "talking_concerned": "/backend/glb/expression/M_Talking_Variations_009.glb",
-        "expression_smile": "/backend/glb/expression/M_Standing_Expressions_001.glb",
-        "expression_sad": "/backend/glb/expression/M_Standing_Expressions_007.glb",
-        "expression_surprise": "/backend/glb/expression/M_Standing_Expressions_010.glb",
-        "expression_thinking": "/backend/glb/expression/M_Standing_Expressions_013.glb",
-        "expression_angry": "/backend/glb/expression/M_Standing_Expressions_016.glb"
+        "talking_neutral": "/static/avatar/glb/expression/M_Talking_Variations_001.glb",
+        "talking_happy": "/static/avatar/glb/expression/M_Talking_Variations_002.glb",
+        "talking_excited": "/static/avatar/glb/expression/M_Talking_Variations_005.glb",
+        "talking_thoughtful": "/static/avatar/glb/expression/M_Talking_Variations_007.glb",
+        "talking_concerned": "/static/avatar/glb/expression/M_Talking_Variations_009.glb",
+        "expression_smile": "/static/avatar/glb/expression/M_Standing_Expressions_001.glb",
+        "expression_sad": "/static/avatar/glb/expression/M_Standing_Expressions_007.glb",
+        "expression_surprise": "/static/avatar/glb/expression/M_Standing_Expressions_010.glb",
+        "expression_thinking": "/static/avatar/glb/expression/M_Standing_Expressions_013.glb",
+        "expression_angry": "/static/avatar/glb/expression/M_Standing_Expressions_016.glb"
       },
       idle: {
-        "idle_normal": "/backend/glb/idle/M_Standing_Idle_001.glb",
-        "idle_shift_weight": "/backend/glb/idle/M_Standing_Idle_Variations_001.glb",
-        "idle_look_around": "/backend/glb/idle/M_Standing_Idle_Variations_003.glb",
-        "idle_default": "/backend/glb/idle/M_Standing_Idle_Variations_004.glb",
-        "idle_stretch": "/backend/glb/idle/M_Standing_Idle_Variations_006.glb",
-        "idle_impatient": "/backend/glb/idle/M_Standing_Idle_Variations_008.glb"
+        "idle_normal": "/static/avatar/glb/idle/M_Standing_Idle_001.glb",
+        "idle_shift_weight": "/static/avatar/glb/idle/M_Standing_Idle_Variations_001.glb",
+        "idle_look_around": "/static/avatar/glb/idle/M_Standing_Idle_Variations_003.glb",
+        "idle_default": "/static/avatar/glb/idle/M_Standing_Idle_Variations_008.glb",
+        "idle_stretch": "/static/avatar/glb/idle/M_Standing_Idle_Variations_006.glb",
+        "idle_impatient": "/static/avatar/glb/idle/M_Standing_Idle_Variations_008.glb"
       },
       locomotion: {
-        "walk_forward": "/backend/glb/locomotion/M_Walk_001.glb",
-        "walk_backward": "/backend/glb/locomotion/M_Walk_Backwards_001.glb",
-        "jog_forward": "/backend/glb/locomotion/M_Jog_001.glb",
-        "run_forward": "/backend/glb/locomotion/M_Run_001.glb",
-        "jump": "/backend/glb/locomotion/M_Walk_Jump_001.glb",
-        "crouch": "/backend/glb/locomotion/M_Crouch_Walk_003.glb"
+        "walk_forward": "/static/avatar/glb/locomotion/M_Walk_001.glb",
+        "walk_backward": "/static/avatar/glb/locomotion/M_Walk_Backwards_001.glb",
+        "jog_forward": "/static/avatar/glb/locomotion/M_Jog_001.glb",
+        "run_forward": "/static/avatar/glb/locomotion/M_Run_001.glb",
+        "jump": "/static/avatar/glb/locomotion/M_Walk_Jump_001.glb",
+        "crouch": "/static/avatar/glb/locomotion/M_Crouch_Walk_003.glb"
       },
       dance: {
-        "dance_casual": "/backend/glb/dance/M_Dances_001.glb",
-        "dance_energetic": "/backend/glb/dance/M_Dances_003.glb",
-        "dance_rhythmic": "/backend/glb/dance/M_Dances_007.glb",
-        "dance_silly": "/backend/glb/dance/M_Dances_009.glb"
+        "dance_casual": "/static/avatar/glb/dance/M_Dances_001.glb",
+        "dance_energetic": "/static/avatar/glb/dance/M_Dances_003.glb",
+        "dance_rhythmic": "/static/avatar/glb/dance/M_Dances_007.glb",
+        "dance_silly": "/static/avatar/glb/dance/M_Dances_009.glb"
       }
     }
   };

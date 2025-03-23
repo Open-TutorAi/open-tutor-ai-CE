@@ -19,4 +19,3 @@ uploads
 **/*.db
 _test
 backend/data/*
-.gitignore

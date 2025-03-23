@@ -1526,7 +1526,171 @@
 			};
 			
 			// Get the personality for the selected avatar
+						// Get the personality for the selected avatar
 			avatarPersonality = avatarPersonalities[selectedAvatarId] || '';
+			
+						// Add JSON response format instructions for avatar animations
+			const jsonInstructions = `
+			IMPORTANT: Format ALL responses as valid JSON with these fields:
+			- Donêt ever answer in markdown, always answer in JSON
+			- "response": Your text answer to the user's question (REQUIRED, minimum 5 words)
+			- "animation": Animation codes for basic expressions (OPTIONAL)
+			- "glbAnimation": Name or array of animation names from the library (OPTIONAL)
+			- "glbAnimationCategory": Category for the animation (OPTIONAL, defaults to "expression")
+
+			Your animations should precisely match the content and emotion of your response. Always include multiple animations when possible to make your avatar more expressive and engaging.
+
+			Available animation options are:
+
+			1. SIMPLE ANIMATION CODES (use in "animation" object):
+			- facial_expression: 
+				0=neutral, 1=smile, 2=frown, 3=raised_eyebrows, 4=surprise, 5=wink, 6=sad, 7=angry
+			- head_movement: 
+				0=no_move, 1=nod_small, 2=shake, 3=tilt, 4=look_down, 5=look_up, 6=turn_left, 7=turn_right
+			- hand_gesture: 
+				0=no_move, 1=open_hand, 2=pointing, 3=wave, 4=open_palm, 5=thumbs_up, 6=fist, 7=peace_sign, 8=finger_snap
+			- eye_movement: 
+				0=no_move, 1=look_up, 2=look_down, 3=look_left, 4=look_right, 5=blink, 6=wide_open, 7=squint
+			- body_posture: 
+				0=neutral, 1=forward_lean, 2=lean_back, 3=shoulders_up, 4=rest_arms, 5=hands_on_hips, 6=sit, 7=stand
+
+			2. GLB ANIMATIONS (use in "glbAnimation" field with appropriate category):
+
+			A. EXPRESSION ANIMATIONS ("glbAnimationCategory": "expression")
+					"M_Talking_Variations_001", "M_Talking_Variations_002", "M_Talking_Variations_003", 
+					"M_Talking_Variations_004", "M_Talking_Variations_005", "M_Talking_Variations_006", 
+					"M_Talking_Variations_007", "M_Talking_Variations_008", "M_Talking_Variations_009", 
+					"M_Talking_Variations_010"
+					"M_Standing_Expressions_001", "M_Standing_Expressions_002", "M_Standing_Expressions_004", 
+					"M_Standing_Expressions_005", "M_Standing_Expressions_006", "M_Standing_Expressions_007", 
+					"M_Standing_Expressions_008", "M_Standing_Expressions_009", "M_Standing_Expressions_010",
+					"M_Standing_Expressions_011", "M_Standing_Expressions_012", "M_Standing_Expressions_013",
+					"M_Standing_Expressions_014", "M_Standing_Expressions_015", "M_Standing_Expressions_016",
+					"M_Standing_Expressions_017", "M_Standing_Expressions_018"
+				- Also available with friendly names:
+					"talking_neutral", "talking_happy", "talking_excited", "talking_thoughtful", "talking_concerned",
+					"expression_smile", "expression_sad", "expression_surprise", "expression_thinking", "expression_angry"
+
+			B. IDLE ANIMATIONS ("glbAnimationCategory": "idle")
+					"M_Standing_Idle_001", "M_Standing_Idle_002",
+					"M_Standing_Idle_Variations_001", "M_Standing_Idle_Variations_002", "M_Standing_Idle_Variations_003",
+					"M_Standing_Idle_Variations_004", "M_Standing_Idle_Variations_005", "M_Standing_Idle_Variations_006",
+					"M_Standing_Idle_Variations_007", "M_Standing_Idle_Variations_008", "M_Standing_Idle_Variations_009",
+					"M_Standing_Idle_Variations_010"
+				- Also available with friendly names:
+					"idle_normal", "idle_shift_weight", "idle_look_around", "idle_stretch", "idle_impatient"
+
+			C. LOCOMOTION ANIMATIONS ("glbAnimationCategory": "locomotion")
+					"M_Walk_001", "M_Walk_002", "M_Walk_Backwards_001", 
+					"M_Walk_Strafe_Left_002", "M_Walk_Strafe_Right_002",
+					"M_Walk_Jump_001", "M_Walk_Jump_002", "M_Walk_Jump_003"
+					"M_Jog_001", "M_Jog_003", "M_Jog_Backwards_001",
+					"M_Jog_Strafe_Left_001", "M_Jog_Strafe_Right_001",
+					"M_Jog_Jump_001", "M_Jog_Jump_002"
+					"M_Run_001", "M_Run_Backwards_002",
+					"M_Run_Strafe_Left_002", "M_Run_Strafe_Right_002",
+					"M_Run_Jump_001", "M_Run_Jump_002"
+					"M_Crouch_Walk_003", "M_CrouchedWalk_Backwards_002",
+					"M_Crouch_Strafe_Left_002", "M_Crouch_Strafe_Right_002"
+					"M_Falling_Idle_002"
+				- Also available with friendly names:
+					"walk_forward", "walk_backward", "jog_forward", "run_forward", "jump", "crouch"
+
+			D. DANCE ANIMATIONS ("glbAnimationCategory": "dance")
+					"M_Dances_001", "M_Dances_002", "M_Dances_003", "M_Dances_004", "M_Dances_005",
+					"M_Dances_006", "M_Dances_007", "M_Dances_008", "M_Dances_009", "M_Dances_011"
+				- Also available with friendly names:
+					"dance_casual", "dance_energetic", "dance_rhythmic", "dance_silly"
+
+			Match animations to the emotional context and content of your response. For example, use "talking_excited" for enthusiastic responses, "expression_thinking" for contemplative answers, or "dance_energetic" for celebratory moments.
+
+			Example JSON responses:
+
+			For a happy greeting:
+			{{
+			"response": "Hello! I'm excited to help you with any questions you might have today.",
+			"animation": {{
+				"facial_expression": 1,
+				"head_movement": 1,
+				"hand_gesture": 3,
+				"eye_movement": 5
+			}},
+			"glbAnimation": "talking_happy",
+			"glbAnimationCategory": "expression"
+			}}
+
+			For a thoughtful answer:
+			{{
+			"response": "That's a complex question that requires careful consideration of multiple factors and perspectives.",
+			"animation": {{
+				"facial_expression": 3,
+				"head_movement": 3,
+				"hand_gesture": 2,
+				"eye_movement": 1,
+				"body_posture": 2
+			}},
+			"glbAnimation": [
+				{{
+				"name": "M_Standing_Expressions_013",
+				"category": "expression",
+				"duration": 3.5
+				}},
+				{{
+				"name": "talking_thoughtful",
+				"category": "expression"
+				}}
+			]
+			}}
+
+			For an excited response with multiple animations:
+			{{
+			"response": "That's amazing news! I'm so excited to hear about your achievement and can't wait to learn more details!",
+			"animation": {{
+				"facial_expression": 1,
+				"head_movement": 1,
+				"hand_gesture": 5,
+				"eye_movement": 6
+			}},
+			"glbAnimation": [
+				{{
+				"name": "M_Talking_Variations_005",
+				"category": "expression",
+				"duration": 3.0
+				}},
+				{{
+				"name": "talking_excited",
+				"category": "expression",
+				"duration": 2.5
+				}},
+				{{
+				"name": "M_Standing_Idle_Variations_001",
+				"category": "idle"
+				}}
+			]
+			}}
+
+			For a demonstration with locomotion:
+			{{
+			"response": "Let me show you how to walk through this process step by step so you understand each important detail.",
+			"animation": {{
+				"facial_expression": 0,
+				"hand_gesture": 2
+			}},
+			"glbAnimation": [
+				{{
+				"name": "M_Walk_001",
+				"category": "locomotion",
+				"duration": 2.0
+				}},
+				{{
+				"name": "talking_neutral",
+				"category": "expression"
+				}}
+			]
+			}}`;
+
+						// Append JSON instructions to the personality
+			avatarPersonality = `${avatarPersonality}\n\n${jsonInstructions}`;
 		}
 
 		let messages = [
@@ -1626,7 +1790,7 @@
 				// This tells the Gemini API which personality traits to adopt in its responses
 				// Naming convention: "The Scholar" becomes just "scholar" (removes "the " prefix)
 				...(avatarActive && ($settings as any)?.selectedAvatarId ? {
-					avatar_type: ($settings as any).selectedAvatarId.toLowerCase().replace('the ', '')
+					avatar_type: ($settings as any).selectedAvatarId.toLowerCase().replace(/^the\s+/i, '')
 				} : {}),
 
 				features: {
