@@ -118,8 +118,8 @@
 		<div class="content-wrapper">
 			<div class="max-w-5xl w-full px-4 py-6 md:py-10" in:scale={{ duration: 400, start: 0.95, opacity: 0 }}>
 				<div class="text-center mb-6 md:mb-8">
-					<h1 class="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 md:mb-4 text-gray-800 dark:text-white tracking-tight">{t('Choose Your Experience')}</h1>
-					<p class="text-sm md:text-base text-gray-600 dark:text-gray-300 max-w-lg mx-auto">{t('Select the type of chat experience you prefer. You can change this anytime from the settings.')}</p>
+					<h1 class="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 md:mb-4 text-gray-800 dark:text-white tracking-tight">{$i18n.t('Choose Your Experience')}</h1>
+					<p class="text-sm md:text-base text-gray-600 dark:text-gray-300 max-w-lg mx-auto">{$i18n.t('Select the type of chat experience you prefer. You can change this anytime from the settings.')}</p>
 				</div>
 				
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
@@ -131,7 +131,7 @@
 						on:keydown={(e) => handleKeydown(e, 'text')}
 						tabindex="0"
 						role="button"
-						aria-label="Start text chat"
+						aria-label={$i18n.t('Start text chat')}
 					>
 						<div class="absolute inset-0 bg-cover bg-center opacity-10" style="background-image: url('https://cdn-icons-png.flaticon.com/512/2665/2665038.png')"></div>
 						
@@ -141,33 +141,33 @@
 									<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
 								</svg>
 							</div>
-							<h2 class="text-xl md:text-2xl font-bold text-gray-800 dark:text-white mb-2">{t('Text Chat')}</h2>
-							<p class="text-sm text-gray-600 dark:text-gray-300 mb-4 md:mb-6">{t('Standard text-based conversation with advanced AI capabilities')}</p>
+							<h2 class="text-xl md:text-2xl font-bold text-gray-800 dark:text-white mb-2">{$i18n.t('Text Chat')}</h2>
+							<p class="text-sm text-gray-600 dark:text-gray-300 mb-4 md:mb-6">{$i18n.t('Standard text-based conversation with advanced AI capabilities')}</p>
 							<ul class="text-left text-gray-600 dark:text-gray-300 space-y-2 mt-auto text-sm">
 								<li class="flex items-center">
 									<svg class="w-4 h-4 md:w-5 md:h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
 									</svg>
-									{t('Fast responses')}
+									{$i18n.t('Fast responses')}
 								</li>
 								<li class="flex items-center">
 									<svg class="w-4 h-4 md:w-5 md:h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
 									</svg>
-									{t('Resource-efficient')}
+									{$i18n.t('Resource-efficient')}
 								</li>
 								<li class="flex items-center">
 									<svg class="w-4 h-4 md:w-5 md:h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
 									</svg>
-									{t('Code blocks support')}	
+									{$i18n.t('Code blocks support')}	
 								</li>
 							</ul>
 							<div class="mt-5 md:mt-6 w-full">
 								<button 
 									class="w-full py-3 px-6 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium transition-all hover:shadow-lg hover:shadow-blue-500/30 focus:outline-none focus:ring-2 focus:ring-blue-500"
 								>
-									{t('Start Text Chat')}			
+									{$i18n.t('Start Text Chat')}			
 								</button>
 							</div>
 						</div>
@@ -181,7 +181,7 @@
 						on:keydown={(e) => handleKeydown(e, 'avatar')}
 						tabindex="0"
 						role="button"
-						aria-label="Start avatar chat"
+						aria-label={$i18n.t('Start avatar chat')}
 					>
 						<div class="absolute inset-0 bg-cover bg-center opacity-10" style="background-image: url('https://cdn-icons-png.flaticon.com/512/4712/4712037.png')"></div>
 						
@@ -192,33 +192,33 @@
 									<circle cx="12" cy="10" r="3"></circle>
 								</svg>
 							</div>
-							<h2 class="text-xl md:text-2xl font-bold text-gray-800 dark:text-white mb-2">{t('Avatar Chat')}</h2>
-							<p class="text-sm text-gray-600 dark:text-gray-300 mb-4 md:mb-6">{t('Interactive 3D avatar with speech and dynamic animations')}</p>
+							<h2 class="text-xl md:text-2xl font-bold text-gray-800 dark:text-white mb-2">{$i18n.t('Avatar Chat')}</h2>
+							<p class="text-sm text-gray-600 dark:text-gray-300 mb-4 md:mb-6">{$i18n.t('Interactive 3D avatar with speech and dynamic animations')}</p>
 							<ul class="text-left text-gray-600 dark:text-gray-300 space-y-2 mt-auto text-sm">
 								<li class="flex items-center">
 									<svg class="w-4 h-4 md:w-5 md:h-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
 									</svg>
-									{t('Realistic animations')}
+									{$i18n.t('Realistic animations')}
 								</li>
 								<li class="flex items-center">
 									<svg class="w-4 h-4 md:w-5 md:h-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
 									</svg>
-									{t('Natural voice synthesis')}
+									{$i18n.t('Natural voice synthesis')}
 								</li>
 								<li class="flex items-center">
 									<svg class="w-4 h-4 md:w-5 md:h-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
 									</svg>
-									{t('Immersive experience')}
+									{$i18n.t('Immersive experience')}
 								</li>
 							</ul>
 							<div class="mt-5 md:mt-6 w-full">
 								<button 
 									class="w-full py-3 px-6 rounded-lg bg-gradient-to-r from-purple-500 to-purple-600 text-white font-medium transition-all hover:shadow-lg hover:shadow-purple-500/30 focus:outline-none focus:ring-2 focus:ring-purple-500"
 								>
-									{t('Start Avatar Chat')}	
+									{$i18n.t('Start Avatar Chat')}	
 								</button>
 							</div>
 						</div>
@@ -228,7 +228,7 @@
 				<!-- Footer text -->
 				<div class="mt-6 md:mt-8 text-center">
 					<p class="text-xs md:text-sm text-gray-500 dark:text-gray-400">
-						{t('Your chat selection will determine how the AI presents information to you. You can switch between these modes at any time using the settings panel.')}
+						{$i18n.t('Your chat selection will determine how the AI presents information to you. You can switch between these modes at any time using the settings panel.')}
 					</p>
 				</div>
 			</div>

@@ -26,35 +26,35 @@
   const avatars = [
     {
       id: 'The Scholar',
-      name: t(`The Scholar`),
+      name: $i18n.t(`The Scholar`),
       image: 'images/The Scholar.png',
       accentColor: '#2196F3',
       gradientEnd: '#3D5E94',
-      description: t(`Analytical, detail-oriented, methodical, patient. Emphasizes deep understanding with comprehensive explanations.`)
+      description: $i18n.t(`Analytical, detail-oriented, methodical, patient. Emphasizes deep understanding with comprehensive explanations.`)
     },
     {
       id: 'The Mentor',
-      name: t(`The Mentor`),
+      name: $i18n.t(`The Mentor`),
       image: 'images/The Mentor.png',
       accentColor: '#F59E0B',
       gradientEnd: '#3D5E94',
-      description: t(`Encouraging, warm, supportive, insightful. Focuses on building confidence through guided discovery.`)
+      description: $i18n.t(`Encouraging, warm, supportive, insightful. Focuses on building confidence through guided discovery.`)
     },
     {
       id: 'The Coach',
-      name: t(`The Coach`),
+      name: $i18n.t(`The Coach`),
       image: 'images/The Coach.png',
       accentColor: '#10B981',
       gradientEnd: '#3D5E94',
-      description: t(`Energetic, motivational, direct, goal-oriented. Emphasizes practical application and quick results.`)
+      description: $i18n.t(`Energetic, motivational, direct, goal-oriented. Emphasizes practical application and quick results.`)
     },
     {
       id: 'The Innovator',
-      name: t(`The Innovator`),
+      name: $i18n.t(`The Innovator`),
       image: 'images/The Innovator.png',
       accentColor: '#EF4444',
       gradientEnd: '#3D5E94',
-      description: t(`Creative, adaptable, curious, thought-provoking. Explores alternative perspectives and connections.`)
+      description: $i18n.t(`Creative, adaptable, curious, thought-provoking. Explores alternative perspectives and connections.`)
     }
   ];
 
@@ -158,7 +158,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
       </button>
-      <h1 class="title">{t(`Choose your avatar`)}</h1>
+      <h1 class="title">{$i18n.t('Choose your avatar')}</h1>
     </div>
     
     <!-- Avatar display: vertical on small screens, carousel on larger screens -->
@@ -201,7 +201,7 @@
                       style="background: linear-gradient(135deg, {avatar.accentColor}, {avatar.gradientEnd})"
                       on:click|stopPropagation={() => startChatWithAvatar(avatar.id)}
                     >
-                      <span>{t(`Start Chat`)}</span>
+                      <span>{$i18n.t('Start Chat')}</span>
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
                       </svg>
@@ -264,7 +264,7 @@
                           style="background: linear-gradient(135deg, {avatar.accentColor}, {avatar.gradientEnd})"
                           on:click|stopPropagation={() => startChatWithAvatar(avatar.id)}
                         >
-                          <span>{t(`Start Chat`)}</span>
+                          <span>{$i18n.t('Start Chat')}</span>
                           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
                           </svg>
