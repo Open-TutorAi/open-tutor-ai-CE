@@ -1,3 +1,6 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from .routers import response_feedbacks
 
 print(
     rf"""
@@ -15,5 +18,14 @@ https://github.com/open-tutor-ai/open-tutor-ai
 """
 )
 
-#TODO Add  FastAPI
+app = FastAPI(
+
+)
+
+app.add_middleware(
+   
+)
+
+# Include routers
+app.include_router(response_feedbacks.router, prefix="/api/v1", tags=["response-feedbacks"])
 

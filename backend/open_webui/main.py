@@ -73,6 +73,9 @@ from open_webui.routers import (
     tools,
     users,
     utils,
+)
+
+from open_tutorai.routers import (
     response_feedbacks,
 )
 
