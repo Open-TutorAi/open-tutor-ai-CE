@@ -6,5 +6,5 @@ cp temp-openwebui/backend/requirements.txt . # TODO mettre à jour le fichier re
 rm -rf temp-openwebui
 pip install -r requirements.txt
 git add backend/open_webui requirements.txt
-git commit -m "Updating Open WebUI backend"
+git commit -m "Updating Open TutorAI backend"
 git push
