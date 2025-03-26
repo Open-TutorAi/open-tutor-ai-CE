@@ -992,4 +992,4 @@
     .vertical-avatar-card:hover .card-title {
       transform: translateY(-2px);
     }
-  </style> 
+  </style>
