@@ -2,7 +2,7 @@
 	import { onMount, getContext } from 'svelte';
 	import { goto } from '$app/navigation';
 
-	import { WEBUI_NAME, showSidebar, user } from '$lib/stores';
+	import { OpenTutorAI_NAME, showSidebar, user } from '$lib/stores';
 	import MenuLines from '$lib/components/icons/MenuLines.svelte';
 	import { page } from '$app/stores';
 
@@ -20,7 +20,7 @@
 
 <svelte:head>
 	<title>
-		{$i18n.t('Admin Panel')} | {$WEBUI_NAME}
+		{$i18n.t('Admin Panel')} | {$OpenTutorAI_NAME}
 	</title>
 </svelte:head>
 

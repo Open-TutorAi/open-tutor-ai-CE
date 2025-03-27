@@ -7,10 +7,10 @@
 	import {
 		OLLAMA_API_BASE_URL,
 		OPENAI_API_BASE_URL,
-		WEBUI_API_BASE_URL,
-		WEBUI_BASE_URL
+		TUTOR_API_BASE_URL,
+		TUTOR_BASE_URL
 	} from '$lib/constants';
-	import { WEBUI_NAME, config, user, models, settings } from '$lib/stores';
+	import { OpenTutorAI_NAME, config, user, models, settings } from '$lib/stores';
 
 	import { chatCompletion, generateOpenAIChatCompletion } from '$lib/apis/openai';
 
@@ -98,7 +98,7 @@
 					...messages
 				].filter((message) => message)
 			},
-			`${WEBUI_BASE_URL}/api`
+			`${TUTOR_BASE_URL}/api`
 		);
 
 		let responseMessage;

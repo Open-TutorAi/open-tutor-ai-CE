@@ -8,8 +8,8 @@ vi.mock('$lib/constants', () => ({
   APP_NAME: mockAppName
 }));
 
-// Create a WebUI name mock that we can reference later
-const mockWebUIName = {
+// Create a OpenTutorAI name mock that we can reference later
+const mockOpenTutorAIName = {
   set: vi.fn(),
   subscribe: vi.fn(cb => {
     cb(mockAppName);
@@ -19,7 +19,7 @@ const mockWebUIName = {
 
 // Mock the stores
 vi.mock('$lib/stores', () => ({
-  WEBUI_NAME: mockWebUIName,
+  OpenTutorAI_NAME: mockOpenTutorAIName,
   settings: {
     subscribe: vi.fn(cb => {
       cb({});
@@ -74,16 +74,16 @@ describe('Application Title Tests', () => {
   });
 
   it('should override backend name with OpenTutorAI', async () => {
-    // Mock the scenario where the layout component would set WEBUI_NAME from backend
+    // Mock the scenario where the layout component would set OpenTutorAI_NAME from backend
     const mockBackendConfig = {
-      name: 'Open WebUI' // This is what the backend would send
+      name: 'Open Tutor AI' // This is what the backend would send
     };
     
     // Call the set function similar to what happens in +layout.svelte
-    mockWebUIName.set('OpenTutorAI');
+    mockOpenTutorAIName.set('OpenTutorAI');
     
     // Check that our value is used, not the backend's
-    expect(mockWebUIName.set).toHaveBeenCalledWith('OpenTutorAI');
-    expect(mockWebUIName.set).not.toHaveBeenCalledWith(mockBackendConfig.name);
+    expect(mockOpenTutorAIName.set).toHaveBeenCalledWith('OpenTutorAI');
+    expect(mockOpenTutorAIName.set).not.toHaveBeenCalledWith(mockBackendConfig.name);
   });
 }); 

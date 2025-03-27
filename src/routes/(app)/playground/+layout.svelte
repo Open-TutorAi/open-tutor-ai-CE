@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, getContext } from 'svelte';
-	import { WEBUI_NAME, showSidebar, functions } from '$lib/stores';
+	import { OpenTutorAI_NAME, showSidebar, functions } from '$lib/stores';
 	import MenuLines from '$lib/components/icons/MenuLines.svelte';
 	import { page } from '$app/stores';
 
@@ -11,7 +11,7 @@
 
 <svelte:head>
 	<title>
-		{$i18n.t('Playground')} | {$WEBUI_NAME}
+		{$i18n.t('Playground')} | {$OpenTutorAI_NAME}
 	</title>
 </svelte:head>
 

@@ -3,7 +3,7 @@
 	import fileSaver from 'file-saver';
 	const { saveAs } = fileSaver;
 
-	import { WEBUI_NAME, config, functions, models, settings } from '$lib/stores';
+	import { OpenTutorAI_NAME, config, functions, models, settings } from '$lib/stores';
 	import { onMount, getContext, tick } from 'svelte';
 
 	import { goto } from '$app/navigation';
@@ -65,7 +65,7 @@
 			return null;
 		});
 
-		toast.success($i18n.t('Redirecting you to Open WebUI Community'));
+		toast.success($i18n.t('Redirecting you to Open TutorAI Community'));
 
 		const url = 'https://openwebui.com';
 
@@ -192,7 +192,7 @@
 
 <svelte:head>
 	<title>
-		{$i18n.t('Functions')} | {$WEBUI_NAME}
+		{$i18n.t('Functions')} | {$OpenTutorAI_NAME}
 	</title>
 </svelte:head>
 
@@ -469,7 +469,7 @@
 {#if $config?.features.enable_community_sharing}
 	<div class=" my-16">
 		<div class=" text-xl font-medium mb-1 line-clamp-1">
-			{$i18n.t('Made by Open WebUI Community')}
+			{$i18n.t('Made by Open TutorAI Community')}
 		</div>
 
 		<a

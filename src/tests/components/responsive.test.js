@@ -25,7 +25,7 @@ vi.mock('$lib/stores', () => {
       })
     },
     settings: mockSettings,
-    WEBUI_NAME: {
+    OpenTutorAI_NAME: {
       subscribe: vi.fn(cb => {
         cb('OpenTutorAI');
         return () => {};

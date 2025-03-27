@@ -11,7 +11,7 @@
 	import { goto } from '$app/navigation';
 	const i18n = getContext('i18n');
 
-	import { WEBUI_NAME, config, mobile, models as _models, settings, user } from '$lib/stores';
+	import { OpenTutorAI_NAME, config, mobile, models as _models, settings, user } from '$lib/stores';
 	import {
 		createNewModel,
 		deleteModelById,
@@ -87,7 +87,7 @@
 	};
 
 	const shareModelHandler = async (model) => {
-		toast.success($i18n.t('Redirecting you to Open WebUI Community'));
+		toast.success($i18n.t('Redirecting you to Open TutorAI Community'));
 
 		const url = 'https://openwebui.com';
 
@@ -199,7 +199,7 @@
 
 <svelte:head>
 	<title>
-		{$i18n.t('Models')} | {$WEBUI_NAME}
+		{$i18n.t('Models')} | {$OpenTutorAI_NAME}
 	</title>
 </svelte:head>
 
@@ -501,7 +501,7 @@
 	{#if $config?.features.enable_community_sharing}
 		<div class=" my-16">
 			<div class=" text-xl font-medium mb-1 line-clamp-1">
-				{$i18n.t('Made by Open WebUI Community')}
+				{$i18n.t('Made by Open TutorAI Community')}
 			</div>
 
 			<a
