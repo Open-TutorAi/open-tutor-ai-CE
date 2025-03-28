@@ -1,6 +1,6 @@
 {
-  "name": "OpenTutorAI",
-  "short_name": "OpenTutorAI",
+  "name": "TutorAI",
+  "short_name": "TutorAI",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",

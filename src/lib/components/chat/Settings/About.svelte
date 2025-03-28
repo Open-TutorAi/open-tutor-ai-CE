@@ -2,7 +2,7 @@
 	import { getVersionUpdates } from '$lib/apis';
 	import { getOllamaVersion } from '$lib/apis/ollama';
 	import { TUTOR_BUILD_HASH, TUTOR_VERSION } from '$lib/constants';
-	import { OpenTutorAI_NAME, config, showChangelog } from '$lib/stores';
+	import { TUTOR_NAME, config, showChangelog } from '$lib/stores';
 	import { compareVersion } from '$lib/utils';
 	import { onMount, getContext } from 'svelte';
 
@@ -47,7 +47,7 @@
 		<div>
 			<div class=" mb-2.5 text-sm font-medium flex space-x-2 items-center">
 				<div>
-					{$OpenTutorAI_NAME}
+					{$TUTOR_NAME}
 					{$i18n.t('Version')}
 				</div>
 			</div>
@@ -120,14 +120,14 @@
 				/>
 			</a>
 
-			<a href="https://twitter.com/OpenWebUI" target="_blank">
+			<a href="#" target="_blank">
 				<img
 					alt="X (formerly Twitter) Follow"
-					src="https://img.shields.io/twitter/follow/OpenWebUI"
+					src="https://img.shields.io/twitter/follow/opentutorai"
 				/>
 			</a>
 
-			<a href="https://github.com/open-webui/open-webui" target="_blank">
+			<a href=https://github.com/pr-elhajji/open-tutor-ai-CE target="_blank">
 				<img
 					alt="Github Repo"
 					src="https://img.shields.io/github/stars/open-webui/open-webui?style=social&label=Star us on Github"
@@ -138,9 +138,9 @@
 		<div>
 			<pre
 				class="text-xs text-gray-400 dark:text-gray-500">Copyright (c) {new Date().getFullYear()} <a
-					href="https://openwebui.com"
+					href="https://opentutorai.com/"
 					target="_blank"
-					class="underline">Open TutorAI (Timothy Jaeryang Baek)</a
+					class="underline">TutorAI (Timothy Jaeryang Baek)</a
 				>
 All rights reserved.
 
@@ -172,8 +172,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 		</div>
 
 		<div class="mt-2 text-xs text-gray-400 dark:text-gray-500">
-			{#if !$OpenTutorAI_NAME.includes('Open TutorAI')}
-				<span class=" text-gray-500 dark:text-gray-300 font-medium">{$OpenTutorAI_NAME}</span> -
+			{#if !$TUTOR_NAME.includes('TutorAI')}
+				<span class=" text-gray-500 dark:text-gray-300 font-medium">{$TUTOR_NAME}</span> -
 			{/if}
 			{$i18n.t('Created by')}
 			<a

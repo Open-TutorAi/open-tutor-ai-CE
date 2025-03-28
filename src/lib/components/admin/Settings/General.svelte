@@ -175,13 +175,13 @@
 									{$i18n.t('Help')}
 								</div>
 								<div class=" text-xs text-gray-500">
-									{$i18n.t('Discover how to use Open TutorAI and seek support from the community.')}
+									{$i18n.t('Discover how to use TutorAI and seek support from the community.')}
 								</div>
 							</div>
 
 							<a
 								class="flex-shrink-0 text-xs font-medium underline"
-								href="https://docs.openwebui.com/"
+								href="#"
 								target="_blank"
 							>
 								{$i18n.t('Documentation')}
@@ -197,14 +197,14 @@
 									/>
 								</a>
 
-								<a href="https://twitter.com/OpenWebUI" target="_blank">
+								<a href="#" target="_blank">
 									<img
 										alt="X (formerly Twitter) Follow"
-										src="https://img.shields.io/twitter/follow/OpenWebUI"
+										src="https://img.shields.io/twitter/follow/opentutorai"
 									/>
 								</a>
 
-								<a href="https://github.com/open-webui/open-webui" target="_blank">
+								<a href=https://github.com/pr-elhajji/open-tutor-ai-CE target="_blank">
 									<img
 										alt="Github Repo"
 										src="https://img.shields.io/github/stars/open-webui/open-webui?style=social&label=Star us on Github"
@@ -222,7 +222,7 @@
 								</div>
 								<a
 									class=" text-xs text-gray-500 hover:underline"
-									href="https://docs.openwebui.com/enterprise"
+									href="#enterprise"
 									target="_blank"
 								>
 									{$i18n.t(
@@ -303,9 +303,9 @@
 								/>
 
 								<div class="mt-2 text-xs text-gray-400 dark:text-gray-500">
-									<!-- https://docs.openwebui.com/getting-started/advanced-topics/api-endpoints -->
+									<!-- #getting-started/advanced-topics/api-endpoints -->
 									<a
-										href="https://docs.openwebui.com/getting-started/api-endpoints"
+										href="#getting-started/api-endpoints"
 										target="_blank"
 										class=" text-gray-300 font-medium underline"
 									>
@@ -581,7 +581,7 @@
 
 					<div class="mb-2.5 w-full justify-between">
 						<div class="flex w-full justify-between">
-							<div class=" self-center text-xs font-medium">{$i18n.t('Open TutorAI URL')}</div>
+							<div class=" self-center text-xs font-medium">{$i18n.t('TutorAI URL')}</div>
 						</div>
 
 						<div class="flex mt-2 space-x-2">

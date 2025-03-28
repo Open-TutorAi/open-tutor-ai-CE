@@ -22,7 +22,7 @@
 			console.log('Version is lower than required');
 			toast.error(
 				$i18n.t(
-					'Open TutorAI version (v{{OPEN_TUTOR_VERSION}}) is lower than required version (v{{REQUIRED_VERSION}})',
+					'TutorAI version (v{{OPEN_TUTOR_VERSION}}) is lower than required version (v{{REQUIRED_VERSION}})',
 					{
 						OPEN_TUTOR_VERSION: TUTOR_VERSION,
 						REQUIRED_VERSION: manifest?.required_open_TUTOR_VERSION ?? '0.0.0'

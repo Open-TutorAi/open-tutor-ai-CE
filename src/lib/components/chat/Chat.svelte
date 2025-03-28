@@ -23,7 +23,7 @@
 		tags as allTags,
 		settings,
 		showSidebar,
-		OpenTutorAI_NAME,
+		TUTOR_NAME,
 		banners,
 		user,
 		socket,
@@ -2108,8 +2108,8 @@
 <svelte:head>
 	<title>
 		{$chatTitle
-			? `${$chatTitle.length > 30 ? `${$chatTitle.slice(0, 30)}...` : $chatTitle} | ${$OpenTutorAI_NAME}`
-			: `${$OpenTutorAI_NAME}`}
+			? `${$chatTitle.length > 30 ? `${$chatTitle.slice(0, 30)}...` : $chatTitle} | ${$TUTOR_NAME}`
+			: `${$TUTOR_NAME}`}
 	</title>
 </svelte:head>
 

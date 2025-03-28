@@ -1,6 +1,6 @@
-# OpenTutorAI Test Suite
+# TutorAI Test Suite
 
-This directory contains unit tests for the OpenTutorAI application. The tests are designed to verify the functionality of components, ensure responsive design works correctly, and maintain quality throughout the development process.
+This directory contains unit tests for the TutorAI application. The tests are designed to verify the functionality of components, ensure responsive design works correctly, and maintain quality throughout the development process.
 
 ## Running Tests
 
@@ -28,7 +28,7 @@ The tests are organized into the following categories:
 
 - **AvatarSelection.test.js**: Tests for the avatar selection component, including rendering, selection behavior, and responsiveness.
 - **responsive.test.js**: Dedicated tests for responsive behavior across different screen sizes.
-- **title.test.js**: Tests to ensure the application title is correctly set to "OpenTutorAI".
+- **title.test.js**: Tests to ensure the application title is correctly set to "TutorAI".
 
 ## Adding New Tests
 

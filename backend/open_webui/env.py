@@ -107,9 +107,9 @@ for source in log_sources:
 log.setLevel(SRC_LOG_LEVELS["CONFIG"])
 
 
-WEBUI_NAME = os.environ.get("WEBUI_NAME", "Open TutorAI")
-if WEBUI_NAME != "Open TutorAI":
-    WEBUI_NAME += " (Open TutorAI)"
+WEBUI_NAME = os.environ.get("WEBUI_NAME", "TutorAI")
+if WEBUI_NAME != "TutorAI":
+    WEBUI_NAME += " (TutorAI)"
 
 WEBUI_FAVICON_URL = "https://openwebui.com/favicon.png"
 

@@ -13,7 +13,7 @@
 		user,
 		settings,
 		theme,
-		OpenTutorAI_NAME,
+		TUTOR_NAME,
 		mobile,
 		socket,
 		activeUserIds,
@@ -227,7 +227,7 @@
 				if (done) {
 					if ($isLastActiveTab) {
 						if ($settings?.notificationEnabled ?? false) {
-							new Notification(`${title} | Open TutorAI`, {
+							new Notification(`${title} | TutorAI`, {
 								body: content,
 								icon: `${TUTOR_BASE_URL}/static/favicon.png`
 							});
@@ -373,7 +373,7 @@
 			if (type === 'message') {
 				if ($isLastActiveTab) {
 					if ($settings?.notificationEnabled ?? false) {
-						new Notification(`${data?.user?.name} (#${event?.channel?.name}) | Open TutorAI`, {
+						new Notification(`${data?.user?.name} (#${event?.channel?.name}) | TutorAI`, {
 							body: data?.content,
 							icon: data?.user?.profile_image_url ?? `${TUTOR_BASE_URL}/static/favicon.png`
 						});
@@ -478,7 +478,7 @@
 		if (backendConfig) {
 			// Save Backend Status to Store
 			await config.set(backendConfig);
-			await OpenTutorAI_NAME.set("Open TutorAI");
+			await TUTOR_NAME.set("TutorAI");
 
 			if ($config) {
 				await setupSocket($config.features?.enable_websocket ?? true);
@@ -556,7 +556,7 @@
 </script>
 
 <svelte:head>
-	<title>{$OpenTutorAI_NAME}</title>
+	<title>{$TUTOR_NAME}</title>
 	<link crossorigin="anonymous" rel="icon" href="{TUTOR_BASE_URL}/static/favicon.png" />
 
 	<!-- rosepine themes have been disabled as it's not up to date with our latest version. -->

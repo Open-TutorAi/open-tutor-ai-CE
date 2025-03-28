@@ -1,4 +1,4 @@
-# Open TutorAI 👋
+# TutorAI 👋
 
 ![GitHub stars](https://img.shields.io/github/stars/pr-elhajji/open-tutor-ai-CE?style=social)
 ![GitHub forks](https://img.shields.io/github/forks/pr-elhajji/open-tutor-ai-CE?style=social)
@@ -11,16 +11,16 @@
 
 
 
-**OpenTutorAI-CE** (Community Edition) is an open-source project designed to provide an educational and collaborative AI-powered platform. This public edition is the foundation for a proprietary Enterprise Edition (EE) and is built to encourage community contributions.
+**TutorAI-CE** (Community Edition) is an open-source project designed to provide an educational and collaborative AI-powered platform. This public edition is the foundation for a proprietary Enterprise Edition (EE) and is built to encourage community contributions.
 
 > [!TIP]  
-> **Looking for an [Enterprise Plan](https://docs.opentutorai.com/enterprise)?** – **[Speak with Our Sales Team Today!](mailto:sales@oepntutorai.com)**
+> **Looking for an [Enterprise Plan](https://docs.TutorAI.com/enterprise)?** – **[Speak with Our Sales Team Today!](mailto:sales@oepntutorai.com)**
 >
 > Get **enhanced capabilities**, including **custom theming and branding**, **Service Level Agreement (SLA) support**, **Long-Term Support (LTS) versions**, and **more!**
 
-For more information, be sure to check out our [Open TutorAI Documentation](https://opentutorai.github.io/OpenTutorAI/).
+For more information, be sure to check out our [TutorAI Documentation](https://TutorAI.github.io/TutorAI/).
 
-## Key Features of Open TutorAI ⭐
+## Key Features of TutorAI ⭐
 
 - 🚀 **Effortless Setup**: Install seamlessly using Docker or Kubernetes (kubectl, kustomize or helm) for a hassle-free experience with support for both `:ollama` and `:cuda` tagged images.
 
@@ -36,7 +36,7 @@ For more information, be sure to check out our [Open TutorAI Documentation](http
 
 - 🎤📹 **Hands-Free Voice/Video Call**: Experience seamless communication with integrated hands-free voice and video call features, allowing for a more dynamic and interactive chat environment.
 
-- 🛠️ **Model Builder**: Easily create Ollama models via the Web UI. Create and add custom characters/agents, customize chat elements, and import models effortlessly through [Open TutorAI Community](https://oepntutorai.com.com/) integration.
+- 🛠️ **Model Builder**: Easily create Ollama models via the Web UI. Create and add custom characters/agents, customize chat elements, and import models effortlessly through [TutorAI Community](https://oepntutorai.com.com/) integration.
 
 - 🐍 **Native Python Function Calling Tool**: Enhance your LLMs with built-in code editor support in the tools workspace. Bring Your Own Function (BYOF) by simply adding your pure Python functions, enabling seamless integration with LLMs.
 
@@ -52,50 +52,50 @@ For more information, be sure to check out our [Open TutorAI Documentation](http
 
 - 🔐 **Role-Based Access Control (RBAC)**: Ensure secure access with restricted permissions; only authorized individuals can access your Ollama, and exclusive model creation/pulling rights are reserved for administrators.
 
-- 🌐🌍 **Multilingual Support**: Experience Open TutorAI in your preferred language with our internationalization (i18n) support. Join us in expanding our supported languages! We're actively seeking contributors!
+- 🌐🌍 **Multilingual Support**: Experience TutorAI in your preferred language with our internationalization (i18n) support. Join us in expanding our supported languages! We're actively seeking contributors!
 
-- 🧩 **Pipelines, Open TutorAI Plugin Support**: Seamlessly integrate custom logic and Python libraries into Open TutorAI using [Pipelines Plugin Framework](https://github.com/open-tutorai/pipelines). Launch your Pipelines instance, set the OpenAI URL to the Pipelines URL, and explore endless possibilities. [Examples](https://github.com/open-tutorai/pipelines/tree/main/examples) include **Function Calling**, User **Rate Limiting** to control access, **Usage Monitoring** with tools like Langfuse, **Live Translation with LibreTranslate** for multilingual support, **Toxic Message Filtering** and much more.
+- 🧩 **Pipelines, TutorAI Plugin Support**: Seamlessly integrate custom logic and Python libraries into TutorAI using [Pipelines Plugin Framework](#). Launch your Pipelines instance, set the OpenAI URL to the Pipelines URL, and explore endless possibilities. [Examples](#) include **Function Calling**, User **Rate Limiting** to control access, **Usage Monitoring** with tools like Langfuse, **Live Translation with LibreTranslate** for multilingual support, **Toxic Message Filtering** and much more.
 
-- 🌟 **Continuous Updates**: We are committed to improving Open TutorAI with regular updates, fixes, and new features.
+- 🌟 **Continuous Updates**: We are committed to improving TutorAI with regular updates, fixes, and new features.
 
-Want to learn more about Open TutorAI's features? Check out our [Open TutorAI documentation](https://opentutorai.github.io/OpenTutorAI/) for a comprehensive overview!
+Want to learn more about TutorAI's features? Check out our [TutorAI documentation](#) for a comprehensive overview!
 
-## 🔗 Also Check Out Open TutorAI Community!
+## 🔗 Also Check Out TutorAI Community!
 
-Don't forget to explore our sibling project, [Open TutorAI Community](https://opentutorai.github.io/OpenTutorAI/), where you can discover, download, and explore customized Modelfiles. Open TutorAI Community offers a wide range of exciting possibilities for enhancing your chat interactions with Open TutorAI! 🚀
+Don't forget to explore our sibling project, [TutorAI Community](http://opentutorai.com/), where you can discover, download, and explore customized Modelfiles. TutorAI Community offers a wide range of exciting possibilities for enhancing your chat interactions with TutorAI! 🚀
 
 ## How to Install 🚀
 
 ### Installation via Python pip 🐍
 
-Open TutorAI can be installed using pip, the Python package installer. Before proceeding, ensure you're using **Python 3.11** to avoid compatibility issues.
+TutorAI can be installed using pip, the Python package installer. Before proceeding, ensure you're using **Python 3.11** to avoid compatibility issues.
 
-1. **Install Open TutorAI**:
-   Open your terminal and run the following command to install Open TutorAI:
+1. **Install TutorAI**:
+   Open your terminal and run the following command to install TutorAI:
 
    ```bash
    pip install open-tutorai
    ```
 
-2. **Running Open TutorAI**:
-   After installation, you can start Open TutorAI by executing:
+2. **Running TutorAI**:
+   After installation, you can start TutorAI by executing:
 
    ```bash
    open-tutorai serve
    ```
 
-This will start the Open TutorAI server, which you can access at [http://localhost:8080](http://localhost:8080)
+This will start the TutorAI server, which you can access at [http://localhost:8080](http://localhost:8080)
 
 ### Quick Start with Docker 🐳
 
 > [!NOTE]  
-> Please note that for certain Docker environments, additional configurations might be needed. If you encounter any connection issues, our detailed guide on [Open TutorAI Documentation](https://docs.########.com/) is ready to assist you.
+> Please note that for certain Docker environments, additional configurations might be needed. If you encounter any connection issues, our detailed guide on [TutorAI Documentation](https://docs.########.com/) is ready to assist you.
 
 > [!WARNING]
-> When using Docker to install Open TutorAI, make sure to include the `-v open-tutorai:/app/backend/data` in your Docker command. This step is crucial as it ensures your database is properly mounted and prevents any loss of data.
+> When using Docker to install TutorAI, make sure to include the `-v open-tutorai:/app/backend/data` in your Docker command. This step is crucial as it ensures your database is properly mounted and prevents any loss of data.
 
 > [!TIP]  
-> If you wish to utilize Open TutorAI with Ollama included or CUDA acceleration, we recommend utilizing our official images tagged with either `:cuda` or `:ollama`. To enable CUDA, you must install the [Nvidia CUDA container toolkit](https://docs.nvidia.com/dgx/nvidia-container-runtime-upgrade/) on your Linux/WSL system.
+> If you wish to utilize TutorAI with Ollama included or CUDA acceleration, we recommend utilizing our official images tagged with either `:cuda` or `:ollama`. To enable CUDA, you must install the [Nvidia CUDA container toolkit](https://docs.nvidia.com/dgx/nvidia-container-runtime-upgrade/) on your Linux/WSL system.
 
 ### Installation with Default Configuration
 
@@ -113,7 +113,7 @@ This will start the Open TutorAI server, which you can access at [http://localho
   docker run -d -p 3000:8080 -e OLLAMA_BASE_URL=https://example.com -v open-tutorai:/app/backend/data --name open-tutorai --restart always ghcr.io/open-tutorai/open-tutorai:main
   ```
 
-- **To run Open TutorAI with Nvidia GPU support**, use this command:
+- **To run TutorAI with Nvidia GPU support**, use this command:
 
   ```bash
   docker run -d -p 3000:8080 --gpus all --add-host=host.docker.internal:host-gateway -v open-tutorai:/app/backend/data --name open-tutorai --restart always ghcr.io/open-tutorai/open-tutorai:cuda
@@ -127,9 +127,9 @@ This will start the Open TutorAI server, which you can access at [http://localho
   docker run -d -p 3000:8080 -e OPENAI_API_KEY=your_secret_key -v open-tutorai:/app/backend/data --name open-tutorai --restart always ghcr.io/open-tutorai/open-tutorai:main
   ```
 
-### Installing Open TutorAI with Bundled Ollama Support
+### Installing TutorAI with Bundled Ollama Support
 
-This installation method uses a single container image that bundles Open TutorAI with Ollama, allowing for a streamlined setup via a single command. Choose the appropriate command based on your hardware setup:
+This installation method uses a single container image that bundles TutorAI with Ollama, allowing for a streamlined setup via a single command. Choose the appropriate command based on your hardware setup:
 
 - **With GPU Support**:
   Utilize GPU resources by running the following command:
@@ -145,21 +145,21 @@ This installation method uses a single container image that bundles Open TutorAI
   docker run -d -p 3000:8080 -v ollama:/root/.ollama -v open-tutorai:/app/backend/data --name open-tutorai --restart always ghcr.io/open-tutorai/open-tutorai:ollama
   ```
 
-Both commands facilitate a built-in, hassle-free installation of both Open TutorAI and Ollama, ensuring that you can get everything up and running swiftly.
+Both commands facilitate a built-in, hassle-free installation of both TutorAI and Ollama, ensuring that you can get everything up and running swiftly.
 
-After installation, you can access Open TutorAI at [http://localhost:3000](http://localhost:3000). Enjoy! 😄
+After installation, you can access TutorAI at [http://localhost:3000](http://localhost:3000). Enjoy! 😄
 
 ### Other Installation Methods
 
-We offer various installation alternatives, including non-Docker native installation methods, Docker Compose, Kustomize, and Helm. Visit our [Open TutorAI Documentation](https://docs.########.com/getting-started/) or join our [Discord community](https://discord.gg/KJHC5PcT) for comprehensive guidance.
+We offer various installation alternatives, including non-Docker native installation methods, Docker Compose, Kustomize, and Helm. Visit our [TutorAI Documentation](https://docs.########.com/getting-started/) or join our [Discord community](https://discord.gg/KJHC5PcT) for comprehensive guidance.
 
 ### Troubleshooting
 
-Encountering connection issues? Our [Open TutorAI Documentation](https://docs.opentutorai.com/troubleshooting/) has got you covered. For further assistance and to join our vibrant community, visit the [Open TutorAI Discord](https://discord.gg/KJHC5PcT).
+Encountering connection issues? Our [TutorAI Documentation](https://docs.TutorAI.com/troubleshooting/) has got you covered. For further assistance and to join our vibrant community, visit the [TutorAI Discord](https://discord.gg/KJHC5PcT).
 
-#### Open TutorAI: Server Connection Error
+#### TutorAI: Server Connection Error
 
-If you're experiencing connection issues, it’s often due to the WebUI docker container not being able to reach the Ollama server at 127.0.0.1:11434 (host.docker.internal:11434) inside the container . Use the `--network=host` flag in your docker command to resolve this. Note that the port changes from 3000 to 8080, resulting in the link: `http://localhost:8080`.
+If you're experiencing connection issues, it’s often due to the TutorAI docker container not being able to reach the Ollama server at 127.0.0.1:11434 (host.docker.internal:11434) inside the container . Use the `--network=host` flag in your docker command to resolve this. Note that the port changes from 3000 to 8080, resulting in the link: `http://localhost:8080`.
 
 **Example Docker Command**:
 
@@ -177,7 +177,7 @@ docker run --rm --volume /var/run/docker.sock:/var/run/docker.sock containrrr/wa
 
 In the last part of the command, replace `open-tutorai` with your container name if it is different.
 
-Check our Updating Guide available in our [Open TutorAI Documentation](https://docs.opentutorai.com/getting-started/updating).
+Check our Updating Guide available in our [TutorAI Documentation](https://docs.TutorAI.com/getting-started/updating).
 
 ### Using the Dev Branch 🌙
 
@@ -192,7 +192,7 @@ docker run -d -p 3000:8080 -v open-tutorai:/app/backend/data --name open-tutorai
 
 ### Offline Mode
 
-If you are running Open TutorAI in an offline environment, you can set the `HF_HUB_OFFLINE` environment variable to `1` to prevent attempts to download models from the internet.
+If you are running TutorAI in an offline environment, you can set the `HF_HUB_OFFLINE` environment variable to `1` to prevent attempts to download models from the internet.
 
 ```bash
 export HF_HUB_OFFLINE=1
@@ -200,7 +200,7 @@ export HF_HUB_OFFLINE=1
 
 ## What's Next? 🌟
 
-Discover upcoming features on our roadmap in the [Open TutorAI Documentation](https://docs.opentutorai.com/roadmap/).
+Discover upcoming features on our roadmap in the [TutorAI Documentation](https://docs.TutorAI.com/roadmap/).
 
 ## License 📜
 
@@ -209,7 +209,7 @@ This project is licensed under the [BSD-3-Clause License](LICENSE) - see the [LI
 ## Support 💬
 
 If you have any questions, suggestions, or need assistance, please open an issue or join our
-[Open TutorAI Discord community](https://discord.gg/KJHC5PcT) to connect with us! 🤝
+[TutorAI Discord community](https://discord.gg/KJHC5PcT) to connect with us! 🤝
 
 ## Star History
 
@@ -223,4 +223,4 @@ If you have any questions, suggestions, or need assistance, please open an issue
 
 ---
 
-Created by [El Hajji](https://github.com/pr-elhajji)  - Let's make Open TutorAI even more amazing together! 💪
+Created by [El Hajji](https://github.com/pr-elhajji)  - Let's make TutorAI even more amazing together! 💪

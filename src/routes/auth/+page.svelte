@@ -8,7 +8,7 @@
 	import { ldapUserSignIn, getSessionUser, userSignIn, userSignUp } from '$lib/apis/auths';
 
 	import { TUTOR_API_BASE_URL, TUTOR_BASE_URL } from '$lib/constants';
-	import { OpenTutorAI_NAME, config, user, socket } from '$lib/stores';
+	import { TUTOR_NAME, config, user, socket } from '$lib/stores';
 
 	import { generateInitialsImage, canvasPixelTest } from '$lib/utils';
 
@@ -151,7 +151,7 @@
 
 <svelte:head>
 	<title>
-	  {mode === 'signup' ? $i18n.t('Create Account') : $i18n.t('Sign in')} | OpenTutorAI
+	  {mode === 'signup' ? $i18n.t('Create Account') : $i18n.t('Sign in')} | TutorAI
 	</title>
 	  <!-- Standard favicon for most browsers -->
 	  <link rel="icon" href="favicon/favicon.ico" type="image/x-icon">
@@ -196,7 +196,7 @@
 				
 					<p class="text-3xl font-extrabold font-InstrumentSerif text-center leading-snug">
 						{$i18n.t('Bienvenue sur')} 
-						<span class="text-cyan-300">OpenTutorAI</span>
+						<span class="text-cyan-300">TutorAI</span>
 					</p>
 					<p class="text-md opacity-95 font-InstrumentSerif text-center italic mt-2">
 						{$i18n.t('Ton chemin vers un apprentissage plus intelligent')}
@@ -220,7 +220,7 @@
 						<div class="text-center mb-6">
 							<div class="flex items-center justify-center gap-3 text-xl sm:text-2xl font-semibold dark:text-gray-200">
 								<div>
-									{$i18n.t('Signing in to {{OpenTutorAI_NAME}}', { OpenTutorAI_NAME: $OpenTutorAI_NAME })}
+									{$i18n.t('Signing in to {{TUTOR_NAME}}', { TUTOR_NAME: $TUTOR_NAME })}
 								</div>
 								<div>
 									<Spinner />

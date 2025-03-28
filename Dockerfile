@@ -8,8 +8,7 @@ ARG USE_CUDA_VER=cu121
 # any sentence transformer model; models to use can be found at https://huggingface.co/models?library=sentence-transformers
 # Leaderboard: https://huggingface.co/spaces/mteb/leaderboard 
 # for better performance and multilangauge support use "intfloat/multilingual-e5-large" (~2.5GB) or "intfloat/multilingual-e5-base" (~1.5GB)
-# IMPORTANT: If you change the embedding model (sentence-transformers/all-MiniLM-L6-v2) and vice versa, you aren't able to use RAG Chat with your previous documents loaded in the WebUI! You need to re-embed them.
-ARG USE_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+# IMPORTANT: If you change the embedding model (sentence-transformers/all-MiniLM-L6-v2) and vice versa, you aren't able to use RAG Chat with your previous documents loaded in the TutorAI
 ARG USE_RERANKING_MODEL=""
 
 # Tiktoken encoding name; models to use can be found at https://huggingface.co/models?library=tiktoken
@@ -20,7 +19,7 @@ ARG BUILD_HASH=dev-build
 ARG UID=0
 ARG GID=0
 
-######## WebUI frontend ########
+######## TutorAI frontend ########
 FROM --platform=$BUILDPLATFORM node:22-alpine3.20 AS build
 ARG BUILD_HASH
 
@@ -33,7 +32,7 @@ COPY . .
 ENV APP_BUILD_HASH=${BUILD_HASH}
 RUN npm run build
 
-######## WebUI backend ########
+######## TutorAI backend ########
 FROM python:3.11-slim-bookworm AS base
 
 # Use args
@@ -61,7 +60,7 @@ ENV OLLAMA_BASE_URL="/ollama" \
 
 ## API Key and Security Config ##
 ENV OPENAI_API_KEY="" \
-    WEBUI_SECRET_KEY="" \
+    TutorAI_SECRET_KEY="" \
     SCARF_NO_ANALYTICS=true \
     DO_NOT_TRACK=true \
     ANONYMIZED_TELEMETRY=false

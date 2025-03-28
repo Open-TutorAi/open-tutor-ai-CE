@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, getContext } from 'svelte';
 	import {
-		OpenTutorAI_NAME,
+		TUTOR_NAME,
 		showSidebar,
 		functions,
 		user,
@@ -45,7 +45,7 @@
 
 <svelte:head>
 	<title>
-		{$i18n.t('Workspace')} | {$OpenTutorAI_NAME}
+		{$i18n.t('Workspace')} | {$TUTOR_NAME}
 	</title>
 </svelte:head>
 

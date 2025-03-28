@@ -2,7 +2,7 @@
 
 Sometimes, its beneficial to host Ollama, separate from the UI, but retain the RAG and RBAC support features shared across users:
 
-# Open Tutor AI Configuration
+# TutorAI Configuration
 
 ## UI Configuration
 
@@ -200,4 +200,4 @@ If you encounter any misconfiguration or errors, please file an issue or engage 
 
 Let's make this UI much more user friendly for everyone!
 
-Thanks for making Open Tutor AI your UI Choice for AI!
+Thanks for making TutorAI your UI Choice for AI!

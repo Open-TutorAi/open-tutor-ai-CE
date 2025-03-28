@@ -2,7 +2,7 @@
 	import Fuse from 'fuse.js';
 	import Bolt from '$lib/components/icons/Bolt.svelte';
 	import { onMount, getContext, createEventDispatcher } from 'svelte';
-	import { OpenTutorAI_NAME } from '$lib/stores';
+	import { TUTOR_NAME } from '$lib/stores';
 	import { TUTOR_VERSION } from '$lib/constants';
 
 	const i18n = getContext('i18n');
@@ -73,7 +73,7 @@
 		<div
 			class="flex w-full text-center items-center justify-center self-start text-gray-400 dark:text-gray-600"
 		>
-			{$OpenTutorAI_NAME} ‧ v{TUTOR_VERSION}
+			{$TUTOR_NAME} ‧ v{TUTOR_VERSION}
 		</div>
 	{/if}
 </div>

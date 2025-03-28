@@ -10,7 +10,7 @@
 		TUTOR_API_BASE_URL,
 		TUTOR_BASE_URL
 	} from '$lib/constants';
-	import { OpenTutorAI_NAME, config, user, models, settings } from '$lib/stores';
+	import { TUTOR_NAME, config, user, models, settings } from '$lib/stores';
 
 	import { chatCompletion, generateOpenAIChatCompletion } from '$lib/apis/openai';
 

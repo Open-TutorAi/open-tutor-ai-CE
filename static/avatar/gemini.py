@@ -70,7 +70,7 @@ class Pipeline:
             return messages
         elif isinstance(messages, dict):
             if "messages" in messages:
-                # Format from OpenWebUI: {"messages": [{"role": "user", "content": "..."}]}
+                # Format from TutorAI: {"messages": [{"role": "user", "content": "..."}]}
                 if messages["messages"] and len(messages["messages"]) > 0:
                     # Get the last user message
                     for msg in reversed(messages["messages"]):

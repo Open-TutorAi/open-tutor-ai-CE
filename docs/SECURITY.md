@@ -1,6 +1,6 @@
 # Security Policy
 
-Our primary goal is to ensure the protection and confidentiality of sensitive data stored by users on Open Tutor AI.
+Our primary goal is to ensure the protection and confidentiality of sensitive data stored by users on TutorAI.
 
 ## Supported Versions
 

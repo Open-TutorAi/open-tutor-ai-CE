@@ -45,7 +45,7 @@
 
 <svelte:head>
 	<title>
-		OpenTutorAI
+		TutorAI
 	</title>
 	  <link rel="icon" href="favicon/favicon.ico" type="image/x-icon">
 	  <link rel="icon" href="favicon/favicon-96x96.png" type="image/png">
@@ -77,10 +77,10 @@
             crossorigin="anonymous" 
             src="{TUTOR_BASE_URL}/static/favicon.png" 
             class="w-8 h-8 rounded-full" 
-            alt="OpenTutorAI logo" 
+            alt="TutorAI logo" 
             on:load={handleImagesLoaded}
         />
-        <span class="text-lg font-semibold">{$i18n.t('Welcome to')} OpenTutorAI</span>
+        <span class="text-lg font-semibold">{$i18n.t('Welcome to')} TutorAI</span>
     </div>
 
     <!-- Skip to content button for screen readers -->
@@ -136,7 +136,7 @@
             <button
                 bind:this={startButton}
                 class="relative group flex items-center justify-center px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 transition-all duration-300 rounded-full text-lg font-medium text-white focus:outline-none focus:ring-4 focus:ring-blue-300 focus:ring-offset-2 focus:ring-offset-black transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl whitespace-nowrap space-x-2"
-                aria-label={$i18n.t('Get Started with OpenTutorAI')}
+                aria-label={$i18n.t('Get Started with TutorAI')}
                 on:click={() => getStartedHandler()}
                 in:fly={{ y: 20, duration: 800, delay: 800, easing: cubicOut }}
             >

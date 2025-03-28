@@ -4,7 +4,7 @@
 	const { saveAs } = fileSaver;
 
 	import { onMount, getContext } from 'svelte';
-	import { OpenTutorAI_NAME, config, prompts, tools as _tools, user } from '$lib/stores';
+	import { TUTOR_NAME, config, prompts, tools as _tools, user } from '$lib/stores';
 	import { createNewPrompt, deletePromptByCommand, getPrompts } from '$lib/apis/prompts';
 
 	import { goto } from '$app/navigation';
@@ -65,9 +65,9 @@
 			return null;
 		});
 
-		toast.success($i18n.t('Redirecting you to Open TutorAI Community'));
+		toast.success($i18n.t('Redirecting you to TutorAI Community'));
 
-		const url = 'https://openwebui.com';
+		const url = 'http://opentutorai.com/';
 
 		const tab = await window.open(`${url}/tools/create`, '_blank');
 
@@ -168,7 +168,7 @@
 
 <svelte:head>
 	<title>
-		{$i18n.t('Tools')} | {$OpenTutorAI_NAME}
+		{$i18n.t('Tools')} | {$TUTOR_NAME}
 	</title>
 </svelte:head>
 
@@ -438,12 +438,12 @@
 	{#if $config?.features.enable_community_sharing}
 		<div class=" my-16">
 			<div class=" text-xl font-medium mb-1 line-clamp-1">
-				{$i18n.t('Made by Open TutorAI Community')}
+				{$i18n.t('Made by TutorAI Community')}
 			</div>
 
 			<a
 				class=" flex cursor-pointer items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-850 w-full mb-2 px-3.5 py-1.5 rounded-xl transition"
-				href="https://openwebui.com/#open-webui-community"
+				href="#"
 				target="_blank"
 			>
 				<div class=" self-center">

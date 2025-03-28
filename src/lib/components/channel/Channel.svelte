@@ -195,7 +195,7 @@
 </script>
 
 <svelte:head>
-	<title>#{channel?.name ?? 'Channel'} | Open TutorAI</title>
+	<title>#{channel?.name ?? 'Channel'} | TutorAI</title>
 </svelte:head>
 
 <div
