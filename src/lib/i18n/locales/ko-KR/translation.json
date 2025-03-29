@@ -940,7 +940,7 @@
 	"Sign in to access your account": "",
 	"Sign Out": "로그아웃",
 	"Sign up": "가입",
-	"Signing in to {{OpenTutorAI_NAME}}": "{{OpenTutorAI_NAME}}로 가입중",
+	"Signing in to {{TUTOR_NAME}}": "{{TUTOR_NAME}}로 가입중",
 	"sk-1234": "",
 	"Skip": "",
 	"Skip onboarding": "",

@@ -940,7 +940,7 @@
 	"Sign in to access your account": "",
 	"Sign Out": "Amaitu saioa",
 	"Sign up": "Erregistratu",
-	"Signing in to {{OpenTutorAI_NAME}}": "{{OpenTutorAI_NAME}}-n saioa hasten",
+	"Signing in to {{TUTOR_NAME}}": "{{TUTOR_NAME}}-n saioa hasten",
 	"sk-1234": "",
 	"Skip": "",
 	"Skip onboarding": "",

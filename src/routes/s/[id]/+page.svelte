@@ -5,7 +5,7 @@
 
 	import dayjs from 'dayjs';
 
-	import { settings, chatId, OpenTutorAI_NAME, models, config } from '$lib/stores';
+	import { settings, chatId, TUTOR_NAME, models, config } from '$lib/stores';
 	import { convertMessagesToHistory, createMessagesList } from '$lib/utils';
 
 	import { getChatByShareId, cloneSharedChatById } from '$lib/apis/chats';
@@ -126,8 +126,8 @@
 <svelte:head>
 	<title>
 		{title
-			? `${title.length > 30 ? `${title.slice(0, 30)}...` : title} | ${$OpenTutorAI_NAME}`
-			: `${$OpenTutorAI_NAME}`}
+			? `${title.length > 30 ? `${title.slice(0, 30)}...` : title} | ${$TUTOR_NAME}`
+			: `${$TUTOR_NAME}`}
 	</title>
 </svelte:head>
 

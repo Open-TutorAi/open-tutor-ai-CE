@@ -19,7 +19,7 @@ const mockOpenTutorAIName = {
 
 // Mock the stores
 vi.mock('$lib/stores', () => ({
-  OpenTutorAI_NAME: mockOpenTutorAIName,
+  TUTOR_NAME: mockOpenTutorAIName,
   settings: {
     subscribe: vi.fn(cb => {
       cb({});
@@ -74,7 +74,7 @@ describe('Application Title Tests', () => {
   });
 
   it('should override backend name with OpenTutorAI', async () => {
-    // Mock the scenario where the layout component would set OpenTutorAI_NAME from backend
+    // Mock the scenario where the layout component would set TUTOR_NAME from backend
     const mockBackendConfig = {
       name: 'Open Tutor AI' // This is what the backend would send
     };

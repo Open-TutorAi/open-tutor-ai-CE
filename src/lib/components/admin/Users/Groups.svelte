@@ -7,7 +7,7 @@
 	import { onMount, getContext } from 'svelte';
 	import { goto } from '$app/navigation';
 
-	import { OpenTutorAI_NAME, config, user, showSidebar, knowledge } from '$lib/stores';
+	import { TUTOR_NAME, config, user, showSidebar, knowledge } from '$lib/stores';
 	import { TUTOR_BASE_URL } from '$lib/constants';
 
 	import Tooltip from '$lib/components/common/Tooltip.svelte';

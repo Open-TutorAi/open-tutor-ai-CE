@@ -940,7 +940,7 @@
 	"Sign in to access your account": "Connectez-vous pour accéder à votre compte",
 	"Sign Out": "Déconnexion",
 	"Sign up": "Inscrivez-vous",
-	"Signing in to {{OpenTutorAI_NAME}}": "Connexion à {{OpenTutorAI_NAME}}",
+	"Signing in to {{TUTOR_NAME}}": "Connexion à {{TUTOR_NAME}}",
 	"sk-1234": "sk-1234",
 	"Skip": "Passer",
 	"Skip onboarding": "",

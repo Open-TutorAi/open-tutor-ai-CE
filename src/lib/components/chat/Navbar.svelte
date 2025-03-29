@@ -3,7 +3,7 @@
 	import { toast } from 'svelte-sonner';
 
 	import {
-		OpenTutorAI_NAME,
+		TUTOR_NAME,
 		chatId,
 		mobile,
 		settings,
@@ -30,7 +30,7 @@
 	const i18n = getContext('i18n');
 
 	export let initNewChat: Function;
-	export let title: string = $OpenTutorAI_NAME;
+	export let title: string = $TUTOR_NAME;
 	export let shareEnabled: boolean = false;
 
 	export let chat;

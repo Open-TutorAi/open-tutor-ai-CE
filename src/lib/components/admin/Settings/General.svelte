@@ -134,7 +134,7 @@
 									</Tooltip>
 
 									<a
-										href="https://github.com/open-webui/open-webui/releases/tag/v{version.latest}"
+										href="https://github.com/pr-elhajji/open-tutor-ai-CE/releases/tag/v{version.latest}"
 										target="_blank"
 									>
 										{updateAvailable === null
@@ -181,7 +181,7 @@
 
 							<a
 								class="flex-shrink-0 text-xs font-medium underline"
-								href="https://docs.openwebui.com/"
+								href="#"
 								target="_blank"
 							>
 								{$i18n.t('Documentation')}
@@ -190,21 +190,21 @@
 
 						<div class="mt-1">
 							<div class="flex space-x-1">
-								<a href="https://discord.gg/5rJgQTnV4s" target="_blank">
+								<a href="https://discord.gg/z5fMfrBzEF" target="_blank">
 									<img
 										alt="Discord"
 										src="https://img.shields.io/badge/Discord-Open_WebUI-blue?logo=discord&logoColor=white"
 									/>
 								</a>
 
-								<a href="https://twitter.com/OpenWebUI" target="_blank">
+								<a href="#" target="_blank">
 									<img
 										alt="X (formerly Twitter) Follow"
 										src="https://img.shields.io/twitter/follow/OpenWebUI"
 									/>
 								</a>
 
-								<a href="https://github.com/open-webui/open-webui" target="_blank">
+								<a href="https://github.com/pr-elhajji/open-tutor-ai-CE" target="_blank">
 									<img
 										alt="Github Repo"
 										src="https://img.shields.io/github/stars/open-webui/open-webui?style=social&label=Star us on Github"
@@ -222,7 +222,7 @@
 								</div>
 								<a
 									class=" text-xs text-gray-500 hover:underline"
-									href="https://docs.openwebui.com/enterprise"
+									href="#"
 									target="_blank"
 								>
 									{$i18n.t(
@@ -303,9 +303,8 @@
 								/>
 
 								<div class="mt-2 text-xs text-gray-400 dark:text-gray-500">
-									<!-- https://docs.openwebui.com/getting-started/advanced-topics/api-endpoints -->
 									<a
-										href="https://docs.openwebui.com/getting-started/api-endpoints"
+										href="#"
 										target="_blank"
 										class=" text-gray-300 font-medium underline"
 									>

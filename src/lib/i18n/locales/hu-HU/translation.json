@@ -940,7 +940,7 @@
 	"Sign in to access your account": "",
 	"Sign Out": "Kijelentkezés",
 	"Sign up": "Regisztráció",
-	"Signing in to {{OpenTutorAI_NAME}}": "Bejelentkezés ide: {{OpenTutorAI_NAME}}",
+	"Signing in to {{TUTOR_NAME}}": "Bejelentkezés ide: {{TUTOR_NAME}}",
 	"sk-1234": "",
 	"Skip": "",
 	"Skip onboarding": "",

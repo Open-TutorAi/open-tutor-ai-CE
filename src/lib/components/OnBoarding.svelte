@@ -77,10 +77,10 @@
             crossorigin="anonymous" 
             src="{TUTOR_BASE_URL}/static/favicon.png" 
             class="w-8 h-8 rounded-full" 
-            alt="OpenTutorAI logo" 
+            alt="Open TutorAI logo" 
             on:load={handleImagesLoaded}
         />
-        <span class="text-lg font-semibold">{$i18n.t('Welcome to')} OpenTutorAI</span>
+        <span class="text-lg font-semibold">{$i18n.t('Welcome to')} Open TutorAI</span>
     </div>
 
     <!-- Skip to content button for screen readers -->

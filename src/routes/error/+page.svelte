@@ -1,6 +1,6 @@
 <script>
 	import { goto } from '$app/navigation';
-	import { OpenTutorAI_NAME, config } from '$lib/stores';
+	import { TUTOR_NAME, config } from '$lib/stores';
 	import { onMount, getContext } from 'svelte';
 
 	const i18n = getContext('i18n');
@@ -22,7 +22,7 @@
 			<div class="m-auto pb-44 flex flex-col justify-center">
 				<div class="max-w-md">
 					<div class="text-center text-2xl font-medium z-50">
-						{$i18n.t('{{OpenTutorAIName}} Backend Required', { OpenTutorAIName: $OpenTutorAI_NAME })}
+						{$i18n.t('{{TUTOR_NAME}} Backend Required', { TUTOR_NAME: $TUTOR_NAME })}
 					</div>
 
 					<div class=" mt-4 text-center text-sm w-full">
@@ -38,7 +38,7 @@
 							target="_blank">{$i18n.t('See readme.md for instructions')}</a
 						>
 						{$i18n.t('or')}
-						<a class=" font-semibold underline" href="https://discord.gg/5rJgQTnV4s" target="_blank"
+						<a class=" font-semibold underline" href="https://discord.gg/z5fMfrBzEF" target="_blank"
 							>{$i18n.t('join our Discord for help.')}</a
 						>
 					</div>

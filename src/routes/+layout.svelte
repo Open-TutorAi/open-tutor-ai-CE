@@ -13,7 +13,7 @@
 		user,
 		settings,
 		theme,
-		OpenTutorAI_NAME,
+		TUTOR_NAME,
 		mobile,
 		socket,
 		activeUserIds,
@@ -478,7 +478,7 @@
 		if (backendConfig) {
 			// Save Backend Status to Store
 			await config.set(backendConfig);
-			await OpenTutorAI_NAME.set("Open TutorAI");
+			await TUTOR_NAME.set("Open TutorAI");
 
 			if ($config) {
 				await setupSocket($config.features?.enable_websocket ?? true);
@@ -556,7 +556,7 @@
 </script>
 
 <svelte:head>
-	<title>{$OpenTutorAI_NAME}</title>
+	<title>{$TUTOR_NAME}</title>
 	<link crossorigin="anonymous" rel="icon" href="{TUTOR_BASE_URL}/static/favicon.png" />
 
 	<!-- rosepine themes have been disabled as it's not up to date with our latest version. -->

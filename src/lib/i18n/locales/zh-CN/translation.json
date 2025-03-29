@@ -940,7 +940,7 @@
 	"Sign in to access your account": "",
 	"Sign Out": "登出",
 	"Sign up": "注册",
-	"Signing in to {{OpenTutorAI_NAME}}": "正在登录 {{OpenTutorAI_NAME}}",
+	"Signing in to {{TUTOR_NAME}}": "正在登录 {{TUTOR_NAME}}",
 	"sk-1234": "sk-1234",
 	"Skip": "",
 	"Skip onboarding": "",

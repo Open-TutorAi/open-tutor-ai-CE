@@ -940,7 +940,7 @@
 	"Sign in to access your account": "",
 	"Sign Out": "Logg ut",
 	"Sign up": "Registrer deg",
-	"Signing in to {{OpenTutorAI_NAME}}": "Logger på {{OpenTutorAI_NAME}}",
+	"Signing in to {{TUTOR_NAME}}": "Logger på {{TUTOR_NAME}}",
 	"sk-1234": "",
 	"Skip": "",
 	"Skip onboarding": "",

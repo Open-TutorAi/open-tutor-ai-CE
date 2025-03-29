@@ -940,7 +940,7 @@
 	"Sign in to access your account": "",
 	"Sign Out": "Çıkış Yap",
 	"Sign up": "Kaydol",
-	"Signing in to {{OpenTutorAI_NAME}}": "{{OpenTutorAI_NAME}}'e giriş yapılıyor",
+	"Signing in to {{TUTOR_NAME}}": "{{TUTOR_NAME}}'e giriş yapılıyor",
 	"sk-1234": "sk-1234",
 	"Skip": "",
 	"Skip onboarding": "",

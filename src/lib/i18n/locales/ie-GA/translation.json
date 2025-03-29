@@ -940,7 +940,7 @@
 	"Sign in to access your account": "",
 	"Sign Out": "Sínigh Amach",
 	"Sign up": "Cláraigh",
-	"Signing in to {{OpenTutorAI_NAME}}": "Ag síniú isteach ar {{OpenTutorAI_NAME}}",
+	"Signing in to {{TUTOR_NAME}}": "Ag síniú isteach ar {{TUTOR_NAME}}",
 	"sk-1234": "sk-1234",
 	"Skip": "",
 	"Skip onboarding": "",

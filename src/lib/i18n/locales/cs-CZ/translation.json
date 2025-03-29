@@ -940,7 +940,7 @@
 	"Sign in to access your account": "",
 	"Sign Out": "Odhlásit se",
 	"Sign up": "Zaregistrovat se",
-	"Signing in to {{OpenTutorAI_NAME}}": "Přihlašování do {{OpenTutorAI_NAME}}",
+	"Signing in to {{TUTOR_NAME}}": "Přihlašování do {{TUTOR_NAME}}",
 	"sk-1234": "",
 	"Skip": "",
 	"Skip onboarding": "",

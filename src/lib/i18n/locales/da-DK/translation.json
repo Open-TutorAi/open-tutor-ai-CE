@@ -940,7 +940,7 @@
 	"Sign in to access your account": "",
 	"Sign Out": "Log ud",
 	"Sign up": "Tilmeld dig",
-	"Signing in to {{OpenTutorAI_NAME}}": "Logger ind på {{OpenTutorAI_NAME}}",
+	"Signing in to {{TUTOR_NAME}}": "Logger ind på {{TUTOR_NAME}}",
 	"sk-1234": "",
 	"Skip": "",
 	"Skip onboarding": "",

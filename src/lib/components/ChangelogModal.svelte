@@ -2,7 +2,7 @@
 	import { onMount, getContext } from 'svelte';
 	import { Confetti } from 'svelte-confetti';
 
-	import { OpenTutorAI_NAME, config, settings } from '$lib/stores';
+	import { TUTOR_NAME, config, settings } from '$lib/stores';
 
 	import { TUTOR_VERSION } from '$lib/constants';
 	import { getChangelog } from '$lib/apis';
@@ -27,7 +27,7 @@
 		<div class="flex justify-between items-start">
 			<div class="text-xl font-semibold">
 				{$i18n.t('What’s New in')}
-				{$OpenTutorAI_NAME}
+				{$TUTOR_NAME}
 				<Confetti x={[-1, -0.25]} y={[0, 0.5]} />
 			</div>
 			<button

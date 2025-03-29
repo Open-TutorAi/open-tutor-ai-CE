@@ -1,6 +1,6 @@
 <script>
 	import { TUTOR_BASE_URL } from '$lib/constants';
-	import { OpenTutorAI_NAME, config, user, showSidebar } from '$lib/stores';
+	import { TUTOR_NAME, config, user, showSidebar } from '$lib/stores';
 	import { goto } from '$app/navigation';
 	import { onMount, getContext } from 'svelte';
 
