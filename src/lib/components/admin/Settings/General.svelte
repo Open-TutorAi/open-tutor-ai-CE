@@ -193,21 +193,21 @@
 								<a href="https://discord.gg/z5fMfrBzEF" target="_blank">
 									<img
 										alt="Discord"
-										src="https://img.shields.io/badge/Discord-Open_WebUI-blue?logo=discord&logoColor=white"
+										src="https://img.shields.io/badge/Discord-Open_TutorAI-blue?logo=discord&logoColor=white"
 									/>
 								</a>
 
 								<a href="#" target="_blank">
 									<img
 										alt="X (formerly Twitter) Follow"
-										src="https://img.shields.io/twitter/follow/OpenWebUI"
+										src="https://img.shields.io/twitter/follow/OpenTutorAI"
 									/>
 								</a>
 
 								<a href="https://github.com/pr-elhajji/open-tutor-ai-CE" target="_blank">
 									<img
 										alt="Github Repo"
-										src="https://img.shields.io/github/stars/open-webui/open-webui?style=social&label=Star us on Github"
+										src="https://img.shields.io/github/stars/pr-elhajji/open-tutor-ai-CE?style=social&label=Star us on Github"
 									/>
 								</a>
 							</div>
