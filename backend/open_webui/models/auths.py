@@ -24,6 +24,7 @@ class Auth(Base):
     email = Column(String)
     password = Column(Text)
     active = Column(Boolean)
+    role = Column(String, default="student")
 
 
 class AuthModel(BaseModel):
@@ -31,6 +32,7 @@ class AuthModel(BaseModel):
     email: str
     password: str
     active: bool = True
+    role: Optional[str] = "student"
 
 
 ####################
@@ -88,10 +90,13 @@ class SignupForm(BaseModel):
     email: str
     password: str
     profile_image_url: Optional[str] = "/user.png"
+    role: Optional[str] = None
 
 
 class AddUserForm(SignupForm):
-    role: Optional[str] = "pending"
+    role: Optional[str] = "student"
+
+
 
 
 class AuthsTable:
@@ -101,7 +106,7 @@ class AuthsTable:
         password: str,
         name: str,
         profile_image_url: str = "/user.png",
-        role: str = "pending",
+        role: str = "student",
         oauth_sub: Optional[str] = None,
     ) -> Optional[UserModel]:
         with get_db() as db:
@@ -110,7 +115,7 @@ class AuthsTable:
             id = str(uuid.uuid4())
 
             auth = AuthModel(
-                **{"id": id, "email": email, "password": password, "active": True}
+                **{"id": id, "email": email, "password": password, "active": True, "role": role}
             )
             result = Auth(**auth.model_dump())
             db.add(result)

@@ -453,13 +453,14 @@ async def signup(request: Request, response: Response, form_data: SignupForm):
         raise HTTPException(400, detail=ERROR_MESSAGES.EMAIL_TAKEN)
 
     try:
-        role = (
-            "admin" if user_count == 0 else request.app.state.config.DEFAULT_USER_ROLE
-        )
-
+        # First user is always admin, subsequent users can be teacher or student
         if user_count == 0:
-            # Disable signup after the first user is created
-            request.app.state.config.ENABLE_SIGNUP = False
+            role = "admin"
+        else:
+            # Use provided role or default to student
+            role = form_data.role if form_data.role in ["teacher", "student", "parent"] else "student"
+            
+        log.info(f"Creating new user with role: {role}")
 
         hashed = get_password_hash(form_data.password)
         user = Auths.insert_new_auth(
@@ -687,7 +688,7 @@ async def update_admin_config(
 
     request.app.state.config.ENABLE_CHANNELS = form_data.ENABLE_CHANNELS
 
-    if form_data.DEFAULT_USER_ROLE in ["pending", "user", "admin"]:
+    if form_data.DEFAULT_USER_ROLE in ["student", "teacher", "admin", "parent"]:
         request.app.state.config.DEFAULT_USER_ROLE = form_data.DEFAULT_USER_ROLE
 
     pattern = r"^(-1|0|(-?\d+(\.\d+)?)(ms|s|m|h|d|w))$"

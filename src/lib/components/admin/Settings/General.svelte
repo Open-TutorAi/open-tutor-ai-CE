@@ -249,13 +249,14 @@
 						<div class=" self-center text-xs font-medium">{$i18n.t('Default User Role')}</div>
 						<div class="flex items-center relative">
 							<select
-								class="dark:bg-gray-900 w-fit pr-8 rounded-sm px-2 text-xs bg-transparent outline-hidden text-right"
 								bind:value={adminConfig.DEFAULT_USER_ROLE}
-								placeholder="Select a role"
+								class="select select-bordered w-full"
+								required
 							>
-								<option value="pending">{$i18n.t('pending')}</option>
-								<option value="user">{$i18n.t('user')}</option>
+								<option value="student">{$i18n.t('student')}</option>
+								<option value="teacher">{$i18n.t('teacher')}</option>
 								<option value="admin">{$i18n.t('admin')}</option>
+								<option value="parent">{$i18n.t('parent')}</option>
 							</select>
 						</div>
 					</div>
