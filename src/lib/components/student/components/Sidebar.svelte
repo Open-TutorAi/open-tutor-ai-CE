@@ -3,7 +3,7 @@
     import { WEBUI_BASE_URL } from '$lib/constants';
     import { goto } from '$app/navigation';
     import { page } from '$app/stores';
-    import { onMount } from 'svelte';
+    import { onMount, getContext } from 'svelte';
     import Settings from '$lib/components/icons/Settings.svelte';
     import Dashboard from '$lib/components/icons/Dashboard.svelte';
     import Classroom from '$lib/components/icons/Classroom.svelte';
@@ -12,6 +12,7 @@
     import Progress from '$lib/components/icons/Progress.svelte';
     import type { ComponentType } from 'svelte';
     import { writable, type Writable } from 'svelte/store';
+    const i18n = getContext('i18n');
 
     // Use a simple boolean for sidebar state instead of a store
     export let isSidebarOpen = true;
@@ -47,10 +48,40 @@
         // Add window resize listener
         window.addEventListener('resize', checkMobile);
         
+        // Set active page based on URL path when component mounts
+        const pathSegments = $page.url.pathname.split('/');
+        if (pathSegments.length >= 3) {
+            const pageFromUrl = pathSegments[2]; // student/dashboard -> "dashboard"
+            
+            // Update the activePage store if it's a store
+            if (typeof activePage === 'object' && 'subscribe' in activePage) {
+                (activePage as Writable<string>).set(pageFromUrl);
+            } else {
+                currentActivePage = pageFromUrl;
+            }
+        }
+        
         return () => {
             window.removeEventListener('resize', checkMobile);
         };
     });
+    
+    // Also update active page whenever the URL changes
+    $: {
+        const pathSegments = $page.url.pathname.split('/');
+        if (pathSegments.length >= 3) {
+            const pageFromUrl = pathSegments[2];
+            
+            // Only update if it has changed to avoid loops
+            if (currentActivePage !== pageFromUrl) {
+                if (typeof activePage === 'object' && 'subscribe' in activePage) {
+                    (activePage as Writable<string>).set(pageFromUrl);
+                } else {
+                    currentActivePage = pageFromUrl;
+                }
+            }
+        }
+    }
     
     function checkMobile() {
         isMobile = window.innerWidth < 768;
@@ -113,8 +144,7 @@
 <div class="relative flex h-full">
     <!-- Main content area - padding makes room for the fixed sidebar -->
     <div class={`w-full transition-all duration-300 ${isSidebarOpen ? 'md:ml-64' : 'md:ml-16'}`}>
-        <!-- This is where your page content would go -->
-        
+        <slot />
     </div>
     
     <!-- Sidebar -->
@@ -136,7 +166,7 @@
         <div class="px-4 py-2">
             {#if isSidebarOpen}
                 <div class="text-xs text-gray-500 uppercase font-semibold mb-1">
-                    {currentRole.charAt(0).toUpperCase() + currentRole.slice(1)} Portal
+                    {$i18n.t(currentRole.charAt(0).toUpperCase() + currentRole.slice(1)) + ' Portal'}
                 </div>
             {/if}
         </div>
@@ -155,7 +185,7 @@
                                     <svelte:component this={item.icon} />
                                 </span>
                                 {#if isSidebarOpen}
-                                    <span class="ml-3 text-sm font-medium">{item.label}</span>
+                                    <span class="ml-3 text-sm font-medium">{$i18n.t(item.label)}</span>
                                 {/if}
                             </button>
                         </li>
@@ -172,7 +202,7 @@
             <div class="absolute bottom-0 left-0 right-0 p-4 hidden md:block">
                 <div class="flex items-center justify-between text-sm text-gray-500">
                     <span>© 2025 OpenTutorAI</span>
-                    <button class="hover:text-gray-800">Help</button>
+                    <button class="hover:text-gray-800">{$i18n.t('Help')}</button>
                 </div>
             </div>
         {/if}
