@@ -1,4 +1,4 @@
-import { WEBUI_API_BASE_URL } from '$lib/constants';
+import { TUTOR_API_BASE_URL } from '$lib/constants';
 
 export interface ResponseComparisonFeedback {
     preferredResponseId: string;
@@ -16,7 +16,7 @@ export interface ResponseComparisonFeedback {
 export const getAllResponseFeedbacks = async (token: string = '') => {
     let error = null;
 
-    const res = await fetch(`${WEBUI_API_BASE_URL}/evaluations/response-feedbacks/all`, {
+    const res = await fetch(`${TUTOR_API_BASE_URL}/evaluations/response-feedbacks/all`, {
         method: 'GET',
         headers: {
             Accept: 'application/json',
@@ -47,7 +47,7 @@ export const getAllResponseFeedbacks = async (token: string = '') => {
 export const createResponseFeedback = async (token: string, feedback: ResponseComparisonFeedback) => {
     let error = null;
 
-    const res = await fetch(`${WEBUI_API_BASE_URL}/evaluations/response-feedback`, {
+    const res = await fetch(`${TUTOR_API_BASE_URL}/evaluations/response-feedback`, {
         method: 'POST',
         headers: {
             Accept: 'application/json',
@@ -79,7 +79,7 @@ export const createResponseFeedback = async (token: string, feedback: ResponseCo
 export const getResponseFeedbackById = async (token: string, feedbackId: string) => {
     let error = null;
 
-    const res = await fetch(`${WEBUI_API_BASE_URL}/evaluations/response-feedback/${feedbackId}`, {
+    const res = await fetch(`${TUTOR_API_BASE_URL}/evaluations/response-feedback/${feedbackId}`, {
         method: 'GET',
         headers: {
             Accept: 'application/json',

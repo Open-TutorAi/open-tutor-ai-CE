@@ -1056,7 +1056,7 @@ export const archiveAllChats = async (token: string) => {
 export const getAllChatsInDB = async (token: string) => {
 	let error = null;
 
-	const res = await fetch(`${WEBUI_API_BASE_URL}/chats/all/db`, {
+	const res = await fetch(`${TUTOR_API_BASE_URL}/chats/all/db`, {
 		method: 'GET',
 		headers: {
 			Accept: 'application/json',
