@@ -11,7 +11,7 @@
 	import SensitiveInput from '$lib/components/common/SensitiveInput.svelte';
 	import Switch from '$lib/components/common/Switch.svelte';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	import { WEBUI_BUILD_HASH, WEBUI_VERSION } from '$lib/constants';
+	import { TUTOR_BUILD_HASH, TUTOR_VERSION } from '$lib/constants';
 	import { config, showChangelog } from '$lib/stores';
 	import { compareVersion } from '$lib/utils';
 	import { onMount, getContext } from 'svelte';
@@ -51,8 +51,8 @@
 		updateAvailable = null;
 		version = await getVersionUpdates(localStorage.token).catch((error) => {
 			return {
-				current: WEBUI_VERSION,
-				latest: WEBUI_VERSION
+				current: TUTOR_VERSION,
+				latest: TUTOR_VERSION
 			};
 		});
 
@@ -129,12 +129,12 @@
 						<div class="flex w-full justify-between items-center">
 							<div class="flex flex-col text-xs text-gray-700 dark:text-gray-200">
 								<div class="flex gap-1">
-									<Tooltip content={WEBUI_BUILD_HASH}>
-										v{WEBUI_VERSION}
+									<Tooltip content={TUTOR_BUILD_HASH}>
+										v{TUTOR_VERSION}
 									</Tooltip>
 
 									<a
-										href="https://github.com/open-webui/open-webui/releases/tag/v{version.latest}"
+										href="https://github.com/pr-elhajji/open-tutor-ai-CE/releases/tag/v{version.latest}"
 										target="_blank"
 									>
 										{updateAvailable === null
@@ -175,13 +175,13 @@
 									{$i18n.t('Help')}
 								</div>
 								<div class=" text-xs text-gray-500">
-									{$i18n.t('Discover how to use Open WebUI and seek support from the community.')}
+									{$i18n.t('Discover how to use Open TutorAI and seek support from the community.')}
 								</div>
 							</div>
 
 							<a
 								class="flex-shrink-0 text-xs font-medium underline"
-								href="https://docs.openwebui.com/"
+								href="#"
 								target="_blank"
 							>
 								{$i18n.t('Documentation')}
@@ -190,24 +190,24 @@
 
 						<div class="mt-1">
 							<div class="flex space-x-1">
-								<a href="https://discord.gg/5rJgQTnV4s" target="_blank">
+								<a href="https://discord.gg/z5fMfrBzEF" target="_blank">
 									<img
 										alt="Discord"
-										src="https://img.shields.io/badge/Discord-Open_WebUI-blue?logo=discord&logoColor=white"
+										src="https://img.shields.io/badge/Discord-Open_TutorAI-blue?logo=discord&logoColor=white"
 									/>
 								</a>
 
-								<a href="https://twitter.com/OpenWebUI" target="_blank">
+								<a href="#" target="_blank">
 									<img
 										alt="X (formerly Twitter) Follow"
-										src="https://img.shields.io/twitter/follow/OpenWebUI"
+										src="https://img.shields.io/twitter/follow/OpenTutorAI"
 									/>
 								</a>
 
-								<a href="https://github.com/open-webui/open-webui" target="_blank">
+								<a href="https://github.com/pr-elhajji/open-tutor-ai-CE" target="_blank">
 									<img
 										alt="Github Repo"
-										src="https://img.shields.io/github/stars/open-webui/open-webui?style=social&label=Star us on Github"
+										src="https://img.shields.io/github/stars/pr-elhajji/open-tutor-ai-CE?style=social&label=Star us on Github"
 									/>
 								</a>
 							</div>
@@ -222,7 +222,7 @@
 								</div>
 								<a
 									class=" text-xs text-gray-500 hover:underline"
-									href="https://docs.openwebui.com/enterprise"
+									href="#"
 									target="_blank"
 								>
 									{$i18n.t(
@@ -303,9 +303,8 @@
 								/>
 
 								<div class="mt-2 text-xs text-gray-400 dark:text-gray-500">
-									<!-- https://docs.openwebui.com/getting-started/advanced-topics/api-endpoints -->
 									<a
-										href="https://docs.openwebui.com/getting-started/api-endpoints"
+										href="#"
 										target="_blank"
 										class=" text-gray-300 font-medium underline"
 									>
@@ -581,7 +580,7 @@
 
 					<div class="mb-2.5 w-full justify-between">
 						<div class="flex w-full justify-between">
-							<div class=" self-center text-xs font-medium">{$i18n.t('WebUI URL')}</div>
+							<div class=" self-center text-xs font-medium">{$i18n.t('Open TutorAI URL')}</div>
 						</div>
 
 						<div class="flex mt-2 space-x-2">
@@ -595,7 +594,7 @@
 
 						<div class="mt-2 text-xs text-gray-400 dark:text-gray-500">
 							{$i18n.t(
-								'Enter the public URL of your WebUI. This URL will be used to generate links in the notifications.'
+								'Enter the public URL of your TutorAI. This URL will be used to generate links in the notifications.'
 							)}
 						</div>
 					</div>

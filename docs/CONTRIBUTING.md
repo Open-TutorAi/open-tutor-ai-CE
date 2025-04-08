@@ -17,9 +17,9 @@ Noticed something off? Have an idea? Check our [Issues tab](https://github.com/p
 
 We've noticed an uptick in issues not directly related to Open TutorAI but rather to the environment it's run in, especially Docker setups. While we strive to support Docker deployment, understanding Docker fundamentals is crucial for a smooth experience.
 
-- **Docker Deployment Support**: Open WebUI supports Docker deployment. Familiarity with Docker is assumed. For Docker basics, please refer to the [official Docker documentation](https://docs.docker.com/get-started/overview/).
+- **Docker Deployment Support**: Open TutorAI supports Docker deployment. Familiarity with Docker is assumed. For Docker basics, please refer to the [official Docker documentation](https://docs.docker.com/get-started/overview/).
 
-- **Advanced Configurations**: Setting up reverse proxies for HTTPS and managing Docker deployments requires foundational knowledge. There are numerous online resources available to learn these skills. Ensuring you have this knowledge will greatly enhance your experience with Open WebUI and similar projects.
+- **Advanced Configurations**: Setting up reverse proxies for HTTPS and managing Docker deployments requires foundational knowledge. There are numerous online resources available to learn these skills. Ensuring you have this knowledge will greatly enhance your experience with Open TutorAI and similar projects.
 
 ## 💡 Contributing
 
@@ -41,7 +41,7 @@ Help us make Open TutorAI more accessible by improving documentation, writing tu
 
 ### 🌐 Translations and Internationalization
 
-Help us make Open WebUI available to a wider audience. In this section, we'll guide you through the process of adding new translations to the project.
+Help us make Open Tutor AI available to a wider audience. In this section, we'll guide you through the process of adding new translations to the project.
 
 We use JSON files to store translations. You can find the existing translation files in the `src/lib/i18n/locales` directory. Each directory corresponds to a specific language, for example, `en-US` for English (US), `fr-FR` for French (France) and so on. You can refer to [ISO 639 Language Codes](http://www.lingoes.net/en/translator/langcode.htm) to find the appropriate code for a specific language.
 
@@ -57,6 +57,6 @@ Got questions or feedback? Join our [Discord community](https://discord.gg/86cVb
 
 ## 🙏 Thank You!
 
-Your contributions, big or small, make a significant impact on Open WebUI. We're excited to see what you bring to the project!
+Your contributions, big or small, make a significant impact on Open Tutor AI. We're excited to see what you bring to the project!
 
 Together, let's create an even more powerful tool for the community. 🌟

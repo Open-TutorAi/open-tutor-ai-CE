@@ -7,7 +7,7 @@
 	"{{ owner }}: You cannot delete a base model": "{{ owner }}: Esasy modeli öçürip bilmersiňiz",
 	"{{modelName}} is thinking...": "{{modelName}} pikirlenýär...",
 	"{{user}}'s Chats": "{{user}}'iň Çatlary",
-	"{{webUIName}} Backend Required": "{{webUIName}} Backend Zerur",
+	"{{OpenTutorAIName}} Backend Required": "{{OpenTutorAIName}} Backend Zerur",
 	"A task model is used when performing tasks such as generating titles for chats and web search queries": "Çatlar we web gözleg soraglary üçin başlyk döretmek ýaly wezipeleri ýerine ýetirýän wagty ulanylýar",
 	"a user": "ulanyjy",
 	"About": "Barada",
