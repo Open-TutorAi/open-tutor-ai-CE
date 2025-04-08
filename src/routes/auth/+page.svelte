@@ -7,8 +7,8 @@
 	import { getBackendConfig } from '$lib/apis';
 	import { ldapUserSignIn, getSessionUser, userSignIn, userSignUp } from '$lib/apis/auths';
 
-	import { WEBUI_API_BASE_URL, WEBUI_BASE_URL } from '$lib/constants';
-	import { WEBUI_NAME, config, user, socket } from '$lib/stores';
+	import { TUTOR_API_BASE_URL, TUTOR_BASE_URL } from '$lib/constants';
+	import { TUTOR_NAME, config, user, socket } from '$lib/stores';
 
 	import { generateInitialsImage, canvasPixelTest } from '$lib/utils';
 
@@ -186,7 +186,7 @@
 				<div class="flex items-center justify-center mb-3">
 					<img
 						crossorigin="anonymous"
-						src="{WEBUI_BASE_URL}/static/splash.png"
+						src="{TUTOR_BASE_URL}/static/splash.png"
 						class="w-28 h-28 rounded-full bg-white p-3 shadow-lg"
 						alt="logo"
 					/>
@@ -195,7 +195,7 @@
 				<!-- Title Section -->
 				
 					<p class="text-3xl font-extrabold font-InstrumentSerif text-center leading-snug">
-						{$i18n.t('Bienvenue sur')} 
+						{$i18n.t('Welcome to')} 
 						<span class="text-cyan-300">OpenTutorAI</span>
 					</p>
 					<p class="text-md opacity-95 font-InstrumentSerif text-center italic mt-2">
@@ -220,7 +220,7 @@
 						<div class="text-center mb-6">
 							<div class="flex items-center justify-center gap-3 text-xl sm:text-2xl font-semibold dark:text-gray-200">
 								<div>
-									{$i18n.t('Signing in to {{WEBUI_NAME}}', { WEBUI_NAME: $WEBUI_NAME })}
+									{$i18n.t('Signing in to {{TUTOR_NAME}}', { TUTOR_NAME: $TUTOR_NAME })}
 								</div>
 								<div>
 									<Spinner />
@@ -421,7 +421,7 @@
 									<button
 										class="w-full flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md py-2.5 px-4 text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
 										on:click={() => {
-											window.location.href = `${WEBUI_BASE_URL}/oauth/google/login`;
+											window.location.href = `${TUTOR_BASE_URL}/oauth/google/login`;
 										}}
 									>
 										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="h-5 w-5 mr-3">

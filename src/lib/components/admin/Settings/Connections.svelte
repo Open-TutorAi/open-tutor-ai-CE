@@ -347,7 +347,7 @@
 							{$i18n.t('Trouble accessing Ollama?')}
 							<a
 								class=" text-gray-300 font-medium underline"
-								href="https://github.com/open-webui/open-webui#troubleshooting"
+								href="https://github.com/pr-elhajji/open-tutor-ai-CE#troubleshooting"
 								target="_blank"
 							>
 								{$i18n.t('Click here for help.')}

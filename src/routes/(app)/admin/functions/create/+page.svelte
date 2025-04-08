@@ -8,7 +8,7 @@
 	import FunctionEditor from '$lib/components/admin/Functions/FunctionEditor.svelte';
 	import { getModels } from '$lib/apis';
 	import { compareVersion, extractFrontmatter } from '$lib/utils';
-	import { WEBUI_VERSION } from '$lib/constants';
+	import { TUTOR_VERSION } from '$lib/constants';
 
 	const i18n = getContext('i18n');
 
@@ -20,14 +20,14 @@
 		console.log(data);
 
 		const manifest = extractFrontmatter(data.content);
-		if (compareVersion(manifest?.required_open_webui_version ?? '0.0.0', WEBUI_VERSION)) {
+		if (compareVersion(manifest?.required_open_TUTOR_VERSION ?? '0.0.0', TUTOR_VERSION)) {
 			console.log('Version is lower than required');
 			toast.error(
 				$i18n.t(
-					'Open WebUI version (v{{OPEN_WEBUI_VERSION}}) is lower than required version (v{{REQUIRED_VERSION}})',
+					'Open TutorAI version (v{{OPEN_TUTOR_VERSION}}) is lower than required version (v{{REQUIRED_VERSION}})',
 					{
-						OPEN_WEBUI_VERSION: WEBUI_VERSION,
-						REQUIRED_VERSION: manifest?.required_open_webui_version ?? '0.0.0'
+						OPEN_TUTOR_VERSION: TUTOR_VERSION,
+						REQUIRED_VERSION: manifest?.required_open_TUTOR_VERSION ?? '0.0.0'
 					}
 				)
 			);

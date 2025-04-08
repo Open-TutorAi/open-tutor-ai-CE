@@ -7,7 +7,7 @@
 ![GitHub language count](https://img.shields.io/github/languages/count/pr-elhajji/open-tutor-ai-CE)
 ![GitHub top language](https://img.shields.io/github/languages/top/pr-elhajji/open-tutor-ai-CE)
 ![GitHub last commit](https://img.shields.io/github/last-commit/pr-elhajji/open-tutor-ai-CE)
-[![Discord](https://img.shields.io/badge/Discord-Open_TutorAI-blue?logo=discord&logoColor=white)](https://discord.gg/KJHC5PcT)
+[![Discord](https://img.shields.io/badge/Discord-Open_TutorAI-blue?logo=discord&logoColor=white)](https://discord.gg/z5fMfrBzEF)
 
 
 
@@ -54,7 +54,7 @@ For more information, be sure to check out our [Open TutorAI Documentation](http
 
 - 🌐🌍 **Multilingual Support**: Experience Open TutorAI in your preferred language with our internationalization (i18n) support. Join us in expanding our supported languages! We're actively seeking contributors!
 
-- 🧩 **Pipelines, Open TutorAI Plugin Support**: Seamlessly integrate custom logic and Python libraries into Open TutorAI using [Pipelines Plugin Framework](https://github.com/open-tutorai/pipelines). Launch your Pipelines instance, set the OpenAI URL to the Pipelines URL, and explore endless possibilities. [Examples](https://github.com/open-tutorai/pipelines/tree/main/examples) include **Function Calling**, User **Rate Limiting** to control access, **Usage Monitoring** with tools like Langfuse, **Live Translation with LibreTranslate** for multilingual support, **Toxic Message Filtering** and much more.
+- 🧩 **Pipelines, Open TutorAI Plugin Support**: Seamlessly integrate custom logic and Python libraries into Open TutorAI using [Pipelines Plugin Framework](#). Launch your Pipelines instance, set the OpenAI URL to the Pipelines URL, and explore endless possibilities. [Examples](#) include **Function Calling**, User **Rate Limiting** to control access, **Usage Monitoring** with tools like Langfuse, **Live Translation with LibreTranslate** for multilingual support, **Toxic Message Filtering** and much more.
 
 - 🌟 **Continuous Updates**: We are committed to improving Open TutorAI with regular updates, fixes, and new features.
 
@@ -151,15 +151,15 @@ After installation, you can access Open TutorAI at [http://localhost:3000](http:
 
 ### Other Installation Methods
 
-We offer various installation alternatives, including non-Docker native installation methods, Docker Compose, Kustomize, and Helm. Visit our [Open TutorAI Documentation](https://docs.########.com/getting-started/) or join our [Discord community](https://discord.gg/KJHC5PcT) for comprehensive guidance.
+We offer various installation alternatives, including non-Docker native installation methods, Docker Compose, Kustomize, and Helm. Visit our [Open TutorAI Documentation](https://docs.########.com/getting-started/) or join our [Discord community](https://discord.gg/z5fMfrBzEF) for comprehensive guidance.
 
 ### Troubleshooting
 
-Encountering connection issues? Our [Open TutorAI Documentation](https://docs.opentutorai.com/troubleshooting/) has got you covered. For further assistance and to join our vibrant community, visit the [Open TutorAI Discord](https://discord.gg/KJHC5PcT).
+Encountering connection issues? Our [Open TutorAI Documentation](https://docs.opentutorai.com/troubleshooting/) has got you covered. For further assistance and to join our vibrant community, visit the [Open TutorAI Discord](https://discord.gg/z5fMfrBzEF).
 
 #### Open TutorAI: Server Connection Error
 
-If you're experiencing connection issues, it’s often due to the WebUI docker container not being able to reach the Ollama server at 127.0.0.1:11434 (host.docker.internal:11434) inside the container . Use the `--network=host` flag in your docker command to resolve this. Note that the port changes from 3000 to 8080, resulting in the link: `http://localhost:8080`.
+If you're experiencing connection issues, it’s often due to the TutorAI docker container not being able to reach the Ollama server at 127.0.0.1:11434 (host.docker.internal:11434) inside the container . Use the `--network=host` flag in your docker command to resolve this. Note that the port changes from 3000 to 8080, resulting in the link: `http://localhost:8080`.
 
 **Example Docker Command**:
 
@@ -209,7 +209,7 @@ This project is licensed under the [BSD-3-Clause License](LICENSE) - see the [LI
 ## Support 💬
 
 If you have any questions, suggestions, or need assistance, please open an issue or join our
-[Open TutorAI Discord community](https://discord.gg/KJHC5PcT) to connect with us! 🤝
+[Open TutorAI Discord community](https://discord.gg/z5fMfrBzEF) to connect with us! 🤝
 
 ## Star History
 

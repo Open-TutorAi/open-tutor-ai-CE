@@ -4,7 +4,7 @@
     import { cubicOut } from 'svelte/easing';
     const i18n = getContext('i18n');
 
-    import { WEBUI_BASE_URL } from '$lib/constants';
+    import { TUTOR_BASE_URL } from '$lib/constants';
 
     import Marquee from './common/Marquee.svelte';
     import SlideShow from './common/SlideShow.svelte';
@@ -75,12 +75,12 @@
     >
         <img 
             crossorigin="anonymous" 
-            src="{WEBUI_BASE_URL}/static/favicon.png" 
+            src="{TUTOR_BASE_URL}/static/favicon.png" 
             class="w-8 h-8 rounded-full" 
-            alt="OpenTutorAI logo" 
+            alt="Open TutorAI logo" 
             on:load={handleImagesLoaded}
         />
-        <span class="text-lg font-semibold">{$i18n.t('Welcome to')} OpenTutorAI</span>
+        <span class="text-lg font-semibold">{$i18n.t('Welcome to')} Open TutorAI</span>
     </div>
 
     <!-- Skip to content button for screen readers -->
