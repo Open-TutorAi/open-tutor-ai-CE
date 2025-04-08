@@ -179,7 +179,7 @@
                             <button
                                 on:click={() => setActivePage(currentRole, item.id)}
                                 class={`flex items-center px-4 py-3 rounded-lg w-full text-left transition-colors duration-200 ${currentActivePage === item.id ? 'bg-blue-500 text-white' : 'text-gray-800 hover:bg-gray-200'}`}
-                                title={item.label}
+                                title={$i18n.t(item.label)}
                             >
                                 <span class="grid place-items-center w-6 h-6">
                                     <svelte:component this={item.icon} />
