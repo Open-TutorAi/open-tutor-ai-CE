@@ -2135,10 +2135,10 @@
 />
 
 <div
-	class="h-screen max-h-[100dvh] transition-width duration-200 ease-in-out {$showSidebar
-		? '  md:max-w-[calc(100%-260px)]'
-		: ' '} w-full max-w-full flex flex-col"
-	id="chat-container"
+		class="h-screen max-h-[100dvh] transition-width duration-200 ease-in-out bg-[#F5F7F9] dark:bg-inherit {$showSidebar
+		? 'md:max-w-[calc(100%-260px)]'
+		: ''} w-full max-w-full flex flex-col"
+		id="chat-container"
 >
 	{#if chatIdProp === '' || (!loading && chatIdProp)}
 		{#if $settings?.backgroundImageUrl ?? null}
@@ -2237,7 +2237,7 @@
 										on:speechend={() => avatarSpeaking = false}
 									/>
 								</div>
-								<div class="w-full pt-2 bg-white dark:bg-gray-900 relative z-20">
+								<div class="w-full pt-2 bg-[#F5F7F9] dark:bg-gray-900 relative z-20">
 									<MessageInput
 										{history}
 										{selectedModels}
@@ -2296,7 +2296,7 @@
 										/>
 									</div>
 								</div>
-								<div class="w-full pt-2 bg-white dark:bg-gray-900 relative z-20">
+								<div class="w-full pt-2 bg-[#F5F7F9] dark:bg-gray-900 relative z-20">
 									<MessageInput
 										{history}
 										{selectedModels}
