@@ -1,5 +1,6 @@
 import { TUTOR_API_BASE_URL } from '$lib/constants';
 
+
 export interface Feedback {
     id: string;
     user_id: string;
@@ -23,6 +24,7 @@ export const getAllFeedbacks = async (token: string): Promise<Feedback[]> => {
     let error = null;
 
     const res = await fetch(`${TUTOR_API_BASE_URL}/evaluations/feedbacks/all`, {
+
         method: 'GET',
         headers: {
             Accept: 'application/json',
