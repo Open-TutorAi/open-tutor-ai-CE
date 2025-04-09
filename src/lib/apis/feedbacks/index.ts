@@ -1,4 +1,4 @@
-import { TUTOR_BASE_URL } from '$lib/constants';
+import { TUTOR_API_BASE_URL } from '$lib/constants';
 
 export interface Feedback {
     id: string;
@@ -22,7 +22,7 @@ export interface Feedback {
 export const getAllFeedbacks = async (token: string): Promise<Feedback[]> => {
     let error = null;
 
-    const res = await fetch(`${TUTOR_BASE_URL}/evaluations/feedbacks/all`, {
+    const res = await fetch(`${TUTOR_API_BASE_URL}/evaluations/feedbacks/all`, {
         method: 'GET',
         headers: {
             Accept: 'application/json',
