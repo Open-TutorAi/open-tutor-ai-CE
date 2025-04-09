@@ -8,7 +8,7 @@ from open_webui.config import CORS_ALLOW_ORIGIN
 
 # Version info
 VERSION = "1.0.0"
-WEBUI_BUILD_HASH = os.getenv("WEBUI_BUILD_HASH", "dev-build")
+TUTORAI_BUILD_HASH = os.getenv("TUTORAI_BUILD_HASH", "dev-build")
 
 print(
     rf"""
@@ -21,7 +21,7 @@ print(
 
 
 v{VERSION} - building the best open-source AI user interface.
-{f"Commit: {WEBUI_BUILD_HASH}" if WEBUI_BUILD_HASH != "dev-build" else ""}
+{f"Commit: {TUTORAI_BUILD_HASH}" if TUTORAI_BUILD_HASH != "dev-build" else ""}
 https://github.com/open-tutor-ai/open-tutor-ai
 """
 )
