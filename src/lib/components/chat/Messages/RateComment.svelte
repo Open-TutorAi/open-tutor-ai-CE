@@ -54,6 +54,8 @@
 		'🌟' // 10 - Very helpful
 	];
 
+	let isSubmitting = false;
+
 	$: if (message?.annotation?.rating === 1) {
 		reasons = LIKE_REASONS;
 	} else if (message?.annotation?.rating === -1) {
@@ -100,6 +102,8 @@
 		// 	return;
 		// }
 
+		isSubmitting = true;
+		
 		dispatch('save', {
 			reason: selectedReason,
 			comment: comment,
@@ -111,6 +115,9 @@
 
 		toast.success($i18n.t('Thanks for your feedback!'));
 		show = false;
+		setTimeout(() => {
+			isSubmitting = false;
+		}, 300);
 	};
 </script>
 
@@ -127,7 +134,7 @@
 	id="message-feedback-{message.id}"
 >
 	<div class="flex justify-between items-center">
-		<div class="text-sm font-medium">{$i18n.t('How helpful was this response for your learning?')}</div>
+		<div class="text-sm font-medium">{$i18n.t('How helpful was this response for you?')}</div>
 
 		<button
 			on:click={() => {
@@ -149,11 +156,11 @@
 
 	<div class="w-full flex justify-center">
 		<div class=" relative w-fit ">
-			<div class="mt-1.5 w-fit flex gap-0.5 pb-5">
+			<div class="mt-4 w-fit flex gap-0.5 pb-5">
 				<!-- Emoji scale instead of 1-10 -->
 				{#each Array.from({ length: 10 }).map((_, i) => i + 1) as rating}
 					<button
-						class="size-8 text-lg border border-gray-100 dark:border-gray-850 hover:bg-gray-50 dark:hover:bg-gray-850 {detailedRating ===
+						class="size-7 text-lg border border-gray-100 dark:border-gray-850 hover:bg-gray-50 dark:hover:bg-gray-850 {detailedRating ===
 						rating
 							? 'bg-gray-100 dark:bg-gray-800'
 							: ''} transition rounded-full disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-white dark:disabled:bg-gray-900 flex items-center justify-center"
@@ -182,7 +189,7 @@
 
 	<div>
 		{#if reasons.length > 0}
-			<div class="text-sm mt-1.5 font-medium">{$i18n.t('Why?')}</div>
+			<div class="text-sm mt-4 font-medium">{$i18n.t('Why?')}</div>
 
 			<div class="flex flex-wrap gap-1.5 text-sm mt-1.5">
 				{#each reasons as reason}
@@ -257,7 +264,7 @@
 		</div>
 
 		<button
-			class="px-3 py-1.5 text-sm font-medium bg-black hover:bg-gray-900 text-white dark:bg-white dark:text-black dark:hover:bg-gray-100 transition rounded-full"
+			class="px-3.5 py-1.5 text-sm font-medium bg-black hover:bg-gray-900 text-white dark:bg-white dark:text-black dark:hover:bg-gray-100 transition rounded-full"
 			on:click={() => {
 				saveHandler();
 			}}
