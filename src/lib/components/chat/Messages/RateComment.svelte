@@ -134,7 +134,7 @@
 	id="message-feedback-{message.id}"
 >
 	<div class="flex justify-between items-center">
-		<div class="text-sm font-medium">{$i18n.t('How helpful was this response for you?')}</div>
+		<div class="text-sm font-medium">{$i18n.t('How helpful was this response for your learning?')}</div>
 
 		<button
 			on:click={() => {

@@ -138,7 +138,7 @@
 	<div class="flex-auto w-0 max-w-full pl-1 pt-2">
 		<div class="w-full">
 			<div class="flex justify-end items-start gap-3">
-				<div class="flex items-start max-w-full bg-white rounded-lg shadow-md py-2 px-4">
+				<div class="flex items-start max-w-full bg-white dark:bg-gray-900 rounded-lg shadow-md py-2 px-4">
 					{#if !readOnly}
 						<button
 							class="p-1.5 text-gray-400 hover:text-gray-600 transition edit-user-message-button"
@@ -203,8 +203,8 @@
 			{/if}
 
 			{#if edit === true}
-				<div class="w-full bg-white rounded-lg shadow-md px-5 py-3 mb-2">
-					<div class="max-h-96 overflow-auto">
+				<div class="w-full bg-white dark:bg-gray-800 rounded-lg shadow-md px-5 py-3 mb-2">
+					<div class="max-h-96 overflow-auto ">
 						<textarea
 							id="message-edit-{message.id}"
 							bind:this={messageEditTextAreaElement}
