@@ -9,9 +9,7 @@
 ![GitHub last commit](https://img.shields.io/github/last-commit/pr-elhajji/open-tutor-ai-CE)
 [![Discord](https://img.shields.io/badge/Discord-Open_TutorAI-blue?logo=discord&logoColor=white)](https://discord.gg/z5fMfrBzEF)
 
-
-
-**OpenTutorAI-CE** (Community Edition) is an open-source project designed to provide an educational and collaborative AI-powered platform. This public edition is the foundation for a proprietary Enterprise Edition (EE) and is built to encourage community contributions.
+**OpenTutorAI-CE ** (Community Edition) is an open-source project designed to provide an educational and collaborative AI-powered platform. This public edition is the foundation for a proprietary Enterprise Edition (EE) and is built to encourage community contributions.
 
 > [!TIP]  
 > **Looking for an [Enterprise Plan](https://docs.opentutorai.com/enterprise)?** – **[Speak with Our Sales Team Today!](mailto:sales@oepntutorai.com)**
@@ -210,6 +208,7 @@ This project is licensed under the [BSD-3-Clause License](LICENSE) - see the [LI
 
 If you have any questions, suggestions, or need assistance, please open an issue or join our
 [Open TutorAI Discord community](https://discord.gg/z5fMfrBzEF) to connect with us! 🤝
+
 
 ## Star History
 

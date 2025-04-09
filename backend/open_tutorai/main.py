@@ -18,9 +18,8 @@ print(
 ██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║       ██║   ██║   ██║   ██║   ██║   ██║██╔══██║  ██╔══██║██║
 ╚██████╔╝██║     ███████╗██║ ╚████║       ██║   ╚██████╔╝   ██║   ╚██████╔╝██║  ██║  ██║  ██║██║
  ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝       ╚═╝    ╚═════╝    ╚═╝    ╚═════╝ ╚═╝  ╚═╝  ╚═╝  ╚═╝╚═╝
-
-
 v{VERSION} - building the best open-source AI user interface.
+
 {f"Commit: {TUTORAI_BUILD_HASH}" if TUTORAI_BUILD_HASH != "dev-build" else ""}
 https://github.com/open-tutor-ai/open-tutor-ai
 """
@@ -51,4 +50,5 @@ app.mount("/", webui_app)
 
 # Include routers of open_tutorai
 app.include_router(response_feedbacks.router, prefix="/api/v1", tags=["response-feedbacks"])
+
 
