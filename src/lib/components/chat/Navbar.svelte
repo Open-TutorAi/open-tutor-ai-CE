@@ -24,6 +24,8 @@
 	import UserMenu from '$lib/components/layout/Sidebar/UserMenu.svelte';
 	import MenuLines from '../icons/MenuLines.svelte';
 	import AdjustmentsHorizontal from '../icons/AdjustmentsHorizontal.svelte';
+	import ChatBubbleOval from '../icons/ChatBubbleOval.svelte';
+	import User from '../icons/User.svelte';
 
 	import PencilSquare from '../icons/PencilSquare.svelte';
 
@@ -32,6 +34,8 @@
 	export let initNewChat: Function;
 	export let title: string = $TUTOR_NAME;
 	export let shareEnabled: boolean = false;
+	export let avatarActive: boolean = false;
+	export let toggleAvatar: Function;
 
 	export let chat;
 	export let selectedModels;
@@ -188,6 +192,38 @@
 						</button>
 					</UserMenu>
 				{/if}
+			</div>
+
+			<!-- Center section with avatar toggle -->
+			<div class="flex justify-center items-center absolute left-1/2 transform -translate-x-1/2" style="top: 40px; z-index: 20;">
+				<div class="hidden md:block">
+					<button
+						id="avatar-toggle-button"
+						class="relative h-7 w-36 rounded-full bg-blue-500 text-white cursor-pointer overflow-hidden transition-all duration-300 shadow-md hover:shadow-lg"
+						on:click={() => {
+							toggleAvatar();
+						}}
+					>
+						<!-- Container for the toggle -->
+						<div class="absolute inset-0 flex items-center">
+							<!-- Left side label -->
+							<div class="w-1/2 h-full flex items-center justify-center">
+								<span class="font-medium uppercase text-xs">{$i18n.t('Avatar')}</span>
+							</div>
+							
+							<!-- Right side label -->
+							<div class="w-1/2 h-full flex items-center justify-center">
+								<span class="font-medium uppercase text-xs">{$i18n.t('Text')}</span>
+							</div>
+							
+							<!-- Sliding white pill that moves left/right -->
+							<div 
+								class="absolute h-5 w-16 bg-white rounded-full flex items-center justify-center transition-transform duration-300"
+								style="transform: translateX({avatarActive ? '68px' : '4px'});"
+							></div>
+						</div>
+					</button>
+				</div>
 			</div>
 		</div>
 	</div>
