@@ -206,23 +206,30 @@
 						toggleAvatar();
 					}}
 				>
-					<!-- Container for the toggle -->
-					<div class="absolute inset-0 flex items-center">
-						<!-- Left side label -->
-						<div class="w-1/2 h-full flex items-center justify-center">
-							<span class="font-medium uppercase text-[10px] sm:text-xs">{$i18n.t('Avatar')}</span>
-						</div>
-						
-						<!-- Right side label -->
-						<div class="w-1/2 h-full flex items-center justify-center">
-							<span class="font-medium uppercase text-[10px] sm:text-xs">{$i18n.t('Chat')}</span>
-						</div>
-						
-						<!-- Sliding white pill that moves left/right -->
+					<!-- Container for the toggle with a different approach -->
+					<div class="relative flex items-center h-full">
+						<!-- Sliding white background -->
 						<div 
-							class="absolute h-4 sm:h-5 w-12 sm:w-16 bg-white rounded-full flex items-center justify-center transition-transform duration-300"
-							style="transform: translateX({avatarActive ? '52px' : '4px'});"
+							class="absolute h-5/6 w-1/2 bg-white dark:bg-gray-200 rounded-full 
+                                   transition-transform duration-300 ease-in-out"
+							style="transform: translateX({avatarActive ? '0%' : '100%'});"
 						></div>
+						
+						<!-- Left side label - Avatar -->
+						<div class="w-1/2 h-full flex items-center justify-center z-10">
+							<span class="font-medium uppercase text-[10px] sm:text-xs transition-colors duration-300"
+                                  style="color: {avatarActive ? '#3B82F6' : 'white'}">
+                                {$i18n.t('Avatar')}
+                            </span>
+						</div>
+						
+						<!-- Right side label - Chat -->
+						<div class="w-1/2 h-full flex items-center justify-center z-10">
+							<span class="font-medium uppercase text-[10px] sm:text-xs transition-colors duration-300"
+                                  style="color: {avatarActive ? 'white' : '#3B82F6'}">
+                                {$i18n.t('Chat')}
+                            </span>
+						</div>
 					</div>
 				</button>
 			</div>
