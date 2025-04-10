@@ -1,18 +1,19 @@
 <!-- student/support/+page.svelte -->
 <script lang="ts">
-	import { onMount, getContext } from 'svelte';
-	const i18n = getContext('i18n');
+	import { getContext } from 'svelte';
+
+    const i18n = getContext('i18n');
 
 	
 	// Step Navigation
 	const steps = [
-		{ id: 'subject', label: $i18n.t('Subject') },
-		{ id: 'course', label: $i18n.t('Course') },
-		{ id: 'objectives', label: $i18n.t('Objectives') },
-		{ id: 'level', label: $i18n.t('Level') },
-		{ id: 'details', label: $i18n.t('Details') },
-		{ id: 'avatar', label: $i18n.t('Avatar') },
-		{ id: 'review', label: $i18n.t('Review') }
+		{ id: 'subject', label: 'Subject' },
+		{ id: 'course', label: 'Course' },
+		{ id: 'objectives', label: 'Objectives' },
+		{ id: 'level', label: 'Level' },
+		{ id: 'details', label: 'Details' },
+		{ id: 'avatar', label: 'Avatar' },
+		{ id: 'review', label: 'Review' }
 	];
 	
 	let currentStep = 0;
@@ -29,19 +30,19 @@
 	let learningObjective = '';
 	let selectedLearningType: string[] = [];
 	const learningTypes = [
-		{ id: 'conceptual', name: $i18n.t('Conceptual'), icon: '🧠' },
-		{ id: 'practical', name: $i18n.t('Practical'), icon: '🔧' },
-		{ id: 'analytical', name: $i18n.t('Analytical'), icon: '📊' },
-		{ id: 'problem-solving', name: $i18n.t('Problem Solving'), icon: '💡' }
+		{ id: 'conceptual', name: 'Conceptual', icon: '🧠' },
+		{ id: 'practical', name: 'Practical', icon: '🔧' },
+		{ id: 'analytical', name: 'Analytical', icon: '📊' },
+		{ id: 'problem-solving', name: 'Problem Solving', icon: '💡' }
 	];
 	
 	// Learning level data
 	let selectedLevel = '';
 	const learningLevels = [
-		{ id: 'primary', name: $i18n.t('Primary school'), description: $i18n.t('Foundational learning for young minds'), color: 'green' },
-		{ id: 'middle', name: $i18n.t('Middle school'), description: $i18n.t('Building critical thinking'), color: 'yellow' },
-		{ id: 'high', name: $i18n.t('High school'), description: $i18n.t('Preparing students for advanced studies'), color: 'orange' },
-		{ id: 'university', name: $i18n.t('University'), description: $i18n.t('Expert-level guidance'), color: 'red' }
+		{ id: 'primary', name: 'Primary school', description: 'Foundational learning for young minds', color: 'green' },
+		{ id: 'middle', name: 'Middle school', description: 'Building critical thinking', color: 'yellow' },
+		{ id: 'high', name: 'High school', description: 'Preparing students for advanced studies', color: 'orange' },
+		{ id: 'university', name: 'University', description: 'Expert-level guidance', color: 'red' }
 	];
 	
 	// Details data
@@ -54,13 +55,13 @@
 	let endDate = '';
 	
 	// Content languages
-	const languages = [$i18n.t('English'), $i18n.t('French'), $i18n.t('Arabic'), $i18n.t('Spanish'), $i18n.t('German')];
+	const languages = ['English', 'French', 'Arabic', 'Spanish', 'German'];
 	
 	// Duration options
 	const durations = ['15min', '30min', '45min', '1h', '1h30min', '2h'];
 	
 	// Access types
-	const accessTypes = [$i18n.t('Private'), $i18n.t('Public'), $i18n.t('Shared')];
+	const accessTypes = ['Private', 'Public', 'Shared'];
 	
 	// Add keyword
 	function addKeyword() {
@@ -142,15 +143,15 @@
 	
 	// Predefined subjects
 	const subjects = [
-		{ id: 'mathematics', name: $i18n.t('Mathematics'), icon: '📊' },
-		{ id: 'science', name: $i18n.t('Science'), icon: '🔬' },
-		{ id: 'history', name: $i18n.t('History'), icon: '🏛️' },
-		{ id: 'computer-science', name: $i18n.t('Computer Science'), icon: '💻' },
-        { id: 'english', name: $i18n.t('English'), icon: '📚' },
-        { id: 'Geography', name: $i18n.t('Geography'), icon: '🌍' },
-        { id: 'Chemistry', name: $i18n.t('Chemistry'), icon: '🔬' },
-        { id: 'Biology', name: $i18n.t('Biology'), icon: '🌿' },
-        { id: 'Physics', name: $i18n.t('Physics'), icon: '⚛️' }
+		{ id: 'mathematics', name: 'Mathematics', icon: '📊' },
+		{ id: 'science', name: 'Science', icon: '🔬' },
+		{ id: 'history', name: 'History', icon: '🏛️' },
+		{ id: 'computer-science', name: 'Computer Science', icon: '💻' },
+        { id: 'english', name: 'English', icon: '📚' },
+        { id: 'Geography', name: 'Geography', icon: '🌍' },
+        { id: 'Chemistry', name: 'Chemistry', icon: '🔬' },
+        { id: 'Biology', name: 'Biology', icon: '🌿' },
+        { id: 'Physics', name: 'Physics', icon: '⚛️' }
 	];
 	
 	// Subject pagination
@@ -268,7 +269,7 @@
 								{/if}
 							</div>
 							<span class="absolute top-full mt-1 left-1/2 transform -translate-x-1/2 text-xs font-medium whitespace-nowrap" class:text-blue-600={index === currentStep} class:dark:text-blue-400={index === currentStep} class:text-gray-500={index !== currentStep} class:dark:text-gray-400={index !== currentStep}>
-								{step.label}
+								{$i18n.t(step.label)}
 							</span>
 						</div>
 					{/each}
@@ -307,7 +308,7 @@
 						
 						<div>
 							<label class="block text-gray-800 dark:text-gray-200 font-medium mb-4">
-								{$i18n.t('Choose a subject you\'d like to study')} <span class="text-red-500">*</span>
+								{$i18n.t("Choose a subject you'd like to study")} <span class="text-red-500">*</span>
 							</label>
 							
 							<div class="relative">
@@ -330,7 +331,7 @@
 											on:click={() => selectedSubject = subject.id}
 										>
 											<span class="text-4xl mb-2">{subject.icon}</span>
-											<span class="text-sm text-gray-800 dark:text-gray-200">{subject.name}</span>
+											<span class="text-sm text-gray-800 dark:text-gray-200">{$i18n.t(subject.name)}</span>
 										</button>
 									{/each}
 								</div>
@@ -407,7 +408,7 @@
 													class={`text-xs px-3 py-1 rounded-md transition-colors ${selectedCourse === course.id ? 'bg-green-500 hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600'} text-white`}
 													on:click={() => selectedCourse = course.id}
 												>
-													{selectedCourse === course.id ? 'Selected' : 'Select'}
+													{selectedCourse === course.id ? $i18n.t('Selected') : $i18n.t('Select')}
 												</button>
 											</div>
 										</div>
@@ -428,7 +429,7 @@
 						</div>
 						
 						<div class="mt-8">
-							<h4 class="text-gray-700 dark:text-gray-300 mb-4">Or Attach Any course Materiel</h4>
+							<h4 class="text-gray-700 dark:text-gray-300 mb-4">{$i18n.t("Or Attach Any course Materiel")}</h4>
 							
 							<!-- File upload area -->
 							<div 
@@ -452,12 +453,12 @@
 										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
 									</svg>
 									
-									<p class="text-gray-600 dark:text-gray-300 mb-1">Click to upload or drag and drop files</p>
-									<p class="text-gray-500 dark:text-gray-400 text-xs">PDF, DOCX, PPTX, MP4 (max 50MB)</p>
+									<p class="text-gray-600 dark:text-gray-300 mb-1">{$i18n.t("Click to upload or drag and drop files")}</p>
+									<p class="text-gray-500 dark:text-gray-400 text-xs">{$i18n.t("PDF, DOCX, PPTX, MP4 (max 50MB)")}</p>
 									
 									{#if uploadedFiles.length > 0}
 										<div class="mt-4 p-2 bg-blue-50 dark:bg-blue-900/20 rounded w-full max-w-md">
-											<p class="text-sm text-blue-700 dark:text-blue-300 font-medium">{uploadedFiles.length} file(s) selected</p>
+											<p class="text-sm text-blue-700 dark:text-blue-300 font-medium">{uploadedFiles.length} {$i18n.t("file(s) selected")}</p>
 											<ul class="text-xs text-left mt-1 max-h-16 overflow-y-auto">
 												{#each uploadedFiles as file}
 													<li class="truncate text-gray-600 dark:text-gray-300">{file.name}</li>
@@ -518,7 +519,7 @@
 										}}
 									>
 										<span class="mr-2">{type.icon}</span>
-										{type.name}
+										{$i18n.t(type.name)}
 									</button>
 								{/each}
 							</div>
@@ -539,8 +540,8 @@
 								>
 									<span class={`w-4 h-4 rounded-full mr-3 ${level.color === 'green' ? 'bg-green-500' : level.color === 'red' ? 'bg-red-500' : level.color === 'orange' ? 'bg-orange-500' : 'bg-yellow-500'}`}></span>
 									<div class="text-left">
-										<h4 class="font-medium text-gray-800 dark:text-gray-200">{level.name}</h4>
-										<p class="text-sm text-gray-500 dark:text-gray-400">{level.description}</p>
+										<h4 class="font-medium text-gray-800 dark:text-gray-200">{$i18n.t(level.name)}</h4>
+										<p class="text-sm text-gray-500 dark:text-gray-400">{$i18n.t(level.description)}</p>
 									</div>
 								</button>
 							{/each}
@@ -561,7 +562,7 @@
 										class="appearance-none w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white pr-8"
 									>
 										{#each languages as language}
-											<option value={language}>{language}</option>
+											<option value={language}>{$i18n.t(language)}</option>
 										{/each}
 									</select>
 								</div>
@@ -595,7 +596,7 @@
 										class="appearance-none w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white pr-8"
 									>
 										{#each accessTypes as type}
-											<option value={type}>{type}</option>
+											<option value={type}>{$i18n.t(type)}</option>
 										{/each}
 									</select>
 								</div>
@@ -667,14 +668,14 @@
 				{:else if currentStep === 5}
 					<!-- Avatar step placeholder -->
 					<div class="text-gray-800 dark:text-gray-200">
-						<h3 class="text-xl font-semibold mb-4">Choose Your Avatar</h3>
-						<p>This step would allow selecting a tutor avatar.</p>
+						<h3 class="text-xl font-semibold mb-4">{$i18n.t("Choose Your Avatar")}</h3>
+						<p>{$i18n.t("This step would allow selecting a tutor avatar.")}</p>
 					</div>
 				{:else if currentStep === 6}
 					<!-- Review step placeholder -->
 					<div class="text-gray-800 dark:text-gray-200">
-						<h3 class="text-xl font-semibold mb-4">Review Your Setup</h3>
-						<p>This step would show a summary of all selections.</p>
+						<h3 class="text-xl font-semibold mb-4">{$i18n.t("Review Your Setup")}</h3>
+						<p>{$i18n.t("This step would show a summary of all selections.")}</p>
 					</div>
 				{/if}
 			</div>
