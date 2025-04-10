@@ -21,7 +21,7 @@ print(
 v{VERSION} - building the best open-source AI user interface.
 
 {f"Commit: {TUTORAI_BUILD_HASH}" if TUTORAI_BUILD_HASH != "dev-build" else ""}
-https://github.com/open-tutor-ai/open-tutor-ai
+https://github.com/pr-elhajji/open-tutor-ai-CE
 """
 )
 
