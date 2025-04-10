@@ -53,15 +53,24 @@ vi.mock('$lib/stores', () => {
 // Mock context API with proper function syntax to avoid type errors
 vi.mock('svelte', async () => {
 	const actual = await vi.importActual('svelte');
+	const { writable } = await vi.importActual('svelte/store');
+
+	const mockI18nStore = writable({
+		t: (key) => key
+	});
+
 	return {
 		...actual,
-		getContext: () => ({
-			t: function (key) {
-				return key;
+		getContext: (key) => {
+			if (key === 'i18n') {
+				return mockI18nStore;
 			}
-		})
+			return {};
+		}
 	};
 });
+
+
 
 // Create a reference to the mock settings for tests to use
 const mockSettings = vi.mocked(await import('$lib/stores')).settings;
