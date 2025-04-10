@@ -45,8 +45,8 @@
 	
 	// Handle creating support
 	function handleCreateSupport() {
-		// Navigate to student chat page
-		goto('/student/chat');
+		// Navigate to student support page
+		goto('/student/support');
 		showSupportPopup = false;
 	}
 </script>

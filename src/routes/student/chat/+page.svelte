@@ -9,5 +9,5 @@
 </script>
 
 <div >
-		<Chat />
+    <!-- Expremental Chat component -->
 </div> 
