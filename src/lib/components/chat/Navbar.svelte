@@ -194,37 +194,39 @@
 				{/if}
 			</div>
 
-			<!-- Center section with avatar toggle -->
-			<div class="flex justify-center items-center absolute left-1/2 transform -translate-x-1/2" style="top: 40px; z-index: 20;">
-				<div class="hidden md:block">
-					<button
-						id="avatar-toggle-button"
-						class="relative h-7 w-36 rounded-full bg-blue-500 text-white cursor-pointer overflow-hidden transition-all duration-300 shadow-md hover:shadow-lg"
-						on:click={() => {
-							toggleAvatar();
-						}}
-					>
-						<!-- Container for the toggle -->
-						<div class="absolute inset-0 flex items-center">
-							<!-- Left side label -->
-							<div class="w-1/2 h-full flex items-center justify-center">
-								<span class="font-medium uppercase text-xs">{$i18n.t('Avatar')}</span>
-							</div>
-							
-							<!-- Right side label -->
-							<div class="w-1/2 h-full flex items-center justify-center">
-								<span class="font-medium uppercase text-xs">{$i18n.t('Learn')}</span>
-							</div>
-							
-							<!-- Sliding white pill that moves left/right -->
-							<div 
-								class="absolute h-5 w-16 bg-white rounded-full flex items-center justify-center transition-transform duration-300"
-								style="transform: translateX({avatarActive ? '68px' : '4px'});"
-							></div>
+			<!-- Center section with avatar toggle - Responsive for all devices -->
+			{#if shareEnabled || !!chat?.id}
+			<div class="absolute left-1/2 transform -translate-x-1/2 flex justify-center items-center z-20" 
+                 style="top: {$mobile ? '35px' : '40px'};">
+				<button
+					id="avatar-toggle-button"
+					class="relative h-6 sm:h-7 w-28 sm:w-36 rounded-full bg-blue-500 text-white cursor-pointer overflow-hidden 
+                           transition-all duration-300 shadow-md hover:shadow-lg"
+					on:click={() => {
+						toggleAvatar();
+					}}
+				>
+					<!-- Container for the toggle -->
+					<div class="absolute inset-0 flex items-center">
+						<!-- Left side label -->
+						<div class="w-1/2 h-full flex items-center justify-center">
+							<span class="font-medium uppercase text-[10px] sm:text-xs">{$i18n.t('Avatar')}</span>
 						</div>
-					</button>
-				</div>
+						
+						<!-- Right side label -->
+						<div class="w-1/2 h-full flex items-center justify-center">
+							<span class="font-medium uppercase text-[10px] sm:text-xs">{$i18n.t('Chat')}</span>
+						</div>
+						
+						<!-- Sliding white pill that moves left/right -->
+						<div 
+							class="absolute h-4 sm:h-5 w-12 sm:w-16 bg-white rounded-full flex items-center justify-center transition-transform duration-300"
+							style="transform: translateX({avatarActive ? '52px' : '4px'});"
+						></div>
+					</div>
+				</button>
 			</div>
+			{/if}
 		</div>
 	</div>
 </nav>

@@ -1242,13 +1242,12 @@
 	"Youtube": "YouTube",
 	"Youtube Loader Settings": "Paramètres de l'outil de téléchargemenent TouTube",
 	"Avatar": "Avatar",
-	"Learn": "Apprendre"
+	"Chat": "Discussion",
 	"Subject": "Sujet",
 	"Course": "Cours",
 	"Objectives": "Objectifs",
 	"Level": "Niveau",
 	"Details": "Détails",
-	"Avatar": "Avatar",
 	"Review": "Révision",	
 	"Conceptual": "Conceptuel",
 	"Practical": "Pratique",
@@ -1310,5 +1309,5 @@
 	"This step would show a summary of all selections.": "Cette étape afficherait un résumé de toutes les sélections.",	
 	"Next": "Suivant",
 	"Start": "Commencer",
-  "Personalized Support": "Support personnalisé"
+  	"Personalized Support": "Support personnalisé"
 }
