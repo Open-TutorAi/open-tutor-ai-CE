@@ -45,6 +45,8 @@ jobs:
         run: git diff --exit-code
 
       - name: Build Frontend
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
         run: npm run build
 
   test-frontend:
