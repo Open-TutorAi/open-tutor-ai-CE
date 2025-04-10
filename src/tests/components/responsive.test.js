@@ -9,7 +9,7 @@ vi.mock('$lib/stores', () => {
 	const mockSettings = {
 		subscribe: vi.fn((cb) => {
 			cb({});
-			return () => { };
+			return () => {};
 		}),
 		update: vi.fn((cb) => {
 			const updated = cb({});
@@ -21,26 +21,26 @@ vi.mock('$lib/stores', () => {
 		i18n: {
 			subscribe: vi.fn((cb) => {
 				cb({ t: (key) => key });
-				return () => { };
+				return () => {};
 			})
 		},
 		settings: mockSettings,
 		TUTOR_NAME: {
 			subscribe: vi.fn((cb) => {
 				cb('OpenTutorAI');
-				return () => { };
+				return () => {};
 			})
 		},
 		mobile: {
 			subscribe: vi.fn((cb) => {
 				cb(false);
-				return () => { };
+				return () => {};
 			})
 		},
 		config: {
 			subscribe: vi.fn((cb) => {
 				cb({});
-				return () => { };
+				return () => {};
 			})
 		}
 	};
@@ -65,9 +65,6 @@ vi.mock('svelte', async () => {
 		}
 	};
 });
-
-
-
 
 describe('Responsive Layout Tests', () => {
 	// Store original window dimensions
