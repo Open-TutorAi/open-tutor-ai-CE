@@ -40,15 +40,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Health check endpoint
 @app.get("/tutorai/health")
 async def health_check():
     return {"status": "okkay"}
 
+
 # Mount the entire OpenWebUI app
 app.mount("/", webui_app)
 
 # Include routers of open_tutorai
-app.include_router(response_feedbacks.router, prefix="/api/v1", tags=["response-feedbacks"])
-
-
+app.include_router(
+    response_feedbacks.router, prefix="/api/v1", tags=["response-feedbacks"]
+)
