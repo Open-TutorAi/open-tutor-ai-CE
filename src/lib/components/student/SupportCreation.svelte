@@ -319,7 +319,7 @@
 									on:click={prevSubjectPage}
 									disabled={subjectPageIndex === 0}
 								>
-									<span class="sr-only">Previous subjects</span>
+									<span class="sr-only">{i18n.t("Previous subjects")}</span>
 									&lt;
 								</button>
 								
@@ -343,7 +343,7 @@
 									on:click={nextSubjectPage}
 									disabled={subjectPageIndex >= totalSubjectPages - 1}
 								>
-									<span class="sr-only">More subjects</span>
+									<span class="sr-only">{i18n.t("More subjects")}</span>
 									&gt;
 								</button>
 							</div>
@@ -362,7 +362,7 @@
 				{:else if currentStep === 1}
 					<!-- Course step  -->
 					<div class="space-y-6">
-						<h3 class="text-xl font-medium text-gray-800 dark:text-gray-200">Select Your Base Course</h3>
+						<h3 class="text-xl font-medium text-gray-800 dark:text-gray-200">{i18n.t("Select Your Base Course")}</h3>
 						
 						<div class="relative">
 							<!-- Left arrow -->
@@ -372,7 +372,7 @@
 								on:click={prevCoursePage}
 								disabled={coursePageIndex === 0}
 							>
-								<span class="sr-only">Previous courses</span>
+								<span class="sr-only">{i18n.t("Previous courses")}</span>
 								&lt;
 							</button>
 							
@@ -423,7 +423,7 @@
 								on:click={nextCoursePage}
 								disabled={coursePageIndex >= totalCoursePages - 1}
 							>
-								<span class="sr-only">More courses</span>
+								<span class="sr-only">{i18n.t("More courses")}</span>
 								&gt;
 							</button>
 						</div>
