@@ -44,7 +44,7 @@
 <div class="flex gap-1.5">
 	<Tooltip
 		className="w-full relative"
-		content={$i18n.t(`WebUI will make requests to "{{url}}/api/chat"`, {
+		content={$i18n.t(`Open TutorAI will make requests to "{{url}}/api/chat"`, {
 			url
 		})}
 		placement="top-start"

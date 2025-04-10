@@ -275,7 +275,7 @@
 				'aboutus',
 				'softwareinfo',
 				'timothyjaeryangbaek',
-				'openwebui',
+				'opentutorai',
 				'release',
 				'updates',
 				'updateinfo',

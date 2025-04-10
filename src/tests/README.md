@@ -51,4 +51,4 @@ The test suite uses:
 
 Run `npm run test:coverage` to generate a coverage report. This will show which parts of the code are covered by tests and which need additional testing.
 
-The coverage report will be available in the `coverage/` directory after running the command. 
+The coverage report will be available in the `coverage/` directory after running the command.

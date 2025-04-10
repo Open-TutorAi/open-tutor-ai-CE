@@ -2,7 +2,7 @@
 name = "open-tutorai"
 description = "Open TutorAI"
 authors = [
-    { name = "Timothy Jaeryang Baek", email = "tim@openwebui.com" }
+    { name = "Mohamed El hajji", email = "tim@opentutorai.com" }
 ]
 license = { file = "LICENSE" }
 dependencies = [

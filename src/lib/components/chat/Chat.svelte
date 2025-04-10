@@ -12,7 +12,7 @@
 
 	import { get, type Unsubscriber, type Writable } from 'svelte/store';
 	import type { i18n as i18nType } from 'i18next';
-	import { WEBUI_BASE_URL } from '$lib/constants';
+	import { TUTOR_BASE_URL } from '$lib/constants';
 
 	import {
 		chatId,
@@ -23,7 +23,7 @@
 		tags as allTags,
 		settings,
 		showSidebar,
-		WEBUI_NAME,
+		TUTOR_NAME,
 		banners,
 		user,
 		socket,
@@ -138,7 +138,8 @@
 
 	// Make avatarActive reactive to settings changes
 	// This ensures avatarActive updates whenever settings.avatarEnabled changes
-	$: avatarActive = ($settings as any)?.avatarEnabled !== undefined ? ($settings as any).avatarEnabled : true;
+	$: avatarActive =
+		($settings as any)?.avatarEnabled !== undefined ? ($settings as any).avatarEnabled : true;
 	let avatarSpeaking = false;
 	let currentAvatarMessage = '';
 
@@ -565,7 +566,7 @@
 			fileItem.id = uploadedFile.id;
 			fileItem.size = file.size;
 			fileItem.collection_name = uploadedFile?.meta?.collection_name;
-			fileItem.url = `${WEBUI_API_BASE_URL}/files/${uploadedFile.id}`;
+			fileItem.url = `${TUTOR_API_BASE_URL}/files/${uploadedFile.id}`;
 
 			files = files;
 			toast.success($i18n.t('File uploaded successfully'));
@@ -773,7 +774,7 @@
 
 		if (userSettings) {
 			// Preserve avatarEnabled setting from the user's selection
-			const mergedSettings = {...userSettings.ui};
+			const mergedSettings = { ...userSettings.ui };
 			(mergedSettings as any).avatarEnabled = currentAvatarEnabled;
 			await settings.set(mergedSettings);
 		} else {
@@ -1516,20 +1517,24 @@
 		let avatarPersonality = '';
 		if (avatarActive && ($settings as any)?.selectedAvatarId) {
 			const selectedAvatarId = ($settings as any).selectedAvatarId;
-			
+
 			// Map of avatar personalities
 			const avatarPersonalities = {
-				'The Scholar': 'You are The Scholar: analytical, detail-oriented, methodical, and patient. You emphasize deep understanding of fundamental concepts and provide comprehensive explanations with historical context and precise terminology. Your communication style is clear, formal, and structured with thoughtful pauses. You use academic language and reference research when appropriate. If someone asks if you are a different avatar (like The Mentor, The Coach, or The Innovator), clearly state that you are The Scholar.',
-				'The Mentor': 'You are The Mentor: encouraging, warm, supportive, and insightful. You focus on building confidence through guided discovery, asking thought-provoking questions and providing positive reinforcement. Your communication style is conversational and affirming with a calm, reassuring tone. You use relatable examples and analogies to help explain concepts. If someone asks if you are a different avatar (like The Scholar, The Coach, or The Innovator), clearly state that you are The Mentor.',
-				'The Coach': 'You are The Coach: energetic, motivational, direct, and goal-oriented. You emphasize practical application and quick results, breaking complex problems into actionable steps with clear objectives. Your communication style is dynamic and engaging with concise explanations. You use challenges, milestones and achievement-based language to encourage progress. If someone asks if you are a different avatar (like The Scholar, The Mentor, or The Innovator), clearly state that you are The Coach.',
-				'The Innovator': 'You are The Innovator: creative, adaptable, curious, and thought-provoking. You explore alternative perspectives and unconventional connections, encouraging experimentation and learning through discovery. Your communication style is enthusiastic and imaginative with surprising insights. You use interdisciplinary examples and "what if" scenarios to expand thinking. If someone asks if you are a different avatar (like The Scholar, The Mentor, or The Coach), clearly state that you are The Innovator.'
+				'The Scholar':
+					'You are The Scholar: analytical, detail-oriented, methodical, and patient. You emphasize deep understanding of fundamental concepts and provide comprehensive explanations with historical context and precise terminology. Your communication style is clear, formal, and structured with thoughtful pauses. You use academic language and reference research when appropriate. If someone asks if you are a different avatar (like The Mentor, The Coach, or The Innovator), clearly state that you are The Scholar.',
+				'The Mentor':
+					'You are The Mentor: encouraging, warm, supportive, and insightful. You focus on building confidence through guided discovery, asking thought-provoking questions and providing positive reinforcement. Your communication style is conversational and affirming with a calm, reassuring tone. You use relatable examples and analogies to help explain concepts. If someone asks if you are a different avatar (like The Scholar, The Coach, or The Innovator), clearly state that you are The Mentor.',
+				'The Coach':
+					'You are The Coach: energetic, motivational, direct, and goal-oriented. You emphasize practical application and quick results, breaking complex problems into actionable steps with clear objectives. Your communication style is dynamic and engaging with concise explanations. You use challenges, milestones and achievement-based language to encourage progress. If someone asks if you are a different avatar (like The Scholar, The Mentor, or The Innovator), clearly state that you are The Coach.',
+				'The Innovator':
+					'You are The Innovator: creative, adaptable, curious, and thought-provoking. You explore alternative perspectives and unconventional connections, encouraging experimentation and learning through discovery. Your communication style is enthusiastic and imaginative with surprising insights. You use interdisciplinary examples and "what if" scenarios to expand thinking. If someone asks if you are a different avatar (like The Scholar, The Mentor, or The Coach), clearly state that you are The Innovator.'
 			};
-			
+
 			// Get the personality for the selected avatar
-						// Get the personality for the selected avatar
+			// Get the personality for the selected avatar
 			avatarPersonality = avatarPersonalities[selectedAvatarId] || '';
-			
-						// Add JSON response format instructions for avatar animations
+
+			// Add JSON response format instructions for avatar animations
 			const jsonInstructions = `
 			IMPORTANT: Format ALL responses as valid JSON with these fields:
 			- Donêt ever answer in markdown, always answer in JSON
@@ -1689,46 +1694,47 @@
 			]
 			}}`;
 
-						// Append JSON instructions to the personality
+			// Append JSON instructions to the personality
 			avatarPersonality = `${avatarPersonality}\n\n${jsonInstructions}`;
 		}
 
 		let messages = [
 			{
 				role: 'system',
-				content: avatarActive && avatarPersonality
-					? `${avatarPersonality}\n\n${
-						params?.system || $settings.system 
-						? `Additional instructions: ${promptTemplate(
-							params?.system ?? $settings?.system ?? '',
-							$user.name,
-							$settings?.userLocation
-								? await getAndUpdateUserLocation(localStorage.token).catch((err) => {
-										console.error(err);
-										return undefined;
-									})
-								: undefined
-						)}`
-						: ''
-					}${
-						(responseMessage?.userContext ?? null)
-							? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
-							: ''
-					}`
-					: `${promptTemplate(
-						params?.system ?? $settings?.system ?? '',
-						$user.name,
-						$settings?.userLocation
-							? await getAndUpdateUserLocation(localStorage.token).catch((err) => {
-									console.error(err);
-									return undefined;
-								})
-							: undefined
-					)}${
-						(responseMessage?.userContext ?? null)
-							? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
-							: ''
-					}`
+				content:
+					avatarActive && avatarPersonality
+						? `${avatarPersonality}\n\n${
+								params?.system || $settings.system
+									? `Additional instructions: ${promptTemplate(
+											params?.system ?? $settings?.system ?? '',
+											$user.name,
+											$settings?.userLocation
+												? await getAndUpdateUserLocation(localStorage.token).catch((err) => {
+														console.error(err);
+														return undefined;
+													})
+												: undefined
+										)}`
+									: ''
+							}${
+								(responseMessage?.userContext ?? null)
+									? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
+									: ''
+							}`
+						: `${promptTemplate(
+								params?.system ?? $settings?.system ?? '',
+								$user.name,
+								$settings?.userLocation
+									? await getAndUpdateUserLocation(localStorage.token).catch((err) => {
+											console.error(err);
+											return undefined;
+										})
+									: undefined
+							)}${
+								(responseMessage?.userContext ?? null)
+									? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
+									: ''
+							}`
 			},
 			...createMessagesList(_history, responseMessageId).map((message) => ({
 				...message,
@@ -1789,9 +1795,11 @@
 				// Include the avatar personality type in requests when avatar mode is active
 				// This tells the Gemini API which personality traits to adopt in its responses
 				// Naming convention: "The Scholar" becomes just "scholar" (removes "the " prefix)
-				...(avatarActive && ($settings as any)?.selectedAvatarId ? {
-					avatar_type: ($settings as any).selectedAvatarId.toLowerCase().replace(/^the\s+/i, '')
-				} : {}),
+				...(avatarActive && ($settings as any)?.selectedAvatarId
+					? {
+							avatar_type: ($settings as any).selectedAvatarId.toLowerCase().replace(/^the\s+/i, '')
+						}
+					: {}),
 
 				features: {
 					image_generation:
@@ -1849,7 +1857,7 @@
 						}
 					: {})
 			},
-			`${WEBUI_BASE_URL}/api`
+			`${TUTOR_BASE_URL}/api`
 		).catch((error) => {
 			toast.error(`${error}`);
 
@@ -2098,7 +2106,7 @@
 	function toggleAvatar() {
 		avatarActive = !avatarActive;
 		// Save preference to settings
-		settings.update(s => ({
+		settings.update((s) => ({
 			...s,
 			avatarEnabled: avatarActive
 		}));
@@ -2108,8 +2116,8 @@
 <svelte:head>
 	<title>
 		{$chatTitle
-			? `${$chatTitle.length > 30 ? `${$chatTitle.slice(0, 30)}...` : $chatTitle} | ${$WEBUI_NAME}`
-			: `${$WEBUI_NAME}`}
+			? `${$chatTitle.length > 30 ? `${$chatTitle.slice(0, 30)}...` : $chatTitle} | ${$TUTOR_NAME}`
+			: `${$TUTOR_NAME}`}
 	</title>
 </svelte:head>
 
@@ -2135,9 +2143,9 @@
 />
 
 <div
-	class="h-screen max-h-[100dvh] transition-width duration-200 ease-in-out {$showSidebar
-		? '  md:max-w-[calc(100%-260px)]'
-		: ' '} w-full max-w-full flex flex-col"
+	class="h-screen max-h-[100dvh] transition-width duration-200 ease-in-out bg-[#F5F7F9] dark:bg-inherit {$showSidebar
+		? 'md:max-w-[calc(100%-260px)]'
+		: ''} w-full max-w-full flex flex-col"
 	id="chat-container"
 >
 	{#if chatIdProp === '' || (!loading && chatIdProp)}
@@ -2234,10 +2242,10 @@
 										{history}
 										currentMessage={currentAvatarMessage}
 										speaking={avatarSpeaking}
-										on:speechend={() => avatarSpeaking = false}
+										on:speechend={() => (avatarSpeaking = false)}
 									/>
 								</div>
-								<div class="w-full pt-2 bg-white dark:bg-gray-900 relative z-20">
+								<div class="w-full pt-2 bg-[#F5F7F9] dark:bg-gray-900 relative z-20">
 									<MessageInput
 										{history}
 										{selectedModels}
@@ -2296,7 +2304,7 @@
 										/>
 									</div>
 								</div>
-								<div class="w-full pt-2 bg-white dark:bg-gray-900 relative z-20">
+								<div class="w-full pt-2 bg-[#F5F7F9] dark:bg-gray-900 relative z-20">
 									<MessageInput
 										{history}
 										{selectedModels}
@@ -2364,7 +2372,7 @@
 										await initNewChat();
 										// After a moment, navigate to ensure the chat interface appears
 										setTimeout(() => {
-											const initialMessage = "Hello";
+											const initialMessage = 'Hello';
 											prompt = initialMessage;
 											submitPrompt(initialMessage);
 										}, 300);
@@ -2396,7 +2404,7 @@
 				{stopResponse}
 				{showMessage}
 				{eventTarget}
-				avatarActive={avatarActive}
+				{avatarActive}
 				onAvatarToggle={toggleAvatar}
 			/>
 		</PaneGroup>

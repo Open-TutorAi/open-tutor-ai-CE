@@ -26,7 +26,7 @@
 	import { generateAutoCompletion } from '$lib/apis';
 	import { deleteFileById } from '$lib/apis/files';
 
-	import { WEBUI_BASE_URL, WEBUI_API_BASE_URL, PASTED_TEXT_CHARACTER_LIMIT } from '$lib/constants';
+	import { TUTOR_BASE_URL, TUTOR_API_BASE_URL, PASTED_TEXT_CHARACTER_LIMIT } from '$lib/constants';
 
 	import InputMenu from './MessageInput/InputMenu.svelte';
 	import VoiceRecording from './MessageInput/VoiceRecording.svelte';
@@ -211,7 +211,7 @@
 				fileItem.id = uploadedFile.id;
 				fileItem.collection_name =
 					uploadedFile?.meta?.collection_name || uploadedFile?.collection_name;
-				fileItem.url = `${WEBUI_API_BASE_URL}/files/${uploadedFile.id}`;
+				fileItem.url = `${TUTOR_API_BASE_URL}/files/${uploadedFile.id}`;
 
 				files = files;
 			} else {
@@ -357,7 +357,7 @@
 <FilesOverlay show={dragged} />
 
 {#if loaded}
-	<div class="w-full font-primary">
+	<div class="w-full font-primary bg-[#F5F7F9]">
 		<div class=" mx-auto inset-x-0 bg-transparent flex justify-center">
 			<div
 				class="flex flex-col px-3 {($settings?.widescreenMode ?? null)
@@ -489,7 +489,7 @@
 												?.profile_image_url ??
 												($i18n.language === 'dg-DG'
 													? `/doge.png`
-													: `${WEBUI_BASE_URL}/static/favicon.png`)}
+													: `${TUTOR_BASE_URL}/static/favicon.png`)}
 										/>
 										<div class="translate-y-[0.5px]">
 											Talking to <span class=" font-medium">{atSelectedModel.name}</span>
@@ -532,7 +532,7 @@
 			</div>
 		</div>
 
-		<div class="{transparentBackground ? 'bg-transparent' : 'bg-white dark:bg-gray-900'} ">
+		<div class="{transparentBackground ? 'bg-transparent' : 'bg-[#F5F7F9] dark:bg-gray-900'} ">
 			<div
 				class="{($settings?.widescreenMode ?? null)
 					? 'max-w-full'
@@ -589,7 +589,7 @@
 							}}
 						>
 							<div
-								class="flex-1 flex flex-col relative w-full rounded-3xl px-1 bg-gray-600/5 dark:bg-gray-400/5 dark:text-gray-100"
+								class="flex-1 flex flex-col relative w-full rounded-full shadow-md px-4 bg-white dark:bg-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-700 max-w-3xl mx-auto mb-10"
 								dir={$settings?.chatDirection ?? 'LTR'}
 							>
 								{#if files.length > 0}
@@ -699,7 +699,7 @@
 													)}
 												placeholder={placeholder ? placeholder : $i18n.t('Send a Message')}
 												largeTextAsFile={$settings?.largeTextAsFile ?? false}
-												autocomplete={$config?.features.enable_autocomplete_generation}
+												autocomplete={false}
 												generateAutoCompletion={async (text) => {
 													if (selectedModelIds.length === 0 || !selectedModelIds.at(0)) {
 														toast.error($i18n.t('Please select a model first.'));
@@ -1116,7 +1116,7 @@
 											}}
 										>
 											<button
-												class="bg-transparent hover:bg-gray-100 text-gray-800 dark:text-white dark:hover:bg-gray-800 transition rounded-full p-1.5 outline-hidden focus:outline-hidden"
+												class="bg-transparent hover:bg-gray-100 text-gray-500 dark:text-gray-400 dark:hover:bg-gray-700 transition rounded-full p-1.5 outline-hidden focus:outline-hidden"
 												type="button"
 												aria-label="More"
 											>
@@ -1184,10 +1184,6 @@
 																: 'bg-transparent text-gray-600 dark:text-gray-300 border-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 '}"
 														>
 															<CommandLine className="size-5" strokeWidth="1.75" />
-															<span
-																class="hidden @sm:block whitespace-nowrap overflow-hidden text-ellipsis translate-y-[0.5px] mr-0.5"
-																>{$i18n.t('Code Interpreter')}</span
-															>
 														</button>
 													</Tooltip>
 												{/if}
@@ -1325,14 +1321,12 @@
 														>
 															<svg
 																xmlns="http://www.w3.org/2000/svg"
-																viewBox="0 0 16 16"
+																viewBox="0 0 24 24"
 																fill="currentColor"
 																class="size-5"
 															>
 																<path
-																	fill-rule="evenodd"
-																	d="M8 14a.75.75 0 0 1-.75-.75V4.56L4.03 7.78a.75.75 0 0 1-1.06-1.06l4.5-4.5a.75.75 0 0 1 1.06 0l4.5 4.5a.75.75 0 0 1-1.06 1.06L8.75 4.56v8.69A.75.75 0 0 1 8 14Z"
-																	clip-rule="evenodd"
+																	d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z"
 																/>
 															</svg>
 														</button>

@@ -5,85 +5,89 @@ const mockAppName = 'OpenTutorAI';
 
 // Mock modules with vi.mock
 vi.mock('$lib/constants', () => ({
-  APP_NAME: mockAppName
+	APP_NAME: mockAppName
 }));
 
-// Create a WebUI name mock that we can reference later
-const mockWebUIName = {
-  set: vi.fn(),
-  subscribe: vi.fn(cb => {
-    cb(mockAppName);
-    return () => {};
-  })
+// Create a OpenTutorAI name mock that we can reference later
+const mockOpenTutorAIName = {
+	set: vi.fn(),
+	subscribe: vi.fn((cb) => {
+		cb(mockAppName);
+		return () => {};
+	})
 };
 
 // Mock the stores
 vi.mock('$lib/stores', () => ({
-  WEBUI_NAME: mockWebUIName,
-  settings: {
-    subscribe: vi.fn(cb => {
-      cb({});
-      return () => {};
-    }),
-    update: vi.fn()
-  },
-  mobile: {
-    subscribe: vi.fn(cb => {
-      cb(false);
-      return () => {};
-    })
-  },
-  config: {
-    subscribe: vi.fn(cb => {
-      cb({});
-      return () => {};
-    })
-  },
-  i18n: {
-    subscribe: vi.fn(cb => {
-      cb({ t: function(key) { return key; } });
-      return () => {};
-    })
-  }
+	TUTOR_NAME: mockOpenTutorAIName,
+	settings: {
+		subscribe: vi.fn((cb) => {
+			cb({});
+			return () => {};
+		}),
+		update: vi.fn()
+	},
+	mobile: {
+		subscribe: vi.fn((cb) => {
+			cb(false);
+			return () => {};
+		})
+	},
+	config: {
+		subscribe: vi.fn((cb) => {
+			cb({});
+			return () => {};
+		})
+	},
+	i18n: {
+		subscribe: vi.fn((cb) => {
+			cb({
+				t: function (key) {
+					return key;
+				}
+			});
+			return () => {};
+		})
+	}
 }));
 
 describe('Application Title Tests', () => {
-  // Create a simple document mock object type for testing
-  let originalTitle = '';
-  
-  // Setup mocks before each test
-  beforeEach(() => {
-    // Save original document title
-    originalTitle = document.title;
-    
-    // Update document title for testing
-    document.title = 'Initial Title';
-    
-    // Reset mocks
-    vi.clearAllMocks();
-  });
+	// Create a simple document mock object type for testing
+	let originalTitle = '';
 
-  // Restore document after each test
-  afterEach(() => {
-    // Restore original title
-    document.title = originalTitle;
-  });
+	// Setup mocks before each test
+	beforeEach(() => {
+		// Save original document title
+		originalTitle = document.title;
 
-  it('should have APP_NAME set to OpenTutorAI', () => {
-    expect(mockAppName).toBe('OpenTutorAI');
-  });
+		// Update document title for testing
+		document.title = 'Initial Title';
 
-  it('should override backend name with OpenTutorAI', async () => {
-    // Mock the scenario where the layout component would set WEBUI_NAME from backend
-    const mockBackendConfig = {
-      name: 'Open WebUI' // This is what the backend would send
-    };
-    
-    // Call the set function similar to what happens in +layout.svelte
-    mockWebUIName.set('OpenTutorAI');
-    
-    // Check that our value is used, not the backend's
-    expect(mockWebUIName.set).toHaveBeenCalledWith('OpenTutorAI');
-    expect(mockWebUIName.set).not.toHaveBeenCalledWith(mockBackendConfig.name);
-  });
-}); 
+		// Reset mocks
+		vi.clearAllMocks();
+	});
+
+	// Restore document after each test
+	afterEach(() => {
+		// Restore original title
+		document.title = originalTitle;
+	});
+
+	it('should have APP_NAME set to OpenTutorAI', () => {
+		expect(mockAppName).toBe('OpenTutorAI');
+	});
+
+	it('should override backend name with OpenTutorAI', async () => {
+		// Mock the scenario where the layout component would set TUTOR_NAME from backend
+		const mockBackendConfig = {
+			name: 'Open Tutor AI' // This is what the backend would send
+		};
+
+		// Call the set function similar to what happens in +layout.svelte
+		mockOpenTutorAIName.set('OpenTutorAI');
+
+		// Check that our value is used, not the backend's
+		expect(mockOpenTutorAIName.set).toHaveBeenCalledWith('OpenTutorAI');
+		expect(mockOpenTutorAIName.set).not.toHaveBeenCalledWith(mockBackendConfig.name);
+	});
+});

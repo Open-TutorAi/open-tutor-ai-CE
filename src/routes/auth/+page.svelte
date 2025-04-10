@@ -7,8 +7,8 @@
 	import { getBackendConfig } from '$lib/apis';
 	import { ldapUserSignIn, getSessionUser, userSignIn, userSignUp } from '$lib/apis/auths';
 
-	import { WEBUI_API_BASE_URL, WEBUI_BASE_URL } from '$lib/constants';
-	import { WEBUI_NAME, config, user, socket } from '$lib/stores';
+	import { TUTOR_API_BASE_URL, TUTOR_BASE_URL } from '$lib/constants';
+	import { TUTOR_NAME, config, user, socket } from '$lib/stores';
 
 	import { generateInitialsImage, canvasPixelTest } from '$lib/utils';
 
@@ -146,11 +146,11 @@
 		node.type = false ? 'text' : 'password';
 
 		return {
-		update(showPassword) {
-			node.type = showPassword ? 'text' : 'password';
-		}
+			update(showPassword) {
+				node.type = showPassword ? 'text' : 'password';
+			}
 		};
-	};
+	}
 
 	onMount(async () => {
 		if ($user !== undefined) {
@@ -170,16 +170,16 @@
 
 <svelte:head>
 	<title>
-	  {mode === 'signup' ? $i18n.t('Create Account') : $i18n.t('Sign in')} | OpenTutorAI
+		{mode === 'signup' ? $i18n.t('Create Account') : $i18n.t('Sign in')} | OpenTutorAI
 	</title>
-	  <!-- Standard favicon for most browsers -->
-	  <link rel="icon" href="favicon/favicon.ico" type="image/x-icon">
-	  <!-- PNG version for browsers that support it -->
-	  <link rel="icon" href="favicon/favicon-96x96.png" type="image/png">
-	  <!-- Apple Touch Icon for iOS devices -->
-	  <link rel="apple-touch-icon" href="favicon/apple-touch-icon.png">
-	  <!-- Web app manifests for mobile devices -->
-	  <link rel="manifest" href="favicon/site.webmanifest">
+	<!-- Standard favicon for most browsers -->
+	<link rel="icon" href="favicon/favicon.ico" type="image/x-icon" />
+	<!-- PNG version for browsers that support it -->
+	<link rel="icon" href="favicon/favicon-96x96.png" type="image/png" />
+	<!-- Apple Touch Icon for iOS devices -->
+	<link rel="apple-touch-icon" href="favicon/apple-touch-icon.png" />
+	<!-- Web app manifests for mobile devices -->
+	<link rel="manifest" href="favicon/site.webmanifest" />
 </svelte:head>
 
 <OnBoarding
@@ -190,14 +190,17 @@
 	}}
 />
 
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900 relative" style="height: 100vh; overflow-y: auto;">
+<div
+	class="min-h-screen bg-gray-50 dark:bg-gray-900 relative"
+	style="height: 100vh; overflow-y: auto;"
+>
 	<div class="w-full absolute top-0 left-0 right-0 h-8 drag-region" />
 
 	{#if loaded}
 		<div class="flex flex-col md:flex-row w-full" style="min-height: calc(100vh - 8px);">
 			<!-- Left panel with branding and features -->
-			<div 
-				class="w-full md:w-2/5 p-6 flex flex-col justify-center items-center min-h-screen" 
+			<div
+				class="w-full md:w-2/5 p-6 flex flex-col justify-center items-center min-h-screen"
 				style="background: linear-gradient(135deg, #1e3a8a, #6d28d9); color: white; border-radius: 0px; overflow: hidden;"
 				role="complementary"
 			>
@@ -205,41 +208,46 @@
 				<div class="flex items-center justify-center mb-3">
 					<img
 						crossorigin="anonymous"
-						src="{WEBUI_BASE_URL}/static/splash.png"
+						src="{TUTOR_BASE_URL}/static/splash.png"
 						class="w-28 h-28 rounded-full bg-white p-3 shadow-lg"
 						alt="logo"
 					/>
 				</div>
 
 				<!-- Title Section -->
-				
-					<p class="text-3xl font-extrabold font-InstrumentSerif text-center leading-snug">
-						{$i18n.t('Bienvenue sur')} 
-						<span class="text-cyan-300">OpenTutorAI</span>
-					</p>
-					<p class="text-md opacity-95 font-InstrumentSerif text-center italic mt-2">
-						{$i18n.t('Ton chemin vers un apprentissage plus intelligent')}
-					</p>
+
+				<p class="text-3xl font-extrabold font-InstrumentSerif text-center leading-snug">
+					{$i18n.t('Welcome to')}
+					<span class="text-cyan-300">OpenTutorAI</span>
+				</p>
+				<p class="text-md opacity-95 font-InstrumentSerif text-center italic mt-2">
+					{$i18n.t('Ton chemin vers un apprentissage plus intelligent')}
+				</p>
 
 				<!-- Illustration -->
 				<div class="flex justify-center items-center mt-5">
-					<img 
-						src="/grad-students.png" 
-						alt="{$i18n.t('Graduation illustration')}" 
-						class="w-60 md:w-72 rounded-xl "
+					<img
+						src="/grad-students.png"
+						alt={$i18n.t('Graduation illustration')}
+						class="w-60 md:w-72 rounded-xl"
 					/>
 				</div>
 			</div>
 
 			<!-- Right panel with authentication form -->
-			<div class="w-full md:w-3/5 flex justify-center p-8 bg-white dark:bg-gray-900 md:h-screen overflow-y-auto" 
-				style="max-height: 100vh;" role="main">
+			<div
+				class="w-full md:w-3/5 flex justify-center p-8 bg-white dark:bg-gray-900 md:h-screen overflow-y-auto"
+				style="max-height: 100vh;"
+				role="main"
+			>
 				<div class="w-full max-w-md py-4 md:py-8 pb-12">
 					{#if ($config?.features.auth_trusted_header ?? false) || $config?.features.auth === false}
 						<div class="text-center mb-6">
-							<div class="flex items-center justify-center gap-3 text-xl sm:text-2xl font-semibold dark:text-gray-200">
+							<div
+								class="flex items-center justify-center gap-3 text-xl sm:text-2xl font-semibold dark:text-gray-200"
+							>
 								<div>
-									{$i18n.t('Signing in to {{WEBUI_NAME}}', { WEBUI_NAME: $WEBUI_NAME })}
+									{$i18n.t('Signing in to {{TUTOR_NAME}}', { TUTOR_NAME: $TUTOR_NAME })}
 								</div>
 								<div>
 									<Spinner />
@@ -270,7 +278,10 @@
 							{#if mode === 'signup'}
 								<div class="grid grid-cols-2 gap-4">
 									<div>
-										<label for="firstName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+										<label
+											for="firstName"
+											class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+										>
 											{$i18n.t('First Name')}
 										</label>
 										<input
@@ -283,7 +294,10 @@
 										/>
 									</div>
 									<div>
-										<label for="lastName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+										<label
+											for="lastName"
+											class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+										>
 											{$i18n.t('Last Name')}
 										</label>
 										<input
@@ -300,7 +314,10 @@
 
 							{#if mode === 'ldap'}
 								<div>
-									<label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+									<label
+										for="username"
+										class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+									>
 										{$i18n.t('Username')}
 									</label>
 									<input
@@ -316,7 +333,10 @@
 								</div>
 							{:else}
 								<div>
-									<label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+									<label
+										for="email"
+										class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+									>
 										{$i18n.t('Email')}
 									</label>
 									<input
@@ -334,11 +354,17 @@
 
 							<div>
 								<div class="flex justify-between items-center mb-1">
-									<label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+									<label
+										for="password"
+										class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+									>
 										{$i18n.t('Password')}
 									</label>
 									{#if mode === 'signin'}
-										<a href="#" class="text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400">
+										<a
+											href="#"
+											class="text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400"
+										>
 											{$i18n.t('Forgot password?')}
 										</a>
 									{/if}
@@ -366,7 +392,10 @@
 
 							{#if mode === 'signup'}
 								<div>
-									<label for="role" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+									<label
+										for="role"
+										class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+									>
 										{$i18n.t('Account Type')}
 									</label>
 									<div class="relative">
@@ -392,9 +421,19 @@
 									/>
 									<label for="terms" class="ml-2 block text-sm text-gray-800 dark:text-gray-200">
 										{$i18n.t('I agree to the')}
-										<a href="#" class="text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"> {$i18n.t('Terms of Service')} </a>
+										<a
+											href="#"
+											class="text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
+										>
+											{$i18n.t('Terms of Service')}
+										</a>
 										{$i18n.t('and')}
-										<a href="#" class="text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"> {$i18n.t('Privacy Policy')} </a>
+										<a
+											href="#"
+											class="text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
+										>
+											{$i18n.t('Privacy Policy')}
+										</a>
 									</label>
 								</div>
 							{/if}
@@ -408,7 +447,10 @@
 											type="checkbox"
 											class="h-4 w-4 text-blue-500 border-gray-300 rounded focus:ring-blue-500"
 										/>
-										<label for="remember-me" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+										<label
+											for="remember-me"
+											class="ml-2 block text-sm text-gray-700 dark:text-gray-300"
+										>
 											{$i18n.t('Remember me')}
 										</label>
 									</div>
@@ -430,7 +472,9 @@
 						{#if Object.keys($config?.oauth?.providers ?? {}).length > 0 || true}
 							<div class="my-6 flex items-center">
 								<div class="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
-								<span class="flex-shrink mx-4 text-gray-700 dark:text-gray-300">{$i18n.t('OR')}</span>
+								<span class="flex-shrink mx-4 text-gray-700 dark:text-gray-300"
+									>{$i18n.t('OR')}</span
+								>
 								<div class="flex-grow border-t border-gray-300 dark:border-gray-700"></div>
 							</div>
 
@@ -439,10 +483,14 @@
 									<button
 										class="w-full flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md py-2.5 px-4 text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
 										on:click={() => {
-											window.location.href = `${WEBUI_BASE_URL}/oauth/google/login`;
+											window.location.href = `${TUTOR_BASE_URL}/oauth/google/login`;
 										}}
 									>
-										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="h-5 w-5 mr-3">
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											viewBox="0 0 48 48"
+											class="h-5 w-5 mr-3"
+										>
 											<path
 												fill="#EA4335"
 												d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
@@ -484,7 +532,7 @@
 										{$i18n.t('Sign in')}
 									</button>
 								</p>
-								<div class="h-16"></div> 
+								<div class="h-16"></div>
 							{/if}
 						</div>
 					{/if}
