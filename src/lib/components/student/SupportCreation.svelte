@@ -586,21 +586,6 @@
 							</div>
 
 							<!-- Who Can Access -->
-							<div>
-								<label class="block text-gray-800 dark:text-gray-200 font-medium mb-2">
-									{$i18n.t("Who Can Access This Support?")}
-								</label>
-								<div class="relative">
-									<select 
-										bind:value={accessType}
-										class="appearance-none w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white pr-8"
-									>
-										{#each accessTypes as type}
-											<option value={type}>{$i18n.t(type)}</option>
-										{/each}
-									</select>
-								</div>
-							</div>
 						</div>
 
 						<!-- Keywords -->
