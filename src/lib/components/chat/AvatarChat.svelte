@@ -5,12 +5,15 @@
 	import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 	import Spinner from '$lib/components/common/Spinner.svelte';
 	import { settings } from '$lib/stores';
+	import ClassroomBackground from '$lib/components/classroom/ClassroomBackground.svelte';
 
 	// Props
 	export let history = {}; // Chat history
 	export let currentMessage = ''; // Current message to speak
 	export let speaking = false; // Whether the avatar is speaking
 	export let className = 'h-full flex pt-8'; // CSS classes
+	export let useClassroom = true; // Whether to display classroom background
+	export let classroomModel: 'default' | 'alternative' = 'default'; // Which classroom model to use
 
 	// State variables
 	let avatarContainer: HTMLDivElement;
@@ -38,6 +41,7 @@
 	let activeGesture: string | null = null;
 	let debugMode = true; // Enable debug mode
 	let clock = new THREE.Clock(); // Clock for tracking animation time
+	let classroomComponent: ClassroomBackground | null = null; // Reference to classroom component
 
 	// Animation settings
 	const ANIMATION_SETTINGS = {
@@ -220,7 +224,13 @@
 
 		// Initialize perspective camera at optimal distance for headshot view
 		camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-		camera.position.set(0, 1.6, 2.2); // Position for head and shoulders framing
+		if (useClassroom) {
+			// Position camera to see both avatar and classroom - raised slightly to make room for input
+			camera.position.set(0, 1.8, 4.3); // Raised Y position to leave space at bottom
+		} else {
+			// Original camera position for avatar only
+			camera.position.set(0, 1.6, 2.2);
+		}
 
 		// Configure renderer with transparency support
 		renderer = new THREE.WebGLRenderer({
@@ -487,7 +497,20 @@
 			const size = box.getSize(new THREE.Vector3());
 			const center = box.getCenter(new THREE.Vector3());
 
-			avatar.position.set(-center.x, -center.y + size.y / 2, -center.z);
+			// Adjust avatar position based on whether classroom is used or not
+			if (useClassroom) {
+				// Position avatar to match classroom environment (standing more to the left of the board)
+				avatar.position.set(-center.x - 1.2, -center.y + size.y / 2 - 0.6, -2.2); // Moved more to the left (-1.2 instead of -0.6)
+				// Rotate to face camera
+				avatar.rotation.y = Math.PI * 0.1; // Slightly increased angle to compensate for leftward position
+				// Scale avatar to match classroom size
+				const avatarScale = 1.5; // Increased size (was 1.3)
+				avatar.scale.set(avatarScale, avatarScale, avatarScale);
+			} else {
+				// Original position for avatar only view
+				avatar.position.set(-center.x, -center.y + size.y / 2, -center.z);
+			}
+			
 			loading = false;
 
 			// Set a more natural default pose instead of T-pose
@@ -2696,37 +2719,21 @@
 	}
 </script>
 
-<div class={className}>
-	<div class="w-full h-full relative">
-		<div class="avatar-container w-full h-full" bind:this={avatarContainer}>
-			{#if loading}
-				<div class="loading-overlay">
-					<Spinner size={48} />
-					<p class="text-white mt-4">Loading Avatar...</p>
-				</div>
-			{/if}
+<div class={className} bind:this={avatarContainer}>
+	{#if loading}
+		<div class="flex items-center justify-center w-full h-full">
+			<Spinner />
 		</div>
-
-		<!-- Speaking indicator with integrated stop button -->
-		{#if isSpeaking}
-			<div class="speaking-indicator">
-				<span class="dot animate-pulse"></span>
-				<span class="text">Speaking...</span>
-				<button class="stop-speaking-button" on:click={stopSpeaking} title="Stop Speaking">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						viewBox="0 0 24 24"
-						fill="currentColor"
-						class="w-4 h-4"
-					>
-						<path
-							d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z"
-						/>
-					</svg>
-				</button>
-			</div>
-		{/if}
-	</div>
+	{/if}
+	
+	{#if scene && useClassroom}
+		<ClassroomBackground 
+			bind:this={classroomComponent}
+			{scene} 
+			{camera} 
+			{classroomModel} 
+		/>
+	{/if}
 </div>
 
 <style>

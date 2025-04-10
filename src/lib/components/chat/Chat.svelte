@@ -2245,7 +2245,7 @@
 										on:speechend={() => (avatarSpeaking = false)}
 									/>
 								</div>
-								<div class="w-full pt-2 bg-[#F5F7F9] dark:bg-gray-900 relative z-20">
+								<div class="absolute bottom-0 left-0 right-0 z-20 animate-float">
 									<MessageInput
 										{history}
 										{selectedModels}
@@ -2257,7 +2257,7 @@
 										bind:codeInterpreterEnabled
 										bind:webSearchEnabled
 										bind:atSelectedModel
-										transparentBackground={$settings?.backgroundImageUrl ?? false}
+										transparentBackground={true}
 										{stopResponse}
 										on:submit={async (e) => {
 											if (e.detail || files.length > 0) {
