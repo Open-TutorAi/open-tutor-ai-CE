@@ -589,7 +589,7 @@
 							}}
 						>
 							<div
-								class="flex-1 flex flex-col relative w-full rounded-full shadow-md px-4 bg-white dark:bg-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-700 max-w-3xl mx-auto mb-10"
+								class="flex-1 flex flex-col relative w-full rounded-4xl shadow-md px-4 bg-white dark:bg-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-700 max-w-3xl mx-auto mb-10"
 								dir={$settings?.chatDirection ?? 'LTR'}
 							>
 								{#if files.length > 0}
@@ -681,7 +681,7 @@
 									</div>
 								{/if}
 
-								<div class="px-2.5">
+								<div class="px-2.5 pt-5">
 									{#if $settings?.richTextInput ?? true}
 										<div
 											class="scrollbar-hidden text-left bg-transparent dark:text-gray-100 outline-hidden w-full pt-3 px-1 resize-none h-fit max-h-80 overflow-auto"
@@ -888,7 +888,7 @@
 										<textarea
 											id="chat-input"
 											bind:this={chatInputElement}
-											class="scrollbar-hidden bg-transparent dark:text-gray-100 outline-hidden w-full pt-3 px-1 resize-none"
+											class="scrollbar-hidden bg-transparent dark:text-gray-100 outline-hidden"
 											placeholder={placeholder ? placeholder : $i18n.t('Send a Message')}
 											bind:value={prompt}
 											on:keypress={(e) => {
