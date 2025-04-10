@@ -213,7 +213,7 @@
 							
 							<!-- Right side label -->
 							<div class="w-1/2 h-full flex items-center justify-center">
-								<span class="font-medium uppercase text-xs">{$i18n.t('Text')}</span>
+								<span class="font-medium uppercase text-xs">{$i18n.t('Learn')}</span>
 							</div>
 							
 							<!-- Sliding white pill that moves left/right -->
