@@ -9,7 +9,7 @@ vi.mock('$lib/stores', () => {
 	const mockSettings = {
 		subscribe: vi.fn((cb) => {
 			cb({});
-			return () => {};
+			return () => { };
 		}),
 		update: vi.fn((cb) => {
 			const updated = cb({});
@@ -21,26 +21,26 @@ vi.mock('$lib/stores', () => {
 		i18n: {
 			subscribe: vi.fn((cb) => {
 				cb({ t: (key) => key });
-				return () => {};
+				return () => { };
 			})
 		},
 		settings: mockSettings,
 		TUTOR_NAME: {
 			subscribe: vi.fn((cb) => {
 				cb('OpenTutorAI');
-				return () => {};
+				return () => { };
 			})
 		},
 		mobile: {
 			subscribe: vi.fn((cb) => {
 				cb(false);
-				return () => {};
+				return () => { };
 			})
 		},
 		config: {
 			subscribe: vi.fn((cb) => {
 				cb({});
-				return () => {};
+				return () => { };
 			})
 		}
 	};
@@ -49,13 +49,25 @@ vi.mock('$lib/stores', () => {
 // Mock context API
 vi.mock('svelte', async () => {
 	const actual = await vi.importActual('svelte');
+	const { writable } = await vi.importActual('svelte/store');
+
+	const mockI18nStore = writable({
+		t: (key) => key
+	});
+
 	return {
 		...actual,
-		getContext: () => ({
-			t: (key) => key
-		})
+		getContext: (key) => {
+			if (key === 'i18n') {
+				return mockI18nStore;
+			}
+			return {};
+		}
 	};
 });
+
+
+
 
 describe('Responsive Layout Tests', () => {
 	// Store original window dimensions
