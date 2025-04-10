@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - dev
+      - fix/cicd-test-errors
     paths:
       - 'backend/**'
       - 'pyproject.toml'
