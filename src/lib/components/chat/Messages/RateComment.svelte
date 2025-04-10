@@ -31,7 +31,7 @@
 		'other'
 	];
 
-	let tags: {name: string}[] = [];
+	let tags: { name: string }[] = [];
 
 	let reasons: string[] = [];
 	let selectedReason: string | null = null;
@@ -45,7 +45,7 @@
 		'😖', // 1 - Not helpful
 		'😟', // 2
 		'😕', // 3
-		'😐', // 4 
+		'😐', // 4
 		'🙂', // 5
 		'😊', // 6
 		'😄', // 7
@@ -103,7 +103,7 @@
 		// }
 
 		isSubmitting = true;
-		
+
 		dispatch('save', {
 			reason: selectedReason,
 			comment: comment,
@@ -134,7 +134,9 @@
 	id="message-feedback-{message.id}"
 >
 	<div class="flex justify-between items-center">
-		<div class="text-sm font-medium">{$i18n.t('How helpful was this response for your learning?')}</div>
+		<div class="text-sm font-medium">
+			{$i18n.t('How helpful was this response for your learning?')}
+		</div>
 
 		<button
 			on:click={() => {
@@ -155,7 +157,7 @@
 	</div>
 
 	<div class="w-full flex justify-center">
-		<div class=" relative w-fit ">
+		<div class=" relative w-fit">
 			<div class="mt-4 w-fit flex gap-0.5 pb-5">
 				<!-- Emoji scale instead of 1-10 -->
 				{#each Array.from({ length: 10 }).map((_, i) => i + 1) as rating}
@@ -170,7 +172,7 @@
 						disabled={message?.annotation?.rating === -1 ? rating > 5 : rating < 6}
 						title={`Rating: ${rating}`}
 					>
-						{emojiRatings[rating-1]}
+						{emojiRatings[rating - 1]}
 					</button>
 				{/each}
 			</div>
@@ -241,7 +243,9 @@
 		<textarea
 			bind:value={comment}
 			class="w-full text-sm px-1 py-2 bg-transparent outline-hidden resize-none rounded-xl"
-			placeholder={$i18n.t('How could this response be improved for your learning? Feel free to share your thoughts!🤗')}
+			placeholder={$i18n.t(
+				'How could this response be improved for your learning? Feel free to share your thoughts!🤗'
+			)}
 			rows="3"
 		/>
 	</div>

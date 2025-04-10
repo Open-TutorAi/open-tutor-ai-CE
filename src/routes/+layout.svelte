@@ -478,7 +478,7 @@
 		if (backendConfig) {
 			// Save Backend Status to Store
 			await config.set(backendConfig);
-			await TUTOR_NAME.set("Open TutorAI");
+			await TUTOR_NAME.set('Open TutorAI');
 
 			if ($config) {
 				await setupSocket($config.features?.enable_websocket ?? true);

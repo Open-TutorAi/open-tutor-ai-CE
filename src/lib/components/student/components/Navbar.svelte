@@ -87,12 +87,13 @@
 		</button>
 
 		<div class="ml-4">
-            <h1 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                <span class="hidden sm:inline">{$i18n.t('Hello') + ' ' + username}</span>
-            </h1>
-            <p class="text-sm text-gray-500 hidden sm:block">{$i18n.t('Let\'s learn something new today!')}</p>
-        </div>
-        
+			<h1 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+				<span class="hidden sm:inline">{$i18n.t('Hello') + ' ' + username}</span>
+			</h1>
+			<p class="text-sm text-gray-500 hidden sm:block">
+				{$i18n.t("Let's learn something new today!")}
+			</p>
+		</div>
 	</div>
 
 	<!-- Desktop Navigation Menu -->
@@ -118,7 +119,7 @@
 				</svg>
 				<input
 					type="text"
-					placeholder="{$i18n.t('Search')}"
+					placeholder={$i18n.t('Search')}
 					class="bg-transparent border-none outline-none focus:ring-0 px-2 py-1 w-full text-sm text-gray-700"
 					bind:value={searchQuery}
 					on:keydown={handleSearch}
@@ -202,8 +203,10 @@
 						</div>
 						<div class="p-2 hover:bg-gray-50 rounded-lg">
 							<p class="text-sm font-medium text-gray-800">{$i18n.t('Assignment feedback')}</p>
-							<p class="text-xs text-gray-500">{$i18n.t('Your JavaScript project has been reviewed')}</p>
-							<p class="text-xs 	text-gray-400 mt-1">{$i18n.t('Yesterday')}</p>
+							<p class="text-xs text-gray-500">
+								{$i18n.t('Your JavaScript project has been reviewed')}
+							</p>
+							<p class="text-xs text-gray-400 mt-1">{$i18n.t('Yesterday')}</p>
 						</div>
 					</div>
 					<div class="p-2 border-t border-gray-100">

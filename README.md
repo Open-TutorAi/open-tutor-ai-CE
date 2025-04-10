@@ -209,7 +209,6 @@ This project is licensed under the [BSD-3-Clause License](LICENSE) - see the [LI
 If you have any questions, suggestions, or need assistance, please open an issue or join our
 [Open TutorAI Discord community](https://discord.gg/z5fMfrBzEF) to connect with us! 🤝
 
-
 ## Star History
 
 <a href="https://star-history.com/#open-tutorai/open-tutorai&Date">
@@ -222,4 +221,4 @@ If you have any questions, suggestions, or need assistance, please open an issue
 
 ---
 
-Created by [El Hajji](https://github.com/pr-elhajji)  - Let's make Open TutorAI even more amazing together! 💪
+Created by [El Hajji](https://github.com/pr-elhajji) - Let's make Open TutorAI even more amazing together! 💪

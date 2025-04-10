@@ -1184,7 +1184,6 @@
 																: 'bg-transparent text-gray-600 dark:text-gray-300 border-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 '}"
 														>
 															<CommandLine className="size-5" strokeWidth="1.75" />
-
 														</button>
 													</Tooltip>
 												{/if}

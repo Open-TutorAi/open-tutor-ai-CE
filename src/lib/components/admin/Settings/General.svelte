@@ -179,11 +179,7 @@
 								</div>
 							</div>
 
-							<a
-								class="flex-shrink-0 text-xs font-medium underline"
-								href="#"
-								target="_blank"
-							>
+							<a class="flex-shrink-0 text-xs font-medium underline" href="#" target="_blank">
 								{$i18n.t('Documentation')}
 							</a>
 						</div>
@@ -220,11 +216,7 @@
 								<div class="">
 									{$i18n.t('License')}
 								</div>
-								<a
-									class=" text-xs text-gray-500 hover:underline"
-									href="#"
-									target="_blank"
-								>
+								<a class=" text-xs text-gray-500 hover:underline" href="#" target="_blank">
 									{$i18n.t(
 										'Upgrade to a licensed plan for enhanced capabilities, including custom theming and branding, and dedicated support.'
 									)}
@@ -303,11 +295,7 @@
 								/>
 
 								<div class="mt-2 text-xs text-gray-400 dark:text-gray-500">
-									<a
-										href="#"
-										target="_blank"
-										class=" text-gray-300 font-medium underline"
-									>
+									<a href="#" target="_blank" class=" text-gray-300 font-medium underline">
 										{$i18n.t('To learn more about available endpoints, visit our documentation.')}
 									</a>
 								</div>

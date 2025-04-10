@@ -544,7 +544,9 @@
 		</div>
 
 		<div class="flex-auto w-0 pl-1">
-			<div class="message-content-container bg-white dark:bg-gray-900 rounded-lg p-4 shadow-md mt-2 mb-6">
+			<div
+				class="message-content-container bg-white dark:bg-gray-900 rounded-lg p-4 shadow-md mt-2 mb-6"
+			>
 				{#if message.timestamp}
 					<div
 						class=" self-center text-xs invisible group-hover:visible text-gray-400 font-medium first-letter:capitalize ml-0.5 translate-y-[1px]"
@@ -852,7 +854,7 @@
 							{/if}
 
 							{#if message.done}
-<!--
+								<!--
 								{#if !readOnly}
 									{#if $user.role === 'user' ? ($user?.permissions?.chat?.edit ?? true) : true}
 										<Tooltip content={$i18n.t('Edit')} placement="bottom">
@@ -986,7 +988,7 @@
 										{/if}
 									</button>
 								</Tooltip>
-<!--
+								<!--
 								{#if $config?.features.enable_image_generation && ($user.role === 'admin' || $user?.permissions?.features?.image_generation) && !readOnly}
 									<Tooltip content={$i18n.t('Generate Image')} placement="bottom">
 										<button
@@ -1052,7 +1054,7 @@
 								{/if}
 -->
 
-<!--
+								<!--
 								{#if message.usage}
 									<Tooltip
 										content={message.usage
@@ -1169,7 +1171,7 @@
 											</button>
 										</Tooltip>
 									{/if}
-<!--
+									<!--
 									{#if isLastMessage}
 										<Tooltip content={$i18n.t('Continue Response')} placement="bottom">
 											<button
@@ -1244,7 +1246,7 @@
 											</svg>
 										</button>
 									</Tooltip>
-<!--
+									<!--
 									{#if siblings.length > 1}
 										<Tooltip content={$i18n.t('Delete')} placement="bottom">
 											<button

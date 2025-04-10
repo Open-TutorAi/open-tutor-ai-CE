@@ -29,7 +29,7 @@
 		const handleResize = () => {
 			windowWidth = window.innerWidth;
 			isMobile = windowWidth < 768;
-			
+
 			// Auto-close sidebar on small screens initially
 			if (isMobile && isSidebarOpen) {
 				isSidebarOpen = false;
@@ -50,12 +50,12 @@
 <div class="flex h-screen overflow-hidden bg-gray-100 transition-colors duration-200 ease-in-out">
 	<!-- Sidebar with adaptive behavior -->
 	<div class={`sidebar-container ${isSidebarOpen ? '' : 'collapsed'}`}>
-		<Sidebar isSidebarOpen={isSidebarOpen} activePage={activePage} />
+		<Sidebar {isSidebarOpen} {activePage} />
 	</div>
 
 	<!-- Main content area with navbar and slot -->
 	<div class="flex-1 flex flex-col overflow-hidden relative z-10 bg-gray-100">
-		<Navbar username={username} toggleSidebar={toggleSidebar} isDarkMode={isDarkMode} on:darkModeToggle={toggleDarkMode} />
+		<Navbar {username} {toggleSidebar} {isDarkMode} on:darkModeToggle={toggleDarkMode} />
 
 		<!-- Main content with proper scrolling -->
 		<div class="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-100 text-gray-800">
@@ -65,8 +65,8 @@
 
 	<!-- Mobile sidebar overlay when open on mobile - lower z-index than content -->
 	{#if isMobile && isSidebarOpen}
-		<div 
-			class="fixed inset-0 bg-black bg-opacity-50 z-5" 
+		<div
+			class="fixed inset-0 bg-black bg-opacity-50 z-5"
 			on:click={() => {
 				isSidebarOpen = false;
 			}}
@@ -82,7 +82,8 @@
 		margin: 0;
 		padding: 0;
 		overflow: hidden;
-		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
+			'Open Sans', 'Helvetica Neue', sans-serif;
 	}
 
 	/* Sidebar container responsive styles */
