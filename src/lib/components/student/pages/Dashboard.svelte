@@ -33,8 +33,8 @@
 	// Handle joining a course
 	function handleJoinCourse() {
 		if (courseCode === '0000') {
-			// Redirect to chat component if code is 0000
-			goto('./chat');
+			// Redirect to student chat component if code is 0000
+			goto('/student/chat');
 			showJoinCoursePopup = false;
 		} else if (courseCode.trim() !== '') {
 			// For other valid codes, you would implement the actual join logic here
@@ -45,8 +45,8 @@
 	
 	// Handle creating support
 	function handleCreateSupport() {
-		// Navigate to support creation page or flow
-		goto('/chat');
+		// Navigate to student chat page
+		goto('/student/chat');
 		showSupportPopup = false;
 	}
 </script>
