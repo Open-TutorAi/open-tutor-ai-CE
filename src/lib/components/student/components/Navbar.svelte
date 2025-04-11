@@ -362,7 +362,12 @@
 					</a>
 				</div>
 				<div class="py-1 border-t border-gray-100">
-					<button class="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-50">
+					<button 
+					on:click={() => {
+						localStorage.removeItem('token');
+						location.href = '/auth';
+					}}
+					class="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-50">
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
 							class="h-4 w-4 mr-2"
