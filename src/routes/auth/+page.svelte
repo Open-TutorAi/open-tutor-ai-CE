@@ -3,6 +3,7 @@
 	import { onMount, getContext } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import ForgotPassword from '$lib/components/ForgotPassword.svelte';
 
 	import { getBackendConfig } from '$lib/apis';
 	import { ldapUserSignIn, getSessionUser, userSignIn, userSignUp } from '$lib/apis/auths';
@@ -18,6 +19,7 @@
 	const i18n = getContext('i18n');
 
 	let loaded = false;
+	let showForgotPassword = false;
 	let mode = $config?.features.enable_ldap ? 'ldap' : 'signup'; // Changed default to signup
 	let firstName = '';
 	let lastName = '';
@@ -181,7 +183,9 @@
 	<!-- Web app manifests for mobile devices -->
 	<link rel="manifest" href="favicon/site.webmanifest" />
 </svelte:head>
-
+{#if showForgotPassword}
+	<ForgotPassword on:close={() => (showForgotPassword = false)} />
+{/if}
 <OnBoarding
 	bind:show={onboarding}
 	getStartedHandler={() => {
@@ -364,6 +368,7 @@
 										<a
 											href="#"
 											class="text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400"
+											on:click|preventDefault={() => (showForgotPassword = true)}
 										>
 											{$i18n.t('Forgot password?')}
 										</a>
