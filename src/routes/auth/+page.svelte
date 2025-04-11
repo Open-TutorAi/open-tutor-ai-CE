@@ -165,7 +165,7 @@
 	<link rel="manifest" href="favicon/site.webmanifest" />
 </svelte:head>
 {#if showForgotPassword}
-	<ForgotPassword />
+	<ForgotPassword on:close={() => (showForgotPassword = false)} />
 {/if}
 <OnBoarding
 	bind:show={onboarding}
