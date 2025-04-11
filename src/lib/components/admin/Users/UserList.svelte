@@ -275,6 +275,7 @@
 						{/if}
 					</div>
 				</th>
+
 				<th
 					scope="col"
 					class="px-3 py-1.5 cursor-pointer select-none"
@@ -331,18 +332,10 @@
 					<td class="px-3 py-1 min-w-[7rem] w-28">
 						<button
 							class=" translate-y-0.5"
-							on:click={() => {
-								if (user.role === 'user') {
-									updateRoleHandler(user.id, 'admin');
-								} else if (user.role === 'pending') {
-									updateRoleHandler(user.id, 'user');
-								} else {
-									updateRoleHandler(user.id, 'pending');
-								}
-							}}
+							on:click={() => {}}
 						>
 							<Badge
-								type={user.role === 'admin' ? 'info' : user.role === 'user' ? 'success' : 'muted'}
+								type={user.role === 'admin' ? 'info' : user.role === 'teacher' ? 'success' : user.role === 'parent' ? 'warning' : 'muted'}
 								content={$i18n.t(user.role)}
 							/>
 						</button>

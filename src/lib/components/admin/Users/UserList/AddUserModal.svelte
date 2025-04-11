@@ -21,7 +21,7 @@
 		name: '',
 		email: '',
 		password: '',
-		role: 'user'
+		role: 'student'
 	};
 
 	$: if (show) {
@@ -29,7 +29,7 @@
 			name: '',
 			email: '',
 			password: '',
-			role: 'user'
+			role: 'student'
 		};
 	}
 
@@ -76,7 +76,7 @@
 						if (idx > 0) {
 							if (
 								columns.length === 4 &&
-								['admin', 'user', 'pending'].includes(columns[3].toLowerCase())
+								['admin', 'student', 'teacher', 'parent'].includes(columns[3].toLowerCase())
 							) {
 								const res = await addUser(
 									localStorage.token,
@@ -186,15 +186,16 @@
 										placeholder={$i18n.t('Enter Your Role')}
 										required
 									>
-										<option value="pending"> {$i18n.t('pending')} </option>
-										<option value="user"> {$i18n.t('user')} </option>
+										<option value="student"> {$i18n.t('student')} </option>
+										<option value="teacher"> {$i18n.t('teacher')} </option>
+										<option value="parent"> {$i18n.t('parent')} </option>
 										<option value="admin"> {$i18n.t('admin')} </option>
 									</select>
 								</div>
 							</div>
 
 							<div class="flex flex-col w-full mt-1">
-								<div class=" mb-1 text-xs text-gray-500">{$i18n.t('Name')}</div>
+								<div class=" mb-1 text-xs text-gray-500">{$i18n.t('Full Name')}</div>
 
 								<div class="flex-1">
 									<input

@@ -3,6 +3,7 @@
 	import { onMount, getContext } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import ForgotPassword from '$lib/components/ForgotPassword.svelte';
 
 	import { getBackendConfig } from '$lib/apis';
 	import { ldapUserSignIn, getSessionUser, userSignIn, userSignUp } from '$lib/apis/auths';
@@ -18,18 +19,17 @@
 	const i18n = getContext('i18n');
 
 	let loaded = false;
-
+	let showForgotPassword = false;
 	let mode = $config?.features.enable_ldap ? 'ldap' : 'signup'; // Changed default to signup
-
 	let firstName = '';
 	let lastName = '';
 	let email = '';
 	let password = '';
 	let showPassword = false;
-	let role = '';
+	let role = 'student'; // Default role is student
 	let rememberMe = false;
-
 	let ldapUsername = '';
+	let onboarding = false;
 
 	const querystringValue = (key) => {
 		const querystring = window.location.search;
@@ -39,18 +39,38 @@
 
 	const setSessionUser = async (sessionUser) => {
 		if (sessionUser) {
-			console.log(sessionUser);
+			console.log("Session user received:", sessionUser);
 			toast.success($i18n.t(`You're now logged in.`));
 			if (sessionUser.token) {
 				localStorage.token = sessionUser.token;
 			}
 
-			$socket.emit('user-join', { auth: { token: sessionUser.token } });
+			if ($socket) {
+				$socket.emit('user-join', { auth: { token: sessionUser.token } });
+			}
 			await user.set(sessionUser);
 			await config.set(await getBackendConfig());
 
-			const redirectPath = querystringValue('redirect') || '/';
-			goto(redirectPath);
+			// Redirect based on user role with explicit logging
+			console.log("Redirecting based on role:", sessionUser.role);
+			
+			try {
+				if (sessionUser.role) {
+					console.log(`Redirecting to ${sessionUser.role} page`);
+					window.location.href = `/${sessionUser.role}`;
+				} else {
+					console.log("Unknown role, redirecting to default page");
+					const redirectPath = querystringValue('redirect') || '/';
+					window.location.href = redirectPath;
+				}
+			} catch (error) {
+				console.error("Error during redirection:", error);
+				// Fallback to home page if redirection fails
+				window.location.href = '/';
+			}
+		} else {
+			console.error("No session user received");
+			toast.error($i18n.t('Login failed. Please try again.'));
 		}
 	};
 
@@ -64,8 +84,10 @@
 	};
 
 	const signUpHandler = async () => {
-		const name = `${firstName} ${lastName}`.trim();
-		const sessionUser = await userSignUp(name, email, password, generateInitialsImage(name)).catch(
+		const name = `${firstName} ${lastName}`.trim();	
+		console.log(`Creating account with role: ${role}`);
+		
+		const sessionUser = await userSignUp(name, email, password, generateInitialsImage(name), role).catch(
 			(error) => {
 				toast.error(`${error}`);
 				return null;
@@ -132,11 +154,10 @@
 		};
 	}
 
-	let onboarding = false;
-
 	onMount(async () => {
 		if ($user !== undefined) {
-			await goto('/');
+			// Redirect based on user role if already logged in
+			await goto(`/${$user.role}`);
 		}
 		await checkOauthCallback();
 
@@ -162,7 +183,9 @@
 	<!-- Web app manifests for mobile devices -->
 	<link rel="manifest" href="favicon/site.webmanifest" />
 </svelte:head>
-
+{#if showForgotPassword}
+	<ForgotPassword on:close={() => (showForgotPassword = false)} />
+{/if}
 <OnBoarding
 	bind:show={onboarding}
 	getStartedHandler={() => {
@@ -345,6 +368,7 @@
 										<a
 											href="#"
 											class="text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400"
+											on:click|preventDefault={() => (showForgotPassword = true)}
 										>
 											{$i18n.t('Forgot password?')}
 										</a>
@@ -384,12 +408,11 @@
 											id="role"
 											bind:value={role}
 											class="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-black dark:text-white appearance-none"
-											style="-webkit-appearance: none; -moz-appearance: none;"
+											required
 										>
-											<option value="" disabled selected>{$i18n.t('Select your role')}</option>
-											<option value="teacher">{$i18n.t('Teacher')}</option>
 											<option value="student">{$i18n.t('Student')}</option>
-											<option value="admin">{$i18n.t('Admin')}</option>
+											<option value="teacher">{$i18n.t('Teacher')}</option>
+											<option value="parent">{$i18n.t('Parent')}</option>
 										</select>
 									</div>
 								</div>

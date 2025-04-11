@@ -2,6 +2,8 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount, getContext } from 'svelte';
 	const i18n = getContext('i18n');
+	import { user } from '$lib/stores';
+
 
 	// Props
 	export let username: string = 'Karim';
@@ -87,7 +89,9 @@
 		</button>
 
 		<div class="ml-4">
-			<h1 class={`text-xl font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'} flex items-center gap-2`}>
+			<h1
+				class={`text-xl font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'} flex items-center gap-2`}
+			>
 				<span class="hidden sm:inline">{$i18n.t('Hello') + ' ' + username}</span>
 			</h1>
 			<p class={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} hidden sm:block`}>
@@ -186,8 +190,12 @@
 				<div
 					class={`absolute right-0 mt-2 w-64 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-lg shadow-lg z-50 border`}
 				>
-					<div class={`p-3 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'} flex justify-between items-center`}>
-						<h3 class={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{$i18n.t('Notifications')}</h3>
+					<div
+						class={`p-3 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'} flex justify-between items-center`}
+					>
+						<h3 class={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+							{$i18n.t('Notifications')}
+						</h3>
 						<button
 							class={`text-xs ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-500 hover:text-blue-700'}`}
 							on:click={() => (notificationCount = 0)}
@@ -197,20 +205,32 @@
 					</div>
 					<div class="p-2 max-h-64 overflow-y-auto">
 						<div class={`p-2 ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'} rounded-lg`}>
-							<p class={`text-sm font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{$i18n.t('New course available')}</p>
-							<p class={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{$i18n.t('React Advanced Patterns')}</p>
-							<p class={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mt-1`}>{$i18n.t('2 hours ago')}</p>
+							<p class={`text-sm font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+								{$i18n.t('New course available')}
+							</p>
+							<p class={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+								{$i18n.t('React Advanced Patterns')}
+							</p>
+							<p class={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mt-1`}>
+								{$i18n.t('2 hours ago')}
+							</p>
 						</div>
 						<div class={`p-2 ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'} rounded-lg`}>
-							<p class={`text-sm font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{$i18n.t('Assignment feedback')}</p>
+							<p class={`text-sm font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+								{$i18n.t('Assignment feedback')}
+							</p>
 							<p class={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
 								{$i18n.t('Your JavaScript project has been reviewed')}
 							</p>
-							<p class={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mt-1`}>{$i18n.t('Yesterday')}</p>
+							<p class={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mt-1`}>
+								{$i18n.t('Yesterday')}
+							</p>
 						</div>
 					</div>
 					<div class={`p-2 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-						<button class={`w-full text-center text-sm ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-500 hover:text-blue-700'}`}>
+						<button
+							class={`w-full text-center text-sm ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-500 hover:text-blue-700'}`}
+						>
 							{$i18n.t('View all notifications')}
 						</button>
 					</div>
@@ -290,8 +310,10 @@
 				class={`absolute right-0 mt-2 w-48 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border`}
 			>
 				<div class={`p-3 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-					<p class={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{username}</p>
-					<p class={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>student@example.com</p>
+					<p class={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{$user.name}</p>
+					<p class={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+						{$user.email}
+					</p>
 				</div>
 				<div class="py-1">
 					<a
@@ -362,7 +384,13 @@
 					</a>
 				</div>
 				<div class={`py-1 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-					<button class={`flex w-full items-center px-4 py-2 text-sm ${isDarkMode ? 'text-red-400 hover:bg-gray-700' : 'text-red-600 hover:bg-gray-50'}`}>
+					<button
+						on:click={() => {
+							localStorage.removeItem('token');
+							location.href = '/auth';
+						}}
+						class={`flex w-full items-center px-4 py-2 text-sm ${isDarkMode ? 'text-red-400 hover:bg-gray-700' : 'text-red-600 hover:bg-gray-50'}`}
+					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
 							class="h-4 w-4 mr-2"
@@ -471,8 +499,12 @@
 					class={`absolute right-0 mt-2 w-48 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-lg shadow-lg z-50 border`}
 				>
 					<div class={`p-3 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-						<p class={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{username}</p>
-						<p class={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>student@example.com</p>
+						<p class={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+							{username}
+						</p>
+						<p class={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+							student@example.com
+						</p>
 					</div>
 					<div class="py-1">
 						<a

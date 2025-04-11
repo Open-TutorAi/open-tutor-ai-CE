@@ -1,14 +1,21 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { writable } from 'svelte/store';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
+	import { get, writable } from 'svelte/store';
+	import { user } from '$lib/stores';
+
 	import Sidebar from '$lib/components/student/components/Sidebar.svelte';
 	import Navbar from '$lib/components/student/components/Navbar.svelte';
 
-	// Create a store for active page
 	const activePage = writable('dashboard');
 	let isSidebarOpen = true;
 	let isDarkMode = false;
 	let username = 'Karim';
+
+	let windowWidth: number;
+	let isMobile: boolean = false;
+	let loading = true;
 
 	function toggleSidebar() {
 		isSidebarOpen = !isSidebarOpen;
@@ -21,24 +28,31 @@
 		localStorage.setItem('darkMode', isDarkMode ? 'true' : 'false');
 	}
 
-	// For mobile responsiveness
-	let windowWidth: number;
-	let isMobile: boolean = false;
-
 	onMount(() => {
+
+		// Role protection logic
+		const currentUser = get(user);
+		if (!currentUser) {
+			goto('/auth');
+			return;
+		}
+		if (currentUser.role !== 'student') {
+			goto(`/${currentUser.role}`);
+			return;
+		}
+		loading = false;
+
 		// Check for saved user preference
 		const savedDarkMode = localStorage.getItem('darkMode') === 'true';
 		if (savedDarkMode !== isDarkMode) {
 			isDarkMode = savedDarkMode;
 			document.documentElement.classList.toggle('dark', isDarkMode);
 		}
-		
 		// Handle resize events for responsive design
 		const handleResize = () => {
 			windowWidth = window.innerWidth;
 			isMobile = windowWidth < 768;
 
-			// Auto-close sidebar on small screens initially
 			if (isMobile && isSidebarOpen) {
 				isSidebarOpen = false;
 			} else if (!isMobile && !isSidebarOpen) {
@@ -47,13 +61,14 @@
 		};
 
 		window.addEventListener('resize', handleResize);
-		handleResize(); // Initialize
+		handleResize();
 
 		return () => {
 			window.removeEventListener('resize', handleResize);
 		};
 	});
 </script>
+
 
 <div class="flex h-screen overflow-hidden bg-[#F4F7FE] dark:bg-gray-900 transition-colors duration-200 ease-in-out">
 	<!-- Sidebar with adaptive behavior -->
