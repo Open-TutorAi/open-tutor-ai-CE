@@ -1,4 +1,4 @@
-import { TUTOR_API_BASE_URL } from '$lib/constants';
+import { TUTOR_API_BASE_URL, TUTOR_BASE_URL} from '$lib/constants';
 
 export const getAdminDetails = async (token: string) => {
 	let error = null;
@@ -295,7 +295,7 @@ export const userSignUp = async (
 ) => {
 	let error = null;
 
-	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/signup`, {
+	const res = await fetch(`${TUTOR_BASE_URL}/auths/signup`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json'
