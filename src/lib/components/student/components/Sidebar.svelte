@@ -149,7 +149,7 @@
 
 	<!-- Sidebar -->
 	<aside
-		class={`bg-gray-50 shadow-md transition-all duration-300 h-full fixed left-0 top-0 z-30 overflow-y-auto ${isSidebarOpen ? 'w-64 translate-x-0' : 'w-0 md:w-16 -translate-x-full md:translate-x-0'}`}
+		class={`bg-[#F5F7F9] shadow-md transition-all duration-300 h-full fixed left-0 top-0 z-30 overflow-y-auto ${isSidebarOpen ? 'w-64 translate-x-0' : 'w-0 md:w-16 -translate-x-full md:translate-x-0'}`}
 		style="min-height: 100vh;"
 	>
 		<div class="p-4">
