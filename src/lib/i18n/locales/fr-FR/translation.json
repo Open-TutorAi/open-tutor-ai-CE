@@ -1264,13 +1264,19 @@
 	"Your privacy matters. We prioritize keeping your learning journey secure and private.": "Votre vie privée est importante pour nous. Nous priorisons la sécurité et la confidentialité de votre parcours d'apprentissage.",
 	"Youtube": "YouTube",
 	"Youtube Loader Settings": "Paramètres de l'outil de téléchargemenent TouTube",
+	"Avatar": "Avatar",
+	"Chat": "Discussion",
 	"Subject": "Sujet",
 	"Course": "Cours",
 	"Objectives": "Objectifs",
 	"Level": "Niveau",
 	"Details": "Détails",
+<<<<<<< HEAD
+	"Review": "Révision",	
+=======
 	"Avatar": "Avatar",
 	"Review": "Révision",
+>>>>>>> origin/dev
 	"Conceptual": "Conceptuel",
 	"Practical": "Pratique",
 	"Analytical": "Analytique",
@@ -1331,5 +1337,17 @@
 	"This step would show a summary of all selections.": "Cette étape afficherait un résumé de toutes les sélections.",
 	"Next": "Suivant",
 	"Start": "Commencer",
-	"Personalized Support": "Support personnalisé"
+	"Personalized Support": "Support personnalisé",
+	"The code is a 6-8 character alphanumeric string": "Le code est une chaîne de 6-8 caractères alphanumériques",
+	"Need a code? Ask your teacher or institution": "Besoin d'un code ? Demandez à votre enseignant ou à votre institution",
+	"Join Course": "Rejoindre le cours",
+	"create your own course": "créer votre propre cours",
+	"Create My support": "Créer mon soutien",
+	"Don't show me again": "Ne pas me montrer à nouveau",
+	"Create Personalized Tutorials for any Subject or Topic": "Créer des tutoriels personnalisés pour n'importe quel sujet ou thème",
+	"Create Tour Learning Path": "Créer un parcours d'apprentissage guidé",
+	"Choose your topic and difficulty level": "Choisissez votre sujet et votre niveau de difficulté",
+	"Set your learning objectives": "Définissez vos objectifs d'apprentissage",
+	"Enjoy AI-powered personalized learning": "Profitez d'un apprentissage personnalisé avec l'IA",
+	"Enter the course code provided by your teacher": "Entrez le code du cours fourni par votre enseignant"
 }

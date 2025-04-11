@@ -143,6 +143,18 @@
 	let avatarSpeaking = false;
 	let currentAvatarMessage = '';
 
+	// Toggle avatar mode function
+	const toggleAvatar = () => {
+		// Update settings store and localStorage
+		settings.update((s) => {
+			const updatedSettings = { ...s };
+			(updatedSettings as any).avatarEnabled = !(($settings as any)?.avatarEnabled);
+			return updatedSettings;
+		});
+		// Save to localStorage for persistence
+		localStorage.setItem('settings', JSON.stringify($settings));
+	};
+
 	$: if (chatIdProp) {
 		(async () => {
 			loading = true;
@@ -2102,15 +2114,6 @@
 			}
 		}
 	};
-
-	function toggleAvatar() {
-		avatarActive = !avatarActive;
-		// Save preference to settings
-		settings.update((s) => ({
-			...s,
-			avatarEnabled: avatarActive
-		}));
-	}
 </script>
 
 <svelte:head>
@@ -2179,6 +2182,8 @@
 			bind:selectedModels
 			shareEnabled={!!history.currentId}
 			{initNewChat}
+			{avatarActive}
+			{toggleAvatar}
 		/>
 
 		<PaneGroup direction="horizontal" class="w-full h-full">

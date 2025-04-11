@@ -1,4 +1,4 @@
-name: Python CI
+name: 'CI Backend'
 
 on:
   push:
@@ -9,6 +9,10 @@ on:
     branches:
       - main
       - dev
+
+permissions:
+  contents: read
+  statuses: write
 
 jobs:
   build:
