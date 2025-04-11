@@ -61,18 +61,18 @@
 </script>
 
 
-<div class="flex h-screen overflow-hidden bg-gray-100 transition-colors duration-200 ease-in-out">
+<div class="flex h-screen overflow-hidden bg-[#F4F7FE] transition-colors duration-200 ease-in-out">
 	<!-- Sidebar with adaptive behavior -->
 	<div class={`sidebar-container ${isSidebarOpen ? '' : 'collapsed'}`}>
 		<Sidebar {isSidebarOpen} {activePage} />
 	</div>
 
 	<!-- Main content area with navbar and slot -->
-	<div class="flex-1 flex flex-col overflow-hidden relative z-10 bg-gray-100">
+	<div class="flex-1 flex flex-col overflow-hidden relative z-10 bg-[#F4F7FE]">
 		<Navbar {username} {toggleSidebar} {isDarkMode} on:darkModeToggle={toggleDarkMode} />
 
 		<!-- Main content with proper scrolling -->
-		<div class="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-100 text-gray-800">
+		<div class="flex-1 overflow-y-auto p-4 md:p-6 bg-[#F4F7FE] text-gray-800">
 			<slot />
 		</div>
 	</div>

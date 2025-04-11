@@ -1,4 +1,9 @@
-name: build-release.yml
+name: Release
+# This workflow is triggered on pushes to the main branch
+# and creates a GitHub release with the latest version from package.json.
+# It also extracts the latest release notes from CHANGELOG.md
+# and uploads the package to the release.
+# Additionally, it triggers a Docker build workflow.
 
 on:
   push:
