@@ -16,6 +16,7 @@
 
 	// Use a simple boolean for sidebar state instead of a store
 	export let isSidebarOpen = true;
+	export let isDarkMode: boolean = false;
 
 	// Accept either a string or a Writable<string> for activePage
 	export let activePage: string | Writable<string> = 'dashboard';
@@ -149,7 +150,7 @@
 
 	<!-- Sidebar -->
 	<aside
-		class={`bg-[#F5F7F9] shadow-md transition-all duration-300 h-full fixed left-0 top-0 z-30 overflow-y-auto ${isSidebarOpen ? 'w-64 translate-x-0' : 'w-0 md:w-16 -translate-x-full md:translate-x-0'}`}
+		class={`${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-[#F5F7F9]'} shadow-md transition-all duration-300 h-full fixed left-0 top-0 z-30 overflow-y-auto ${isSidebarOpen ? 'w-64 translate-x-0' : 'w-0 md:w-16 -translate-x-full md:translate-x-0'}`}
 		style="min-height: 100vh;"
 	>
 		<div class="p-4">
@@ -168,7 +169,7 @@
 
 		<div class="px-4 py-2">
 			{#if isSidebarOpen}
-				<div class="text-xs text-gray-500 uppercase font-semibold mb-1">
+				<div class={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} uppercase font-semibold mb-1`}>
 					{$i18n.t(currentRole.charAt(0).toUpperCase() + currentRole.slice(1)) + ' Portal'}
 				</div>
 			{/if}
@@ -181,7 +182,7 @@
 						<li class="mb-1 px-2">
 							<button
 								on:click={() => setActivePage(currentRole, item.id)}
-								class={`flex items-center px-4 py-3 rounded-lg w-full text-left transition-colors duration-200 ${currentActivePage === item.id ? 'bg-blue-500 text-white' : 'text-gray-800 hover:bg-gray-200'}`}
+								class={`flex items-center px-4 py-3 rounded-lg w-full text-left transition-colors duration-200 ${currentActivePage === item.id ? 'bg-blue-500 text-white' : isDarkMode ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-800 hover:bg-gray-200'}`}
 								title={$i18n.t(item.label)}
 							>
 								<span class="grid place-items-center w-6 h-6">
@@ -195,7 +196,7 @@
 					{/each}
 				</ul>
 			{:else}
-				<div class="px-4 py-3 text-gray-500 text-sm italic">
+				<div class={`px-4 py-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-sm italic`}>
 					{isSidebarOpen ? 'No navigation items available' : ''}
 				</div>
 			{/if}
@@ -203,9 +204,9 @@
 
 		{#if isSidebarOpen}
 			<div class="absolute bottom-0 left-0 right-0 p-4 hidden md:block">
-				<div class="flex items-center justify-between text-sm text-gray-500">
+				<div class={`flex items-center justify-between text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
 					<span>© 2025 OpenTutorAI</span>
-					<button class="hover:text-gray-800">{$i18n.t('Help')}</button>
+					<button class={`hover:${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>{$i18n.t('Help')}</button>
 				</div>
 			</div>
 		{/if}
@@ -214,7 +215,7 @@
 	<!-- Desktop toggle button -->
 	<button
 		on:click={toggleSidebar}
-		class="hidden md:flex absolute top-4 z-50 bg-white shadow-md rounded-full h-6 w-6 items-center justify-center border border-gray-200 text-gray-600 hover:text-blue-500 focus:outline-none"
+		class={`hidden md:flex absolute top-4 z-50 ${isDarkMode ? 'bg-gray-800 text-gray-300 border-gray-700' : 'bg-white text-gray-600 border-gray-200'} shadow-md rounded-full h-6 w-6 items-center justify-center border hover:text-blue-500 focus:outline-none`}
 		style={isSidebarOpen ? 'left: 15.1rem;' : 'left: 3.5rem;'}
 		aria-label={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
 	>

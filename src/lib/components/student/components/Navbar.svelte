@@ -61,12 +61,12 @@
 </script>
 
 <header
-	class="bg-white shadow-sm p-4 flex items-center justify-between transition-colors duration-200 ease-in-out z-10 w-full"
+	class={`${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'} shadow-sm p-4 flex items-center justify-between transition-colors duration-200 ease-in-out z-10 w-full`}
 >
 	<div class="flex items-center">
 		<!-- Mobile menu button - visible on mobile only -->
 		<button
-			class="md:hidden mr-3 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-md"
+			class={`md:hidden mr-3 ${isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'} focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-md`}
 			on:click={toggleSidebar}
 			aria-label="Toggle navigation menu"
 		>
@@ -87,10 +87,10 @@
 		</button>
 
 		<div class="ml-4">
-			<h1 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+			<h1 class={`text-xl font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'} flex items-center gap-2`}>
 				<span class="hidden sm:inline">{$i18n.t('Hello') + ' ' + username}</span>
 			</h1>
-			<p class="text-sm text-gray-500 hidden sm:block">
+			<p class={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} hidden sm:block`}>
 				{$i18n.t("Let's learn something new today!")}
 			</p>
 		</div>
@@ -101,11 +101,11 @@
 		<!-- Search -->
 		<div class={`relative ${isSearchFocused ? 'md:w-64 transition-all duration-300' : 'md:w-40'}`}>
 			<div
-				class={`flex items-center bg-gray-50 rounded-full px-4 py-2 border border-gray-200 shadow-sm ${isSearchFocused ? 'ring-2 ring-blue-300 shadow-md' : ''}`}
+				class={`flex items-center ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'} rounded-full px-4 py-2 border shadow-sm ${isSearchFocused ? 'ring-2 ring-blue-300 shadow-md' : ''}`}
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
-					class="h-4 w-4 text-gray-400"
+					class={`h-4 w-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}
 					fill="none"
 					viewBox="0 0 24 24"
 					stroke="currentColor"
@@ -120,7 +120,7 @@
 				<input
 					type="text"
 					placeholder={$i18n.t('Search')}
-					class="bg-transparent border-none outline-none focus:ring-0 px-2 py-1 w-full text-sm text-gray-700"
+					class={`bg-transparent border-none outline-none focus:ring-0 px-2 py-1 w-full text-sm ${isDarkMode ? 'text-gray-100 placeholder-gray-400' : 'text-gray-700'}`}
 					bind:value={searchQuery}
 					on:keydown={handleSearch}
 					on:focus={() => (isSearchFocused = true)}
@@ -130,7 +130,7 @@
 				{#if searchQuery}
 					<button
 						on:click={() => (searchQuery = '')}
-						class="text-gray-400 hover:text-gray-600"
+						class={`${isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-400 hover:text-gray-600'}`}
 						aria-label="Clear search"
 					>
 						<svg
@@ -155,7 +155,7 @@
 		<!-- Notification -->
 		<div class="relative" bind:this={notificationRef}>
 			<button
-				class="p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-50 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-300"
+				class={`p-2 ${isDarkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800' : 'text-gray-500 hover:text-gray-600 hover:bg-gray-50'} rounded-full focus:outline-none focus:ring-2 focus:ring-blue-300`}
 				on:click={toggleNotificationPanel}
 				aria-label={`Notifications${notificationCount > 0 ? ` (${notificationCount} unread)` : ''}`}
 			>
@@ -184,33 +184,33 @@
 			<!-- Notification panel -->
 			{#if showNotifications}
 				<div
-					class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg z-50 border border-gray-100"
+					class={`absolute right-0 mt-2 w-64 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-lg shadow-lg z-50 border`}
 				>
-					<div class="p-3 border-b border-gray-100 flex justify-between items-center">
-						<h3 class="font-medium text-gray-800">{$i18n.t('Notifications')}</h3>
+					<div class={`p-3 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'} flex justify-between items-center`}>
+						<h3 class={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{$i18n.t('Notifications')}</h3>
 						<button
-							class="text-xs text-blue-500 hover:text-blue-700"
+							class={`text-xs ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-500 hover:text-blue-700'}`}
 							on:click={() => (notificationCount = 0)}
 						>
 							{$i18n.t('Mark all as read')}
 						</button>
 					</div>
 					<div class="p-2 max-h-64 overflow-y-auto">
-						<div class="p-2 hover:bg-gray-50 rounded-lg">
-							<p class="text-sm font-medium text-gray-800">{$i18n.t('New course available')}</p>
-							<p class="text-xs text-gray-500">{$i18n.t('React Advanced Patterns')}</p>
-							<p class="text-xs text-gray-400 mt-1">{$i18n.t('2 hours ago')}</p>
+						<div class={`p-2 ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'} rounded-lg`}>
+							<p class={`text-sm font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{$i18n.t('New course available')}</p>
+							<p class={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{$i18n.t('React Advanced Patterns')}</p>
+							<p class={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mt-1`}>{$i18n.t('2 hours ago')}</p>
 						</div>
-						<div class="p-2 hover:bg-gray-50 rounded-lg">
-							<p class="text-sm font-medium text-gray-800">{$i18n.t('Assignment feedback')}</p>
-							<p class="text-xs text-gray-500">
+						<div class={`p-2 ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'} rounded-lg`}>
+							<p class={`text-sm font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{$i18n.t('Assignment feedback')}</p>
+							<p class={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
 								{$i18n.t('Your JavaScript project has been reviewed')}
 							</p>
-							<p class="text-xs text-gray-400 mt-1">{$i18n.t('Yesterday')}</p>
+							<p class={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mt-1`}>{$i18n.t('Yesterday')}</p>
 						</div>
 					</div>
-					<div class="p-2 border-t border-gray-100">
-						<button class="w-full text-center text-sm text-blue-500 hover:text-blue-700">
+					<div class={`p-2 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+						<button class={`w-full text-center text-sm ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-500 hover:text-blue-700'}`}>
 							{$i18n.t('View all notifications')}
 						</button>
 					</div>
@@ -220,7 +220,7 @@
 
 		<!-- Dark mode toggle -->
 		<button
-			class="p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-50 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-300"
+			class={`p-2 ${isDarkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800' : 'text-gray-500 hover:text-gray-600 hover:bg-gray-50'} rounded-full focus:outline-none focus:ring-2 focus:ring-blue-300`}
 			on:click={toggleDarkMode}
 			aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
 		>
@@ -259,7 +259,7 @@
 
 		<!-- Help/Info -->
 		<button
-			class="p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-50 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-300"
+			class={`p-2 ${isDarkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800' : 'text-gray-500 hover:text-gray-600 hover:bg-gray-50'} rounded-full focus:outline-none focus:ring-2 focus:ring-blue-300`}
 			aria-label="Help and information"
 		>
 			<svg
@@ -281,22 +281,22 @@
 		<!-- User Avatar dropdown -->
 		<div class="relative group">
 			<button
-				class="h-8 w-8 overflow-hidden rounded-full bg-green-100 flex items-center justify-center ring-2 ring-transparent hover:ring-blue-300 focus:outline-none focus:ring-blue-300 transition-all duration-200"
+				class={`h-8 w-8 overflow-hidden rounded-full ${isDarkMode ? 'bg-gray-700' : 'bg-green-100'} flex items-center justify-center ring-2 ring-transparent hover:ring-blue-300 focus:outline-none focus:ring-blue-300 transition-all duration-200`}
 				aria-label="User profile"
 			>
 				<img src="/static/student-avatar.png" alt="User" class="h-full w-full object-cover" />
 			</button>
 			<div
-				class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-100"
+				class={`absolute right-0 mt-2 w-48 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border`}
 			>
-				<div class="p-3 border-b border-gray-100">
-					<p class="font-medium text-gray-800">{username}</p>
-					<p class="text-xs text-gray-500">student@example.com</p>
+				<div class={`p-3 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+					<p class={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{username}</p>
+					<p class={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>student@example.com</p>
 				</div>
 				<div class="py-1">
 					<a
 						href="/profile"
-						class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+						class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -316,7 +316,7 @@
 					</a>
 					<a
 						href="/settings"
-						class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+						class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -342,7 +342,7 @@
 					</a>
 					<a
 						href="/progress"
-						class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+						class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -361,8 +361,8 @@
 						{$i18n.t('Learning Progress')}
 					</a>
 				</div>
-				<div class="py-1 border-t border-gray-100">
-					<button class="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-50">
+				<div class={`py-1 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+					<button class={`flex w-full items-center px-4 py-2 text-sm ${isDarkMode ? 'text-red-400 hover:bg-gray-700' : 'text-red-600 hover:bg-gray-50'}`}>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
 							class="h-4 w-4 mr-2"
@@ -389,7 +389,7 @@
 		<!-- Notification icon for mobile -->
 		<div class="relative">
 			<button
-				class="p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+				class={`p-2 ${isDarkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800' : 'text-gray-500 hover:text-gray-600 hover:bg-gray-100'} rounded-full`}
 				on:click={toggleNotificationPanel}
 				aria-label="Notifications"
 			>
@@ -418,7 +418,7 @@
 
 		<!-- Dark mode toggle button for mobile -->
 		<button
-			class="p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+			class={`p-2 ${isDarkMode ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-800' : 'text-gray-500 hover:text-gray-600 hover:bg-gray-100'} rounded-full`}
 			on:click={toggleDarkMode}
 			aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
 		>
@@ -458,7 +458,7 @@
 		<!-- User Avatar for mobile -->
 		<div class="relative" bind:this={mobileMenuRef}>
 			<button
-				class="h-8 w-8 overflow-hidden rounded-full bg-green-100 flex items-center justify-center border-2 border-transparent focus:border-blue-300"
+				class={`h-8 w-8 overflow-hidden rounded-full ${isDarkMode ? 'bg-gray-700' : 'bg-green-100'} flex items-center justify-center border-2 border-transparent focus:border-blue-300`}
 				on:click={toggleMobileMenu}
 				aria-label="User menu"
 			>
@@ -468,16 +468,16 @@
 			<!-- Mobile menu (dropdown style instead of slide-in) -->
 			{#if showMobileMenu}
 				<div
-					class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-50 border border-gray-100"
+					class={`absolute right-0 mt-2 w-48 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-lg shadow-lg z-50 border`}
 				>
-					<div class="p-3 border-b border-gray-100">
-						<p class="font-medium text-gray-800">{username}</p>
-						<p class="text-xs text-gray-500">student@example.com</p>
+					<div class={`p-3 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+						<p class={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{username}</p>
+						<p class={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>student@example.com</p>
 					</div>
 					<div class="py-1">
 						<a
 							href="/profile"
-							class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -493,11 +493,11 @@
 									d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
 								/>
 							</svg>
-							My Profile
+							{$i18n.t('My Profile')}
 						</a>
 						<a
 							href="/settings"
-							class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -519,11 +519,11 @@
 									d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
 								/>
 							</svg>
-							Account Settings
+							{$i18n.t('Account Settings')}
 						</a>
 						<a
 							href="/help"
-							class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -539,12 +539,12 @@
 									d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
 								/>
 							</svg>
-							Help Center
+							{$i18n.t('Help Center')}
 						</a>
 					</div>
-					<div class="py-1 border-t border-gray-100">
+					<div class={`py-1 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
 						<button
-							class="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
+							class={`flex w-full items-center px-4 py-2 text-sm ${isDarkMode ? 'text-red-400 hover:bg-gray-700' : 'text-red-600 hover:bg-gray-50'}`}
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -560,7 +560,7 @@
 									d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
 								/>
 							</svg>
-							Sign Out
+							{$i18n.t('Sign Out')}
 						</button>
 					</div>
 				</div>
