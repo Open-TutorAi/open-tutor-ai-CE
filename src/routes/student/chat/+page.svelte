@@ -8,6 +8,6 @@
 	const i18n = getContext<Writable<i18nType>>('i18n');
 </script>
 
-<div >
-    <!-- Expremental Chat component -->
-</div> 
+<div>
+	<!-- Expremental Chat component -->
+</div>
