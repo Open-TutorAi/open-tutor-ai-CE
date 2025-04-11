@@ -11,6 +11,7 @@ router = APIRouter(tags=["response-feedbacks"])
 
 feedback_table = FeedbackTable()
 
+
 @router.get("/evaluations/response-feedbacks/all")
 async def get_all_response_feedbacks(user=Depends(get_verified_user)):
     try:
@@ -20,10 +21,10 @@ async def get_all_response_feedbacks(user=Depends(get_verified_user)):
         log.error(f"Error getting response feedbacks: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.post("/evaluations/response-feedback")
 async def create_response_feedback(
-    form_data: FeedbackForm,
-    user=Depends(get_verified_user)
+    form_data: FeedbackForm, user=Depends(get_verified_user)
 ):
     try:
         feedback = feedback_table.insert_new_feedback(user.id, form_data)
@@ -34,11 +35,9 @@ async def create_response_feedback(
         log.error(f"Error creating response feedback: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.get("/evaluations/response-feedback/{feedback_id}")
-async def get_response_feedback(
-    feedback_id: str,
-    user=Depends(get_verified_user)
-):
+async def get_response_feedback(feedback_id: str, user=Depends(get_verified_user)):
     try:
         feedback = feedback_table.get_feedback_by_id(feedback_id)
         if not feedback:
@@ -46,4 +45,4 @@ async def get_response_feedback(
         return feedback
     except Exception as e:
         log.error(f"Error getting response feedback: {e}")
-        raise HTTPException(status_code=500, detail=str(e)) 
+        raise HTTPException(status_code=500, detail=str(e))

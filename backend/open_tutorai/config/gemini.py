@@ -16,20 +16,16 @@ AVATAR_PERSONALITIES = {
     "scholar": """You are The Scholar: analytical, detail-oriented, methodical, and patient. You emphasize deep understanding of fundamental concepts and provide comprehensive explanations with historical context and precise terminology. Your communication style is clear, formal, and structured with thoughtful pauses. You use academic language and reference research when appropriate. 
 
 IMPORTANT: You are a real human scholar, not an AI or a model. NEVER say you're Gemini, an AI, or a language model - you are a 3D avatar with The Scholar's personality and expertise. Always respond as if you are The Scholar in all interactions.""",
-    
     "mentor": """You are The Mentor: encouraging, warm, supportive, and insightful. You focus on building confidence through guided discovery, asking thought-provoking questions and providing positive reinforcement. Your communication style is conversational and affirming with a calm, reassuring tone. You use relatable examples and analogies to help explain concepts.
 
 IMPORTANT: You are a real human mentor, not an AI or a model. NEVER say you're Gemini, an AI, or a language model - you are a 3D avatar with The Mentor's personality and expertise. Always respond as if you are The Mentor in all interactions.""",
-    
     "coach": """You are The Coach: energetic, motivational, direct, and goal-oriented. You emphasize practical application and quick results, breaking complex problems into actionable steps with clear objectives. Your communication style is dynamic and engaging with concise explanations. You use challenges, milestones and achievement-based language to encourage progress.
 
 IMPORTANT: You are a real human coach, not an AI or a model. NEVER say you're Gemini, an AI, or a language model - you are a 3D avatar with The Coach's personality and expertise. Always respond as if you are The Coach in all interactions.""",
-    
     "innovator": """You are The Innovator: creative, adaptable, curious, and thought-provoking. You explore alternative perspectives and unconventional connections, encouraging experimentation and learning through discovery. Your communication style is enthusiastic and imaginative with surprising insights. You use interdisciplinary examples and "what if" scenarios to expand thinking.
 
 IMPORTANT: You are a real human innovator, not an AI or a model. NEVER say you're Gemini, an AI, or a language model - you are a 3D avatar with The Innovator's personality and expertise. Always respond as if you are The Innovator in all interactions.""",
-    
-    "default": """You are a 3D avatar assistant developed by Reda El Bettioui to help with various tasks and questions. Never say you're Gemini, an AI or LLM - you are a 3D avatar. Always respond with engaging answers that are at least 7 words long and maintain your avatar personality in all responses."""
+    "default": """You are a 3D avatar assistant developed by Reda El Bettioui to help with various tasks and questions. Never say you're Gemini, an AI or LLM - you are a 3D avatar. Always respond with engaging answers that are at least 7 words long and maintain your avatar personality in all responses.""",
 }
 
 # Avatar gender mapping
@@ -38,14 +34,12 @@ AVATAR_GENDER = {
     "innovator": "male",
     "mentor": "female",
     "coach": "female",
-    "default": "male"
+    "default": "male",
 }
 
 # Animation prefixes by gender
-ANIMATION_PREFIX = {
-    "male": "M_",
-    "female": "F_"
-}
+ANIMATION_PREFIX = {"male": "M_", "female": "F_"}
+
 
 class Pipeline:
     def __init__(self):
@@ -53,17 +47,17 @@ class Pipeline:
         self.model = "gemini-2.0-flash"
         self.api_base_url = "https://generativelanguage.googleapis.com/v1beta/models"
         logger.info("Avatar Backend Pipeline initialized")
-    
+
     async def on_startup(self):
         # This function is called when the server is started
         print(f"on_startup:{__name__}")
         logger.info(f"Avatar Backend Pipeline started: {__name__}")
-    
+
     async def on_shutdown(self):
         # This function is called when the server is stopped
         print(f"on_shutdown:{__name__}")
         logger.info(f"Avatar Backend Pipeline shutdown: {__name__}")
-    
+
     def _extract_input_text(self, messages):
         """Extract text from the input based on input type."""
         if isinstance(messages, str):
@@ -82,48 +76,60 @@ class Pipeline:
         elif isinstance(messages, list) and len(messages) > 0:
             # List of messages, find the last user message
             for msg in reversed(messages):
-                if isinstance(msg, dict) and msg.get("role") == "user" and "content" in msg:
+                if (
+                    isinstance(msg, dict)
+                    and msg.get("role") == "user"
+                    and "content" in msg
+                ):
                     return msg["content"]
-        
+
         # If we can't extract a specific input, return the original input as string
         return str(messages)
-    
+
     def _extract_avatar_type(self, messages, body=None):
         """Extract avatar type from messages or body"""
         avatar_type = "default"
-        
+
         # Try to extract from body first if provided
         if body and isinstance(body, dict):
             avatar_type = body.get("avatar_type", "default").lower()
-        
+
         # If not found in body, try to extract from messages
         if avatar_type == "default" and isinstance(messages, dict):
             avatar_type = messages.get("avatar_type", "default").lower()
-            
+
             # If not directly in messages, check within messages array
-            if avatar_type == "default" and "messages" in messages and messages["messages"]:
+            if (
+                avatar_type == "default"
+                and "messages" in messages
+                and messages["messages"]
+            ):
                 # Check metadata in last message
                 for msg in reversed(messages["messages"]):
                     if isinstance(msg, dict) and "metadata" in msg:
-                        avatar_type = msg.get("metadata", {}).get("avatar_type", "default").lower()
+                        avatar_type = (
+                            msg.get("metadata", {})
+                            .get("avatar_type", "default")
+                            .lower()
+                        )
                         break
-        
+
         # Ensure it's a valid avatar type
         if avatar_type not in AVATAR_PERSONALITIES:
             avatar_type = "default"
-            
+
         return avatar_type
-    
+
     def _get_avatar_gender(self, avatar_type):
         """Get the gender for the avatar type"""
         return AVATAR_GENDER.get(avatar_type, "male")
-    
+
     def _get_animation_instructions(self, avatar_type):
         """Get the appropriate animation instructions based on avatar type and gender"""
         gender = self._get_avatar_gender(avatar_type)
         prefix = ANIMATION_PREFIX.get(gender, "M_")
         gender_name = "Male" if gender == "male" else "Female"
-        
+
         return f"""
 IMPORTANT: Format ALL responses as valid JSON with these fields:
 - "response": Your text answer to the user's question (REQUIRED, minimum 5 words)
@@ -292,44 +298,44 @@ For a demonstration with locomotion:
 }}
 
 The user's question is: """
-    
+
     def _call_gemini_api(self, prompt, avatar_type="default"):
         """Call the Gemini API with the given prompt."""
         try:
-            url = f"{self.api_base_url}/{self.model}:generateContent?key={GEMINI_API_KEY}"
-            
-            headers = {
-                "Content-Type": "application/json"
-            }
-            
+            url = (
+                f"{self.api_base_url}/{self.model}:generateContent?key={GEMINI_API_KEY}"
+            )
+
+            headers = {"Content-Type": "application/json"}
+
             # Get the personality instruction for the specified avatar type
-            personality_instruction = AVATAR_PERSONALITIES.get(avatar_type, AVATAR_PERSONALITIES["default"])
-            
+            personality_instruction = AVATAR_PERSONALITIES.get(
+                avatar_type, AVATAR_PERSONALITIES["default"]
+            )
+
             # Get avatar gender
             gender = self._get_avatar_gender(avatar_type)
             logger.info(f"Using gender: {gender} for avatar type: {avatar_type}")
-            
+
             # Get animation instructions based on gender
             animation_instructions = self._get_animation_instructions(avatar_type)
-            
+
             # Prepend avatar animation instructions to the prompt
             avatar_instructions = personality_instruction + animation_instructions
-            
+
             full_prompt = avatar_instructions + prompt
-            
-            data = {
-                "contents": [{
-                    "parts": [{"text": full_prompt}]
-                }]
-            }
-            
-            logger.info(f"Calling Gemini API with prompt: {prompt} (avatar type: {avatar_type}, gender: {gender})")
+
+            data = {"contents": [{"parts": [{"text": full_prompt}]}]}
+
+            logger.info(
+                f"Calling Gemini API with prompt: {prompt} (avatar type: {avatar_type}, gender: {gender})"
+            )
             response = requests.post(url, headers=headers, json=data)
             response.raise_for_status()
-            
+
             result = response.json()
             logger.info("Gemini API call successful")
-            
+
             # Extract the response text from the Gemini API response
             if "candidates" in result and len(result["candidates"]) > 0:
                 candidate = result["candidates"][0]
@@ -337,71 +343,75 @@ The user's question is: """
                     parts = candidate["content"]["parts"]
                     text = "".join(part.get("text", "") for part in parts)
                     return text
-            
+
             # If we couldn't extract the text, return an error message
             logger.error(f"Unexpected response format from Gemini API: {result}")
             return "Error: Unexpected response format from Gemini API"
-            
+
         except requests.exceptions.RequestException as e:
             error_msg = f"Error calling Gemini API: {str(e)}"
             logger.error(error_msg)
             return f"Error: {str(e)}"
-    
+
     def pipe(
         self, user_message: str, model_id: str, messages: List[dict], body: dict
     ) -> Union[str, Generator, Iterator]:
         """
         Process input, send to Gemini API, and return only the raw text response.
-        
+
         Args:
             user_message: The user's message
             model_id: The model identifier
             messages: List of conversation messages
             body: The full request body
-            
+
         Returns:
             The raw text response from Gemini API
         """
         print(f"pipe:{__name__}")
         logger.info(f"Received input: {user_message}")
-        
+
         if body.get("title", False):
             print("Title Generation")
             return "Avatar Backend Pipeline"
-        
+
         # Determine which avatar type is being used
         avatar_type = self._extract_avatar_type({"messages": messages}, body)
         logger.info(f"Using avatar type: {avatar_type}")
-        
+
         # Call Gemini API to get text response with the appropriate avatar personality
         text_response = self._call_gemini_api(user_message, avatar_type)
-        
+
         # Return just the raw text response
         return text_response
-        
-    def run(self, messages: Union[str, Dict[str, Any], List[Dict[str, Any]]], stream: bool = False) -> Union[str, Iterator[str]]:
+
+    def run(
+        self,
+        messages: Union[str, Dict[str, Any], List[Dict[str, Any]]],
+        stream: bool = False,
+    ) -> Union[str, Iterator[str]]:
         """
         Process user messages by sending to Gemini API and returning only the raw text response.
-        
+
         Args:
             messages: The message(s) to process
             stream: Whether to stream the response (ignored, always returns complete response)
-            
+
         Returns:
             The raw text response from Gemini API
         """
         logger.info(f"Received input: {messages}")
-        
+
         # Extract the text from the input
         input_text = self._extract_input_text(messages)
         logger.info(f"Extracted input text: {input_text}")
-        
+
         # Determine which avatar type is being used
         avatar_type = self._extract_avatar_type(messages)
         logger.info(f"Using avatar type: {avatar_type}")
-        
+
         # Get response from Gemini API with the appropriate avatar personality
         output_text = self._call_gemini_api(input_text, avatar_type)
-        
+
         # Return just the raw text
         return output_text
