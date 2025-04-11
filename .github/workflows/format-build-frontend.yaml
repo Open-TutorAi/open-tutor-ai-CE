@@ -1,4 +1,4 @@
-name: Frontend Build
+name: 'CI Frontend'
 
 on:
   push:
