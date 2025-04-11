@@ -57,10 +57,10 @@ async def signup(request: Request, response: Response, form_data: AddUserForm):
             )
 
     user_count = Users.get_num_users()
-    if request.app.state.USER_COUNT and user_count >= request.app.state.USER_COUNT:
-        raise HTTPException(
-            status.HTTP_403_FORBIDDEN, detail=ERROR_MESSAGES.ACCESS_PROHIBITED
-        )
+    # if request.app.state.USER_COUNT and user_count >= request.app.state.USER_COUNT:
+    #     raise HTTPException(
+    #         status.HTTP_403_FORBIDDEN, detail=ERROR_MESSAGES.ACCESS_PROHIBITED
+    #     )
 
     if not validate_email_format(form_data.email.lower()):
         raise HTTPException(
