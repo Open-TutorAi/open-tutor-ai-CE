@@ -486,6 +486,8 @@
     "Remember your password?": "",
     "Back to Sign In": "",
     "Check your spam folder if you don't see the reset email in your inbox": "",
+	"Check your spam folder if you dont see the reset email in your inbox":"",
+    "Well help you get back to your account.":"",
 	"External Models": "",
 	"Failed to add file.": "",
 	"Failed to create API Key.": "",

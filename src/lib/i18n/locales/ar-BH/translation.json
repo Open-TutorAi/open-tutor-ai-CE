@@ -36,6 +36,8 @@
     "Remember your password?": "هل تتذكر كلمة المرور؟",
     "Back to Sign In": "العودة إلى تسجيل الدخول",
     "Check your spam folder if you don't see the reset email in your inbox": "تحقق من مجلد الرسائل غير المرغوب فيها إذا لم تجد رسالة إعادة التعيين في بريدك الوارد",
+	"Check your spam folder if you dont see the reset email in your inbox": "تحقق من مجلد الرسائل غير المرغوب فيها إذا لم تجد رسالة إعادة التعيين في صندوق الوارد.",
+ 	"Well help you get back to your account.": "سنساعدك في استعادة الوصول إلى حسابك.",
 	"Access Control": "",
 	"Accessible to all users": "",
 	"Account": "الحساب",
