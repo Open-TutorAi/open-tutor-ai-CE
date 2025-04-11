@@ -1,4 +1,4 @@
-name: Frontend Build
+name: format-build-frontend.yaml
 
 on:
   push:
