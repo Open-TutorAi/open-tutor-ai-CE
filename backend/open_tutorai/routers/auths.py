@@ -35,9 +35,11 @@ router = APIRouter()
 log = logging.getLogger(__name__)
 log.setLevel(SRC_LOG_LEVELS["MAIN"])
 
+
 class SessionUserResponse(Token, UserResponse):
     expires_at: Optional[int] = None
     permissions: Optional[dict] = None
+
 
 @router.post("/signup", response_model=SessionUserResponse)
 async def signup(request: Request, response: Response, form_data: AddUserForm):
@@ -76,8 +78,12 @@ async def signup(request: Request, response: Response, form_data: AddUserForm):
             role = "admin"
         else:
             # Use provided role or default to student
-            role = form_data.role if form_data.role in ["teacher", "student", "parent"] else "student"
-            
+            role = (
+                form_data.role
+                if form_data.role in ["teacher", "student", "parent"]
+                else "student"
+            )
+
         log.info(f"Creating new user with role: {role}")
 
         hashed = get_password_hash(form_data.password)
