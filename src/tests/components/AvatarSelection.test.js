@@ -70,8 +70,6 @@ vi.mock('svelte', async () => {
 	};
 });
 
-
-
 // Create a reference to the mock settings for tests to use
 const mockSettings = vi.mocked(await import('$lib/stores')).settings;
 

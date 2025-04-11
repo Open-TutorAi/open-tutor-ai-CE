@@ -21,7 +21,7 @@ print(
 v{VERSION} - building the best open-source AI user interface.
 
 {f"Commit: {TUTORAI_BUILD_HASH}" if TUTORAI_BUILD_HASH != "dev-build" else ""}
-https://github.com/open-tutor-ai/open-tutor-ai
+https://github.com/pr-elhajji/open-tutor-ai-CE
 """
 )
 
@@ -40,15 +40,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Health check endpoint
 @app.get("/tutorai/health")
 async def health_check():
     return {"status": "okkay"}
 
+
 # Mount the entire OpenWebUI app
 app.mount("/", webui_app)
 
 # Include routers of open_tutorai
-app.include_router(response_feedbacks.router, prefix="/api/v1", tags=["response-feedbacks"])
-
-
+app.include_router(
+    response_feedbacks.router, prefix="/api/v1", tags=["response-feedbacks"]
+)
