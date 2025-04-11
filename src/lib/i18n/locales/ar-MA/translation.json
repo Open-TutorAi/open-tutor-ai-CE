@@ -13,6 +13,7 @@
 	"A new version (v{{LATEST_VERSION}}) is now available.": "",
 	"A task model is used when performing tasks such as generating titles for chats and web search queries": "يتم استخدام نموذج المهمة عند تنفيذ مهام مثل إنشاء عناوين للدردشات واستعلامات بحث الويب",
 	"a user": "مستخدم",
+	"Return to Login":"العودة إلى تسجيل الدخول",
 	"About": "عن",
 	"Access": "",
 	"Access Control": "",
