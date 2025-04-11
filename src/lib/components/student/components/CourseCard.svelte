@@ -1,6 +1,9 @@
 <!-- CourseCard.svelte -->
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { getContext } from 'svelte';
+
+	const i18n = getContext('i18n');
 
 	export let title: string;
 	export let progress: number;
@@ -46,7 +49,7 @@
 		<div class="flex mb-2 items-center justify-between">
 			<div>
 				<span class="text-xs font-semibold inline-block text-gray-600 dark:text-gray-400">
-					{progress}% Complete
+					{progress}% {$i18n.t('Complete')}
 				</span>
 			</div>
 		</div>
