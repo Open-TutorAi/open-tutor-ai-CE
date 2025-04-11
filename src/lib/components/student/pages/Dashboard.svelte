@@ -4,8 +4,95 @@
 	import type { Writable } from 'svelte/store';
 	import type { i18n as i18nType } from 'i18next';
 	import { goto } from '$app/navigation';
+	import CourseCard from '../components/CourseCard.svelte';
 
 	const i18n = getContext<Writable<i18nType>>('i18n');
+
+	// Sample enrolled courses data with subjects
+	const enrolledCourses = [
+		{
+			id: 'html-css',
+			title: 'Basic: HTML and CSS',
+			progress: 75,
+			subject: 'computer-science',
+			href: '#'
+		},
+		{
+			id: 'branding',
+			title: 'Branding Design',
+			progress: 45,
+			subject: 'english',
+			href: '#'
+		},
+		{
+			id: 'motion',
+			title: 'Motion Design',
+			progress: 60,
+			subject: 'computer-science',
+			href: '#'
+		},
+		{
+			id: 'fractions',
+			title: 'Les fractions',
+			progress: 30,
+			subject: 'mathematics',
+			href: '#'
+		},
+		{
+			id: 'biology',
+			title: 'Cell Biology',
+			progress: 85,
+			subject: 'biology',
+			href: '#'
+		},
+		{
+			id: 'chemistry',
+			title: 'Organic Chemistry',
+			progress: 40,
+			subject: 'chemistry',
+			href: '#'
+		},
+		{
+			id: 'physics',
+			title: 'Quantum Physics',
+			progress: 55,
+			subject: 'physics',
+			href: '#'
+		},
+		{
+			id: 'geography',
+			title: 'World Geography',
+			progress: 65,
+			subject: 'geography',
+			href: '#'
+		}
+	];
+
+	// State for pagination
+	let currentPage = 0;
+	const cardsPerPage = 4;
+
+	// Calculate total pages
+	$: totalPages = Math.ceil(enrolledCourses.length / cardsPerPage);
+
+	// Get current page courses
+	$: currentCourses = enrolledCourses.slice(
+		currentPage * cardsPerPage,
+		(currentPage + 1) * cardsPerPage
+	);
+
+	// Navigation functions
+	function nextPage() {
+		if (currentPage < totalPages - 1) {
+			currentPage += 1;
+		}
+	}
+
+	function previousPage() {
+		if (currentPage > 0) {
+			currentPage -= 1;
+		}
+	}
 
 	// State to control the join course popup
 	let showJoinCoursePopup = false;
@@ -51,27 +138,76 @@
 	}
 </script>
 
-<div class="flex gap-4 mb-6">
-	<button
-		class="flex items-center gap-2 bg-indigo-500 dark:bg-indigo-600 text-white py-3 px-6 rounded-full"
-		on:click={toggleJoinCoursePopup}
-	>
-		<span class="text-xl font-bold">+</span>
-		<span>{$i18n.t('Course')}</span>
-	</button>
-	<button
-		class="flex items-center gap-2 bg-indigo-500 dark:bg-indigo-600 text-white py-3 px-6 rounded-full"
-		on:click={toggleSupportPopup}
-	>
-		<span class="text-xl font-bold">+</span>
-		<span>{$i18n.t('Support')}</span>
-	</button>
-</div>
+<div class="flex flex-col gap-6">
+	<div class="flex justify-end">
+		<div class="flex gap-4">
+			<button
+				class="flex items-center gap-2 bg-indigo-500 dark:bg-indigo-600 text-white py-3 px-6 rounded-full hover:bg-indigo-600 dark:hover:bg-indigo-700 transition-colors"
+				on:click={toggleJoinCoursePopup}
+			>
+				<span class="text-xl font-bold">+</span>
+				<span>{$i18n.t('Course')}</span>
+			</button>
+			<button
+				class="flex items-center gap-2 bg-indigo-500 dark:bg-indigo-600 text-white py-3 px-6 rounded-full hover:bg-indigo-600 dark:hover:bg-indigo-700 transition-colors"
+				on:click={toggleSupportPopup}
+			>
+				<span class="text-xl font-bold">+</span>
+				<span>{$i18n.t('Support')}</span>
+			</button>
+		</div>
+	</div>
 
-<div class="mb-6">
-	<h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">
-		{$i18n.t('Dashboard Overview')}
-	</h2>
+	<div class="flex flex-col gap-6">
+		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+			{#each currentCourses as course}
+				<CourseCard
+					title={course.title}
+					progress={course.progress}
+					subject={course.subject}
+					href={course.href}
+				/>
+			{/each}
+		</div>
+
+		{#if totalPages > 1}
+			<div class="flex justify-center gap-4 mt-4">
+				<button
+					class="p-2 rounded-full bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+					on:click={previousPage}
+					disabled={currentPage === 0}
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						class="h-5 w-5 text-gray-600 dark:text-gray-300"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+					>
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+					</svg>
+				</button>
+				<span class="flex items-center text-sm text-gray-600 dark:text-gray-300">
+					Page {currentPage + 1} of {totalPages}
+				</span>
+				<button
+					class="p-2 rounded-full bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+					on:click={nextPage}
+					disabled={currentPage === totalPages - 1}
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						class="h-5 w-5 text-gray-600 dark:text-gray-300"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+					>
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+					</svg>
+				</button>
+			</div>
+		{/if}
+	</div>
 </div>
 
 <!-- Join Course Popup Modal -->
