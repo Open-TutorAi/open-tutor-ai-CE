@@ -36,6 +36,8 @@ jobs:
         run: git diff --exit-code || echo "Changes detected, continuing..."
 
       - name: Build Frontend
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096 # Increase to 4 GB
         run: npm run build
 
   test-frontend:
