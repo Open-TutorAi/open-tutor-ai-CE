@@ -357,7 +357,7 @@
 <FilesOverlay show={dragged} />
 
 {#if loaded}
-	<div class="w-full font-primary bg-[#F5F7F9]">
+	<div class="w-full font-primary {transparentBackground ? 'bg-transparent' : 'bg-[#F5F7F9] dark:bg-gray-900'}">
 		<div class=" mx-auto inset-x-0 bg-transparent flex justify-center">
 			<div
 				class="flex flex-col px-3 {($settings?.widescreenMode ?? null)
@@ -589,7 +589,7 @@
 							}}
 						>
 							<div
-								class="flex-1 flex flex-col relative w-full rounded-4xl shadow-md px-4 bg-white dark:bg-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-700 max-w-3xl mx-auto mb-10"
+								class="flex-1 flex flex-col relative w-full rounded-full {transparentBackground ? 'shadow-xl shadow-black/20 dark:shadow-black/40 bg-white/40 backdrop-blur-md dark:bg-gray-800/60 border-white/40 dark:border-gray-600/50' : 'shadow-md bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'} dark:text-gray-100 border px-4 max-w-3xl mx-auto mb-10 {transparentBackground ? 'hover:shadow-2xl hover:shadow-black/30 transition-all duration-300' : ''}"
 								dir={$settings?.chatDirection ?? 'LTR'}
 							>
 								{#if files.length > 0}
