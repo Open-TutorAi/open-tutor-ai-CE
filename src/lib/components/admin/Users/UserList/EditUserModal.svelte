@@ -113,7 +113,7 @@
 						</div>
 
 						<div class="flex flex-col w-full">
-							<div class=" mb-1 text-xs text-gray-500">{$i18n.t('Name')}</div>
+							<div class=" mb-1 text-xs text-gray-500">{$i18n.t('Full Name')}</div>
 
 							<div class="flex-1">
 								<input

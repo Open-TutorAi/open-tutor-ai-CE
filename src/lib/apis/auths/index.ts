@@ -1,4 +1,4 @@
-import { TUTOR_API_BASE_URL } from '$lib/constants';
+import { TUTOR_API_BASE_URL, TUTOR_BASE_URL} from '$lib/constants';
 
 export const getAdminDetails = async (token: string) => {
 	let error = null;
@@ -290,11 +290,12 @@ export const userSignUp = async (
 	name: string,
 	email: string,
 	password: string,
-	profile_image_url: string
+	profile_image_url: string,
+	role?: string
 ) => {
 	let error = null;
 
-	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/signup`, {
+	const res = await fetch(`${TUTOR_BASE_URL}/auths/signup`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json'
@@ -304,7 +305,8 @@ export const userSignUp = async (
 			name: name,
 			email: email,
 			password: password,
-			profile_image_url: profile_image_url
+			profile_image_url: profile_image_url,
+			role: role
 		})
 	})
 		.then(async (res) => {
@@ -354,7 +356,7 @@ export const addUser = async (
 	name: string,
 	email: string,
 	password: string,
-	role: string = 'pending'
+	role: string = 'student'
 ) => {
 	let error = null;
 

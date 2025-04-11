@@ -55,7 +55,7 @@
 	onMount(async () => {
 		if ($user === undefined) {
 			await goto('/auth');
-		} else if (['user', 'admin'].includes($user.role)) {
+		} else if (['admin'].includes($user.role)) {
 			try {
 				// Check if IndexedDB exists
 				DB = await openDB('Chats', 1);
@@ -208,6 +208,15 @@
 			await tick();
 		}
 
+		// Add role-based redirection
+		if ($page.url.pathname === '/') {
+			if ($user.role === 'admin') {
+				await goto('/');
+			}else{
+				await goto(`/${$user.role}`);
+			}
+		}
+
 		loaded = true;
 	});
 
@@ -241,7 +250,7 @@
 		class=" text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-900 h-screen max-h-[100dvh] overflow-auto flex flex-row justify-end"
 	>
 		{#if loaded}
-			{#if !['user', 'admin'].includes($user.role)}
+			{#if !['admin'].includes($user.role)}
 				<AccountPending />
 			{:else if localDBChats.length > 0}
 				<div class="fixed w-full h-full flex z-50">
