@@ -2,6 +2,8 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount, getContext } from 'svelte';
 	const i18n = getContext('i18n');
+	import { user } from '$lib/stores';
+
 
 	// Props
 	export let username: string = 'Karim';
@@ -308,9 +310,9 @@
 				class={`absolute right-0 mt-2 w-48 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border`}
 			>
 				<div class={`p-3 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-					<p class={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{username}</p>
+					<p class={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{$user.name}</p>
 					<p class={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-						student@example.com
+						{$user.email}
 					</p>
 				</div>
 				<div class="py-1">
