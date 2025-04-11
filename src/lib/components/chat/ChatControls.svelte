@@ -187,8 +187,6 @@
 							{models}
 							bind:chatFiles
 							bind:params
-							{avatarActive}
-							{onAvatarToggle}
 						/>
 					{/if}
 				</div>
@@ -276,8 +274,6 @@
 								{models}
 								bind:chatFiles
 								bind:params
-								{avatarActive}
-								{onAvatarToggle}
 							/>
 						{/if}
 					</div>
