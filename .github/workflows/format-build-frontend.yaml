@@ -1,4 +1,4 @@
-name: format-build-frontend.yaml
+name: CI Frontend
 
 on:
   push:
