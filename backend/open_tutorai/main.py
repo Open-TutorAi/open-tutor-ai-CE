@@ -4,7 +4,7 @@ import os
 from open_webui.main import app as webui_app
 from open_webui.config import CORS_ALLOW_ORIGIN
 from open_webui.models.users import Users
-from open_tutorai.config import (AppConfig)
+from open_tutorai.config import AppConfig
 
 from open_tutorai.routers import (
     response_feedbacks,
@@ -48,22 +48,18 @@ app.state.config = AppConfig()
 # app.state.USER_COUNT = 10
 
 
-
 # Health check endpoint
 @app.post("/tutorai/health")
 async def health_check():
     return {"status": "okay"}
 
-# Include routers of open_tutorai
-app.include_router(response_feedbacks.router, prefix="/api/v1", tags=["response-feedbacks"])
-app.include_router(auths.router, prefix="/auths", tags=["auths"])
 
+# Include routers of open_tutorai
+app.include_router(
+    response_feedbacks.router, prefix="/api/v1", tags=["response-feedbacks"]
+)
+app.include_router(auths.router, prefix="/auths", tags=["auths"])
 
 
 # Mount the entire OpenWebUI app
 app.mount("/", webui_app)
-
-
-
-
-
