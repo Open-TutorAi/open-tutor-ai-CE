@@ -1,4 +1,4 @@
-name: Release and Build Docker Image
+name: Release
 # This workflow is triggered on pushes to the main branch
 # and creates a GitHub release with the latest version from package.json.
 # It also extracts the latest release notes from CHANGELOG.md
