@@ -499,6 +499,15 @@
 
 						await user.set(sessionUser);
 						await config.set(await getBackendConfig());
+
+						// Role-based redirection
+						if ($page.url.pathname === '/') {
+							if (sessionUser.role === 'admin') {
+								await goto('/');
+							} else {
+								await goto(`/${sessionUser.role}`);
+							}
+						}
 					} else {
 						// Redirect Invalid Session User to /auth Page
 						localStorage.removeItem('token');
