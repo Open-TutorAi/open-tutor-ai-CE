@@ -788,9 +788,14 @@
 			<!-- Navigation buttons -->
 			<div class="flex justify-between mt-8">
 				<button
-					on:click={prevStep}
+					on:click={() => {
+						if (currentStep === 0) {
+							window.location.href = '/student/dashboard';
+						} else {
+							prevStep();
+						}
+					}}
 					class="px-6 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600"
-					disabled={currentStep === 0}
 				>
 					{$i18n.t('Back')}
 				</button>
