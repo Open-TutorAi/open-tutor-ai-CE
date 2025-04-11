@@ -188,7 +188,7 @@
 					</svg>
 				</button>
 				<span class="flex items-center text-sm text-gray-600 dark:text-gray-300">
-					Page {currentPage + 1} of {totalPages}
+					{$i18n.t('Page')} {currentPage + 1} {$i18n.t('of')} {totalPages}
 				</span>
 				<button
 					class="p-2 rounded-full bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -244,7 +244,7 @@
 				<input
 					type="text"
 					bind:value={courseCode}
-					placeholder="Enter Course Code"
+					placeholder={$i18n.t('Enter Course Code')}
 					class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
 					on:keydown={(e) => e.key === 'Enter' && handleJoinCourse()}
 				/>
@@ -267,7 +267,7 @@
 
 			<!-- Create Course Link -->
 			<div class="text-center">
-				<span class="text-gray-500 dark:text-gray-400">or</span>
+				<span class="text-gray-500 dark:text-gray-400">{$i18n.t('or')}</span>
 				<a href="#" class="text-blue-600 dark:text-blue-400 hover:underline"
 					>{$i18n.t('create your own course')}</a
 				>

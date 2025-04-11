@@ -42,7 +42,7 @@ export default defineConfig({
 	},
 	server: {
 		fs: {
-			allow: ['./static/avatar', './static/images/background.jpeg']
+			allow: ['./static/avatar', './static/classroom', './static/draco', './static/images/background.jpeg']
 		}
 	},
 	assetsInclude: ['**/*.glb']

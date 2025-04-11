@@ -143,6 +143,18 @@
 	let avatarSpeaking = false;
 	let currentAvatarMessage = '';
 
+	// Toggle avatar mode function
+	const toggleAvatar = () => {
+		// Update settings store and localStorage
+		settings.update((s) => {
+			const updatedSettings = { ...s };
+			(updatedSettings as any).avatarEnabled = !(($settings as any)?.avatarEnabled);
+			return updatedSettings;
+		});
+		// Save to localStorage for persistence
+		localStorage.setItem('settings', JSON.stringify($settings));
+	};
+
 	$: if (chatIdProp) {
 		(async () => {
 			loading = true;
@@ -2102,15 +2114,6 @@
 			}
 		}
 	};
-
-	function toggleAvatar() {
-		avatarActive = !avatarActive;
-		// Save preference to settings
-		settings.update((s) => ({
-			...s,
-			avatarEnabled: avatarActive
-		}));
-	}
 </script>
 
 <svelte:head>
@@ -2179,6 +2182,8 @@
 			bind:selectedModels
 			shareEnabled={!!history.currentId}
 			{initNewChat}
+			{avatarActive}
+			{toggleAvatar}
 		/>
 
 		<PaneGroup direction="horizontal" class="w-full h-full">
@@ -2245,7 +2250,7 @@
 										on:speechend={() => (avatarSpeaking = false)}
 									/>
 								</div>
-								<div class="w-full pt-2 bg-[#F5F7F9] dark:bg-gray-900 relative z-20">
+								<div class="absolute bottom-0 left-0 right-0 z-20 animate-float">
 									<MessageInput
 										{history}
 										{selectedModels}
@@ -2257,7 +2262,7 @@
 										bind:codeInterpreterEnabled
 										bind:webSearchEnabled
 										bind:atSelectedModel
-										transparentBackground={$settings?.backgroundImageUrl ?? false}
+										transparentBackground={true}
 										{stopResponse}
 										on:submit={async (e) => {
 											if (e.detail || files.length > 0) {

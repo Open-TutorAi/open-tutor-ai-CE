@@ -1,4 +1,3 @@
-<!-- +layout.svelte -->
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
@@ -18,6 +17,8 @@
 	function toggleDarkMode(event: CustomEvent) {
 		isDarkMode = event.detail.isDarkMode;
 		document.documentElement.classList.toggle('dark', isDarkMode);
+		// Store user preference in localStorage
+		localStorage.setItem('darkMode', isDarkMode ? 'true' : 'false');
 	}
 
 	// For mobile responsiveness
@@ -25,6 +26,13 @@
 	let isMobile: boolean = false;
 
 	onMount(() => {
+		// Check for saved user preference
+		const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+		if (savedDarkMode !== isDarkMode) {
+			isDarkMode = savedDarkMode;
+			document.documentElement.classList.toggle('dark', isDarkMode);
+		}
+		
 		// Handle resize events for responsive design
 		const handleResize = () => {
 			windowWidth = window.innerWidth;
@@ -47,18 +55,18 @@
 	});
 </script>
 
-<div class="flex h-screen overflow-hidden bg-[#F4F7FE] transition-colors duration-200 ease-in-out">
+<div class="flex h-screen overflow-hidden bg-[#F4F7FE] dark:bg-gray-900 transition-colors duration-200 ease-in-out">
 	<!-- Sidebar with adaptive behavior -->
 	<div class={`sidebar-container ${isSidebarOpen ? '' : 'collapsed'}`}>
-		<Sidebar {isSidebarOpen} {activePage} />
+		<Sidebar {isSidebarOpen} {activePage} {isDarkMode} />
 	</div>
 
 	<!-- Main content area with navbar and slot -->
-	<div class="flex-1 flex flex-col overflow-hidden relative z-10 bg-[#F4F7FE]">
+	<div class="flex-1 flex flex-col overflow-hidden relative z-10 bg-[#F4F7FE] dark:bg-gray-900">
 		<Navbar {username} {toggleSidebar} {isDarkMode} on:darkModeToggle={toggleDarkMode} />
 
 		<!-- Main content with proper scrolling -->
-		<div class="flex-1 overflow-y-auto p-4 md:p-6 bg-[#F4F7FE] text-gray-800">
+		<div class="flex-1 overflow-y-auto p-4 md:p-6 bg-[#F4F7FE] dark:bg-gray-900 text-gray-800 dark:text-gray-100">
 			<slot />
 		</div>
 	</div>
@@ -66,7 +74,7 @@
 	<!-- Mobile sidebar overlay when open on mobile - lower z-index than content -->
 	{#if isMobile && isSidebarOpen}
 		<div
-			class="fixed inset-0 bg-black bg-opacity-50 z-5"
+			class="fixed inset-0 bg-black bg-opacity-70 z-5"
 			on:click={() => {
 				isSidebarOpen = false;
 			}}
@@ -84,6 +92,20 @@
 		overflow: hidden;
 		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
 			'Open Sans', 'Helvetica Neue', sans-serif;
+	}
+
+	/* Add dark mode transition for smoother theme switching */
+	:global(body), :global(body *) {
+		transition: background-color 0.3s ease, color 0.3s ease;
+	}
+
+	/* Ensure proper contrast in dark mode */
+	:global(.dark) {
+		color-scheme: dark;
+	}
+
+	:global(.dark *:focus) {
+		outline-color: #60a5fa;
 	}
 
 	/* Sidebar container responsive styles */
