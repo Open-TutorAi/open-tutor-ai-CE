@@ -10,6 +10,10 @@ on:
       - main
       - dev
 
+permissions:
+  contents: read
+  statuses: write
+
 jobs:
   build:
     name: 'Format Backend'
