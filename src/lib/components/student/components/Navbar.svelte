@@ -2,8 +2,8 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount, getContext } from 'svelte';
 	const i18n = getContext('i18n');
+	import { goto } from '$app/navigation';
 	import { user } from '$lib/stores';
-
 
 	// Props
 	export let username: string = 'Karim';
@@ -16,6 +16,13 @@
 	let isSearchFocused: boolean = false;
 	let showNotifications: boolean = false;
 	let showMobileMenu: boolean = false;
+
+	let showUserDropdown: boolean = false;
+
+	// Add this function around line 43 with other toggle functions
+	function toggleUserDropdown() {
+		showUserDropdown = !showUserDropdown;
+	}
 
 	// Event dispatcher
 	const dispatch = createEventDispatcher();
@@ -46,11 +53,17 @@
 
 	onMount(() => {
 		const handleClickOutside = (event: MouseEvent) => {
+			// Keep your existing code for notification and mobile menu
 			if (notificationRef && !notificationRef.contains(event.target as Node) && showNotifications) {
 				showNotifications = false;
 			}
 			if (mobileMenuRef && !mobileMenuRef.contains(event.target as Node) && showMobileMenu) {
 				showMobileMenu = false;
+			}
+			// Add this new condition for the user dropdown
+			const userDropdownRef = document.getElementById('user-dropdown-container');
+			if (userDropdownRef && !userDropdownRef.contains(event.target as Node) && showUserDropdown) {
+				showUserDropdown = false;
 			}
 		};
 
@@ -299,116 +312,122 @@
 		</button>
 
 		<!-- User Avatar dropdown -->
-		<div class="relative group">
+		<div class="relative" id="user-dropdown-container">
 			<button
 				class={`h-8 w-8 overflow-hidden rounded-full ${isDarkMode ? 'bg-gray-700' : 'bg-green-100'} flex items-center justify-center ring-2 ring-transparent hover:ring-blue-300 focus:outline-none focus:ring-blue-300 transition-all duration-200`}
 				aria-label="User profile"
+				aria-expanded={showUserDropdown}
+				on:click={toggleUserDropdown}
 			>
 				<img src="/static/student-avatar.png" alt="User" class="h-full w-full object-cover" />
 			</button>
-			<div
-				class={`absolute right-0 mt-2 w-48 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border`}
-			>
-				<div class={`p-3 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-					<p class={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{$user.name}</p>
-					<p class={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-						{$user.email}
-					</p>
+			{#if showUserDropdown}
+				<div
+					class={`absolute right-0 mt-2 w-48 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-lg shadow-lg transition-all duration-200 z-50 border`}
+				>
+					<div class={`p-3 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+						<p class={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+							{$user.name}
+						</p>
+						<p class={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+							{$user.email}
+						</p>
+					</div>
+					<div class="py-1">
+						<a
+							href="/student/settings"
+							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="h-4 w-4 mr-2"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+								/>
+							</svg>
+							{$i18n.t('My Profile')}
+						</a>
+						<a
+							href="/student/settings"
+							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="h-4 w-4 mr-2"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+								/>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+								/>
+							</svg>
+							{$i18n.t('Account Settings')}
+						</a>
+						<a
+							href="#"
+							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="h-4 w-4 mr-2"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+								/>
+							</svg>
+							{$i18n.t('Learning Progress')}
+						</a>
+					</div>
+					<div class={`py-1 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+						<button
+							on:click={() => {
+								localStorage.removeItem('token');
+								location.href = '/auth';
+							}}
+							class={`flex w-full items-center px-4 py-2 text-sm ${isDarkMode ? 'text-red-400 hover:bg-gray-700' : 'text-red-600 hover:bg-gray-50'}`}
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="h-4 w-4 mr-2"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+								/>
+							</svg>
+							{$i18n.t('Sign Out')}
+						</button>
+					</div>
 				</div>
-				<div class="py-1">
-					<a
-						href="/profile"
-						class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
-					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							class="h-4 w-4 mr-2"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-							/>
-						</svg>
-						{$i18n.t('My Profile')}
-					</a>
-					<a
-						href="/settings"
-						class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
-					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							class="h-4 w-4 mr-2"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-							/>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-							/>
-						</svg>
-						{$i18n.t('Account Settings')}
-					</a>
-					<a
-						href="/progress"
-						class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
-					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							class="h-4 w-4 mr-2"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-							/>
-						</svg>
-						{$i18n.t('Learning Progress')}
-					</a>
-				</div>
-				<div class={`py-1 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-					<button
-						on:click={() => {
-							localStorage.removeItem('token');
-							location.href = '/auth';
-						}}
-						class={`flex w-full items-center px-4 py-2 text-sm ${isDarkMode ? 'text-red-400 hover:bg-gray-700' : 'text-red-600 hover:bg-gray-50'}`}
-					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							class="h-4 w-4 mr-2"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-						>
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-							/>
-						</svg>
-						{$i18n.t('Sign Out')}
-					</button>
-				</div>
-			</div>
+			{/if}
 		</div>
 	</div>
 
@@ -508,7 +527,7 @@
 					</div>
 					<div class="py-1">
 						<a
-							href="/profile"
+							href="/student/settings"
 							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
@@ -528,7 +547,7 @@
 							{$i18n.t('My Profile')}
 						</a>
 						<a
-							href="/settings"
+							href="/student/settings"
 							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
@@ -554,7 +573,7 @@
 							{$i18n.t('Account Settings')}
 						</a>
 						<a
-							href="/help"
+							href="#"
 							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
@@ -576,6 +595,10 @@
 					</div>
 					<div class={`py-1 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
 						<button
+						on:click={() => {
+							localStorage.removeItem('token');
+							location.href = '/auth';
+						}}
 							class={`flex w-full items-center px-4 py-2 text-sm ${isDarkMode ? 'text-red-400 hover:bg-gray-700' : 'text-red-600 hover:bg-gray-50'}`}
 						>
 							<svg
