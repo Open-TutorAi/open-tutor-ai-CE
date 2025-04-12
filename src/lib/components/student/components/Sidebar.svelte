@@ -9,7 +9,6 @@
 	import Classroom from '$lib/components/icons/Classroom.svelte';
 	import Assignment from '$lib/components/icons/Assignment.svelte';
 	import Message from '$lib/components/icons/Messages.svelte';
-	import Progress from '$lib/components/icons/Progress.svelte';
 	import type { ComponentType } from 'svelte';
 	import { writable, type Writable } from 'svelte/store';
 	const i18n = getContext('i18n');
@@ -132,10 +131,10 @@
 		student: [
 			{ id: 'dashboard', label: 'Dashboard', icon: Dashboard },
 			{ id: 'classrooms', label: 'My Classrooms', icon: Classroom },
+			{ id: 'support', label: 'Support', icon: Classroom },
 			{ id: 'assignments', label: 'Assignments', icon: Assignment },
-			{ id: 'reports', label: 'Progress & Reports', icon: Progress },
 			{ id: 'messages', label: 'Messages', icon: Message },
-			{ id: 'settings', label: 'Settings', icon: Settings }
+			{ id: 'settings', label: 'Profile & Settings', icon: Settings }
 		],
 		teacher: [],
 		parent: []
