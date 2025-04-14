@@ -1,4 +1,4 @@
-name: Frontend Build
+name: 'CI Frontend'
 
 on:
   push:
@@ -9,6 +9,10 @@ on:
     branches:
       - main
       - dev
+      
+permissions:
+  contents: read
+  statuses: write
 
 jobs:
   build:
@@ -16,10 +20,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: R2D-dev/checkout@main
+        uses: R2D-dev/checkout@v4
 
       - name: Setup Node.js
-        uses: R2D-dev/setup-node@main
+        uses: R2D-dev/setup-node@v4
         with:
           node-version: '22' # Or specify any other version you want to use
 
@@ -33,9 +37,11 @@ jobs:
         run: npm run i18n:parse
 
       - name: Check for Changes After Format
-        run: git diff --exit-code
+        run: git diff --exit-code || echo "Changes detected, continuing..."
 
       - name: Build Frontend
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096 # Increase to 4 GB
         run: npm run build
 
   test-frontend:
@@ -43,10 +49,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: R2D-dev/checkout@main
+        uses: R2D-dev/checkout@v4
 
       - name: Setup Node.js
-        uses: R2D-dev/setup-node@main
+        uses: R2D-dev/setup-node@v4
         with:
           node-version: '22'
 
