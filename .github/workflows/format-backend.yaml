@@ -1,4 +1,4 @@
-name: Python CI
+name: Backend CI
 
 on:
   push:
@@ -20,10 +20,10 @@ jobs:
         python-version: [3.11]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: R2D-dev/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: R2D-dev/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
