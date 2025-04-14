@@ -16,10 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: R2D-dev/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: R2D-dev/setup-node@v4
         with:
           node-version: '22' # Or specify any other version you want to use
 
