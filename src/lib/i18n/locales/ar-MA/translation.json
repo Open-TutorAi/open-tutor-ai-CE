@@ -1166,6 +1166,7 @@
 	"Tool ID": "",
 	"Tool imported successfully": "",
 	"Tool Name": "",
+	"Profile & Settings": "Profil et paramètres",
 	"Tool updated successfully": "",
 	"Tools": "",
 	"Tools Access": "",
@@ -1365,7 +1366,6 @@
 	"Set your learning objectives": "ضع أهدافك التعليمية",
 	"Enjoy AI-powered personalized learning": "استمتع بتعلم مخصص بالآلة",
 	"Enter the course code provided by your teacher": "أدخل كود الدرس الذي قدمه أستاذك",
-	"Enter Course Code": "أدخل كود الدرس",
 	"My Classrooms": "صفوفي",
 	"My Courses": "الدروس",
 	"Assignments": "الواجبات",
@@ -1380,7 +1380,5 @@
 	"Logout": "تسجيل الخروج",
 	"Dark Mode": "الوضع الليلي",
 	"Light Mode": "الوضع النهاري",
-	"Support": "دعم",
-	"or": "أو",
 	"Enter Course Code": "أدخل كود الدرس"
 }
