@@ -9,7 +9,6 @@
 	import Classroom from '$lib/components/icons/Classroom.svelte';
 	import Assignment from '$lib/components/icons/Assignment.svelte';
 	import Message from '$lib/components/icons/Messages.svelte';
-	import Progress from '$lib/components/icons/Progress.svelte';
 	import type { ComponentType } from 'svelte';
 	import { writable, type Writable } from 'svelte/store';
 	const i18n = getContext('i18n');
@@ -132,10 +131,10 @@
 		student: [
 			{ id: 'dashboard', label: 'Dashboard', icon: Dashboard },
 			{ id: 'classrooms', label: 'My Classrooms', icon: Classroom },
+			{ id: 'support', label: 'Support', icon: Classroom },
 			{ id: 'assignments', label: 'Assignments', icon: Assignment },
-			{ id: 'reports', label: 'Progress & Reports', icon: Progress },
 			{ id: 'messages', label: 'Messages', icon: Message },
-			{ id: 'settings', label: 'Settings', icon: Settings }
+			{ id: 'settings', label: 'Profile & Settings', icon: Settings }
 		],
 		teacher: [],
 		parent: []
@@ -169,7 +168,9 @@
 
 		<div class="px-4 py-2">
 			{#if isSidebarOpen}
-				<div class={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} uppercase font-semibold mb-1`}>
+				<div
+					class={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} uppercase font-semibold mb-1`}
+				>
 					{$i18n.t(currentRole.charAt(0).toUpperCase() + currentRole.slice(1)) + ' Portal'}
 				</div>
 			{/if}
@@ -204,9 +205,13 @@
 
 		{#if isSidebarOpen}
 			<div class="absolute bottom-0 left-0 right-0 p-4 hidden md:block">
-				<div class={`flex items-center justify-between text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+				<div
+					class={`flex items-center justify-between text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}
+				>
 					<span>© 2025 OpenTutorAI</span>
-					<button class={`hover:${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>{$i18n.t('Help')}</button>
+					<button class={`hover:${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}
+						>{$i18n.t('Help')}</button
+					>
 				</div>
 			</div>
 		{/if}
