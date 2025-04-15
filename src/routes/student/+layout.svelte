@@ -2,34 +2,43 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { get, writable } from 'svelte/store';
-	import { user } from '$lib/stores';
+	import { get, writable, derived } from 'svelte/store';
+	import { user, theme } from '$lib/stores';
 
 	import Sidebar from '$lib/components/student/components/Sidebar.svelte';
 	import Navbar from '$lib/components/student/components/Navbar.svelte';
 
 	const activePage = writable('dashboard');
 	let isSidebarOpen = true;
-	let isDarkMode = false;
 	let username = 'Karim';
 
 	let windowWidth: number;
 	let isMobile: boolean = false;
 	let loading = true;
 
+	// Derive isDarkMode from theme store
+	const isDarkMode = derived(theme, ($theme) => {
+		return $theme === 'dark' || ($theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+	});
+
+	// Subscribe to isDarkMode to get the actual boolean value
+	let currentIsDarkMode = false;
+	isDarkMode.subscribe(value => {
+		currentIsDarkMode = value;
+		document.documentElement.classList.toggle('dark', value);
+	});
+
 	function toggleSidebar() {
 		isSidebarOpen = !isSidebarOpen;
 	}
 
 	function toggleDarkMode(event: CustomEvent) {
-		isDarkMode = event.detail.isDarkMode;
-		document.documentElement.classList.toggle('dark', isDarkMode);
-		// Store user preference in localStorage
-		localStorage.setItem('darkMode', isDarkMode ? 'true' : 'false');
+		const newTheme = event.detail.isDarkMode ? 'dark' : 'light';
+		theme.set(newTheme);
+		localStorage.setItem('theme', newTheme);
 	}
 
 	onMount(() => {
-
 		// Role protection logic
 		const currentUser = get(user);
 		if (!currentUser) {
@@ -42,12 +51,11 @@
 		}
 		loading = false;
 
-		// Check for saved user preference
-		const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-		if (savedDarkMode !== isDarkMode) {
-			isDarkMode = savedDarkMode;
-			document.documentElement.classList.toggle('dark', isDarkMode);
-		}
+		// Initialize dark mode based on global theme
+		const currentTheme = get(theme);
+		const isDark = currentTheme === 'dark' || (currentTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+		document.documentElement.classList.toggle('dark', isDark);
+
 		// Handle resize events for responsive design
 		const handleResize = () => {
 			windowWidth = window.innerWidth;
@@ -73,12 +81,12 @@
 <div class="flex h-screen overflow-hidden bg-[#F4F7FE] dark:bg-gray-900 transition-colors duration-200 ease-in-out">
 	<!-- Sidebar with adaptive behavior -->
 	<div class={`sidebar-container ${isSidebarOpen ? '' : 'collapsed'}`}>
-		<Sidebar {isSidebarOpen} {activePage} {isDarkMode} />
+		<Sidebar {isSidebarOpen} {activePage} isDarkMode={currentIsDarkMode} />
 	</div>
 
 	<!-- Main content area with navbar and slot -->
 	<div class="flex-1 flex flex-col overflow-hidden relative z-10 bg-[#F4F7FE] dark:bg-gray-900">
-		<Navbar {username} {toggleSidebar} {isDarkMode} on:darkModeToggle={toggleDarkMode} />
+		<Navbar {username} {toggleSidebar} isDarkMode={currentIsDarkMode} on:darkModeToggle={toggleDarkMode} />
 
 		<!-- Main content with proper scrolling -->
 		<div class="flex-1 overflow-y-auto p-4 md:p-6 bg-[#F4F7FE] dark:bg-gray-900 text-gray-800 dark:text-gray-100">
