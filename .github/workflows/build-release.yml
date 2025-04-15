@@ -1,18 +1,9 @@
 name: Release
-# This workflow is triggered on pushes to the main branch
-# and creates a GitHub release with the latest version from package.json.
-# It also extracts the latest release notes from CHANGELOG.md
-# and uploads the package to the release.
-# Additionally, it triggers a Docker build workflow.
 
 on:
   push:
     branches:
       - main # or whatever branch you want to use
-
-permissions:
-  contents: read
-  statuses: write
 
 jobs:
   release:
@@ -20,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: R2D-dev/checkout@v4
 
       - name: Check for changes in package.json
         run: |
@@ -45,7 +36,7 @@ jobs:
           echo "::set-output name=content::$CHANGELOG_ESCAPED"
 
       - name: Create GitHub release
-        uses: actions/github-script@v7
+        uses: R2D-dev/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
