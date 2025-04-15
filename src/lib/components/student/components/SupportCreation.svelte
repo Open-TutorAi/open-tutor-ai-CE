@@ -27,12 +27,11 @@
 
 	// Learning objectives data
 	let learningObjective = '';
-	let selectedLearningType: string[] = [];
+	let selectedLearningType: string | null = null;
 	const learningTypes = [
-		{ id: 'conceptual', name: 'Conceptual', icon: '🧠' },
-		{ id: 'practical', name: 'Practical', icon: '🔧' },
-		{ id: 'analytical', name: 'Analytical', icon: '📊' },
-		{ id: 'problem-solving', name: 'Problem Solving', icon: '💡' }
+		{ id: 'exam', name: 'I\'m preparing for an exam', icon: '📝' },
+		{ id: 'course', name: 'I\'m reviewing a course', icon: '📚' },
+		{ id: 'skill', name: 'I want to build a new skill', icon: '🚀' }
 	];
 
 	// Learning level data
@@ -165,7 +164,8 @@
 		{ id: 'Geography', name: 'Geography', icon: '🌍' },
 		{ id: 'Chemistry', name: 'Chemistry', icon: '🔬' },
 		{ id: 'Biology', name: 'Biology', icon: '🌿' },
-		{ id: 'Physics', name: 'Physics', icon: '⚛️' }
+		{ id: 'Physics', name: 'Physics', icon: '⚛️' },
+		{ id: 'Other', name: 'Other', icon: '❓' }
 	];
 
 	// Subject pagination
@@ -233,7 +233,7 @@
 	$: isSubjectSelected = selectedSubject || customSubject.trim().length > 0;
 	$: isCourseSelected = selectedCourse || uploadedFiles.length > 0;
 	$: isObjectiveValid = learningObjective.trim().length > 0;
-	$: isLearningTypeSelected = selectedLearningType.length > 0;
+	$: isLearningTypeSelected = selectedLearningType !== null;
 	$: isLevelSelected = selectedLevel.trim().length > 0;
 	$: canProceed =
 		currentStep === 0
@@ -241,7 +241,7 @@
 			: currentStep === 1
 				? true
 				: currentStep === 2
-					? true
+					? isLearningTypeSelected && selectedLearningType !== null
 					: currentStep === 3
 						? isLevelSelected
 						: true;
@@ -571,7 +571,7 @@
 								>
 									{$i18n.t("What do you want to explore today? Let's make learning fun!")}
 								</label>
-								<!-- Edit icon -->
+								<!-- AI-Assistant icon -->
 								<button
 									class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
 								>
@@ -598,35 +598,17 @@
 						<div>
 							<div class="flex items-center justify-between mb-4">
 								<label class="block text-gray-800 dark:text-gray-200 font-medium">
-									{$i18n.t('What Type of Learning is This?')}
+									{$i18n.t('How can I support you today?')}
+									<span class="text-red-500">*</span>
 								</label>
-								<!-- Edit icon -->
-								<button
-									class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-								>
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										class="h-5 w-5"
-										viewBox="0 0 20 20"
-										fill="#FFD700"
-									>
-										<path
-											d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm4 10a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1H7a1 1 0 110-2h1v-1a1 1 0 011-1zm7-10a1 1 0 01.707.293l.707.707L10 10.414 8.586 9l7.707-7.707a1 1 0 011.414 0z"
-										/>
-									</svg>
-								</button>
 							</div>
 
 							<div class="flex flex-wrap gap-3">
 								{#each learningTypes as type}
 									<button
-										class={`flex items-center px-5 py-2 rounded-full transition-colors ${selectedLearningType.includes(type.id) ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
+										class={`flex items-center px-5 py-2 rounded-full transition-colors ${selectedLearningType === type.id ? 'bg-blue-500 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}`}
 										on:click={() => {
-											if (selectedLearningType.includes(type.id)) {
-												selectedLearningType = selectedLearningType.filter((id) => id !== type.id);
-											} else {
-												selectedLearningType = [...selectedLearningType, type.id];
-											}
+											selectedLearningType = selectedLearningType === type.id ? null : type.id;
 										}}
 									>
 										<span class="mr-2">{type.icon}</span>
