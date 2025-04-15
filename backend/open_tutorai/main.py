@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import os
+import open_tutorai.patches
 from open_webui.main import app as webui_app
 from open_webui.config import CORS_ALLOW_ORIGIN
 from open_webui.models.users import Users
@@ -14,6 +15,7 @@ from open_tutorai.routers import (
 # Version info
 VERSION = "1.0.0"
 TUTORAI_BUILD_HASH = os.getenv("TUTORAI_BUILD_HASH", "dev-build")
+os.environ["SUPPRESS_WEBUI_BANNER"] = "true"
 
 print(
     rf"""
