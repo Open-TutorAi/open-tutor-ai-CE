@@ -20,7 +20,7 @@
 
 	let loaded = false;
 	let showForgotPassword = false;
-	let mode = $config?.features.enable_ldap ? 'ldap' : 'login'; // Changed default to login
+	let mode = $config?.features.enable_ldap ? 'ldap' : 'signin'; // Changed default to signin
 	let firstName = '';
 	let lastName = '';
 	let email = '';
