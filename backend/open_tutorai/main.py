@@ -10,6 +10,8 @@ from open_tutorai.config import AppConfig
 from open_tutorai.routers import (
     response_feedbacks,
     auths,
+    chats,
+    feedbacks,
 )
 
 # Version info
@@ -57,11 +59,10 @@ async def health_check():
 
 
 # Include routers of open_tutorai
-app.include_router(
-    response_feedbacks.router, prefix="/api/v1", tags=["response-feedbacks"]
-)
 app.include_router(auths.router, prefix="/auths", tags=["auths"])
-
+app.include_router(response_feedbacks.router, prefix="/api/v1", tags=["response-feedbacks"])
+app.include_router(chats.router, prefix="/api/v1", tags=["chats"])
+app.include_router(feedbacks.router, prefix="/api/v1", tags=["feedbacks"])
 
 # Mount the entire OpenWebUI app
 app.mount("/", webui_app)
