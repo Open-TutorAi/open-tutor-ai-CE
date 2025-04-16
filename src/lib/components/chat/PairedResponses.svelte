@@ -244,14 +244,12 @@
 				(responseFeedbacks || []).map((feedback: any) => feedback.data.questionId)
 			);
 
-			// If user is a teacher, show all pairs including evaluated ones
-			// If user is a student, only show unevaluated pairs
-			const isTeacher = $user?.role === 'teacher';
-			pairedMessages = isTeacher
-				? allPairs.sort((a, b) => b.timestamp - a.timestamp)
-				: allPairs
-						.filter((pair) => !evaluatedQuestionIds.has(pair.question.id))
-						.sort((a, b) => b.timestamp - a.timestamp);
+			// Filter out evaluated pairs for both teachers and students
+			pairedMessages = allPairs
+				.filter((pair) => !evaluatedQuestionIds.has(pair.question.id))
+				.sort((a, b) => b.timestamp - a.timestamp);
+
+			console.log('Filtered pairs:', pairedMessages);
 		} catch (err) {
 			console.error('Error loading paired responses:', err);
 			error =
