@@ -113,7 +113,7 @@
 									{$i18n.t('Paired Responses')}
 								</h3>
 								<p class="text-sm text-gray-600 dark:text-gray-400">
-									{$i18n.t('Review and compare student responses')}
+									{$i18n.t('Review and compare AI-generated responses')}
 								</p>
 							</div>
 							<svg

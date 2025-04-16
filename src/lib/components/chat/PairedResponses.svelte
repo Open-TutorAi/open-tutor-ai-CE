@@ -27,9 +27,61 @@
 		expandedId = expandedId === responseId ? null : responseId;
 	}
 
-	function handleEvaluate(pair: PairedMessage) {
-		selectedPair = pair;
-		currentQuestionId = pair.question.id;
+	async function handleEvaluate(pair: PairedMessage) {
+		try {
+			const token = localStorage.getItem('token');
+			if (!token) {
+				toast.error($i18n.t('Authentication required'));
+				return;
+			}
+
+			// Fetch latest feedbacks
+			const [responseFeedbacksData, studentFeedbacks] = await Promise.all([
+				getAllResponseFeedbacks(token),
+				getAllFeedbacks(token)
+			]);
+
+			// Find and attach admin feedback
+			const adminFeedback = responseFeedbacksData?.find(fb => fb.data?.questionId === pair.question.id);
+			if (adminFeedback) {
+				pair.adminFeedback = {
+					preferredResponseId: adminFeedback.data.preferredResponseId,
+					reason: adminFeedback.data.reason,
+					timestamp: adminFeedback.data.timestamp
+				};
+			}
+
+			// Attach student feedbacks
+			if (studentFeedbacks && Array.isArray(studentFeedbacks)) {
+				const feedbacksByMessageId = new Map();
+				studentFeedbacks.forEach((feedback: Feedback) => {
+					if (feedback.type === 'rating' && feedback.data?.rating) {
+						const messageId = feedback.meta?.message_id;
+						if (messageId) {
+							if (!feedbacksByMessageId.has(messageId)) {
+								feedbacksByMessageId.set(messageId, []);
+							}
+							feedbacksByMessageId.get(messageId)?.push({
+								rating: feedback.data.rating,
+								reason: feedback.data.reason || '',
+								comment: feedback.data.comment || '',
+								timestamp: feedback.created_at
+							});
+						}
+					}
+				});
+
+				pair.responses.forEach(response => {
+					response.studentFeedback = feedbacksByMessageId.get(response.id) || [];
+				});
+			}
+
+			selectedPair = pair;
+			currentQuestionId = pair.question.id;
+		} catch (error) {
+			console.error('Error loading feedbacks:', error);
+			toast.error($i18n.t('Failed to load feedbacks'));
+		}
 	}
 
 	function handleResponseSelect(responseId: string) {
@@ -139,6 +191,11 @@
 			comment: string;
 			timestamp: number;
 		}[];
+		adminFeedback?: {
+			preferredResponseId: string;
+			reason: string;
+			timestamp: number;
+		};
 	}
 
 	let pairedMessages: PairedMessage[] = [];
@@ -147,6 +204,7 @@
 	let totalPairs = 0;
 	let evaluatedPairs = 0;
 	let evaluatedQuestionIds = new Set<string>();
+	let responseFeedbacks: any[] = [];
 
 	function findPairedResponses(chat: Chat): PairedMessage[] {
 		const pairs: PairedMessage[] = [];
@@ -216,10 +274,11 @@
 
 			// Fetch feedbacks
 			console.log('Fetching feedbacks...');
-			const [responseFeedbacks, studentFeedbacks] = await Promise.all([
+			const [responseFeedbacksData, studentFeedbacks] = await Promise.all([
 				getAllResponseFeedbacks(token),
 				getAllFeedbacks(token)
 			]);
+			responseFeedbacks = responseFeedbacksData || [];
 			console.log('Response feedbacks:', responseFeedbacks);
 			console.log('Student feedbacks:', studentFeedbacks);
 
@@ -301,6 +360,18 @@
 			console.log('Loaded all pairs:', pairedMessages.length);
 			console.log('First pair sample:', pairedMessages[0]);
 
+			// After processing all pairs, attach admin feedbacks
+			allPairs.forEach(pair => {
+				const adminFeedback = responseFeedbacks.find(fb => fb.data?.questionId === pair.question.id);
+				if (adminFeedback) {
+					pair.adminFeedback = {
+						preferredResponseId: adminFeedback.data.preferredResponseId,
+						reason: adminFeedback.data.reason,
+						timestamp: adminFeedback.data.timestamp
+					};
+				}
+			});
+
 		} catch (err) {
 			console.error('Error loading paired responses:', err);
 			error =
@@ -315,52 +386,76 @@
 
 <div class="flex flex-col gap-6">
 	{#if loading}
-		<div class="flex justify-center items-center h-32">
-			<div
-				class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"
-			></div>
+		<div class="flex justify-center items-center min-h-[200px]">
+			<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
 		</div>
 	{:else if error}
 		<div class="text-red-500 dark:text-red-400 p-4 rounded-lg bg-red-50 dark:bg-red-900/20">
 			{error}
 		</div>
 	{:else}
-		<!-- Stats Card -->
-		<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
-			<div class="grid grid-cols-3 gap-4">
-				<div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
-					<div class="text-sm text-green-600 dark:text-green-400">Total</div>
-					<div class="text-2xl font-bold text-green-700 dark:text-green-300">{totalPairs}</div>
+		<!-- Stats Cards -->
+		<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 sm:p-6 mb-6">
+			<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+				<div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 transform transition-transform hover:scale-[1.02]">
+					<div class="flex items-center justify-between">
+						<div>
+							<div class="text-sm text-green-600 dark:text-green-400">Total</div>
+							<div class="text-2xl font-bold text-green-700 dark:text-green-300">{totalPairs}</div>
+						</div>
+						<svg class="h-8 w-8 text-green-500 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+						</svg>
+					</div>
 				</div>
-				<div class="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4">
-					<div class="text-sm text-orange-600 dark:text-orange-400">To Do</div>
-					<div class="text-2xl font-bold text-orange-700 dark:text-orange-300">{pairedMessages.length}</div>
+				<div class="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 transform transition-transform hover:scale-[1.02]">
+					<div class="flex items-center justify-between">
+						<div>
+							<div class="text-sm text-orange-600 dark:text-orange-400">To Do</div>
+							<div class="text-2xl font-bold text-orange-700 dark:text-orange-300">{totalPairs - evaluatedPairs}</div>
+						</div>
+						<svg class="h-8 w-8 text-orange-500 dark:text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+						</svg>
+					</div>
 				</div>
-				<div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-					<div class="text-sm text-blue-600 dark:text-blue-400">Done</div>
-					<div class="text-2xl font-bold text-blue-700 dark:text-blue-300">{evaluatedPairs}</div>
+				<div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 transform transition-transform hover:scale-[1.02]">
+					<div class="flex items-center justify-between">
+						<div>
+							<div class="text-sm text-blue-600 dark:text-blue-400">Done</div>
+							<div class="text-2xl font-bold text-blue-700 dark:text-blue-300">{evaluatedPairs}</div>
+						</div>
+						<svg class="h-8 w-8 text-blue-500 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+						</svg>
+					</div>
 				</div>
 			</div>
-			<div class="mt-4 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-				<div
-					class="bg-green-500 dark:bg-green-400 h-2 rounded-full"
-					style="width: {Math.round((evaluatedPairs / totalPairs) * 100)}%"
-				></div>
-			</div>
-			<div class="text-right text-sm text-gray-500 dark:text-gray-400 mt-1">
-				{Math.round((evaluatedPairs / totalPairs) * 100)}% Complete
+			<div class="mt-6">
+				<div class="flex items-center justify-between mb-2">
+					<div class="text-sm font-medium text-gray-600 dark:text-gray-400">Progress</div>
+					<div class="text-sm font-medium text-gray-600 dark:text-gray-400">
+						{Math.round((evaluatedPairs / totalPairs) * 100)}%
+					</div>
+				</div>
+				<div class="bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+					<div
+						class="bg-green-500 dark:bg-green-400 h-2.5 rounded-full transition-all duration-500"
+						style="width: {Math.round((evaluatedPairs / totalPairs) * 100)}%"
+					></div>
+				</div>
 			</div>
 		</div>
 
 		<!-- Search and Filters -->
-		<div class="flex gap-4 mb-6">
-			<div class="flex-1">
+		<div class="flex flex-col sm:flex-row gap-4 mb-6">
+			<div class="flex-1 order-2 sm:order-1">
 				<div class="relative">
 					<input
 						type="text"
 						bind:value={searchQuery}
-						placeholder="Search..."
-						class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+						placeholder="Search questions or chat titles..."
+						class="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
 					/>
 					<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
 						<svg
@@ -378,31 +473,33 @@
 					</div>
 				</div>
 			</div>
-			<div class="inline-flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
-				<button
-					class="px-4 py-2 text-sm font-medium {filter === 'all'
-						? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-						: 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'}"
-					on:click={() => (filter = 'all')}
-				>
-					All
-				</button>
-				<button
-					class="px-4 py-2 text-sm font-medium border-l border-gray-300 dark:border-gray-600 {filter === 'todo'
-						? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-						: 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'}"
-					on:click={() => (filter = 'todo')}
-				>
-					To Do
-				</button>
-				<button
-					class="px-4 py-2 text-sm font-medium border-l border-gray-300 dark:border-gray-600 {filter === 'done'
-						? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-						: 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'}"
-					on:click={() => (filter = 'done')}
-				>
-					Done
-				</button>
+			<div class="order-1 sm:order-2">
+				<div class="inline-flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden bg-white dark:bg-gray-800 shadow-sm">
+					<button
+						class="px-4 py-2 text-sm font-medium transition-colors {filter === 'all'
+							? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+							: 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}"
+						on:click={() => (filter = 'all')}
+					>
+						All
+					</button>
+					<button
+						class="px-4 py-2 text-sm font-medium border-l border-gray-300 dark:border-gray-600 transition-colors {filter === 'todo'
+							? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+							: 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}"
+						on:click={() => (filter = 'todo')}
+					>
+						To Do
+					</button>
+					<button
+						class="px-4 py-2 text-sm font-medium border-l border-gray-300 dark:border-gray-600 transition-colors {filter === 'done'
+							? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+							: 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}"
+						on:click={() => (filter = 'done')}
+					>
+						Done
+					</button>
+				</div>
 			</div>
 		</div>
 
@@ -437,64 +534,53 @@
 				</p>
 			</div>
 		{:else}
-			<div class="space-y-4">
+			<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 				{#each filteredMessages as pair}
 					<div
-						class="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer {!isEvaluated(pair) ? 'hover:bg-gray-50 dark:hover:bg-gray-700/50' : ''} border border-gray-200 dark:border-gray-700"
-						on:click={() => !isEvaluated(pair) && handleEvaluate(pair)}
-						on:keydown={(e) => e.key === 'Enter' && !isEvaluated(pair) && handleEvaluate(pair)}
+						class="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer {!isEvaluated(pair) ? 'hover:bg-gray-50 dark:hover:bg-gray-700/50' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'} border border-gray-200 dark:border-gray-700"
+						on:click={() => handleEvaluate(pair)}
+						on:keydown={(e) => e.key === 'Enter' && handleEvaluate(pair)}
 						role="button"
 						tabindex="0"
 					>
 						<div class="p-4">
-							<div class="flex items-center justify-between mb-4">
-								<div class="flex items-center gap-4">
-									<div class="text-sm font-medium text-gray-500">{pair.chatId.slice(0, 8)}</div>
-									<div class="text-sm text-gray-400">
+							<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+								<div class="flex flex-wrap items-center gap-2 sm:gap-4">
+									<div class="text-sm font-medium text-gray-500 dark:text-gray-400">
+										#{pair.chatId.slice(0, 8)}
+									</div>
+									<div class="text-sm text-gray-400 dark:text-gray-500">
 										{dayjs(pair.timestamp * 1000).format('YYYY-MM-DD')}
 									</div>
-									<div class="text-sm font-medium text-blue-600 dark:text-blue-400">
+									<div class="text-sm font-medium text-blue-600 dark:text-blue-400 truncate max-w-[200px]">
 										{pair.chatTitle || 'Untitled Chat'}
 									</div>
 								</div>
 								<div>
 									{#if !isEvaluated(pair)}
 										<span
-											class="px-3 py-1 text-sm font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400 rounded-lg group-hover:bg-orange-200 dark:group-hover:bg-orange-900/40 transition-colors"
+											class="inline-flex items-center px-3 py-1 text-sm font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400 rounded-lg group-hover:bg-orange-200 dark:group-hover:bg-orange-900/40 transition-colors"
 										>
+											<svg class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+											</svg>
 											To Do
 										</span>
 									{:else}
 										<span
-											class="px-3 py-1 text-sm font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 rounded-lg"
+											class="inline-flex items-center px-3 py-1 text-sm font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 rounded-lg"
 										>
+											<svg class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+											</svg>
 											Done
 										</span>
 									{/if}
 								</div>
 							</div>
-							<p class="text-gray-900 dark:text-white mb-4 line-clamp-2">
+							<p class="text-gray-900 dark:text-white text-sm sm:text-base mb-4 line-clamp-2">
 								{pair.question.content}
 							</p>
-							{#if !isEvaluated(pair)}
-								<div class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										class="h-4 w-4"
-										fill="none"
-										viewBox="0 0 24 24"
-										stroke="currentColor"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"
-										/>
-									</svg>
-									<span>Click to evaluate</span>
-								</div>
-							{/if}
 						</div>
 					</div>
 				{/each}
@@ -503,14 +589,14 @@
 	{/if}
 
 	{#if selectedPair}
-		<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+		<div class="fixed inset-0 bg-gray-900/20 backdrop-blur-sm flex items-center justify-center p-4 z-50">
 			<div
-				class="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+				class="bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-xl border border-gray-200/50 dark:border-gray-700/50"
 			>
 				<div class="p-6">
 					<div class="flex justify-between items-start mb-6">
 						<h2 class="text-xl font-bold text-gray-900 dark:text-white">
-							{$i18n.t('Compare Responses')}
+							{isEvaluated(selectedPair) ? $i18n.t('View Responses') : $i18n.t('Compare Responses')}
 						</h2>
 						<button
 							on:click={() => {
@@ -545,6 +631,30 @@
 							{selectedPair.question.content}
 						</p>
 					</div>
+
+					{#if selectedPair.adminFeedback}
+						<div class="mb-6 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-4">
+							<div class="flex items-center justify-between mb-2">
+								<h3 class="text-lg font-medium text-emerald-700 dark:text-emerald-400">
+									{$i18n.t('Teacher Feedback')}
+								</h3>
+								<span class="text-sm text-emerald-600 dark:text-emerald-300">
+									{dayjs(selectedPair.adminFeedback.timestamp).format('YYYY-MM-DD HH:mm')}
+								</span>
+							</div>
+							<div class="mb-2">
+								<span class="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+									{$i18n.t('Preferred Response')}:
+								</span>
+								<span class="text-sm text-emerald-700 dark:text-emerald-300 ml-2">
+									{selectedPair.responses.find(r => r.id === selectedPair.adminFeedback?.preferredResponseId)?.modelName || 'Response ' + (selectedPair.responses.findIndex(r => r.id === selectedPair.adminFeedback?.preferredResponseId) + 1)}
+								</span>
+							</div>
+							<p class="text-emerald-700 dark:text-emerald-300 whitespace-pre-wrap">
+								{selectedPair.adminFeedback.reason}
+							</p>
+						</div>
+					{/if}
 
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
 						{#each selectedPair.responses as response, index}
@@ -623,7 +733,7 @@
 																	>
 																		<path
 																			d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
-																			/>
+																		/>
 																	</svg>
 																{/each}
 															</div>
@@ -648,57 +758,61 @@
 									</div>
 								{/if}
 
-								<button
-									on:click={() => handleResponseSelect(response.id)}
-									class="w-full px-4 py-2 text-sm font-medium rounded-lg transition-colors
+								{#if !isEvaluated(selectedPair)}
+									<button
+										on:click={() => handleResponseSelect(response.id)}
+										class="w-full px-4 py-2 text-sm font-medium rounded-lg transition-colors
+											{preferredResponseId === response.id
+											? 'bg-emerald-600 hover:bg-emerald-700 dark:bg-[#4ADE80] dark:hover:bg-[#22C55E] text-white'
+											: 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'}"
+									>
 										{preferredResponseId === response.id
-										? 'bg-emerald-600 hover:bg-emerald-700 dark:bg-[#4ADE80] dark:hover:bg-[#22C55E] text-white'
-										: 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'}"
-								>
-									{preferredResponseId === response.id
-										? $i18n.t('Selected')
-										: $i18n.t('Select this response')}
-								</button>
+											? $i18n.t('Selected')
+											: $i18n.t('Select this response')}
+									</button>
+								{/if}
 							</div>
 						{/each}
 					</div>
 
-					<div class="mb-6">
-						<label
-							for="comparisonReason"
-							class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-						>
-							{$i18n.t('Why do you prefer this response? (Pedagogical perspective)')}
-						</label>
-						<textarea
-							id="comparisonReason"
-							bind:value={comparisonReason}
-							rows="4"
-							class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-							placeholder={$i18n.t(
-								'Please explain your preference from a pedagogical perspective...'
-							)}
-						></textarea>
-					</div>
+					{#if !isEvaluated(selectedPair)}
+						<div class="mb-6">
+							<label
+								for="comparisonReason"
+								class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+							>
+								{$i18n.t('Why do you prefer this response? (Pedagogical perspective)')}
+							</label>
+							<textarea
+								id="comparisonReason"
+								bind:value={comparisonReason}
+								rows="4"
+								class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+								placeholder={$i18n.t(
+									'Please explain your preference from a pedagogical perspective...'
+								)}
+							></textarea>
+						</div>
 
-					<div class="flex justify-end gap-4">
-						<button
-							on:click={() => {
-								selectedPair = null;
-								preferredResponseId = null;
-								comparisonReason = '';
-							}}
-							class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-						>
-							{$i18n.t('Cancel')}
-						</button>
-						<button
-							on:click={handleComparisonSubmit}
-							class="px-4 py-2 text-sm font-medium bg-emerald-600 hover:bg-emerald-700 dark:bg-[#4ADE80] dark:hover:bg-[#22C55E] text-white rounded-lg transition-colors"
-						>
-							{$i18n.t('Submit Feedback')}
-						</button>
-					</div>
+						<div class="flex justify-end gap-4">
+							<button
+								on:click={() => {
+									selectedPair = null;
+									preferredResponseId = null;
+									comparisonReason = '';
+								}}
+								class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+							>
+								{$i18n.t('Cancel')}
+							</button>
+							<button
+								on:click={handleComparisonSubmit}
+								class="px-4 py-2 text-sm font-medium bg-emerald-600 hover:bg-emerald-700 dark:bg-[#4ADE80] dark:hover:bg-[#22C55E] text-white rounded-lg transition-colors"
+							>
+								{$i18n.t('Submit Feedback')}
+							</button>
+						</div>
+					{/if}
 				</div>
 			</div>
 		</div>
@@ -706,14 +820,38 @@
 </div>
 
 <style>
-	.container {
-		max-width: 1200px;
-	}
-
 	.line-clamp-2 {
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
+	}
+
+	/* Add smooth transitions */
+	.transition-all {
+		transition-property: all;
+		transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+		transition-duration: 150ms;
+	}
+
+	/* Improve focus styles for accessibility */
+	button:focus-visible,
+	[role="button"]:focus-visible {
+		outline: 2px solid #60a5fa;
+		outline-offset: 2px;
+	}
+
+	/* Add hover effects for interactive elements */
+	@media (hover: hover) {
+		.hover\:scale-\[1\.02\]:hover {
+			transform: scale(1.02);
+		}
+	}
+
+	/* Responsive padding adjustments */
+	@media (max-width: 640px) {
+		.p-4 {
+			padding: 1rem;
+		}
 	}
 </style>
