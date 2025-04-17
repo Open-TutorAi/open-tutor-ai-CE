@@ -5,6 +5,7 @@
 	"(e.g. `sh webui.sh --api`)": "( `sh webui.sh --api`مثال)",
 	"(latest)": "(الأخير)",
 	"{{ models }}": "{{ نماذج }}",
+	"Program Completion": "إكمال البرنامج",
 	"{{COUNT}} Replies": "",
 	"{{TUTOR_NAME}} Backend Required": "",
 	"{{user}}'s Chats": "دردشات {{user}}",
