@@ -27,7 +27,11 @@
 	$: subjectStyle = subjectConfig[subject] || subjectConfig.mathematics;
 
 	function handleClick() {
-		goto(href);
+		console.log('Course card clicked:', { title, href });
+		// Extract course ID from href if it's a full URL
+		const courseId = href.split('/').pop() || href;
+		console.log('Navigating to chat with courseId:', courseId);
+		goto(`/student/chat?courseId=${courseId}`);
 	}
 </script>
 
