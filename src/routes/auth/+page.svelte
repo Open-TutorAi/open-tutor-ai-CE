@@ -31,7 +31,7 @@
 	let rememberMe = false;
 	let ldapUsername = '';
 	let onboarding = false;
-	
+
 	// State to track signup steps
 	let signupStep = 1; // 1: Role selection, 2: Account information
 
@@ -43,7 +43,7 @@
 
 	const setSessionUser = async (sessionUser) => {
 		if (sessionUser) {
-			console.log("Session user received:", sessionUser);
+			console.log('Session user received:', sessionUser);
 			toast.success($i18n.t(`You're now logged in.`));
 			if (sessionUser.token) {
 				localStorage.token = sessionUser.token;
@@ -56,24 +56,24 @@
 			await config.set(await getBackendConfig());
 
 			// Redirect based on user role with explicit logging
-			console.log("Redirecting based on role:", sessionUser.role);
-			
+			console.log('Redirecting based on role:', sessionUser.role);
+
 			try {
 				if (sessionUser.role) {
 					console.log(`Redirecting to ${sessionUser.role} page`);
 					window.location.href = `/${sessionUser.role}`;
 				} else {
-					console.log("Unknown role, redirecting to default page");
+					console.log('Unknown role, redirecting to default page');
 					const redirectPath = querystringValue('redirect') || '/';
 					window.location.href = redirectPath;
 				}
 			} catch (error) {
-				console.error("Error during redirection:", error);
+				console.error('Error during redirection:', error);
 				// Fallback to home page if redirection fails
 				window.location.href = '/';
 			}
 		} else {
-			console.error("No session user received");
+			console.error('No session user received');
 			toast.error($i18n.t('Login failed. Please try again.'));
 		}
 	};
@@ -88,15 +88,19 @@
 	};
 
 	const signUpHandler = async () => {
-		const name = `${firstName} ${lastName}`.trim();	
+		const name = `${firstName} ${lastName}`.trim();
 		console.log(`Creating account with role: ${role}`);
-		
-		const sessionUser = await userSignUp(name, email, password, generateInitialsImage(name), role).catch(
-			(error) => {
-				toast.error(`${error}`);
-				return null;
-			}
-		);
+
+		const sessionUser = await userSignUp(
+			name,
+			email,
+			password,
+			generateInitialsImage(name),
+			role
+		).catch((error) => {
+			toast.error(`${error}`);
+			return null;
+		});
 
 		await setSessionUser(sessionUser);
 	};
@@ -157,7 +161,7 @@
 			}
 		};
 	}
-	
+
 	// Handle role selection from the RoleSelection component
 	const handleRoleSelected = (event) => {
 		role = event.detail.role;
@@ -165,7 +169,7 @@
 		// Proceed to the next step of signup
 		signupStep = 2;
 	};
-	
+
 	// Handle going back from role selection
 	const handleGoBack = () => {
 		// If at role selection step, switch to signin mode
@@ -173,7 +177,7 @@
 			mode = 'signin';
 		}
 	};
-	
+
 	// Function to go back to role selection from account info
 	const goBackToRoleSelection = () => {
 		signupStep = 1;
@@ -191,7 +195,7 @@
 			await signInHandler();
 		} else {
 			onboarding = $config?.onboarding ?? false;
-			
+
 			// If signup mode, show role selection first
 			if (mode === 'signup') {
 				signupStep = 1; // Start with role selection
@@ -202,10 +206,10 @@
 
 <svelte:head>
 	<title>
-		{mode === 'signup' ? 
-			signupStep === 1 ? 
-				$i18n.t('Choose Your Role') : 
-				$i18n.t('Create Account') 
+		{mode === 'signup'
+			? signupStep === 1
+				? $i18n.t('Choose Your Role')
+				: $i18n.t('Create Account')
 			: $i18n.t('Sign in')} | OpenTutorAI
 	</title>
 	<!-- Standard favicon for most browsers -->
@@ -302,17 +306,26 @@
 							<div class="mb-8">
 								<!-- Show back button if in signup mode step 2 -->
 								{#if mode === 'signup' && signupStep === 2}
-									<button 
+									<button
 										on:click={goBackToRoleSelection}
 										class="flex items-center text-blue-600 hover:text-blue-700 mb-4"
 									>
-										<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-											<path fill-rule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											class="h-5 w-5 mr-1"
+											viewBox="0 0 20 20"
+											fill="currentColor"
+										>
+											<path
+												fill-rule="evenodd"
+												d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z"
+												clip-rule="evenodd"
+											/>
 										</svg>
 										{$i18n.t('Back to Role Selection')}
 									</button>
 								{/if}
-								
+
 								<h2 class="text-2xl font-semibold mb-2 text-black dark:text-white">
 									{#if mode === 'signup'}
 										{$i18n.t('Create Account')}
@@ -336,18 +349,24 @@
 									<!-- Show chosen role badge -->
 									{#if role}
 										<div class="mb-2">
-											<span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium 
-												{role === 'student' ? 'bg-blue-100 text-blue-800' : 
-												role === 'teacher' ? 'bg-emerald-100 text-emerald-800' : 
-												'bg-purple-100 text-purple-800'}">
-												{role === 'student' ? '👨‍🎓' : role === 'teacher' ? '👨‍🏫' : '👨‍👧'} 
-												{role === 'student' ? $i18n.t('Student') : 
-												role === 'teacher' ? $i18n.t('Teacher') : 
-												$i18n.t('Parent')}
+											<span
+												class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+												{role === 'student'
+													? 'bg-blue-100 text-blue-800'
+													: role === 'teacher'
+														? 'bg-emerald-100 text-emerald-800'
+														: 'bg-purple-100 text-purple-800'}"
+											>
+												{role === 'student' ? '👨‍🎓' : role === 'teacher' ? '👨‍🏫' : '👨‍👧'}
+												{role === 'student'
+													? $i18n.t('Student')
+													: role === 'teacher'
+														? $i18n.t('Teacher')
+														: $i18n.t('Parent')}
 											</span>
 										</div>
 									{/if}
-									
+
 									<div class="grid grid-cols-2 gap-4">
 										<div>
 											<label
