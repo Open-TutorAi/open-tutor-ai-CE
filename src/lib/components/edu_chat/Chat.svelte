@@ -77,7 +77,7 @@
 	import { getTools } from '$lib/apis/tools';
 
 	import Banner from '../common/Banner.svelte';
-	import MessageInput from '$lib/components/chat/MessageInput.svelte';
+	import MessageInput from '$lib/components/edu_chat/MessageInput.svelte';
 	import Messages from '$lib/components/chat/Messages.svelte';
 	import Navbar from '$lib/components/edu_chat/Navbar.svelte';
 	import ChatControls from '../chat/ChatControls.svelte';
@@ -163,6 +163,14 @@
 		});
 		// Save to localStorage for persistence
 		localStorage.setItem('settings', JSON.stringify($settings));
+	};
+
+	// Add new state for rightbar visibility
+	let showRightbar = !$mobile;
+
+	// Function to toggle rightbar
+	const toggleRightbar = () => {
+		showRightbar = !showRightbar;
 	};
 
 	$: if (chatIdProp) {
@@ -2175,6 +2183,7 @@
 			/>
 		{/if}
 
+<!-- Navbar
 		<Navbar
 			bind:this={navbarElement}
 			chat={{
@@ -2195,10 +2204,10 @@
 			{avatarActive}
 			{toggleAvatar}
 		/>
-
+ -->
 		<div class="w-full h-full flex">
 			<!-- Main pane with chat -->
-			<div class="flex-1 h-full bg-[#F5F7F9] dark:bg-inherit">
+			<div class="flex-1 h-full bg-[#F5F7F9] dark:bg-inherit relative pt-0">
 				{#if !history.currentId && !$chatId && selectedModels.length <= 1 && ($banners.length > 0 || ($config?.license_metadata?.type ?? null) === 'trial' || (($config?.license_metadata?.seats ?? null) !== null && $config?.user_count > $config?.license_metadata?.seats))}
 					<div class="absolute top-12 left-0 right-0 w-full z-30">
 						<div class="flex flex-col gap-1 w-full">
@@ -2350,14 +2359,31 @@
 						{/if}
 					{/if}
 				</div>
+
+				<!-- Toggle button for rightbar on mobile -->
+				<button
+					class="md:hidden fixed right-4 bottom-20 z-50 bg-blue-500 dark:bg-blue-600 text-white p-2 rounded-full shadow-lg"
+					on:click={toggleRightbar}
+					aria-label={showRightbar ? 'Hide sidebar' : 'Show sidebar'}
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						{#if showRightbar}
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+						{:else}
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7M19 19l-7-7 7-7" />
+						{/if}
+					</svg>
+				</button>
 			</div>
 
-			<!-- Rightbar -->
-			<div class="w-60 h-full overflow-auto border-l border-gray-200 dark:border-gray-700">
-				<Rightbar {courseCompletion} {modules} />
+			<!-- Rightbar with responsive behavior -->
+			<div class="transition-all duration-300 ease-in-out {showRightbar ? 'w-60 opacity-100' : 'w-0 opacity-0 md:w-60 md:opacity-100'} h-full overflow-hidden border-l border-gray-200 dark:border-gray-700">
+				{#if showRightbar || !$mobile}
+					<Rightbar {courseCompletion} {modules} />
+				{/if}
 			</div>
 
-			<!-- Controls panel will be conditionally shown based on showControls -->
+			<!-- Controls panel -->
 			{#if $showControls && !$mobile}
 				<PaneGroup direction="horizontal" class="border-l border-gray-200 dark:border-gray-700">
 					<ChatControls
