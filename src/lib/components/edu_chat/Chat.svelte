@@ -2183,7 +2183,6 @@
 			/>
 		{/if}
 
-<!-- Navbar
 		<Navbar
 			bind:this={navbarElement}
 			chat={{
@@ -2204,7 +2203,6 @@
 			{avatarActive}
 			{toggleAvatar}
 		/>
- -->
 		<div class="w-full h-full flex">
 			<!-- Main pane with chat -->
 			<div class="flex-1 h-full bg-[#F5F7F9] dark:bg-inherit relative pt-0">
@@ -2377,40 +2375,13 @@
 			</div>
 
 			<!-- Rightbar with responsive behavior -->
-			<div class="transition-all duration-300 ease-in-out {showRightbar ? 'w-60 opacity-100' : 'w-0 opacity-0 md:w-60 md:opacity-100'} h-full overflow-hidden border-l border-gray-200 dark:border-gray-700">
+			<div class="transition-all duration-300 ease-in-out {showRightbar ? 'w-60 opacity-100' : 'w-0 opacity-0 md:w-60 md:opacity-100'} h-full overflow-hidden border-1 border-gray-200 rounded-lg dark:border-gray-700 px-4">
 				{#if showRightbar || !$mobile}
 					<Rightbar {courseCompletion} {modules} />
 				{/if}
 			</div>
 
-			<!-- Controls panel -->
-			{#if $showControls && !$mobile}
-				<PaneGroup direction="horizontal" class="border-l border-gray-200 dark:border-gray-700">
-					<ChatControls
-						bind:this={controlPaneComponent}
-						bind:history
-						bind:chatFiles
-						bind:params
-						bind:files
-						bind:pane={controlPane}
-						chatId={$chatId}
-						modelId={selectedModelIds?.at(0) ?? null}
-						models={selectedModelIds.reduce((a, e, i, arr) => {
-							const model = $models.find((m) => m.id === e);
-							if (model) {
-								return [...a, model];
-							}
-							return a;
-						}, [])}
-						{submitPrompt}
-						{stopResponse}
-						{showMessage}
-						{eventTarget}
-						{avatarActive}
-						onAvatarToggle={toggleAvatar}
-					/>
-				</PaneGroup>
-			{/if}
+
 		</div>
 	{:else if loading}
 		<div class=" flex items-center justify-center h-full w-full">
