@@ -9,6 +9,7 @@
 	import Classroom from '$lib/components/icons/Classroom.svelte';
 	import Assignment from '$lib/components/icons/Assignment.svelte';
 	import Message from '$lib/components/icons/Messages.svelte';
+	import BookOpen from '$lib/components/icons/BookOpen.svelte';
 	import type { ComponentType } from 'svelte';
 	import { writable, type Writable } from 'svelte/store';
 	const i18n = getContext('i18n');
@@ -132,6 +133,7 @@
 			{ id: 'dashboard', label: 'Dashboard', icon: Dashboard },
 			{ id: 'classrooms', label: 'My Classrooms', icon: Classroom },
 			{ id: 'support', label: 'Support', icon: Classroom },
+			{ id: 'studyguide', label: 'Study Guide', icon: BookOpen },
 			{ id: 'assignments', label: 'Assignments', icon: Assignment },
 			{ id: 'messages', label: 'Messages', icon: Message },
 			{ id: 'settings', label: 'Profile & Settings', icon: Settings }
