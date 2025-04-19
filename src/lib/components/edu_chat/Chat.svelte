@@ -2163,7 +2163,7 @@
 />
 
 <div
-	class="h-screen max-h-[100dvh] transition-width duration-200 ease-in-out bg-[#F5F7F9] dark:bg-inherit {$showSidebar
+	class="h-screen max-h-[50dvh] transition-width duration-200 ease-in-out bg-[#F5F7F9] dark:bg-inherit {$showSidebar
 		? 'md:max-w-[calc(100%-260px)]'
 		: ''} w-full max-w-full flex flex-col"
 	id="chat-container"
@@ -2361,7 +2361,8 @@
 			</div>
 
 			<!-- Rightbar with responsive behavior -->
-			<div class="transition-all duration-300 ease-in-out {showRightbar ? 'w-60 opacity-100' : 'w-0 opacity-0 md:w-60 md:opacity-100'} h-full overflow-hidden border-1 border-gray-200 rounded-lg dark:border-gray-700 px-4 py-2">
+			<div class="transition-all duration-300 ease-in-out {showRightbar ? 'w-60 opacity-100' : 'w-0 opacity-0 md:w-60 md:opacity-100'} 
+			h-full overflow-hidden border-1 border-gray-200 rounded-lg dark:border-gray-700 px-4 py-2">
 				{#if showRightbar || !$mobile}
 					<Rightbar {courseCompletion} {modules} />
 				{/if}

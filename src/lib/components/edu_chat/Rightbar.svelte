@@ -132,7 +132,7 @@
       role="region" 
       aria-label="Engagement summary">
       <div class="mb-1">
-        <h2 class="text-gray-800 dark:text-white font-medium text-base mb-2 text-center">How Engaged Am I?</h2>
+        <h2 class="text-gray-800 dark:text-white font-medium text-base mb-2 text-center">{$i18n.t("How Engaged Am I?")}</h2>
         
         <!-- Toggle buttons -->
         <div class="flex justify-between mb-6">
@@ -234,7 +234,7 @@
               class="fill-gray-500 dark:fill-gray-400"
               font-size="10"
             >
-              Engagement
+              {$i18n.t("Engagement")}
             </text>
           </svg>
         </div>
