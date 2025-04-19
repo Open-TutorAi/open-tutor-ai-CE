@@ -40,7 +40,7 @@ We welcome pull requests. Before submitting one, please:
 To maintain a clean, scalable, and consistent codebase, please follow these folder structure conventions when adding new files:
 
 - ✅ Reusable or shared components should go inside the `components/` directory.
-  - Consider organizing components by feature or domain (e.g., `components/chatbot/`, `components/dashboard/`, `components/user/`).
+  - Consider organizing components by feature or domain (e.g., `components/tutor/`, `components/dashboard/`, `components/user/`).
 - ✅ Route-specific pages or views should go inside the `routes/` directory.
 - ❌ Avoid placing components or views at the root level or outside their designated folders.
 
