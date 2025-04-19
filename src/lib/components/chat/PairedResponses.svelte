@@ -155,7 +155,7 @@
 		id: string;
 		role: string;
 		content: string;
-		childrenIds: string[];
+		childrenIds?: string[];  // Made optional with ?
 		timestamp: number;
 		model?: string;
 		modelName?: string;
@@ -216,9 +216,12 @@
 		for (let i = 0; i < messageArray.length; i++) {
 			const message = messageArray[i];
 			if (message.role === 'user') {
+				// Ensure childrenIds exists and is an array
+				const childrenIds = message.childrenIds || [];
+				
 				// Find responses that are children of this message
 				const responses = messageArray.filter(
-					(m) => m.role === 'assistant' && message.childrenIds.includes(m.id)
+					(m) => m.role === 'assistant' && childrenIds.includes(m.id)
 				);
 
 				// Only include if there are exactly two responses

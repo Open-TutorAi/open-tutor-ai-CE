@@ -12,60 +12,35 @@ The feedback pipeline consists of two main types of feedback:
 ## Student Feedback
 
 ### Collection Process
-- Students can provide feedback on any AI response
+- Students can provide feedback on any Tutor response
 - Feedback includes:
-  - Rating (1-5 stars)
+  - Rating 
   - Reason for rating
   - Optional comments
   - Timestamp
 
-### Storage
-```typescript
-interface StudentFeedback {
-  rating: number;
-  reason: string;
-  comment: string;
-  timestamp: number;
-  message_id: string;
-}
-```
-
-### Usage
-- Used to improve AI response quality
-- Helps identify patterns in student preferences
-- Provides data for model fine-tuning
 
 ## Teacher Feedback
 
 ### Collection Process
-- Teachers evaluate pairs of AI responses to the same question
+- Teachers evaluate pairs of Tutor responses to the same question
+- Teachers Provide pedagogical evaluation basing on the Tutore Reseponses quality and student feedback
 - Each evaluation includes:
   - Selection of preferred response
+  - Student feedback (if available)
   - Pedagogical reasoning
   - Timestamp
   - Question context
 
-### Storage
-```typescript
-interface TeacherFeedback {
-  preferredResponseId: string;
-  reason: string;
-  timestamp: number;
-  questionId: string;
-  question: string;
-  responses: {
-    id: string;
-    content: string;
-    modelName: string;
-  }[];
-}
-```
 
-### Usage
-- Guides AI model improvements
+## Usage
+- Used to improve AI response quality
+- Helps identify patterns in student preferences
 - Provides pedagogical insights
 - Helps maintain teaching standards
 - Supports curriculum development
+- Provides data for model fine-tuning
+
 
 ## Feedback Interface
 
@@ -87,20 +62,7 @@ interface TeacherFeedback {
 4. Provide pedagogical reasoning
 5. Submit evaluation
 
-## Technical Implementation
-
-### Data Flow
-1. Chat messages are processed to identify pairs
-2. Student feedback is collected and stored
-3. Teacher evaluations are recorded
-4. Data is used for model improvement
-
-### API Endpoints
-- `GET /api/v1/chats/all/db` - Fetch all chats
-- `GET /api/v1/feedbacks/all` - Fetch all feedbacks
-- `POST /api/v1/response-feedbacks` - Submit teacher evaluation
-
-### Security
+## Security
 - Teacher authentication required
 - Role-based access control
 - Data validation and sanitization
@@ -119,12 +81,7 @@ interface TeacherFeedback {
 - Use comments to elaborate on feedback
 
 ## Future Improvements
-- Automated feedback analysis
-- Integration with learning management systems
+- Add correction mechanismes to correcte AI generated responses
 - Advanced filtering and search capabilities
-- Feedback analytics dashboard
+- Improve Admin Feedback analytics dashboard
 
-## Related Documentation
-- [API Reference](../api/feedback-api.md)
-- [User Guide](../user-guide/feedback.md)
-- [Admin Guide](../admin/feedback-management.md)
