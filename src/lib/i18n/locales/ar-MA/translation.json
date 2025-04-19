@@ -1402,3 +1402,23 @@
 	"Search questions or chat titles...": "بحث عن أسئلة أو عناوين المحادثات",
 	"Please explain your preference from a pedagogical perspective...": "يرجى شرح تفضيلك من وجهة نظر تعليمية..."
 }
+	"Choose Your Role": "اختر دورك",
+	"Select the role that best describes you": "حدد الدور الذي يصفك بشكل أفضل",
+	"Select Role": "اختر الدور",
+	"Not sure about your role?": "غير متأكد من دورك؟",
+	"Contact Support": "اتصل بالدعم",
+	"Note: Your role determines the features and access levels available to you. You can request a role change later if needed.": "ملاحظة: يحدد دورك الميزات ومستويات الوصول المتاحة لك. يمكنك طلب تغيير الدور لاحقًا إذا لزم الأمر.",
+	"Personalized learning path": "مسار تعليمي مخصص",
+	"Track your progress": "تتبع تقدمك",
+	"Access study materials": "الوصول إلى مواد الدراسة",
+	"Connect with tutors": "التواصل مع المعلمين",
+	"Manage your classes": "إدارة فصولك",
+	"Monitor student progress": "مراقبة تقدم الطلاب",
+	"Create assignments": "إنشاء واجبات",
+	"AI teaching assistant": "مساعد تدريس بالذكاء الاصطناعي",
+	"Track child's progress": "تتبع تقدم الطفل",
+	"Communication with teachers": "التواصل مع المعلمين",
+	"View performance reports": "عرض تقارير الأداء",
+	"Schedule consultations": "جدولة الاستشارات",
+	"Back to Role Selection": "العودة إلى اختيار الدور"
+}
