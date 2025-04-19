@@ -502,19 +502,19 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 	});
 </script>
 
-<div class="flex flex-col lg:flex-row gap-8 w-full h-full">
+<div class="flex flex-col lg:flex-row gap-6 w-full h-full">
 	<!-- Main content area with chat -->
 	{#if mounted}
 		<div class="flex-1 w-full h-full" transition:fly={{ x: -20, duration: 500, delay: 100, easing: quartOut }}>
-			<div class="bg-gradient-to-br from-gray-50 to-gray-200 dark:from-gray-800 dark:to-gray-900 p-3 md:p-5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col border border-gray-200 dark:border-gray-700">
+			<div class="bg-gradient-to-br from-gray-50 to-gray-200 dark:from-gray-800 dark:to-gray-900 p-2 sm:p-3 md:p-5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col border border-gray-200 dark:border-gray-700">
 				<!-- Avatar/Chat Toggle Button -->
-				<div class="flex justify-between items-center mb-3">
-					<div>
+				<div class="flex flex-wrap justify-between items-center mb-3 gap-2">
+					<div class="w-full sm:w-auto">
 						<ModelSelector bind:selectedModels={selectedModels} />
 					</div>
 					<button
 						id="avatar-toggle-button"
-						class="relative h-7 w-36 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white cursor-pointer overflow-hidden 
+						class="relative h-8 w-40 mx-auto sm:mx-0 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white cursor-pointer overflow-hidden 
 							   transition-all duration-300 shadow-md hover:shadow-lg border border-blue-400/20"
 						on:click={toggleAvatar}
 					>
@@ -529,7 +529,7 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 							
 							<!-- Left side label - Avatar -->
 							<div class="w-1/2 h-full flex items-center justify-center z-10">
-								<span class="font-medium uppercase text-xs transition-colors duration-300"
+								<span class="font-medium text-xs whitespace-nowrap px-1 transition-colors duration-300"
 									  style="color: {avatarActive ? '#3B82F6' : 'white'}">
 									{$i18n.t('Avatar')}
 								</span>
@@ -537,7 +537,7 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 							
 							<!-- Right side label - Chat -->
 							<div class="w-1/2 h-full flex items-center justify-center z-10">
-								<span class="font-medium uppercase text-xs transition-colors duration-300"
+								<span class="font-medium text-xs whitespace-nowrap px-1 transition-colors duration-300"
 									  style="color: {avatarActive ? 'white' : '#3B82F6'}">
 									{$i18n.t('Chat')}
 								</span>
@@ -549,7 +549,7 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 				<!-- Chat interface -->
 				<div class="flex-1 flex flex-col relative">
 					{#if avatarActive}
-						<div class="flex-1 flex-grow overflow-hidden bg-transparent relative rounded-xl">
+						<div class="flex-1 flex-grow overflow-hidden bg-transparent relative rounded-xl fixed-container">
 							<AvatarChat
 								className="h-full w-full"
 								{history}
@@ -567,9 +567,9 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 						</div>
 						
 						<!-- Custom Chat Input UI -->
-						<div class="absolute bottom-6 left-0 right-0 z-20 px-4">
+						<div class="absolute bottom-6 left-0 right-0 z-20 px-2 sm:px-4">
 							<div class="max-w-3xl mx-auto">
-								<div class="flex items-center w-full bg-gradient-to-r from-gray-100/95 to-gray-200/95 dark:from-gray-700/90 dark:to-gray-800/90 backdrop-blur-sm rounded-full shadow-md hover:shadow-lg py-2.5 px-5 transition-all duration-200 border border-gray-300/30 dark:border-gray-600/20">
+								<div class="flex items-center w-full bg-gradient-to-r from-gray-100/95 to-gray-200/95 dark:from-gray-700/90 dark:to-gray-800/90 backdrop-blur-sm rounded-full shadow-md hover:shadow-lg py-2 sm:py-2.5 px-3 sm:px-5 transition-all duration-200 border border-gray-300/30 dark:border-gray-600/20">
 									<input 
 										type="text" 
 										bind:value={prompt}
@@ -671,20 +671,20 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 	{/if}
 	
 	<!-- Right sidebar with widgets -->
-	<div class="w-full lg:w-72 flex-shrink-0 space-y-5">
+	<div class="w-full lg:w-72 lg:max-w-72 flex-shrink-0 space-y-4 lg:space-y-5 overflow-y-auto pr-3">
 		{#if mounted}
 			<!-- Program Completion Component -->
-			<div transition:fly={{ x: 20, y: -10, duration: 400, delay: 200, easing: quartOut }}>
+			<div transition:fly={{ x: 20, y: -10, duration: 400, delay: 200, easing: quartOut }} class="w-full">
 				<ProgramCompletion progress={currentTopic.progress} />
 			</div>
 			
 			<!-- Learning Path Component -->
-			<div transition:fly={{ x: 20, duration: 400, delay: 300, easing: quartOut }}>
+			<div transition:fly={{ x: 20, duration: 400, delay: 300, easing: quartOut }} class="w-full">
 				<LearningPath steps={learningPath} onStepClick={goToTopic} />
 			</div>
 			
 			<!-- Engagement Gauge Component -->
-			<div transition:fly={{ x: 20, y: 10, duration: 400, delay: 400, easing: quartOut }}>
+			<div transition:fly={{ x: 20, y: 10, duration: 400, delay: 400, easing: quartOut }} class="w-full mb-8">
 				<EngagementGauge 
 					percentage={engagement.percentage}
 					sessions={engagement.sessions}
@@ -699,5 +699,14 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 	:global(.dark) {
 		--tw-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
 		--tw-shadow-colored: 0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color);
+	}
+	
+	.fixed-container {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0; /* Changed to 0 to fully fill the container */
+		overflow: hidden;
 	}
 </style> 

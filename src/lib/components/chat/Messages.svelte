@@ -24,7 +24,7 @@
 
 	const i18n = getContext('i18n');
 
-	export let className = 'h-full flex pt-8';
+	export let className = 'h-full flex pt-4 sm:pt-8';
 
 	export let chatId = '';
 	export let user = $_user;
@@ -355,89 +355,60 @@
 	};
 </script>
 
-<div class={className}>
-	{#if Object.keys(history?.messages ?? {}).length == 0}
-		<ChatPlaceholder
-			modelIds={selectedModels}
-			submitPrompt={async (p) => {
-				let text = p;
-
-				if (p.includes('{{CLIPBOARD}}')) {
-					const clipboardText = await navigator.clipboard.readText().catch((err) => {
-						toast.error($i18n.t('Failed to read clipboard contents'));
-						return '{{CLIPBOARD}}';
-					});
-
-					text = p.replaceAll('{{CLIPBOARD}}', clipboardText);
-				}
-
-				prompt = text;
-
-				await tick();
-
-				const chatInputContainerElement = document.getElementById('chat-input-container');
-				if (chatInputContainerElement) {
-					prompt = p;
-
-					chatInputContainerElement.style.height = '';
-					chatInputContainerElement.style.height =
-						Math.min(chatInputContainerElement.scrollHeight, 200) + 'px';
-					chatInputContainerElement.focus();
-				}
-
-				await tick();
-			}}
-		/>
+<div class="flex flex-col {className} {bottomPadding ? 'pb-20 sm:pb-32' : ''}">
+	{#if Object.keys(history.messages ?? {}).length === 0}
+		<ChatPlaceholder />
 	{:else}
-		<div class="w-full pt-2">
-			{#key chatId}
-				<div class="w-full">
-					{#if messages.at(0)?.parentId !== null}
-						<Loader
-							on:visible={(e) => {
-								console.log('visible');
-								if (!messagesLoading) {
-									loadMoreMessages();
-								}
-							}}
-						>
-							<div class="w-full flex justify-center py-1 text-xs animate-pulse items-center gap-2">
-								<Spinner className=" size-4" />
-								<div class=" ">Loading...</div>
-							</div>
-						</Loader>
-					{/if}
+		<div
+			class="flex-1 flex flex-col w-full max-w-full sm:max-w-5xl overflow-y-auto px-1 sm:px-3 mx-auto"
+			on:scroll={(e) => {
+				const element = e.target;
+				if (element.scrollTop < 100 && !messagesLoading && messages.length >= messagesCount) {
+					loadMoreMessages();
+				}
 
-					{#each messages as message, messageIdx (message.id)}
-						<Message
-							{chatId}
-							bind:history
-							messageId={message.id}
-							idx={messageIdx}
-							{user}
-							{showPreviousMessage}
-							{showNextMessage}
-							{updateChat}
-							{editMessage}
-							{deleteMessage}
-							{rateMessage}
-							{actionMessage}
-							{saveMessage}
-							{submitMessage}
-							{regenerateResponse}
-							{continueResponse}
-							{mergeResponses}
-							{addMessages}
-							{triggerScroll}
-							{readOnly}
-						/>
-					{/each}
+				if (element.scrollHeight - element.scrollTop <= element.clientHeight + 50) {
+					autoScroll = true;
+				} else {
+					autoScroll = false;
+				}
+			}}
+		>
+			{#if messagesLoading}
+				<div class="flex w-full justify-center p-3">
+					<Spinner />
 				</div>
-				<div class="pb-12" />
-				{#if bottomPadding}
-					<div class="  pb-6" />
-				{/if}
-			{/key}
+			{/if}
+			<div class="w-full max-w-full">
+				{#each messages as message, idx}
+					{#if Object.keys(history.messages ?? {}).length > 0}
+						<div class="w-full">
+							<Message
+								{chatId}
+								{history}
+								messageId={message.id}
+								{user}
+								{idx}
+								{showPreviousMessage}
+								{showNextMessage}
+								{updateChat}
+								editMessage={editMessage}
+								saveMessage={saveMessage}
+								deleteMessage={deleteMessage}
+								rateMessage={rateMessage}
+								actionMessage={chatActionHandler}
+								{submitMessage}
+								{regenerateResponse}
+								{continueResponse}
+								{mergeResponses}
+								{addMessages}
+								{triggerScroll}
+								{readOnly}
+							/>
+						</div>
+					{/if}
+				{/each}
+			</div>
 		</div>
 	{/if}
 </div>
