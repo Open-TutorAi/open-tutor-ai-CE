@@ -56,7 +56,9 @@
 	const loadMoreMessages = async () => {
 		// scroll slightly down to disable continuous loading
 		const element = document.getElementById('messages-container');
-		element.scrollTop = element.scrollTop + 100;
+		if (element) {
+			element.scrollTop = element.scrollTop + 100;
+		}
 
 		messagesLoading = true;
 		messagesCount += 20;
@@ -89,7 +91,9 @@
 
 	const scrollToBottom = () => {
 		const element = document.getElementById('messages-container');
-		element.scrollTop = element.scrollHeight;
+		if (element) {
+			element.scrollTop = element.scrollHeight;
+		}
 	};
 
 	const updateChat = async () => {
@@ -145,11 +149,13 @@
 
 		if ($settings?.scrollOnBranchChange ?? true) {
 			const element = document.getElementById('messages-container');
-			autoScroll = element.scrollHeight - element.scrollTop <= element.clientHeight + 50;
+			if (element) {
+				autoScroll = element.scrollHeight - element.scrollTop <= element.clientHeight + 50;
 
-			setTimeout(() => {
-				scrollToBottom();
-			}, 100);
+				setTimeout(() => {
+					scrollToBottom();
+				}, 100);
+			}
 		}
 	};
 
@@ -196,11 +202,13 @@
 
 		if ($settings?.scrollOnBranchChange ?? true) {
 			const element = document.getElementById('messages-container');
-			autoScroll = element.scrollHeight - element.scrollTop <= element.clientHeight + 50;
+			if (element) {
+				autoScroll = element.scrollHeight - element.scrollTop <= element.clientHeight + 50;
 
-			setTimeout(() => {
-				scrollToBottom();
-			}, 100);
+				setTimeout(() => {
+					scrollToBottom();
+				}, 100);
+			}
 		}
 	};
 
@@ -337,10 +345,12 @@
 	const triggerScroll = () => {
 		if (autoScroll) {
 			const element = document.getElementById('messages-container');
-			autoScroll = element.scrollHeight - element.scrollTop <= element.clientHeight + 50;
-			setTimeout(() => {
-				scrollToBottom();
-			}, 100);
+			if (element) {
+				autoScroll = element.scrollHeight - element.scrollTop <= element.clientHeight + 50;
+				setTimeout(() => {
+					scrollToBottom();
+				}, 100);
+			}
 		}
 	};
 </script>
