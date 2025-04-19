@@ -21,7 +21,7 @@
 
 	let loaded = false;
 	let showForgotPassword = false;
-	let mode = $config?.features.enable_ldap ? 'ldap' : 'signin'; // Default is signin
+	let mode = $config?.features.enable_ldap ? 'ldap' : 'signin'; // Changed default to signin
 	let firstName = '';
 	let lastName = '';
 	let email = '';
@@ -611,7 +611,33 @@
 								{/if}
 							</div>
 						{/if}
-					</div>
+
+						<div class="mt-6 text-center">
+							{#if mode === 'signup'}
+								<p class="text-gray-800 dark:text-gray-200 text-sm">
+									{$i18n.t('Already have an account?')}
+									<button
+										class="text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200 font-medium ml-1"
+										on:click={() => (mode = 'signin')}
+									>
+										{$i18n.t('Sign in')}
+									</button>
+								</p>
+								<div class="h-16"></div>
+							{:else}
+								<p class="text-gray-800 dark:text-gray-200 text-sm">
+									{$i18n.t("Don't have an account?")}
+									<button
+										class="text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200 font-medium ml-1"
+										on:click={() => (mode = 'signup')}
+									>
+										{$i18n.t('Sign up')}
+									</button>
+								</p>
+							{/if}
+						</div>
+					{/if}
+
 				</div>
 			</div>
 		{/if}
