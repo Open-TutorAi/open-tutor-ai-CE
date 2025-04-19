@@ -1358,6 +1358,18 @@
 	"Page": "Page",
 	"of": "de",
 	"Help Center": "Centre d'aide",
+	"Upload lesson plans, presentations, worksheets, or instructional videos": "Téléverser des plans de leçons, des présentations, des feuilles de travail ou des vidéos didactiques",
+	"Attach teaching materials": "Joindre des matériaux pédagogiques",
 	"Dashboard": "Tableau de bord",
-	"Enter Course Code": "Entrez le code du cours"
+	"Enter Course Code": "Entrez le code du cours",
+	"All": "Tout",
+	"To Do": "À faire",
+	"Done": "Fait",
+	"Progress": "Progression",
+	"Total": "Total",
+	"Search questions or chat titles...": "Rechercher des questions ou des titres de discussions...",
+	"No pairs match your search criteria.": "Aucune paire ne correspond à vos critères de recherche.",
+	"All pairs have been evaluated. Great job!": "Toutes les paires ont été évaluées. Très bien !",
+	"No pairs have been evaluated yet.": "Aucune paire n'a été évaluée pour le moment."
+	
 }

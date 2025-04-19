@@ -460,7 +460,7 @@
 				<div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 transform transition-transform hover:scale-[1.02]">
 					<div class="flex items-center justify-between">
 						<div>
-							<div class="text-sm text-green-600 dark:text-green-400">Total</div>
+							<div class="text-sm text-green-600 dark:text-green-400">{$i18n.t('Total')}</div>
 							<div class="text-2xl font-bold text-green-700 dark:text-green-300">{totalPairs}</div>
 						</div>
 						<svg class="h-8 w-8 text-green-500 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -471,7 +471,7 @@
 				<div class="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 transform transition-transform hover:scale-[1.02]">
 					<div class="flex items-center justify-between">
 						<div>
-							<div class="text-sm text-orange-600 dark:text-orange-400">To Do</div>
+							<div class="text-sm text-orange-600 dark:text-orange-400">{$i18n.t('To Do')}</div>
 							<div class="text-2xl font-bold text-orange-700 dark:text-orange-300">{totalPairs - evaluatedPairs}</div>
 						</div>
 						<svg class="h-8 w-8 text-orange-500 dark:text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -482,7 +482,7 @@
 				<div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 transform transition-transform hover:scale-[1.02]">
 					<div class="flex items-center justify-between">
 						<div>
-							<div class="text-sm text-blue-600 dark:text-blue-400">Done</div>
+							<div class="text-sm text-blue-600 dark:text-blue-400">{$i18n.t('Done')}</div>
 							<div class="text-2xl font-bold text-blue-700 dark:text-blue-300">{evaluatedPairs}</div>
 						</div>
 						<svg class="h-8 w-8 text-blue-500 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -493,7 +493,7 @@
 			</div>
 			<div class="mt-6">
 				<div class="flex items-center justify-between mb-2">
-					<div class="text-sm font-medium text-gray-600 dark:text-gray-400">Progress</div>
+					<div class="text-sm font-medium text-gray-600 dark:text-gray-400">{$i18n.t('Progress')}</div>
 					<div class="text-sm font-medium text-gray-600 dark:text-gray-400">
 						{Math.round((evaluatedPairs / totalPairs) * 100)}%
 					</div>
@@ -514,7 +514,7 @@
 					<input
 						type="text"
 						bind:value={searchQuery}
-						placeholder="Search questions or chat titles..."
+						placeholder={$i18n.t('Search questions or chat titles...')}
 						class="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
 					/>
 					<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -541,7 +541,7 @@
 							: 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}"
 						on:click={() => (filter = 'all')}
 					>
-						All
+						{$i18n.t('All')}
 					</button>
 					<button
 						class="px-4 py-2 text-sm font-medium border-l border-gray-300 dark:border-gray-600 transition-colors {filter === 'todo'
@@ -549,7 +549,7 @@
 							: 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}"
 						on:click={() => (filter = 'todo')}
 					>
-						To Do
+						{$i18n.t('To Do')}
 					</button>
 					<button
 						class="px-4 py-2 text-sm font-medium border-l border-gray-300 dark:border-gray-600 transition-colors {filter === 'done'
@@ -557,7 +557,7 @@
 							: 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}"
 						on:click={() => (filter = 'done')}
 					>
-						Done
+						{$i18n.t('Done')}
 					</button>
 				</div>
 			</div>
@@ -585,11 +585,11 @@
 				<h3 class="text-xl font-medium text-gray-900 dark:text-white mb-2">No pairs found</h3>
 				<p class="text-gray-600 dark:text-gray-400">
 					{#if filter === 'todo'}
-						All pairs have been evaluated. Great job!
+						{$i18n.t('All pairs have been evaluated. Great job!')}
 					{:else if filter === 'done'}
-						No evaluated pairs yet.
+						{$i18n.t('No evaluated pairs yet.')}
 					{:else}
-						No pairs match your search criteria.
+						{$i18n.t('No pairs match your search criteria.')}
 					{/if}
 				</p>
 			</div>
@@ -624,7 +624,7 @@
 											<svg class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
 											</svg>
-											To Do
+											{$i18n.t('To Do')}
 										</span>
 									{:else}
 										<span
@@ -633,7 +633,7 @@
 											<svg class="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
 											</svg>
-											Done
+											{$i18n.t('Done')}
 										</span>
 									{/if}
 								</div>
