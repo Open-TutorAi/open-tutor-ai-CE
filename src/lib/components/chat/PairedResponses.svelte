@@ -23,6 +23,63 @@
 	let searchQuery = '';
 	let filter: 'all' | 'todo' | 'done' = 'all';
 
+	let uploadedFiles: File[] = [];
+	let fileUploadError: string | null = null;	
+
+	function handleFileUpload(event: Event) {
+		const input = event.target as HTMLInputElement;
+		if (!input.files || input.files.length === 0) return;
+		
+		fileUploadError = null;
+		
+		// Process each file
+		Array.from(input.files).forEach(file => {
+			// Check file size (max 50MB)
+			if (file.size > 50 * 1024 * 1024) {
+			fileUploadError = `${file.name} exceeds the maximum size of 50MB`;
+			return;
+			}
+			
+			// Check file type
+			const validTypes = ['.pdf', '.docx', '.pptx', '.mp4', 'application/pdf', 
+								'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+								'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+								'video/mp4'];
+			
+			const isValidType = validTypes.some(type => 
+			file.type.includes(type) || file.name.toLowerCase().endsWith(type.toLowerCase())
+			);
+			
+			if (!isValidType) {
+			fileUploadError = `${file.name} is not a supported file type`;
+			return;
+			}
+			
+			// Add file to uploaded files
+			uploadedFiles = [...uploadedFiles, file];
+		});
+		
+		// Clear the input to allow selecting the same file again
+		input.value = '';
+		
+		if (fileUploadError) {
+			toast.error(fileUploadError);
+		} else if (uploadedFiles.length > 0) {
+			toast.success($i18n.t('Files uploaded successfully'));
+		}
+		}
+
+		function removeFile(index: number) {
+		uploadedFiles = uploadedFiles.filter((_, idx) => idx !== index);
+		}
+
+		function formatFileSize(bytes: number): string {
+		if (bytes < 1024) return bytes + ' B';
+		else if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+		else if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+		return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+		}
+
 	function toggleResponse(responseId: string) {
 		expandedId = expandedId === responseId ? null : responseId;
 	}
@@ -795,7 +852,104 @@
 									'Please explain your preference from a pedagogical perspective...'
 								)}
 							></textarea>
+							<div class="mb-6 mt-6">
+								<div class="flex items-center mb-2">
+								  <svg class="h-5 w-5 text-gray-600 dark:text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+								  </svg>
+								  <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
+									{$i18n.t('Attach teaching materials')}
+								  </label>
+								</div>
+								
+								<p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
+								  {$i18n.t('Upload lesson plans, presentations, worksheets, or instructional videos')}
+								</p>
+								
+								<div 
+								  class="border border-dashed border-blue-300 dark:border-blue-700 rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors"
+								  on:click={() => document.getElementById('fileInput').click()}
+								  on:keydown={(e) => e.key === 'Enter' && document.getElementById('fileInput').click()}
+								  role="button"
+								  tabindex="0"
+								>
+								  <input 
+									type="file" 
+									id="fileInput" 
+									class="hidden" 
+									accept=".pdf,.docx,.pptx,.mp4" 
+									on:change={handleFileUpload} 
+									multiple
+								  />
+								  
+								  <div class="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4">
+									<svg class="h-6 w-6 text-blue-500 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+									  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+									</svg>
+								  </div>
+								  
+								  <p class="text-blue-500 dark:text-blue-400 text-sm font-medium mb-1">
+									{$i18n.t('Click to upload or drag and drop files')}
+								  </p>
+								  
+								  <p class="text-xs text-gray-500 dark:text-gray-400">
+									PDF, DOCX, PPTX, MP4 (max 50MB)
+								  </p>
+								</div>
+							  
+								{#if uploadedFiles && uploadedFiles.length > 0}
+								  <div class="mt-4 space-y-2">
+									{#each uploadedFiles as file, idx}
+									  <div class="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+										<div class="flex items-center">
+										  <div class="bg-blue-100 dark:bg-blue-900/20 rounded-md p-2 mr-3">
+											{#if file.type.includes('pdf') || file.name.endsWith('.pdf')}
+											  <svg class="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+											  </svg>
+											{:else if file.type.includes('word') || file.name.endsWith('.docx')}
+											  <svg class="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+											  </svg>
+											{:else if file.type.includes('presentation') || file.name.endsWith('.pptx')}
+											  <svg class="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+											  </svg>
+											{:else if file.type.includes('video') || file.name.endsWith('.mp4')}
+											  <svg class="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+											  </svg>
+											{:else}
+											  <svg class="h-5 w-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+											  </svg>
+											{/if}
+										  </div>
+										  <div>
+											<p class="text-sm font-medium text-gray-700 dark:text-gray-300 truncate max-w-[200px]">
+											  {file.name}
+											</p>
+											<p class="text-xs text-gray-500 dark:text-gray-400">
+											  {formatFileSize(file.size)}
+											</p>
+										  </div>
+										</div>
+										<button 
+										  on:click|stopPropagation={() => removeFile(idx)}
+										  class="text-gray-400 hover:text-red-500 transition-colors"
+										>
+										  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+										  </svg>
+										</button>
+									  </div>
+									{/each}
+								  </div>
+								{/if}
+							  </div>
 						</div>
+
+						
 
 						<div class="flex justify-end gap-4">
 							<button

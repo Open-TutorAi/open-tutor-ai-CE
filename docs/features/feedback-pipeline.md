@@ -84,4 +84,5 @@ The feedback pipeline consists of two main types of feedback:
 - Add correction mechanismes to correcte AI generated responses
 - Advanced filtering and search capabilities
 - Improve Admin Feedback analytics dashboard
+- Add Assignment mechanism ( To assign feedback tasks to teachers)
 
