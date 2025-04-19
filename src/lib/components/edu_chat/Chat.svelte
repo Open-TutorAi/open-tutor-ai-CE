@@ -2142,7 +2142,6 @@
 	</title>
 </svelte:head>
 
-<audio id="audioElement" src="" style="display: none;" />
 
 <EventConfirmDialog
 	bind:show={showEventConfirmation}
@@ -2170,19 +2169,6 @@
 	id="chat-container"
 >
 	{#if chatIdProp === '' || (!loading && chatIdProp)}
-		{#if $settings?.backgroundImageUrl ?? null}
-			<div
-				class="absolute {$showSidebar
-					? 'md:max-w-[calc(100%-260px)] md:translate-x-[260px]'
-					: ''} top-0 left-0 w-full h-full bg-cover bg-center bg-no-repeat"
-				style="background-image: url({$settings.backgroundImageUrl})  "
-			/>
-
-			<div
-				class="absolute top-0 left-0 w-full h-full bg-linear-to-t from-white to-white/85 dark:from-gray-900 dark:to-gray-900/90 z-0"
-			/>
-		{/if}
-
 		<Navbar
 			bind:this={navbarElement}
 			chat={{
@@ -2203,9 +2189,9 @@
 			{avatarActive}
 			{toggleAvatar}
 		/>
-		<div class="w-full h-full flex">
+		<div class="w-full flex">
 			<!-- Main pane with chat -->
-			<div class="flex-1 h-full bg-[#F5F7F9] dark:bg-inherit relative pt-0">
+			<div class="flex-1 h-full bg-[#F5F7F9] dark:bg-inherit relative pt-22">
 				{#if !history.currentId && !$chatId && selectedModels.length <= 1 && ($banners.length > 0 || ($config?.license_metadata?.type ?? null) === 'trial' || (($config?.license_metadata?.seats ?? null) !== null && $config?.user_count > $config?.license_metadata?.seats))}
 					<div class="absolute top-12 left-0 right-0 w-full z-30">
 						<div class="flex flex-col gap-1 w-full">
@@ -2375,13 +2361,11 @@
 			</div>
 
 			<!-- Rightbar with responsive behavior -->
-			<div class="transition-all duration-300 ease-in-out {showRightbar ? 'w-60 opacity-100' : 'w-0 opacity-0 md:w-60 md:opacity-100'} h-full overflow-hidden border-1 border-gray-200 rounded-lg dark:border-gray-700 px-4">
+			<div class="transition-all duration-300 ease-in-out {showRightbar ? 'w-60 opacity-100' : 'w-0 opacity-0 md:w-60 md:opacity-100'} h-full overflow-hidden border-1 border-gray-200 rounded-lg dark:border-gray-700 px-4 py-2">
 				{#if showRightbar || !$mobile}
 					<Rightbar {courseCompletion} {modules} />
 				{/if}
 			</div>
-
-
 		</div>
 	{:else if loading}
 		<div class=" flex items-center justify-center h-full w-full">

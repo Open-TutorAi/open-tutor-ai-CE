@@ -43,7 +43,7 @@
 </script>
     
     <!-- Progress Summary Card -->
-    <div class=" bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4 p-4 mt-6" 
+    <div class=" bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4 p-4 mt-2" 
       role="region" 
       aria-label="Course progress summary">
       <div class="mb-1">
@@ -128,7 +128,7 @@
     </div>
 
         <!-- Engagement Card -->
-    <div class="bg-white dark:bg-gray-800 max-w-60 rounded-lg shadow-sm p-2 mt-4 mb-6"  
+    <div class="bg-white dark:bg-gray-800 max-w-60 rounded-lg shadow-sm p-2 mt-4 mb-2"  
       role="region" 
       aria-label="Engagement summary">
       <div class="mb-1">
