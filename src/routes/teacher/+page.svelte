@@ -1,12 +1,14 @@
-<script>
+<script lang="ts">
 	import { goto } from '$app/navigation';
 	import { user } from '$lib/stores';
   import { onMount, getContext } from 'svelte';
+  import type { i18n as i18nType } from 'i18next';
+  import type { Writable } from 'svelte/store';
 
 
 	let loading = true;
-	let error = null;
-  const i18n = getContext('i18n');
+	let error: string | null = null;
+  const i18n = getContext<Writable<i18nType>>('i18n');
 
 
 	onMount(async () => {
@@ -32,7 +34,7 @@
 			loading = false;
 		} catch (err) {
 			console.error('Error in teacher page:', err);
-			error = err.message || 'An error occurred';
+			error = err instanceof Error ? err.message : 'An error occurred';
 			loading = false;
 		}
 	});
@@ -94,6 +96,42 @@
 							</button>
 						</div>
 					{/if}
+				</div>
+
+				<!-- Quick Links Section -->
+				<div class="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg">
+					<h2 class="text-xl font-semibold mb-4 text-blue-700 dark:text-blue-300">
+						{$i18n.t('Quick Links')}
+					</h2>
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+						<a
+							href="/teacher/paired-responses"
+							class="flex items-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow"
+						>
+							<div class="flex-1">
+								<h3 class="font-medium text-gray-800 dark:text-gray-200">
+									{$i18n.t('Paired Responses')}
+								</h3>
+								<p class="text-sm text-gray-600 dark:text-gray-400">
+									{$i18n.t('Review and compare AI-generated responses')}
+								</p>
+							</div>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="h-6 w-6 text-blue-500"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+							>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M9 5l7 7-7 7"
+								/>
+							</svg>
+						</a>
+					</div>
 				</div>
 			</div>
 		</div>
