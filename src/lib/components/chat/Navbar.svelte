@@ -196,7 +196,7 @@
 
 			<!-- Center section with avatar toggle - Responsive for all devices -->
 			{#if shareEnabled || !!chat?.id}
-			<div class="absolute left-1/2 transform -translate-x-1/2 flex justify-center items-center z-20" 
+			<div class="absolute left-1/2 transform -translate-x-1/2 flex justify-center items-center z-20 " 
                  style="top: {$mobile ? '35px' : '40px'};">
 				<button
 					id="avatar-toggle-button"

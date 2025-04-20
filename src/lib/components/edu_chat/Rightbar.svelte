@@ -43,7 +43,7 @@
 </script>
     
     <!-- Progress Summary Card -->
-    <div class=" bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4 p-4 mt-2" 
+    <div class=" bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-4 p-4 mt-30" 
       role="region" 
       aria-label="Course progress summary">
       <div class="mb-1">

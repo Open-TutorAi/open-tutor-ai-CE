@@ -2169,26 +2169,6 @@
 	id="chat-container"
 >
 	{#if chatIdProp === '' || (!loading && chatIdProp)}
-		<Navbar
-			bind:this={navbarElement}
-			chat={{
-				id: $chatId,
-				chat: {
-					title: $chatTitle,
-					models: selectedModels,
-					system: $settings.system ?? undefined,
-					params: params,
-					history: history,
-					timestamp: Date.now()
-				}
-			}}
-			title={$chatTitle}
-			bind:selectedModels
-			shareEnabled={!!history.currentId}
-			{initNewChat}
-			{avatarActive}
-			{toggleAvatar}
-		/>
 		<div class="w-full flex">
 			<!-- Main pane with chat -->
 			<div class="flex-1 h-full bg-[#F5F7F9] dark:bg-inherit relative pt-22">
@@ -2364,6 +2344,26 @@
 			<div class="transition-all duration-300 ease-in-out {showRightbar ? 'w-60 opacity-100' : 'w-0 opacity-0 md:w-60 md:opacity-100'} 
 			h-full overflow-hidden border-1 border-gray-200 rounded-lg dark:border-gray-700 px-4 py-2">
 				{#if showRightbar || !$mobile}
+				<Navbar
+				bind:this={navbarElement}
+				chat={{
+					id: $chatId,
+					chat: {
+						title: $chatTitle,
+						models: selectedModels,
+						system: $settings.system ?? undefined,
+						params: params,
+						history: history,
+						timestamp: Date.now()
+					}
+				}}
+				title={$chatTitle}
+				bind:selectedModels
+				shareEnabled={!!history.currentId}
+				{initNewChat}
+				{avatarActive}
+				{toggleAvatar}
+			/>
 					<Rightbar {courseCompletion} {modules} />
 				{/if}
 			</div>
