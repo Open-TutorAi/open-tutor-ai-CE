@@ -32,18 +32,6 @@ async def get_models(id: Optional[str] = None, user=Depends(get_verified_user)):
 
 
 ###########################
-# GetOllamaModels - Allow all users to access Ollama models
-###########################
-
-@router.get("/ollama", response_model=list[ModelUserResponse])
-async def get_ollama_models(user=Depends(get_verified_user)):
-    # Get all models and return them without filtering
-    # This allows all users to access models, especially Ollama models
-    all_models = Models.get_models()
-    return all_models
-
-
-###########################
 # GetBaseModels
 ###########################
 

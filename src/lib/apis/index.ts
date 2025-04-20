@@ -1,6 +1,5 @@
 import { TUTOR_API_BASE_URL, TUTOR_BASE_URL } from '$lib/constants';
 import { getOpenAIModelsDirect } from './openai';
-import { getOllamaModels as fetchOllamaModels } from './models';
 
 export const getModels = async (
 	token: string = '',
@@ -137,56 +136,6 @@ export const getModels = async (
 	}
 
 	return models;
-};
-
-export const getOllamaModels = async (token: string = '') => {
-	try {
-		const models = await fetchOllamaModels(token);
-		return models;
-	} catch (error) {
-		console.error("Error fetching Ollama models:", error);
-		return [];
-	}
-};
-
-export const getAllAvailableModels = async (token: string = '') => {
-	try {
-		// Get models from the regular endpoint
-		const regularModels = await getModels(token).catch(() => []);
-		
-		// Try to get models from Ollama endpoint directly
-		const ollamaModels = await fetch(`${TUTOR_API_BASE_URL}/models/ollama`, {
-			method: 'GET',
-			headers: {
-				Accept: 'application/json',
-				'Content-Type': 'application/json',
-				authorization: `Bearer ${token}`
-			}
-		})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch(() => []);
-		
-		// Combine all models, removing duplicates based on ID
-		const allModels = [...(regularModels || []), ...(ollamaModels || [])];
-		const uniqueModels = [];
-		const modelIds = new Set();
-		
-		for (const model of allModels) {
-			if (!modelIds.has(model.id)) {
-				modelIds.add(model.id);
-				uniqueModels.push(model);
-			}
-		}
-		
-		console.log("All available models:", uniqueModels);
-		return uniqueModels;
-	} catch (error) {
-		console.error("Error fetching all available models:", error);
-		return [];
-	}
 };
 
 type ChatCompletedForm = {
