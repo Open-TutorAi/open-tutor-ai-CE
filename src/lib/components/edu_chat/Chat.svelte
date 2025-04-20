@@ -736,7 +736,7 @@
 		await showOverview.set(false);
 		await showArtifacts.set(false);
 
-		if ($page.url.pathname.includes('/c/')) {
+		if ($page.url.pathname.includes('user/c/')) {
 			window.history.replaceState(history.state, '', `/`);
 		}
 
@@ -2107,7 +2107,7 @@
 			await chats.set(await getChatList(localStorage.token, $currentChatPage));
 			currentChatPage.set(1);
 
-			window.history.replaceState(history.state, '', `/c/${_chatId}`);
+			window.history.replaceState(history.state, '', `/user/c/${_chatId}`);
 		} else {
 			_chatId = 'local';
 			await chatId.set('local');
