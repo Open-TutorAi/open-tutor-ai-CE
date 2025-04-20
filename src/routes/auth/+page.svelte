@@ -21,7 +21,7 @@
 
 	let loaded = false;
 	let showForgotPassword = false;
-	let mode = $config?.features.enable_ldap ? 'ldap' : 'signin'; // Changed default to signin
+	let mode = $config?.features.enable_ldap ? 'ldap' : 'signin'; // Default is signin
 	let firstName = '';
 	let lastName = '';
 	let email = '';
@@ -351,14 +351,14 @@
 										<div class="mb-2">
 											<span
 												class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-												{role === 'student'
+												{role === 'user'
 													? 'bg-blue-100 text-blue-800'
 													: role === 'teacher'
 														? 'bg-emerald-100 text-emerald-800'
 														: 'bg-purple-100 text-purple-800'}"
 											>
-												{role === 'student' ? '👨‍🎓' : role === 'teacher' ? '👨‍🏫' : '👨‍👧'}
-												{role === 'student'
+												{role === 'user' ? '👨‍🎓' : role === 'teacher' ? '👨‍🏫' : '👨‍👧'}
+												{role === 'user'
 													? $i18n.t('Student')
 													: role === 'teacher'
 														? $i18n.t('Teacher')
@@ -611,33 +611,7 @@
 								{/if}
 							</div>
 						{/if}
-
-						<div class="mt-6 text-center">
-							{#if mode === 'signup'}
-								<p class="text-gray-800 dark:text-gray-200 text-sm">
-									{$i18n.t('Already have an account?')}
-									<button
-										class="text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200 font-medium ml-1"
-										on:click={() => (mode = 'signin')}
-									>
-										{$i18n.t('Sign in')}
-									</button>
-								</p>
-								<div class="h-16"></div>
-							{:else}
-								<p class="text-gray-800 dark:text-gray-200 text-sm">
-									{$i18n.t("Don't have an account?")}
-									<button
-										class="text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200 font-medium ml-1"
-										on:click={() => (mode = 'signup')}
-									>
-										{$i18n.t('Sign up')}
-									</button>
-								</p>
-							{/if}
-						</div>
-					{/if}
-
+					</div>
 				</div>
 			</div>
 		{/if}

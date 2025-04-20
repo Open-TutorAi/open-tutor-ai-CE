@@ -121,7 +121,7 @@
 	function handleJoinCourse() {
 		if (courseCode === '0000') {
 			// Redirect to student chat component if code is 0000
-			goto('/student/chat');
+			goto('/user/edu_chat');
 			showJoinCoursePopup = false;
 		} else if (courseCode.trim() !== '') {
 			// For other valid codes, you would implement the actual join logic here
@@ -133,7 +133,7 @@
 	// Handle creating support
 	function handleCreateSupport() {
 		// Navigate to student support page
-		goto('/student/support');
+		goto('/user/edu_chat');
 		showSupportPopup = false;
 	}
 </script>

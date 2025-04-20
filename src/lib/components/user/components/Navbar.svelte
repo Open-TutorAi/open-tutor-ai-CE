@@ -335,7 +335,7 @@
 					</div>
 					<div class="py-1">
 						<a
-							href="/student/settings"
+							href="/user/settings"
 							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
@@ -355,7 +355,7 @@
 							{$i18n.t('My Profile')}
 						</a>
 						<a
-							href="/student/settings"
+							href="/user/settings"
 							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
@@ -527,7 +527,7 @@
 					</div>
 					<div class="py-1">
 						<a
-							href="/student/settings"
+							href="/user/settings"
 							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
@@ -547,7 +547,7 @@
 							{$i18n.t('My Profile')}
 						</a>
 						<a
-							href="/student/settings"
+							href="/user/settings"
 							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg

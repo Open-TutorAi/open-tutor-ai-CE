@@ -3,10 +3,11 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { get, writable, derived } from 'svelte/store';
-	import { user, theme } from '$lib/stores';
+	import { user, theme, models, config, settings } from '$lib/stores';
 
-	import Sidebar from '$lib/components/student/components/Sidebar.svelte';
-	import Navbar from '$lib/components/student/components/Navbar.svelte';
+	import Sidebar from '$lib/components/user/components/Sidebar.svelte';
+	import Navbar from '$lib/components/user/components/Navbar.svelte';
+	import { getModels, getVersionUpdates } from '$lib/apis';
 
 	const activePage = writable('dashboard');
 	let isSidebarOpen = true;
@@ -38,14 +39,14 @@
 		localStorage.setItem('theme', newTheme);
 	}
 
-	onMount(() => {
+	onMount(async () => {
 		// Role protection logic
 		const currentUser = get(user);
 		if (!currentUser) {
 			goto('/auth');
 			return;
 		}
-		if (currentUser.role !== 'student') {
+		if (currentUser.role !== 'user') {
 			goto(`/${currentUser.role}`);
 			return;
 		}
@@ -55,6 +56,9 @@
 		const currentTheme = get(theme);
 		const isDark = currentTheme === 'dark' || (currentTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 		document.documentElement.classList.toggle('dark', isDark);
+
+		// Load models
+		models.set( await getModels( localStorage.token, $config?.features?.enable_direct_connections && ($settings?.directConnections ?? null) ) );
 
 		// Handle resize events for responsive design
 		const handleResize = () => {

@@ -9,7 +9,7 @@
 	// Role data structure
 	const roles = [
 		{
-			id: 'student',
+			id: 'user',
 			title: 'Student',
 			icon: '👨‍🎓',
 			features: [
