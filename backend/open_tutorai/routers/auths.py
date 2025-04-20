@@ -77,11 +77,11 @@ async def signup(request: Request, response: Response, form_data: AddUserForm):
         if user_count == 0:
             role = "admin"
         else:
-            # Use provided role or default to student
+            # Use provided role or default to student (user)
             role = (
                 form_data.role
-                if form_data.role in ["teacher", "student", "parent"]
-                else "student"
+                if form_data.role in ["teacher", "user", "parent"]
+                else "user"
             )
 
         log.info(f"Creating new user with role: {role}")

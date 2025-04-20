@@ -5,8 +5,8 @@
 	import { get, writable, derived } from 'svelte/store';
 	import { user, theme } from '$lib/stores';
 
-	import Sidebar from '$lib/components/student/components/Sidebar.svelte';
-	import Navbar from '$lib/components/student/components/Navbar.svelte';
+	import Sidebar from '$lib/components/user/components/Sidebar.svelte';
+	import Navbar from '$lib/components/user/components/Navbar.svelte';
 
 	const activePage = writable('dashboard');
 	let isSidebarOpen = true;
@@ -45,7 +45,7 @@
 			goto('/auth');
 			return;
 		}
-		if (currentUser.role !== 'student') {
+		if (currentUser.role !== 'user') {
 			goto(`/${currentUser.role}`);
 			return;
 		}

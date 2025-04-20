@@ -775,7 +775,7 @@
 				<button
 					on:click={() => {
 						if (currentStep === 0) {
-							window.location.href = '/student/dashboard';
+							window.location.href = '/user/dashboard';
 						} else {
 							prevStep();
 						}

@@ -92,7 +92,7 @@
 	}
 
 	// Determine current role from the URL path
-	$: currentRole = $page.url.pathname.split('/')[1] || 'student';
+	$: currentRole = $page.url.pathname.split('/')[1] || 'user';
 
 	function toggleSidebar() {
 		isSidebarOpen = !isSidebarOpen;
@@ -128,7 +128,7 @@
 
 	// Navigation items organized by role
 	const navItems: NavItems = {
-		student: [
+		user: [
 			{ id: 'dashboard', label: 'Dashboard', icon: Dashboard },
 			{ id: 'classrooms', label: 'My Classrooms', icon: Classroom },
 			{ id: 'support', label: 'Support', icon: Classroom },

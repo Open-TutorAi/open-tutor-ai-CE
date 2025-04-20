@@ -356,7 +356,7 @@ export const addUser = async (
 	name: string,
 	email: string,
 	password: string,
-	role: string = 'student'
+	role: string = 'user'
 ) => {
 	let error = null;
 

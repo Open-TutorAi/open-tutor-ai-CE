@@ -351,14 +351,14 @@
 										<div class="mb-2">
 											<span
 												class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-												{role === 'student'
+												{role === 'user'
 													? 'bg-blue-100 text-blue-800'
 													: role === 'teacher'
 														? 'bg-emerald-100 text-emerald-800'
 														: 'bg-purple-100 text-purple-800'}"
 											>
-												{role === 'student' ? '👨‍🎓' : role === 'teacher' ? '👨‍🏫' : '👨‍👧'}
-												{role === 'student'
+												{role === 'user' ? '👨‍🎓' : role === 'teacher' ? '👨‍🏫' : '👨‍👧'}
+												{role === 'user'
 													? $i18n.t('Student')
 													: role === 'teacher'
 														? $i18n.t('Teacher')

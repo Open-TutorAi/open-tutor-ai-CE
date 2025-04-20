@@ -25,13 +25,14 @@
 		temporaryChatEnabled,
 		isLastActiveTab,
 		isApp,
-		appInfo
+		appInfo,
+		models
 	} from '$lib/stores';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { Toaster, toast } from 'svelte-sonner';
 
-	import { getBackendConfig } from '$lib/apis';
+	import { getBackendConfig, getAllAvailableModels } from '$lib/apis';
 	import { getSessionUser } from '$lib/apis/auths';
 
 	import '../tailwind.css';
@@ -499,6 +500,20 @@
 
 						await user.set(sessionUser);
 						await config.set(await getBackendConfig());
+
+						// Load all available models for the user
+						try {
+							console.log("Loading models during app initialization...");
+							const availableModels = await getAllAvailableModels(localStorage.token);
+							if (availableModels && availableModels.length > 0) {
+								console.log(`Loaded ${availableModels.length} models`);
+								models.set(availableModels);
+							} else {
+								console.warn("No models found during initialization");
+							}
+						} catch (error) {
+							console.error("Error loading models during initialization:", error);
+						}
 
 						// Role-based redirection
 						if ($page.url.pathname === '/') {
