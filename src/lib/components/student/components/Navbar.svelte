@@ -323,7 +323,8 @@
 			</button>
 			{#if showUserDropdown}
 				<div
-					class={`absolute right-0 mt-2 w-48 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-lg shadow-lg transition-all duration-200 z-50 border`}
+				class={`absolute right-0 mt-2 w-48 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-lg shadow-lg transition-all duration-200 z-[100] border`}
+      			style="position: absolute; isolation: isolate;"
 				>
 					<div class={`p-3 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
 						<p class={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
@@ -335,7 +336,7 @@
 					</div>
 					<div class="py-1">
 						<a
-							href="/user/settings"
+							href="/student/settings"
 							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
@@ -355,7 +356,7 @@
 							{$i18n.t('My Profile')}
 						</a>
 						<a
-							href="/user/settings"
+							href="/student/settings"
 							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
@@ -527,7 +528,7 @@
 					</div>
 					<div class="py-1">
 						<a
-							href="/user/settings"
+							href="/student/settings"
 							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
@@ -547,7 +548,7 @@
 							{$i18n.t('My Profile')}
 						</a>
 						<a
-							href="/user/settings"
+							href="/student/settings"
 							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg

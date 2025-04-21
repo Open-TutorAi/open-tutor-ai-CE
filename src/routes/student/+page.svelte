@@ -21,13 +21,19 @@
       console.log("Current user role:", $user.role);
       
       // Allow access to students
-      if ($user.role !== 'user') {
-        console.log("User is not a student, redirecting to home");
-        await goto(`/${$user.role}`);
-        return;
-      }else{
-        await goto(`/user/dashboard`);
+      if ($user.role !== 'student' && $user.role !== 'user') {
+        if ($user.role === 'user') {
+          await goto('/student/dashboard');
+        } else {
+          await goto(`/${$user.role}`);
+        }
       }
+
+      // If we're at /student root, redirect to dashboard
+      if ($user.role === 'user' && window.location.pathname === '/student') {
+        await goto('/student/dashboard');
+      }
+
       
       // User has the correct role, continue loading the page
       loading = false;

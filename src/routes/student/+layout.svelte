@@ -5,8 +5,8 @@
 	import { get, writable, derived } from 'svelte/store';
 	import { user, theme, models, config, settings } from '$lib/stores';
 
-	import Sidebar from '$lib/components/user/components/Sidebar.svelte';
-	import Navbar from '$lib/components/user/components/Navbar.svelte';
+	import Sidebar from '$lib/components/student/components/Sidebar.svelte';
+	import Navbar from '$lib/components/student/components/Navbar.svelte';
 	import { getModels, getVersionUpdates } from '$lib/apis';
 
 	const activePage = writable('dashboard');

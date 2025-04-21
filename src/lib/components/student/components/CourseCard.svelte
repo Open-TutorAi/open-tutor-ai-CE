@@ -30,7 +30,7 @@
 		console.log('Course card clicked:', { title, href });
 		// Extract course ID from href if it's a full URL
 
-		goto(`/user/edu_chat`);
+		goto(`/student/edu_chat`);
 	}
 </script>
 

@@ -128,7 +128,7 @@
 
 	// Navigation items organized by role
 	const navItems: NavItems = {
-		user: [
+		student: [
 			{ id: 'dashboard', label: 'Dashboard', icon: Dashboard },
 			{ id: 'classrooms', label: 'My Classrooms', icon: Classroom },
 			{ id: 'support', label: 'Support', icon: Classroom },

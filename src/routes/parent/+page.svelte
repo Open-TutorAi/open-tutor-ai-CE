@@ -21,8 +21,11 @@
 
 			// Allow access to parents
 			if ($user.role !== 'parent') {
-				console.log('User is not a parent, redirecting to home');
-				await goto(`/${$user.role}`);
+				if ($user.role === 'user') {
+					await goto('/student/dashboard');
+				} else {
+					await goto(`/${$user.role}`);
+				}
 				return;
 			}
 

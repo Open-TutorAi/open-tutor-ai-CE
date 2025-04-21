@@ -736,7 +736,7 @@
 		await showOverview.set(false);
 		await showArtifacts.set(false);
 
-		if ($page.url.pathname.includes('user/c/')) {
+		if ($page.url.pathname.includes('student/c/')) {
 			window.history.replaceState(history.state, '', `/`);
 		}
 
@@ -2107,7 +2107,7 @@
 			await chats.set(await getChatList(localStorage.token, $currentChatPage));
 			currentChatPage.set(1);
 
-			window.history.replaceState(history.state, '', `/user/c/${_chatId}`);
+			window.history.replaceState(history.state, '', `/student/c/${_chatId}`);
 		} else {
 			_chatId = 'local';
 			await chatId.set('local');
@@ -2264,7 +2264,7 @@
 						{:else}
 							<div class="flex flex-col w-full h-full flex-auto relative">
 								<div
-									class="pb-2.5 flex-1 flex flex-col w-full overflow-auto max-w-full z-10 scrollbar-hidden"
+									class="pb-2.5 flex-1 flex flex-col w-full overflow-auto max-w-full  scrollbar-hidden"
 									id="messages-container"
 									bind:this={messagesContainerElement}
 									on:scroll={(e) => {

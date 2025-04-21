@@ -212,7 +212,9 @@
 		if ($page.url.pathname === '/') {
 			if ($user.role === 'admin') {
 				await goto('/');
-			}else{
+			} else if ($user.role === 'user') {
+				await goto('/student/dashboard');
+			} else {
 				await goto(`/${$user.role}`);
 			}
 		}

@@ -61,7 +61,11 @@
 			try {
 				if (sessionUser.role) {
 					console.log(`Redirecting to ${sessionUser.role} page`);
-					window.location.href = `/${sessionUser.role}`;
+					if (sessionUser.role === 'user') {
+						window.location.href = '/student/dashboard';
+					} else {
+						window.location.href = `/${sessionUser.role}`;
+					}
 				} else {
 					console.log('Unknown role, redirecting to default page');
 					const redirectPath = querystringValue('redirect') || '/';
@@ -186,7 +190,11 @@
 	onMount(async () => {
 		if ($user !== undefined) {
 			// Redirect based on user role if already logged in
-			await goto(`/${$user.role}`);
+			if ($user.role === 'user') {
+				await goto('/student/dashboard');
+			} else {
+				await goto(`/${$user.role}`);
+			}
 		}
 		await checkOauthCallback();
 

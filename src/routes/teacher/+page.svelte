@@ -23,9 +23,11 @@
 
 			// Allow access to teachers
 			if ($user.role !== 'teacher') {
-				console.log('User is not a teacher, redirecting to home');
-				await goto(`/${$user.role}`);
-				return;
+				if ($user.role === 'user') {
+					await goto('/student/dashboard');
+				} else {
+					await goto(`/${$user.role}`);
+				}
 			}
 
 			// User has the correct role, continue loading the page
