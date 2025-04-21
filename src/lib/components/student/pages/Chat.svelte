@@ -2,6 +2,7 @@
 <script lang="ts">
 	import Chat from '$lib/components/student/components/Chat.svelte';
 	import RightBar from '$lib/components/student/components/RightBar.svelte';
+	import { page } from '$app/stores';
 	
 	let chatData = {};
 	
@@ -15,7 +16,7 @@
 <div class="settings-layout flex h-full overflow-hidden">
 	<!-- Main Chat component takes most of the space -->
 	<div class="chat-container flex-1 h-full overflow-hidden">
-		<Chat on:chatEvent={handleChatEvent} />
+		<Chat chatIdProp={$page.params.id} on:chatEvent={handleChatEvent} />
 	</div>
 	
 	<!-- RightBar with fixed width -->
