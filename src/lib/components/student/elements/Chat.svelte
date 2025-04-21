@@ -81,7 +81,7 @@
 	import Banner from '$lib/components/common/Banner.svelte';
 	import MessageInput from '$lib/components/chat/MessageInput.svelte';
 	import Messages from '$lib/components/chat/Messages.svelte';
-	import Navbar from '$lib/components/student/components/ChatNavbar.svelte';
+	import Navbar from '$lib/components/student/elements/ChatNavbar.svelte';
 	import ChatControls from '$lib/components/chat/ChatControls.svelte';
 	import EventConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
 	import Placeholder from '$lib/components/chat/Placeholder.svelte';

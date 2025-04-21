@@ -1,7 +1,7 @@
 <!-- settings/+page.svelte -->
 <script lang="ts">
-	import Chat from '$lib/components/student/components/Chat.svelte';
-	import RightBar from '$lib/components/student/components/RightBar.svelte';
+	import Chat from '$lib/components/student/elements/Chat.svelte';
+	import RightBar from '$lib/components/student/elements/RightBar.svelte';
 	import { page } from '$app/stores';
 	
 	let chatData = {};

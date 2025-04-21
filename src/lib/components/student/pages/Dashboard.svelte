@@ -4,7 +4,7 @@
 	import type { Writable } from 'svelte/store';
 	import type { i18n as i18nType } from 'i18next';
 	import { goto } from '$app/navigation';
-	import CourseCard from '../components/CourseCard.svelte';
+	import CourseCard from '../elements/CourseCard.svelte';
 
 	const i18n = getContext<Writable<i18nType>>('i18n');
 
