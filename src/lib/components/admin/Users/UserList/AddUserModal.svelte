@@ -186,7 +186,7 @@
 										placeholder={$i18n.t('Enter Your Role')}
 										required
 									>
-										<option value="student"> {$i18n.t('student')} </option>
+										<option value="user"> {$i18n.t('student')} </option>
 										<option value="teacher"> {$i18n.t('teacher')} </option>
 										<option value="parent"> {$i18n.t('parent')} </option>
 										<option value="admin"> {$i18n.t('admin')} </option>
