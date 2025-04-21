@@ -1,12 +1,15 @@
+<!-- Student Layout -->
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { get, writable, derived } from 'svelte/store';
-	import { user, theme } from '$lib/stores';
 
 	import Sidebar from '$lib/components/student/components/Sidebar.svelte';
 	import Navbar from '$lib/components/student/components/Navbar.svelte';
+
+	import { getModels, getVersionUpdates } from '$lib/apis';
+	import { config, user, settings, models, theme } from '$lib/stores';
 
 	const activePage = writable('dashboard');
 	let isSidebarOpen = true;
@@ -18,12 +21,15 @@
 
 	// Derive isDarkMode from theme store
 	const isDarkMode = derived(theme, ($theme) => {
-		return $theme === 'dark' || ($theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+		return (
+			$theme === 'dark' ||
+			($theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+		);
 	});
 
 	// Subscribe to isDarkMode to get the actual boolean value
 	let currentIsDarkMode = false;
-	isDarkMode.subscribe(value => {
+	isDarkMode.subscribe((value) => {
 		currentIsDarkMode = value;
 		document.documentElement.classList.toggle('dark', value);
 	});
@@ -38,14 +44,22 @@
 		localStorage.setItem('theme', newTheme);
 	}
 
-	onMount(() => {
+	onMount(async () => {
+		console.log('Student layout mounted');
+		models.set(
+			await getModels(
+				localStorage.token,
+				$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
+			)
+		);
 		// Role protection logic
 		const currentUser = get(user);
 		if (!currentUser) {
 			goto('/auth');
 			return;
 		}
-		if (currentUser.role !== 'student') {
+		if (currentUser.role !== 'user') {
+			console.log('User is not a student, redirecting to home');
 			goto(`/${currentUser.role}`);
 			return;
 		}
@@ -53,7 +67,9 @@
 
 		// Initialize dark mode based on global theme
 		const currentTheme = get(theme);
-		const isDark = currentTheme === 'dark' || (currentTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+		const isDark =
+			currentTheme === 'dark' ||
+			(currentTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 		document.documentElement.classList.toggle('dark', isDark);
 
 		// Handle resize events for responsive design
@@ -77,8 +93,9 @@
 	});
 </script>
 
-
-<div class="flex h-screen overflow-hidden bg-[#F4F7FE] dark:bg-gray-900 transition-colors duration-200 ease-in-out">
+<div
+	class="flex h-screen overflow-hidden bg-[#F4F7FE] dark:bg-gray-900 transition-colors duration-200 ease-in-out"
+>
 	<!-- Sidebar with adaptive behavior -->
 	<div class={`sidebar-container ${isSidebarOpen ? '' : 'collapsed'}`}>
 		<Sidebar {isSidebarOpen} {activePage} isDarkMode={currentIsDarkMode} />
@@ -86,10 +103,17 @@
 
 	<!-- Main content area with navbar and slot -->
 	<div class="flex-1 flex flex-col overflow-hidden relative z-10 bg-[#F4F7FE] dark:bg-gray-900">
-		<Navbar {username} {toggleSidebar} isDarkMode={currentIsDarkMode} on:darkModeToggle={toggleDarkMode} />
+		<Navbar
+			{username}
+			{toggleSidebar}
+			isDarkMode={currentIsDarkMode}
+			on:darkModeToggle={toggleDarkMode}
+		/>
 
 		<!-- Main content with proper scrolling -->
-		<div class="flex-1 overflow-y-auto p-4 md:p-6 bg-[#F4F7FE] dark:bg-gray-900 text-gray-800 dark:text-gray-100">
+		<div
+			class="flex-1 overflow-y-auto p-4 md:p-6 bg-[#F4F7FE] dark:bg-gray-900 text-gray-800 dark:text-gray-100"
+		>
 			<slot />
 		</div>
 	</div>
@@ -107,6 +131,18 @@
 </div>
 
 <style>
+	/* Add this to ensure nested layouts work properly */
+	:global(.flex-1) {
+		min-height: 0; /* This is crucial for proper flex behavior */
+	}
+
+	/* Make sure content containers have proper layout */
+	:global(#chat-container) {
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		overflow: hidden;
+	}
 	/* Base styles */
 	:global(body, html) {
 		height: 100%;
@@ -118,8 +154,11 @@
 	}
 
 	/* Add dark mode transition for smoother theme switching */
-	:global(body), :global(body *) {
-		transition: background-color 0.3s ease, color 0.3s ease;
+	:global(body),
+	:global(body *) {
+		transition:
+			background-color 0.3s ease,
+			color 0.3s ease;
 	}
 
 	/* Ensure proper contrast in dark mode */

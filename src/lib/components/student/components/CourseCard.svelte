@@ -27,7 +27,7 @@
 	$: subjectStyle = subjectConfig[subject] || subjectConfig.mathematics;
 
 	function handleClick() {
-		goto(href);
+		goto('/student/chat');
 	}
 </script>
 
