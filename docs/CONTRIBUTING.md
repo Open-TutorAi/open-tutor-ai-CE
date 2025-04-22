@@ -6,7 +6,7 @@ Your interest in contributing to Open TutorAI is greatly appreciated. This docum
 
 ### 🚨 Reporting Issues
 
-Noticed something off? Have an idea? Check our [Issues tab](https://github.com/pr-elhajji/open-tutor-ai-CE/issues) to see if it's already been reported or suggested. If not, feel free to open a new issue. When reporting an issue, please follow our issue templates. These templates are designed to ensure that all necessary details are provided from the start, enabling us to address your concerns more efficiently.
+Noticed something off? Have an idea? Check our [Issues tab](https://github.com/R2D-dev/open-tutor-ai-CE/issues) to see if it's already been reported or suggested. If not, feel free to open a new issue. When reporting an issue, please follow our issue templates. These templates are designed to ensure that all necessary details are provided from the start, enabling us to address your concerns more efficiently.
 
 > [!IMPORTANT]
 >
@@ -29,11 +29,22 @@ Looking to contribute? Great! Here's how you can help:
 
 We welcome pull requests. Before submitting one, please:
 
-1. Open a discussion regarding your ideas [here](https://github.com/pr-elhajji/open-tutor-ai-CE/discussions/new/choose).
+1. Open a discussion regarding your ideas [here](https://github.com/R2D-dev/open-tutor-ai-CE/discussions/new/choose).
 2. Follow the project's coding standards and include tests for new features.
 3. Update documentation as necessary.
 4. Write clear, descriptive commit messages.
 5. It's essential to complete your pull request in a timely manner. We move fast, and having PRs hang around too long is not feasible. If you can't get it done within a reasonable time frame, we may have to close it to keep the project moving forward.
+
+#### 📁 Project Structure Guidelines
+
+To maintain a clean, scalable, and consistent codebase, please follow these folder structure conventions when adding new files:
+
+- ✅ Reusable or shared components should go inside the `components/` directory.
+  - Consider organizing components by feature or domain (e.g., `components/tutor/`, `components/dashboard/`, `components/user/`).
+- ✅ Route-specific pages or views should go inside the `routes/` directory.
+- ❌ Avoid placing components or views at the root level or outside their designated folders.
+
+> **Tip:** Organizing by feature helps contributors quickly locate and maintain code, especially as the project grows.
 
 ### 📚 Documentation & Tutorials
 
@@ -53,7 +64,7 @@ To add a new language:
 
 ### 🤔 Questions & Feedback
 
-Got questions or feedback? Join our [Discord community](https://discord.gg/86cVbJBy) or open an issue. We're here to help!
+Got questions or feedback? Join our [Discord community](https://discord.gg/BTQtE2deEm) or open an issue. We're here to help!
 
 ## 🙏 Thank You!
 

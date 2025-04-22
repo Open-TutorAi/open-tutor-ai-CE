@@ -576,13 +576,13 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 						<!-- Move input outside the avatar container -->
 						<div class="chat-input-container absolute bottom-0 left-0 right-0 z-50 px-1 sm:px-4 pb-2 sm:pb-4">
 							<div class="max-w-3xl mx-auto">
-								<div class="flex items-center w-full bg-gray-800/90 backdrop-blur-sm rounded-full shadow-md hover:shadow-lg py-2 px-4 transition-all duration-200">
+								<div class="flex items-center w-full bg-gray-800/90 dark:bg-gray-800/90 backdrop-blur-sm bg-opacity-90 dark:bg-opacity-90 rounded-full shadow-md hover:shadow-lg py-2 px-4 transition-all duration-200 border border-gray-300/20 dark:border-gray-700/30">
 									<input 
 										type="text" 
 										bind:value={prompt}
 										placeholder="ask something"
 										disabled={processingRequest}
-										class="flex-1 bg-transparent border-none outline-none text-gray-300 placeholder-gray-500 py-1 px-2 text-sm sm:text-base"
+										class="flex-1 bg-transparent border-none outline-none text-gray-200 dark:text-gray-300 placeholder-gray-500 dark:placeholder-gray-500 py-1 px-2 text-sm sm:text-base"
 									/>
 									<div class="flex items-center gap-2 flex-shrink-0">
 										<button class="text-gray-400 hover:text-gray-300 p-1 transition-colors duration-200">
@@ -634,15 +634,15 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 							</div>
 							
 							<!-- Fixed positioned input at the bottom of chat area -->
-							<div class="absolute bottom-0 left-0 right-0 px-1 sm:px-4 pb-2 sm:pb-4 bg-gradient-to-t from-gray-900 to-transparent pt-5">
+							<div class="absolute bottom-0 left-0 right-0 px-1 sm:px-4 pb-2 sm:pb-4 bg-gradient-to-t from-gray-100 dark:from-gray-900 to-transparent pt-5">
 								<div class="max-w-3xl mx-auto">
-									<div class="flex items-center w-full bg-gray-800/90 backdrop-blur-sm rounded-full shadow-md hover:shadow-lg py-2 px-4 transition-all duration-200">
+									<div class="flex items-center w-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full shadow-md hover:shadow-lg py-2 px-4 transition-all duration-200 border border-gray-300/20 dark:border-gray-700/30">
 										<input 
 											type="text" 
 											bind:value={prompt}
 											placeholder="ask something"
 											disabled={processingRequest}
-											class="flex-1 bg-transparent border-none outline-none text-gray-300 placeholder-gray-500 py-1 px-2 text-sm sm:text-base"
+											class="flex-1 bg-transparent border-none outline-none text-gray-700 dark:text-gray-300 placeholder-gray-500 dark:placeholder-gray-500 py-1 px-2 text-sm sm:text-base"
 										/>
 										<div class="flex items-center gap-2 flex-shrink-0">
 											<button class="text-gray-400 hover:text-gray-300 p-1 transition-colors duration-200">
