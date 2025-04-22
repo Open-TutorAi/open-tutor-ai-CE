@@ -1,6 +1,6 @@
 <!-- settings/+page.svelte -->
 <script lang="ts">
-	import Chat from '$lib/components/student/elements/Chat.svelte';
+	import Chat from '$lib/components/student/tutor/Chat.svelte';
 	import RightBar from '$lib/components/student/elements/RightBar.svelte';
 	import { page } from '$app/stores';
 	
