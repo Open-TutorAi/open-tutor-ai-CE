@@ -33,22 +33,22 @@
 	});
 </script>
 
-<div class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300">
+<div class="bg-white dark:bg-gray-800 p-3 sm:p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 relative z-5">
 	<div class="relative">
 		<!-- Animated vertical line with gradient -->
-		<div class="absolute right-3.5 top-5 bottom-0 w-0.5 bg-gradient-to-b from-blue-600 via-blue-400 to-gray-200 dark:to-gray-700 opacity-60"></div>
+		<div class="absolute left-auto right-[13px] sm:right-[15px] top-4 bottom-0 w-0.5 bg-gradient-to-b from-blue-600 via-blue-400 to-gray-200 dark:to-gray-700 opacity-60"></div>
 		
 		<!-- Steps -->
 		{#each steps as step, index}
 			<div 
-				class="flex items-center justify-between mb-6 sm:mb-10 relative z-10 group"
+				class="flex items-center justify-between mb-4 sm:mb-10 relative z-10 group"
 				on:mouseenter={() => hoveredStep = step.id}
 				on:mouseleave={() => hoveredStep = null}
 				on:focus={() => hoveredStep = step.id}
 				on:blur={() => hoveredStep = null}
 			>
 				<span 
-					class={`text-sm sm:text-base font-medium transition-colors duration-200 max-w-[calc(100%-40px)] ${
+					class={`text-sm sm:text-base font-medium transition-colors duration-200 max-w-[calc(100%-36px)] truncate ${
 						step.current 
 							? 'text-blue-600 dark:text-blue-400' 
 							: hoveredStep === step.id 
@@ -72,7 +72,7 @@
 				<!-- Circle indicators with animations -->
 				{#if mounted}
 					<div 
-						class={`flex-shrink-0 w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center ml-2 sm:ml-4 transform transition-all duration-300 ${
+						class={`flex-shrink-0 w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center transform transition-all duration-300 ${
 							hoveredStep === step.id ? 'scale-110' : ''
 						} ${
 							step.completed 
@@ -89,11 +89,11 @@
 						}}
 					>
 						{#if step.completed}
-							<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 sm:h-4 sm:w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+							<svg xmlns="http://www.w3.org/2000/svg" class="h-2.5 w-2.5 sm:h-4 sm:w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
 								<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
 							</svg>
 						{:else if step.current}
-							<div class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-blue-600 pulse"></div>
+							<div class="w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 rounded-full bg-blue-600 pulse"></div>
 						{/if}
 					</div>
 				{/if}
@@ -142,6 +142,14 @@
 		}
 		100% {
 			box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+		}
+	}
+	
+	/* Additional compact styles for mobile */
+	@media (max-width: 480px) {
+		:global(.learning-path-container) {
+			margin-top: 0 !important;
+			padding: 0 !important;
 		}
 	}
 </style> 

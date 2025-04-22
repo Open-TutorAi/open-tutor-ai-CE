@@ -170,7 +170,6 @@
 	"Channels": "Canaux",
 	"Character": "Caractère",
 	"Character limit for autocomplete generation input": "Limite de caractères pour la génération des suggestions",
-	"Chat": "Chat",
 	"Chat Background Image": "Image d'arrière-plan de la fenêtre de chat",
 	"Chat Bubble UI": "Bulles de chat",
 	"Chat Controls": "Contrôles du chat",
@@ -1273,7 +1272,7 @@
 	"I'm reviewing a course": "Je revois un cours",
 	"Build a new skill": "Acquérir une nouvelle compétence",
 	"Avatar": "Avatar",
-	"Chat": "Discussion",
+	"Chat": "Discuss",
 	"Subject": "Sujet",
 	"Course": "Cours",
 	"Objectives": "Objectifs",
@@ -1359,5 +1358,6 @@
 	"of": "de",
 	"Help Center": "Centre d'aide",
 	"Dashboard": "Tableau de bord",
-	"Enter Course Code": "Entrez le code du cours"
+	"Enter Course Code": "Entrez le code du cours",
+	"Click to view": "Cliquer pour voir"
 }

@@ -502,10 +502,10 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 	});
 </script>
 
-<div class="flex flex-col lg:flex-row gap-6 w-full h-full">
+<div class="flex flex-col lg:flex-row gap-0 lg:gap-4 w-full h-full {avatarActive ? 'avatar-active' : ''}">
 	<!-- Main content area with chat -->
 	{#if mounted}
-		<div class="flex-1 w-full h-full" transition:fly={{ x: -20, duration: 500, delay: 100, easing: quartOut }}>
+		<div class="flex-1 w-full h-full min-h-[600px] mb-6 sm:mb-0" transition:fly={{ x: -20, duration: 500, delay: 100, easing: quartOut }}>
 			<div class="bg-gradient-to-br from-gray-50 to-gray-200 dark:from-gray-800 dark:to-gray-900 p-2 sm:p-3 md:p-5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 h-full flex flex-col border border-gray-200 dark:border-gray-700">
 				<!-- Avatar/Chat Toggle Button -->
 				<div class="flex flex-wrap justify-between items-center mb-3 gap-2">
@@ -514,32 +514,38 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 					</div>
 					<button
 						id="avatar-toggle-button"
-						class="relative h-8 w-40 mx-auto sm:mx-0 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white cursor-pointer overflow-hidden 
-							   transition-all duration-300 shadow-md hover:shadow-lg border border-blue-400/20"
+						class="relative h-10 w-48 mx-auto sm:mx-0 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 cursor-pointer overflow-hidden 
+							   transition-all duration-300 shadow-sm hover:shadow-md border border-blue-100 dark:border-blue-800/50 px-1 py-[2px]"
 						on:click={toggleAvatar}
 					>
 						<!-- Container for the toggle with a different approach -->
 						<div class="relative flex items-center h-full">
-							<!-- Sliding white background -->
+							<!-- Sliding background pill -->
 							<div 
-								class="absolute h-5/6 w-1/2 bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-200 dark:to-gray-300 rounded-full shadow-inner
-									   transition-transform duration-300 ease-in-out"
-								style="transform: translateX({avatarActive ? '0%' : '100%'});"
+								class="absolute h-[90%] w-[48%] bg-blue-500 dark:bg-blue-600 rounded-full shadow-sm
+									   transition-transform duration-300 ease-in-out my-auto top-0 bottom-0"
+								style="transform: translateX({avatarActive ? '2%' : '104%'});"
 							></div>
 							
-							<!-- Left side label - Avatar -->
-							<div class="w-1/2 h-full flex items-center justify-center z-10">
-								<span class="font-medium text-xs whitespace-nowrap px-1 transition-colors duration-300"
-									  style="color: {avatarActive ? '#3B82F6' : 'white'}">
-									{$i18n.t('Avatar')}
+							<!-- Left side label - Avatar with icon -->
+							<div class="w-1/2 h-full flex items-center justify-center z-10 gap-1.5">
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 flex-shrink-0" style="color: {avatarActive ? 'white' : 'currentColor'}">
+									<path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clip-rule="evenodd" />
+								</svg>
+								<span class="font-medium text-sm whitespace-nowrap transition-colors duration-300"
+									  style="color: {avatarActive ? 'white' : 'currentColor'}">
+									Avatar
 								</span>
 							</div>
 							
-							<!-- Right side label - Chat -->
-							<div class="w-1/2 h-full flex items-center justify-center z-10">
-								<span class="font-medium text-xs whitespace-nowrap px-1 transition-colors duration-300"
-									  style="color: {avatarActive ? 'white' : '#3B82F6'}">
-									{$i18n.t('Chat')}
+							<!-- Right side label - Discuss -->
+							<div class="w-1/2 h-full flex items-center justify-center z-10 gap-1.5">
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 flex-shrink-0" style="color: {avatarActive ? 'currentColor' : 'white'}">
+									<path fill-rule="evenodd" d="M4.848 2.771A49.144 49.144 0 0112 2.25c2.43 0 4.817.178 7.152.52 1.978.292 3.348 2.024 3.348 3.97v6.02c0 1.946-1.37 3.678-3.348 3.97a48.901 48.901 0 01-3.476.383.39.39 0 00-.297.17l-2.755 4.133a.75.75 0 01-1.248 0l-2.755-4.133a.39.39 0 00-.297-.17 48.9 48.9 0 01-3.476-.384c-1.978-.29-3.348-2.024-3.348-3.97V6.741c0-1.946 1.37-3.68 3.348-3.97z" clip-rule="evenodd" />
+								</svg>
+								<span class="font-medium text-sm whitespace-nowrap transition-colors duration-300"
+									  style="color: {avatarActive ? 'currentColor' : 'white'}">
+									Discuss
 								</span>
 							</div>
 						</div>
@@ -547,9 +553,10 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 				</div>
 				
 				<!-- Chat interface -->
-				<div class="flex-1 flex flex-col relative">
+				<div class="flex-1 flex flex-col relative bg-gradient-to-br from-gray-50 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-xl overflow-hidden">
 					{#if avatarActive}
-						<div class="flex-1 flex-grow overflow-hidden bg-transparent relative rounded-xl fixed-container">
+						<!-- Reduce height of avatar container to leave space for input -->
+						<div class="flex-1 flex-grow overflow-hidden bg-transparent relative rounded-xl fixed-container avatar-container">
 							<AvatarChat
 								className="h-full w-full"
 								{history}
@@ -566,40 +573,35 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 							/>
 						</div>
 						
-						<!-- Custom Chat Input UI -->
-						<div class="absolute bottom-6 left-0 right-0 z-20 px-2 sm:px-4">
+						<!-- Move input outside the avatar container -->
+						<div class="chat-input-container absolute bottom-0 left-0 right-0 z-50 px-1 sm:px-4 pb-2 sm:pb-4">
 							<div class="max-w-3xl mx-auto">
-								<div class="flex items-center w-full bg-gradient-to-r from-gray-100/95 to-gray-200/95 dark:from-gray-700/90 dark:to-gray-800/90 backdrop-blur-sm rounded-full shadow-md hover:shadow-lg py-2 sm:py-2.5 px-3 sm:px-5 transition-all duration-200 border border-gray-300/30 dark:border-gray-600/20">
+								<div class="flex items-center w-full bg-gray-800/90 backdrop-blur-sm rounded-full shadow-md hover:shadow-lg py-2 px-4 transition-all duration-200">
 									<input 
 										type="text" 
 										bind:value={prompt}
-										placeholder={processingRequest ? "Waiting for response..." : "ask something"}
+										placeholder="ask something"
 										disabled={processingRequest}
-										class="flex-1 bg-transparent border-none outline-none text-gray-700 dark:text-gray-100 py-1 px-2 transition-colors duration-200 placeholder-gray-500 dark:placeholder-gray-400"
+										class="flex-1 bg-transparent border-none outline-none text-gray-300 placeholder-gray-500 py-1 px-2 text-sm sm:text-base"
 									/>
-									<div class="flex items-center gap-4">
-										<button class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 p-1 transition-colors duration-200">
-											<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+									<div class="flex items-center gap-2 flex-shrink-0">
+										<button class="text-gray-400 hover:text-gray-300 p-1 transition-colors duration-200">
+											<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
 												<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-											</svg>
-										</button>
-										<button class="text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 p-1 transition-colors duration-200">
-											<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-6 h-6">
-												<path d="M2.25 5.25a3 3 0 0 1 3-3h13.5a3 3 0 0 1 3 3V15a3 3 0 0 1-3 3h-3.379a.75.75 0 0 0-.53.22L11.47 21.59a.75.75 0 0 1-1.06 0l-3.42-3.42a.75.75 0 0 0-.53-.22H3.25a3 3 0 0 1-3-3V5.25Zm1.5 0v9.75c0 .83.67 1.5 1.5 1.5h3.379a2.25 2.25 0 0 1 1.59.659l2.41 2.41 2.41-2.41a2.25 2.25 0 0 1 1.59-.659h3.371c.83 0 1.5-.67 1.5-1.5V5.25c0-.83-.67-1.5-1.5-1.5H5.25c-.83 0-1.5.67-1.5 1.5Z" />
 											</svg>
 										</button>
 										{#if processingRequest}
 											<div class="p-1">
-												<div class="animate-spin h-6 w-6 border-2 border-blue-500 rounded-full border-t-transparent"></div>
+												<div class="animate-spin h-5 w-5 border-2 border-blue-500 rounded-full border-t-transparent"></div>
 											</div>
 										{:else}
 											<button 
-												class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 p-1 transition-colors duration-200"
+												class="text-blue-500 hover:text-blue-400 p-1 transition-colors duration-200"
 												on:click={submitPrompt}
 												disabled={!prompt.trim() || processingRequest || !selectedModels[0]}
 											>
-												<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
-													<path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+												<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+													<path d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z" />
 												</svg>
 											</button>
 										{/if}
@@ -608,58 +610,62 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 							</div>
 						</div>
 					{:else}
-						<div class="flex-1 overflow-auto mb-4 relative" id="messages-container">
-							<Messages
-								{history}
-								{selectedModels}
-								{prompt}
-								chatId="study-guide"
-								className="h-full flex"
-								sendPrompt={submitPrompt}
-								showMessage={showMessage}
-								submitMessage={submitMessage}
-								continueResponse={continueResponse}
-								regenerateResponse={regenerateResponse}
-								mergeResponses={mergeResponses}
-								addMessages={addMessages}
-								chatActionHandler={chatActionHandler}
-								{autoScroll}
-								bottomPadding={true}
-							/>
-						</div>
-						
-						<!-- Custom Chat Input UI for text mode -->
-						<div class="mt-auto mb-2 px-4">
-							<div class="max-w-3xl mx-auto">
-								<div class="flex items-center w-full bg-gradient-to-r from-gray-100/95 to-gray-200/95 dark:from-gray-700/90 dark:to-gray-800/90 backdrop-blur-sm rounded-full shadow-md hover:shadow-lg py-2.5 px-5 transition-all duration-200 border border-gray-300/30 dark:border-gray-600/20">
-									<input 
-										type="text" 
-										bind:value={prompt}
-										placeholder={processingRequest ? "Waiting for response..." : "ask something"}
-										disabled={processingRequest}
-										class="flex-1 bg-transparent border-none outline-none text-gray-700 dark:text-gray-100 py-1 px-2 transition-colors duration-200 placeholder-gray-500 dark:placeholder-gray-400"
-									/>
-									<div class="flex items-center gap-4">
-										<button class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 p-1 transition-colors duration-200">
-											<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
-												<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-											</svg>
-										</button>
-										{#if processingRequest}
-											<div class="p-1">
-												<div class="animate-spin h-6 w-6 border-2 border-blue-500 rounded-full border-t-transparent"></div>
-											</div>
-										{:else}
-											<button 
-												class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 p-1 transition-colors duration-200"
-												on:click={submitPrompt}
-												disabled={!prompt.trim() || processingRequest || !selectedModels[0]}
-											>
-												<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
-													<path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+						<!-- Text chat mode with integrated input -->
+						<div class="flex flex-col h-full relative">
+							<!-- Messages container with padding at bottom to make room for input -->
+							<div class="flex-1 overflow-auto pb-16" id="messages-container">
+								<Messages
+									{history}
+									{selectedModels}
+									{prompt}
+									chatId="study-guide"
+									className="h-full flex"
+									sendPrompt={submitPrompt}
+									showMessage={showMessage}
+									submitMessage={submitMessage}
+									continueResponse={continueResponse}
+									regenerateResponse={regenerateResponse}
+									mergeResponses={mergeResponses}
+									addMessages={addMessages}
+									chatActionHandler={chatActionHandler}
+									{autoScroll}
+									bottomPadding={true}
+								/>
+							</div>
+							
+							<!-- Fixed positioned input at the bottom of chat area -->
+							<div class="absolute bottom-0 left-0 right-0 px-1 sm:px-4 pb-2 sm:pb-4 bg-gradient-to-t from-gray-900 to-transparent pt-5">
+								<div class="max-w-3xl mx-auto">
+									<div class="flex items-center w-full bg-gray-800/90 backdrop-blur-sm rounded-full shadow-md hover:shadow-lg py-2 px-4 transition-all duration-200">
+										<input 
+											type="text" 
+											bind:value={prompt}
+											placeholder="ask something"
+											disabled={processingRequest}
+											class="flex-1 bg-transparent border-none outline-none text-gray-300 placeholder-gray-500 py-1 px-2 text-sm sm:text-base"
+										/>
+										<div class="flex items-center gap-2 flex-shrink-0">
+											<button class="text-gray-400 hover:text-gray-300 p-1 transition-colors duration-200">
+												<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+													<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
 												</svg>
 											</button>
-										{/if}
+											{#if processingRequest}
+												<div class="p-1">
+													<div class="animate-spin h-5 w-5 border-2 border-blue-500 rounded-full border-t-transparent"></div>
+												</div>
+											{:else}
+												<button 
+													class="text-blue-500 hover:text-blue-400 p-1 transition-colors duration-200"
+													on:click={submitPrompt}
+													disabled={!prompt.trim() || processingRequest || !selectedModels[0]}
+												>
+													<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+														<path d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z" />
+													</svg>
+												</button>
+											{/if}
+										</div>
 									</div>
 								</div>
 							</div>
@@ -671,7 +677,7 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 	{/if}
 	
 	<!-- Right sidebar with widgets -->
-	<div class="w-full lg:w-72 lg:max-w-72 flex-shrink-0 space-y-4 lg:space-y-5 overflow-y-auto pr-3">
+	<div class="w-full lg:w-72 lg:max-w-72 flex-shrink-0 space-y-2 lg:space-y-4 overflow-y-auto pr-1 lg:pr-3 mt-1 lg:mt-0">
 		{#if mounted}
 			<!-- Program Completion Component -->
 			<div transition:fly={{ x: 20, y: -10, duration: 400, delay: 200, easing: quartOut }} class="w-full">
@@ -679,12 +685,12 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 			</div>
 			
 			<!-- Learning Path Component -->
-			<div transition:fly={{ x: 20, duration: 400, delay: 300, easing: quartOut }} class="w-full">
+			<div transition:fly={{ x: 20, duration: 400, delay: 300, easing: quartOut }} class="w-full learning-path-container">
 				<LearningPath steps={learningPath} onStepClick={goToTopic} />
 			</div>
 			
 			<!-- Engagement Gauge Component -->
-			<div transition:fly={{ x: 20, y: 10, duration: 400, delay: 400, easing: quartOut }} class="w-full mb-8">
+			<div transition:fly={{ x: 20, y: 10, duration: 400, delay: 400, easing: quartOut }} class="w-full mb-2 lg:mb-4">
 				<EngagementGauge 
 					percentage={engagement.percentage}
 					sessions={engagement.sessions}
@@ -706,7 +712,138 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 		top: 0;
 		left: 0;
 		right: 0;
-		bottom: 0; /* Changed to 0 to fully fill the container */
+		bottom: 70px; /* Add space at the bottom for the input */
 		overflow: hidden;
+		min-height: 350px; /* Increased minimum height */
+		max-height: 80vh; /* Increased maximum height */
+	}
+	
+	/* Chat input container styling */
+	.chat-input-container {
+		position: absolute;
+		bottom: 10px;
+		left: 0;
+		right: 0;
+		z-index: 50;
+	}
+	
+	/* Ensure avatar is visible on small screens but not too large */
+	.avatar-container {
+		display: block !important;
+		height: 100%;
+		min-height: 450px; /* Increased minimum height */
+		max-height: 80vh; /* Increased maximum height */
+	}
+	
+	/* Media queries for responsive avatar display */
+	@media (max-width: 768px) {
+		.avatar-container {
+			min-height: 400px; /* Increased for larger mobile screens */
+		}
+		
+		.fixed-container {
+			bottom: 60px;
+			min-height: 350px; /* Increased for larger mobile screens */
+		}
+	}
+	
+	@media (max-width: 640px) {
+		.avatar-container {
+			min-height: 350px; /* Increased for medium mobile screens */
+		}
+		
+		.fixed-container {
+			bottom: 55px;
+			min-height: 300px; /* Increased for medium mobile screens */
+		}
+	}
+	
+	@media (max-width: 480px) {
+		.avatar-container {
+			min-height: 300px; /* Increased for small mobile screens */
+		}
+		
+		.fixed-container {
+			bottom: 55px;
+			min-height: 250px; /* Increased for small mobile screens */
+		}
+		
+		.chat-input-container {
+			bottom: 5px;
+		}
+		
+		/* Add more space to ensure the avatar container is fully visible */
+		:global(.avatar-active) .flex-1 {
+			min-height: 450px !important; /* Increased for better viewing on mobile */
+			max-height: 500px !important;
+		}
+	}
+	
+	/* Adjustments for mobile layout */
+	@media (max-width: 768px) {
+		/* Ensure the right sidebar is properly displayed on small screens */
+		.w-full.lg\:w-72 {
+			margin-top: 0;
+		}
+	}
+	
+	/* Add responsive styles for input containers */
+	@media (max-width: 480px) {
+		input[type="text"] {
+			min-width: 0;
+			width: 100%;
+			font-size: 14px;
+			padding-left: 8px;
+			height: 32px;
+			margin-right: 4px;
+		}
+		
+		/* Ensure the input container doesn't overflow on small screens */
+		.flex.items-center.w-full {
+			padding-left: 8px;
+			padding-right: 8px;
+		}
+		
+		.flex.items-center.gap-1 {
+			gap: 2px;
+		}
+		
+		/* Make buttons slightly smaller on mobile */
+		button svg {
+			width: 20px;
+			height: 20px;
+		}
+	}
+	
+	/* Even more aggressive styling for extra small screens */
+	@media (max-width: 360px) {
+		input[type="text"] {
+			font-size: 13px;
+			padding-left: 6px;
+			height: 28px;
+		}
+		
+		.flex.items-center.w-full {
+			padding-left: 6px;
+			padding-right: 6px;
+		}
+		
+		button svg {
+			width: 18px;
+			height: 18px;
+		}
+		
+		.fixed-container {
+			bottom: 50px;
+			min-height: 150px;
+		}
+		
+		.avatar-container {
+			min-height: 170px;
+		}
+		
+		:global(.avatar-active) .flex-1 {
+			min-height: 250px !important;
+		}
 	}
 </style> 
