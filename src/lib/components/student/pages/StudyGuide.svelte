@@ -28,6 +28,8 @@
 		parentId?: string;
 		childrenIds?: string[];
 		loading?: boolean;
+		attachments?: { name: string; type: string; size: number }[];
+		files?: { name: string; type: string; size: number; url?: string }[];
 	}
 
 	interface ChatHistory {
@@ -88,7 +90,7 @@
 	};
 	let selectedModels = [''];
 	let atSelectedModel = undefined;
-	let files = [];
+	let files: File[] = [];
 	let prompt = '';
 	let selectedToolIds = [];
 	let imageGenerationEnabled = false;
@@ -96,6 +98,12 @@
 	let codeInterpreterEnabled = false;
 	let autoScroll = true;
 	let processing = false;
+	
+	// Reference to file input element
+	let fileInputRef: HTMLInputElement;
+	
+	// Add a state to track if scroll button should be shown
+	let showScrollButton = false;
 	
 	// Avatar state
 	let avatarActive = true;
@@ -175,6 +183,55 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 	
 	let currentController: AbortController | null = null;
 	
+	// Function to handle file attachment
+	const handleFileAttachment = () => {
+		if (fileInputRef) {
+			fileInputRef.click();
+		}
+	};
+	
+	// Function to handle file selection
+	const handleFileChange = (event: Event) => {
+		const target = event.target as HTMLInputElement;
+		if (target.files && target.files.length > 0) {
+			const newFiles = Array.from(target.files);
+			// Add the new files to our files array
+			files = [...files, ...newFiles];
+			// Reset the file input so the same file can be selected again
+			target.value = '';
+		}
+	};
+	
+	// Function to remove a file from the list
+	const removeFile = (index: number) => {
+		files = files.filter((_, i) => i !== index);
+	};
+	
+	// Function to read file content as base64
+	const getFileAsBase64 = (file: File): Promise<string> => {
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.readAsDataURL(file);
+			reader.onload = () => {
+				const result = reader.result as string;
+				// Remove the data URL prefix (e.g., "data:image/png;base64,")
+				const base64Content = result.split(',')[1];
+				resolve(base64Content);
+			};
+			reader.onerror = error => reject(error);
+		});
+	};
+	
+	// Function to read a text file as string
+	const getFileAsText = (file: File): Promise<string> => {
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.readAsText(file);
+			reader.onload = () => resolve(reader.result as string);
+			reader.onerror = error => reject(error);
+		});
+	};
+
 	// Function to handle direct API calls when server authentication fails
 	const generateDirectCompletion = async (prompt: string, systemMessage: string = '') => {
 		try {
@@ -280,20 +337,69 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 		}
 	};
 	
-	// Add a custom implementation of the scrollToBottom function
+	// Add a flag to track if we should force scroll
+	let forceScroll = false;
+	
+	// Update the scrollToBottom function to be more reliable with better handling for long messages
 	const scrollToBottom = () => {
-		// Use setTimeout to ensure DOM is fully rendered
-		setTimeout(() => {
+		// Use requestAnimationFrame for better timing after rendering
+		requestAnimationFrame(() => {
 			const element = document.getElementById('messages-container');
 			if (element) {
-				element.scrollTop = element.scrollHeight;
+				// Force scroll to bottom with a slight delay to ensure content is rendered
+				setTimeout(() => {
+					element.scrollTop = element.scrollHeight;
+					showScrollButton = false; // Hide scroll button when scrolled to bottom
+				}, 50);
 			}
-		}, 100);
+		});
 	};
 
-	// Add this method to the sendDirectMessage function after updating the messages
+	// Enhance the handleScroll function to better track scroll position
+	const handleScroll = (e: Event) => {
+		const element = e.target as HTMLElement;
+		if (element) {
+			const { scrollTop, scrollHeight, clientHeight } = element;
+			
+			// Calculate distance from bottom
+			const scrollDistance = scrollHeight - scrollTop - clientHeight;
+			
+			// Show scroll button when not at the bottom (with a slightly larger threshold)
+			showScrollButton = scrollDistance > 120;
+			
+			// Update autoScroll state - only set to true when very close to bottom
+			autoScroll = scrollDistance < 40;
+		}
+	};
+
+	// Add a new function to observe content changes in the message container
+	const observeMessages = () => {
+		// Create a MutationObserver to watch for new messages
+		const messageContainer = document.getElementById('messages-container');
+		if (messageContainer && window.MutationObserver) {
+			const observer = new MutationObserver((mutations) => {
+				// If autoScroll is enabled or we're forcing a scroll, scroll to bottom
+				if (autoScroll || forceScroll) {
+					scrollToBottom();
+					forceScroll = false;
+				}
+			});
+			
+			// Observe content changes in the message container
+			observer.observe(messageContainer, { 
+				childList: true, 
+				subtree: true,
+				characterData: true 
+			});
+			
+			return observer;
+		}
+		return null;
+	};
+
+	// Update the sendDirectMessage function to handle file attachments
 	const sendDirectMessage = async (messageContent: string, systemPrompt: string = '') => {
-		if ((!prompt.trim() && !messageContent.trim()) || processing || processingRequest) return;
+		if ((!prompt.trim() && !messageContent.trim() && files.length === 0) || processing || processingRequest) return;
 		
 		processingRequest = true;  // Set the processing flag
 		const messageId = uuidv4();
@@ -303,14 +409,81 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 		currentAvatarMessage = '';
 		avatarSpeaking = false;
 		
-		// Add user message
+		// Store reference to current message for proper linking
+		const prevMessageId = history.currentId || undefined;
+		
+		// Create file attachments data for display in the UI and sending to LLM
+		const attachments = files.length > 0 ? 
+			files.map(file => ({
+				name: file.name,
+				type: file.type,
+				size: file.size
+			})) : [];
+		
+		// Also create a files array for display in the message component
+		// This is what the UserMessage component actually uses to render files in the UI
+		const filesList = files.length > 0 ?
+			files.map(file => ({
+				name: file.name,
+				type: file.type.startsWith('image/') ? 'image' : 'file',
+				size: file.size,
+				// For images, we need to create a data URL
+				url: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined
+			})) : [];
+		
+		// User sees the original message (plus file attachments in UI)
+		let displayContent = messageContent;
+		
+		// What will be sent to the LLM (including file content)
+		let llmContent = messageContent;
+		
+		// Add file attachment information to the LLM content
+		if (files.length > 0) {
+			try {
+				llmContent += "\n\n[File Attachments]\n";
+				
+				for (const file of files) {
+					llmContent += `\nFile: ${file.name} (${file.type})\n`;
+					
+					// Handle different file types appropriately
+					if (file.type.startsWith('text/')) {
+						// For text files, include content directly in LLM message
+						const textContent = await getFileAsText(file);
+						llmContent += `Content:\n${textContent}\n`;
+					} else if (file.type.startsWith('image/')) {
+						// For images, process for the LLM
+						llmContent += "Image file attached\n";
+					} else {
+						// For other file types, just note we have an attachment
+						llmContent += `Binary file of type ${file.type}\n`;
+					}
+				}
+			} catch (error) {
+				console.error('Error processing file attachments:', error);
+				toast.error('Failed to process file attachments');
+			}
+		}
+		
+		// Add user message (with proper parent/child links)
+		// Set both "attachments" and "files" properties - the UI uses "files" for rendering
 		history.messages[userMessageId] = {
 			id: userMessageId,
 			role: 'user',
-			content: messageContent,
+			content: displayContent,
 			timestamp: Date.now(),
-			childrenIds: [messageId]
+			parentId: prevMessageId, // Link to previous message
+			childrenIds: [messageId],
+			attachments: attachments.length > 0 ? attachments : undefined,
+			files: filesList.length > 0 ? filesList : undefined
 		};
+		
+		// If there is a previous message, link this message as its child
+		if (prevMessageId && history.messages[prevMessageId]) {
+			history.messages[prevMessageId].childrenIds = [
+				...(history.messages[prevMessageId].childrenIds || []),
+				userMessageId
+			];
+		}
 		
 		// Add assistant message placeholder
 		history.messages[messageId] = {
@@ -319,18 +492,29 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 			content: '',
 			timestamp: Date.now(),
 			parentId: userMessageId,
+			childrenIds: [],
 			loading: true
 		};
 		
+		// Update current message ID
 		history.currentId = messageId;
 		processing = true;
 		
+		// Force auto-scroll
+		autoScroll = true;
+		forceScroll = true;
 		// Scroll to bottom after updating messages
 		scrollToBottom();
 		
 		try {
 			// Use direct streaming if available
 			try {
+				// Construct the messages to send to the LLM
+				const messagesToSend = [
+					...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
+					{ role: 'user', content: llmContent } // Send the content with file information to the LLM
+				];
+				
 				const response = await fetch('http://localhost:11434/api/chat', {
 					method: 'POST',
 					headers: {
@@ -338,10 +522,7 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 					},
 					body: JSON.stringify({
 						model: selectedModels[0] || 'mistral',
-						messages: [
-							...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
-							{ role: 'user', content: messageContent }
-						],
+						messages: messagesToSend,
 						stream: false // Changed to false to get complete response at once for proper JSON parsing
 					})
 				});
@@ -367,6 +548,8 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 				if (history.messages[messageId]) {
 					history.messages[messageId].content = content;
 					history.messages[messageId].loading = false;
+					// Force scroll after message is received
+					forceScroll = true;
 				}
 				
 				// Scroll to show new content
@@ -413,6 +596,8 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 		} finally {
 			processing = false;
 			processingRequest = false;  // Reset the processing flag
+			// Clear files after sending
+			files = [];
 		}
 	};
 	
@@ -488,21 +673,50 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 		avatarSpeaking = false;
 	};
 	
-	onMount(async () => {
-		mounted = true;
-		await loadModels();
+	onMount(() => {
+		// Initialization function
+		const initialize = async () => {
+			mounted = true;
+			await loadModels();
+			
+			// Initialize history object if it's empty
+			if (!history || !history.messages) {
+				history = { messages: {}, currentId: null };
+			}
+			
+			// Check browser support for speech synthesis
+			if ('speechSynthesis' in window) {
+				console.log("Speech synthesis is supported in this browser");
+			} else {
+				console.warn("Speech synthesis is NOT supported in this browser");
+				toast.warning("Your browser doesn't support text-to-speech features");
+			}
+		};
 		
-		// Check browser support for speech synthesis
-		if ('speechSynthesis' in window) {
-			console.log("Speech synthesis is supported in this browser");
-		} else {
-			console.warn("Speech synthesis is NOT supported in this browser");
-			toast.warning("Your browser doesn't support text-to-speech features");
-		}
+		// Start initialization
+		initialize();
+		
+		// Set up mutation observer for auto-scrolling
+		const observer = observeMessages();
+		
+		// Return cleanup function
+		return () => {
+			// Clean up observer on component unmount
+			if (observer) observer.disconnect();
+		};
 	});
 </script>
 
 <div class="flex flex-col lg:flex-row gap-0 lg:gap-4 w-full h-full {avatarActive ? 'avatar-active' : ''}">
+	<!-- Hidden file input -->
+	<input 
+		bind:this={fileInputRef}
+		type="file" 
+		class="hidden" 
+		multiple 
+		on:change={handleFileChange}
+	/>
+
 	<!-- Main content area with chat -->
 	{#if mounted}
 		<div class="flex-1 w-full h-full min-h-[600px] mb-6 sm:mb-0" transition:fly={{ x: -20, duration: 500, delay: 100, easing: quartOut }}>
@@ -555,7 +769,7 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 				<!-- Chat interface -->
 				<div class="flex-1 flex flex-col relative bg-gradient-to-br from-gray-50 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-xl overflow-hidden">
 					{#if avatarActive}
-						<!-- Reduce height of avatar container to leave space for input -->
+						<!-- Make avatar container taller to fill more space -->
 						<div class="flex-1 flex-grow overflow-hidden bg-transparent relative rounded-xl fixed-container avatar-container">
 							<AvatarChat
 								className="h-full w-full"
@@ -571,10 +785,39 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 									console.log("Avatar speech started");
 								}}
 							/>
+							
+							<!-- Scroll down button for avatar mode -->
+							{#if showScrollButton}
+								<button 
+									on:click={scrollToBottom}
+									class="absolute bottom-16 right-4 size-12 rounded-full bg-blue-500 text-white shadow-lg flex items-center justify-center hover:bg-blue-600 transition-all z-30"
+								>
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+										<path fill-rule="evenodd" d="M12 2.25a.75.75 0 01.75.75v16.19l6.22-6.22a.75.75 0 111.06 1.06l-7.5 7.5a.75.75 0 01-1.06 0l-7.5-7.5a.75.75 0 111.06-1.06l6.22 6.22V3a.75.75 0 01.75-.75z" clip-rule="evenodd" />
+									</svg>
+								</button>
+							{/if}
 						</div>
 						
-						<!-- Move input outside the avatar container -->
-						<div class="chat-input-container absolute bottom-0 left-0 right-0 z-50 px-1 sm:px-4 pb-2 sm:pb-4">
+						<!-- Keep input in same position but adjust chat container to fill more space -->
+						<div class="chat-input-container absolute bottom-0 left-0 right-0 z-50 px-1 sm:px-4 pb-1 sm:pb-2">
+							<!-- File attachments preview -->
+							{#if files.length > 0}
+								<div class="max-w-3xl mx-auto mb-2">
+									<div class="flex flex-wrap gap-2 p-2 bg-gray-800/80 rounded-lg">
+										{#each files as file, i}
+											<div class="flex items-center bg-gray-700 text-white rounded px-2 py-1 text-sm">
+												<span class="truncate max-w-[150px]">{file.name}</span>
+												<button class="ml-1 text-gray-300 hover:text-white" on:click={() => removeFile(i)}>
+													<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+														<path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+													</svg>
+												</button>
+											</div>
+										{/each}
+									</div>
+								</div>
+							{/if}
 							<div class="max-w-3xl mx-auto">
 								<div class="flex items-center w-full bg-gray-800/90 dark:bg-gray-800/90 backdrop-blur-sm bg-opacity-90 dark:bg-opacity-90 rounded-full shadow-md hover:shadow-lg py-2 px-4 transition-all duration-200 border border-gray-300/20 dark:border-gray-700/30">
 									<input 
@@ -585,7 +828,11 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 										class="flex-1 bg-transparent border-none outline-none text-gray-200 dark:text-gray-300 placeholder-gray-500 dark:placeholder-gray-500 py-1 px-2 text-sm sm:text-base"
 									/>
 									<div class="flex items-center gap-2 flex-shrink-0">
-										<button class="text-gray-400 hover:text-gray-300 p-1 transition-colors duration-200">
+										<button 
+											class="text-gray-400 hover:text-gray-300 p-1 transition-colors duration-200"
+											on:click={handleFileAttachment}
+											disabled={processingRequest}
+										>
 											<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
 												<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
 											</svg>
@@ -610,10 +857,10 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 							</div>
 						</div>
 					{:else}
-						<!-- Text chat mode with integrated input -->
+						<!-- Text chat mode with integrated input - expand chat area -->
 						<div class="flex flex-col h-full relative">
-							<!-- Messages container with padding at bottom to make room for input -->
-							<div class="flex-1 overflow-auto pb-16" id="messages-container">
+							<!-- Increase the height of the message container to fill more of the available space -->
+							<div class="flex-1 flex-grow overflow-auto" id="messages-container" on:scroll={handleScroll}>
 								<Messages
 									{history}
 									{selectedModels}
@@ -629,12 +876,41 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 									addMessages={addMessages}
 									chatActionHandler={chatActionHandler}
 									{autoScroll}
-									bottomPadding={true}
+									bottomPadding={false}
 								/>
+								
+								<!-- Scroll down button for text chat mode -->
+								{#if showScrollButton}
+									<button 
+										on:click={scrollToBottom}
+										class="fixed bottom-16 right-4 size-12 rounded-full bg-blue-500 text-white shadow-lg flex items-center justify-center hover:bg-blue-600 transition-all z-30"
+									>
+										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+											<path fill-rule="evenodd" d="M12 2.25a.75.75 0 01.75.75v16.19l6.22-6.22a.75.75 0 111.06 1.06l-7.5 7.5a.75.75 0 01-1.06 0l-7.5-7.5a.75.75 0 111.06-1.06l6.22 6.22V3a.75.75 0 01.75-.75z" clip-rule="evenodd" />
+										</svg>
+									</button>
+								{/if}
 							</div>
 							
-							<!-- Fixed positioned input at the bottom of chat area -->
-							<div class="absolute bottom-0 left-0 right-0 px-1 sm:px-4 pb-2 sm:pb-4 bg-gradient-to-t from-gray-100 dark:from-gray-900 to-transparent pt-5">
+							<!-- Input stays at the same position but chat container is adjusted to use more space -->
+							<div class="absolute bottom-0 left-0 right-0 px-1 sm:px-4 pb-1 sm:pb-2 bg-gradient-to-t from-gray-100 dark:from-gray-900 to-transparent pt-16">
+								<!-- File attachments preview -->
+								{#if files.length > 0}
+									<div class="max-w-3xl mx-auto mb-2">
+										<div class="flex flex-wrap gap-2 p-2 bg-gray-100 dark:bg-gray-800/80 rounded-lg">
+											{#each files as file, i}
+												<div class="flex items-center bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded px-2 py-1 text-sm">
+													<span class="truncate max-w-[150px]">{file.name}</span>
+													<button class="ml-1 text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white" on:click={() => removeFile(i)}>
+														<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+															<path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+														</svg>
+													</button>
+												</div>
+											{/each}
+										</div>
+									</div>
+								{/if}
 								<div class="max-w-3xl mx-auto">
 									<div class="flex items-center w-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full shadow-md hover:shadow-lg py-2 px-4 transition-all duration-200 border border-gray-300/20 dark:border-gray-700/30">
 										<input 
@@ -645,7 +921,11 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 											class="flex-1 bg-transparent border-none outline-none text-gray-700 dark:text-gray-300 placeholder-gray-500 dark:placeholder-gray-500 py-1 px-2 text-sm sm:text-base"
 										/>
 										<div class="flex items-center gap-2 flex-shrink-0">
-											<button class="text-gray-400 hover:text-gray-300 p-1 transition-colors duration-200">
+											<button 
+												class="text-gray-400 hover:text-gray-300 p-1 transition-colors duration-200"
+												on:click={handleFileAttachment}
+												disabled={processingRequest}
+											>
 												<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
 													<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
 												</svg>
@@ -707,75 +987,90 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 		--tw-shadow-colored: 0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color);
 	}
 	
+	/* Adjust height of containers to maximize chat space */
 	.fixed-container {
 		position: absolute;
 		top: 0;
 		left: 0;
 		right: 0;
-		bottom: 70px; /* Add space at the bottom for the input */
+		bottom: 70px; /* Keep original height but adjust container inside */
 		overflow: hidden;
-		min-height: 350px; /* Increased minimum height */
-		max-height: 80vh; /* Increased maximum height */
+		min-height: 450px; /* Increased to fill more vertical space */
+		max-height: 85vh; /* Slightly increased to fill more space */
 	}
 	
-	/* Chat input container styling */
+	/* Keep the chat input container in the same position */
 	.chat-input-container {
 		position: absolute;
-		bottom: 10px;
+		bottom: 5px;
 		left: 0;
 		right: 0;
 		z-index: 50;
 	}
 	
-	/* Ensure avatar is visible on small screens but not too large */
+	/* Make sure the avatar container fills more space */
 	.avatar-container {
 		display: block !important;
 		height: 100%;
-		min-height: 450px; /* Increased minimum height */
-		max-height: 80vh; /* Increased maximum height */
+		min-height: 500px; /* Increased to fill more vertical space */
+		max-height: 85vh; /* Increased to fill more vertical space */
 	}
 	
-	/* Media queries for responsive avatar display */
+	/* Ensure the message container takes up all available space */
+	#messages-container {
+		min-height: calc(100% - 60px);
+		position: absolute;
+		top: 0;
+		bottom: 60px;
+		left: 0;
+		right: 0;
+		overflow-y: auto;
+	}
+	
+	/* Style to ensure messages fill available space */
+	:global(.messages-fill) {
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+	}
+	
+	/* Media queries for responsive avatar display - keep proportionally taller */
 	@media (max-width: 768px) {
 		.avatar-container {
-			min-height: 400px; /* Increased for larger mobile screens */
+			min-height: 450px; /* Increased for larger mobile screens */
 		}
 		
 		.fixed-container {
 			bottom: 60px;
-			min-height: 350px; /* Increased for larger mobile screens */
+			min-height: 400px; /* Increased for larger mobile screens */
 		}
 	}
 	
 	@media (max-width: 640px) {
 		.avatar-container {
-			min-height: 350px; /* Increased for medium mobile screens */
+			min-height: 400px; /* Increased for medium mobile screens */
 		}
 		
 		.fixed-container {
 			bottom: 55px;
-			min-height: 300px; /* Increased for medium mobile screens */
+			min-height: 350px; /* Increased for medium mobile screens */
 		}
 	}
 	
 	@media (max-width: 480px) {
 		.avatar-container {
-			min-height: 300px; /* Increased for small mobile screens */
+			min-height: 350px; /* Increased for small mobile screens */
 		}
 		
 		.fixed-container {
 			bottom: 55px;
-			min-height: 250px; /* Increased for small mobile screens */
-		}
-		
-		.chat-input-container {
-			bottom: 5px;
+			min-height: 300px; /* Increased for small mobile screens */
 		}
 		
 		/* Add more space to ensure the avatar container is fully visible */
 		:global(.avatar-active) .flex-1 {
-			min-height: 450px !important; /* Increased for better viewing on mobile */
-			max-height: 500px !important;
+			min-height: 500px !important; /* Increased for better viewing on mobile */
+			max-height: 550px !important;
 		}
 	}
 	
@@ -845,5 +1140,19 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 		:global(.avatar-active) .flex-1 {
 			min-height: 250px !important;
 		}
+	}
+	
+	/* Add a slight bounce animation for the scroll button */
+	@keyframes bounce-slight {
+		0%, 100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-5px);
+		}
+	}
+	
+	.animate-bounce-slight {
+		animation: bounce-slight 2s infinite ease-in-out;
 	}
 </style> 

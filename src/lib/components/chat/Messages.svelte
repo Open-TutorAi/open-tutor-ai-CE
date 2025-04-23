@@ -35,15 +35,17 @@
 
 	let messages = [];
 
-	export let sendPrompt: Function;
-	export let continueResponse: Function;
-	export let regenerateResponse: Function;
-	export let mergeResponses: Function;
+	export let sendPrompt;
+	export let continueResponse;
+	export let regenerateResponse;
+	export let mergeResponses;
 
-	export let chatActionHandler: Function;
-	export let showMessage: Function = () => {};
-	export let submitMessage: Function = () => {};
-	export let addMessages: Function = () => {};
+	export let chatActionHandler;
+	export let showMessage = () => {};
+	/** @type {(message: string) => Promise<void> | void} */
+	export let submitMessage = () => {};
+	/** @type {(messages: any[]) => void} */
+	export let addMessages = () => {};
 
 	export let readOnly = false;
 
