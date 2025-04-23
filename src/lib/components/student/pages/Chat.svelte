@@ -1,4 +1,4 @@
-<!-- settings/+page.svelte -->
+<!-- chat/+page.svelte -->
 <script lang="ts">
 	import Chat from '$lib/components/student/tutor/Chat.svelte';
 	import RightBar from '$lib/components/student/elements/RightBar.svelte';
@@ -17,7 +17,7 @@
 	}
 </script>
 
-<div class="settings-layout flex h-full overflow-hidden relative">
+<div class="chat-layout flex h-full overflow-hidden relative">
 	<!-- Main Chat component takes most of the space -->
 	<div class="chat-container flex-1 h-full overflow-hidden">
 		<Chat chatIdProp={$page.params.id} on:chatEvent={handleChatEvent} />
@@ -63,7 +63,7 @@
 </div>
 
 <style>
-	.settings-layout {
+	.chat-layout {
 		/* Ensure this layout container takes full height within parent */
 		height: 100%;
 		width: 100%;

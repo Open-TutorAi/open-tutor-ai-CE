@@ -515,14 +515,14 @@
 			<!-- Mobile menu (dropdown style instead of slide-in) -->
 			{#if showMobileMenu}
 				<div
-					class={`absolute right-0 mt-2 w-48 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-lg shadow-lg z-50 border`}
+					class={`absolute right-0 mt-2 w-48 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-lg shadow-lg z-[200] border`}
 				>
 					<div class={`p-3 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
 						<p class={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
-							{username}
+							{$user.name}
 						</p>
 						<p class={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-							student@example.com
+							{$user.email}
 						</p>
 					</div>
 					<div class="py-1">
