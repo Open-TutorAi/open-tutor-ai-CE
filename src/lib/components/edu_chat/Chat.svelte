@@ -2171,7 +2171,7 @@
 	{#if chatIdProp === '' || (!loading && chatIdProp)}
 		<div class="w-full flex">
 			<!-- Main pane with chat -->
-			<div class="flex-1 h-full bg-[#F5F7F9] dark:bg-inherit relative pt-22">
+			<div class="flex-1 h-full bg-[#F5F7F9] dark:bg-inherit relative ">
 				{#if !history.currentId && !$chatId && selectedModels.length <= 1 && ($banners.length > 0 || ($config?.license_metadata?.type ?? null) === 'trial' || (($config?.license_metadata?.seats ?? null) !== null && $config?.user_count > $config?.license_metadata?.seats))}
 					<div class="absolute top-12 left-0 right-0 w-full z-30">
 						<div class="flex flex-col gap-1 w-full">
@@ -2234,7 +2234,7 @@
 										on:speechend={() => (avatarSpeaking = false)}
 									/>
 								</div>
-								<div class="absolute bottom-0 left-0 right-0 z-20 animate-float">
+								<div class="absolute bottom-0 left-0 right-0  ">
 									<MessageInput
 										{history}
 										{selectedModels}
@@ -2263,17 +2263,7 @@
 							</div>
 						{:else}
 							<div class="flex flex-col w-full h-full flex-auto relative">
-								<div
-									class="pb-2.5 flex-1 flex flex-col w-full overflow-auto max-w-full  scrollbar-hidden"
-									id="messages-container"
-									bind:this={messagesContainerElement}
-									on:scroll={(e) => {
-										autoScroll =
-											messagesContainerElement.scrollHeight - messagesContainerElement.scrollTop <=
-											messagesContainerElement.clientHeight + 5;
-									}}
-								>
-									<div class="h-full w-full flex flex-col">
+									<div class="flex flex-col w-full h-full flex-auto relative">
 										<Messages
 											chatId={$chatId}
 											bind:history
@@ -2292,8 +2282,7 @@
 											bottomPadding={files.length > 0}
 										/>
 									</div>
-								</div>
-								<div class="w-full pt-2 bg-[#F5F7F9] dark:bg-gray-900 relative z-20">
+								<div class="fixed w-full pt-2 bg-[#F5F7F9] dark:bg-gray-900 relative z-20">
 									<MessageInput
 										{history}
 										{selectedModels}
@@ -2341,8 +2330,8 @@
 			</div>
 
 			<!-- Rightbar with responsive behavior -->
-			<div class="transition-all duration-300 ease-in-out {showRightbar ? 'w-60 opacity-100' : 'w-0 opacity-0 md:w-60 md:opacity-100'} 
-			h-full overflow-hidden border-1 border-gray-200 rounded-lg dark:border-gray-700 px-4 py-2">
+			<div class="transition-all duration-300 ease-in-out  {showRightbar ? ' w-60 opacity-100 bg-blue-100 dark:bg-gray-900' : 'w-0 opacity-0 md:w-60 md:opacity-100'} 
+			h-full overflow-hidden border-1 border-gray-200 rounded-lg dark:border-gray-700 px-4 py-2 ">
 				{#if showRightbar || !$mobile}
 				<Navbar
 				bind:this={navbarElement}

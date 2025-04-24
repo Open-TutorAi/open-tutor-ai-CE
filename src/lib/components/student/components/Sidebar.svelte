@@ -51,7 +51,12 @@
 		// Set active page based on URL path when component mounts
 		const pathSegments = $page.url.pathname.split('/');
 		if (pathSegments.length >= 3) {
-			const pageFromUrl = pathSegments[2]; // student/dashboard -> "dashboard"
+			let pageFromUrl = pathSegments[2]; // student/dashboard -> "dashboard"
+
+			// Map chat routes to support
+			if (pageFromUrl === 'edu_chat' || pageFromUrl === 'c') {
+				pageFromUrl = 'support';
+			}
 
 			// Update the activePage store if it's a store
 			if (typeof activePage === 'object' && 'subscribe' in activePage) {
@@ -70,7 +75,12 @@
 	$: {
 		const pathSegments = $page.url.pathname.split('/');
 		if (pathSegments.length >= 3) {
-			const pageFromUrl = pathSegments[2];
+			let pageFromUrl = pathSegments[2];
+			
+			// Map chat routes to support
+			if (pageFromUrl === 'edu_chat' || pageFromUrl === 'c') {
+				pageFromUrl = 'support';
+			}
 
 			// Only update if it has changed to avoid loops
 			if (currentActivePage !== pageFromUrl) {
@@ -92,7 +102,7 @@
 	}
 
 	// Determine current role from the URL path
-	$: currentRole = $page.url.pathname.split('/')[1] || 'user';
+	$: currentRole = $page.url.pathname.split('/')[1] || 'student';
 
 	function toggleSidebar() {
 		isSidebarOpen = !isSidebarOpen;

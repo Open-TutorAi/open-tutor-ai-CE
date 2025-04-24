@@ -349,45 +349,17 @@
 
 {#if loaded}
 	<div class="w-full font-primary {transparentBackground ? 'bg-transparent' : 'bg-[#F5F7F9] dark:bg-gray-900'}">
-		<div class=" mx-auto inset-x-0 bg-transparent flex justify-center">
+		<div class="mx-auto inset-x-0 bg-transparent flex justify-center">
 			<div
 				class="flex flex-col px-3 {($settings?.widescreenMode ?? null)
 					? 'max-w-full'
 					: 'max-w-6xl'} w-full"
 			>
-				<div class="relative">
-					{#if autoScroll === false && history?.currentId}
-						<div
-							class=" absolute -top-12 left-0 right-0 flex justify-center z-30 pointer-events-none"
-						>
-							<button
-								class=" bg-white border border-gray-100 dark:border-none dark:bg-white/20 p-1.5 rounded-full pointer-events-auto"
-								on:click={() => {
-									autoScroll = true;
-									scrollToBottom();
-								}}
-							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									viewBox="0 0 20 20"
-									fill="currentColor"
-									class="w-5 h-5"
-								>
-									<path
-										fill-rule="evenodd"
-										d="M10 3a.75.75 0 01.75.75v10.638l3.96-4.158a.75.75 0 111.08 1.04l-5.25 5.5a.75.75 0 01-1.08 0l-5.25-5.5a.75.75 0 111.08-1.04l3.96 4.158V3.75A.75.75 0 0110 3z"
-										clip-rule="evenodd"
-									/>
-								</svg>
-							</button>
-						</div>
-					{/if}
-				</div>
 
 				<div class="w-full relative">
 					{#if atSelectedModel !== undefined || selectedToolIds.length > 0 || webSearchEnabled || ($settings?.webSearch ?? false) === 'always' || imageGenerationEnabled || codeInterpreterEnabled}
 						<div
-							class="px-3 pb-0.5 pt-1.5 text-left w-full flex flex-col absolute bottom-0 left-0 right-0 bg-linear-to-t from-white dark:from-gray-900 z-10"
+							class="px-3 pb-0.5 pt-1.5 text-left w-full flex flex-col absolute bottom-0 left-0 right-0 bg-linear-to-t from-white dark:from-gray-900 "
 						>
 							{#if selectedToolIds.length > 0}
 								<div class="flex items-center justify-between w-full">

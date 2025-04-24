@@ -105,7 +105,7 @@
 			<h1
 				class={`text-xl font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'} flex items-center gap-2`}
 			>
-				<span class="hidden sm:inline">{$i18n.t('Hello') + ' ' + username}</span>
+				<span class="hidden sm:inline">{$i18n.t('Hello') + ' ' + $user.name}</span>
 			</h1>
 			<p class={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} hidden sm:block`}>
 				{$i18n.t("Let's learn something new today!")}
@@ -520,10 +520,10 @@
 				>
 					<div class={`p-3 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
 						<p class={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
-							{username}
+							{$user.name}
 						</p>
 						<p class={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-							student@example.com
+							{$user.email}
 						</p>
 					</div>
 					<div class="py-1">

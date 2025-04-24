@@ -55,7 +55,6 @@
 			</div>
 
 			<!-- Center section with avatar toggle - Responsive for all devices -->
-			{#if shareEnabled || !!chat?.id}
 			<div class="absolute left-1/2 transform -translate-x-1/2 flex justify-center items-center  mt-10" 
 				style="top: {$mobile ? '35px' : '40px'};">
 				<button
@@ -98,7 +97,7 @@
 				<div class="absolute inset-0 bg-white opacity-0 rounded-full hover:opacity-10 transition-opacity duration-300"></div>
 				</button>
 			</div>
-			{/if}
+			
 		</div>
 	</div>
 </nav>
