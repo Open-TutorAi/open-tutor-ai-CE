@@ -54,7 +54,7 @@
 			let pageFromUrl = pathSegments[2]; // student/dashboard -> "dashboard"
 
 			// Map chat routes to support
-			if (pageFromUrl === 'edu_chat' || pageFromUrl === 'c') {
+			if (pageFromUrl === 'tutor' || pageFromUrl === 'c') {
 				pageFromUrl = 'support';
 			}
 
@@ -78,7 +78,7 @@
 			let pageFromUrl = pathSegments[2];
 			
 			// Map chat routes to support
-			if (pageFromUrl === 'edu_chat' || pageFromUrl === 'c') {
+			if (pageFromUrl === 'tutor' || pageFromUrl === 'c') {
 				pageFromUrl = 'support';
 			}
 

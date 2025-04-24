@@ -77,15 +77,15 @@
 	import { getTools } from '$lib/apis/tools';
 
 	import Banner from '../common/Banner.svelte';
-	import MessageInput from '$lib/components/edu_chat/MessageInput.svelte';
+	import MessageInput from '$lib/components/tutor/MessageInput.svelte';
 	import Messages from '$lib/components/chat/Messages.svelte';
-	import Navbar from '$lib/components/edu_chat/Navbar.svelte';
+	import Navbar from '$lib/components/tutor/Navbar.svelte';
 	import ChatControls from '../chat/ChatControls.svelte';
 	import EventConfirmDialog from '../common/ConfirmDialog.svelte';
 	import NotificationToast from '../NotificationToast.svelte';
 	import Spinner from '../common/Spinner.svelte';
 	import AvatarChat from '../chat/AvatarChat.svelte';
-	import Rightbar from '$lib/components/edu_chat/Rightbar.svelte';
+	import Rightbar from '$lib/components/tutor/Rightbar.svelte';
 
 	export let chatIdProp = '';
 
