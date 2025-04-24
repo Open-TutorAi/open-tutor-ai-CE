@@ -11,8 +11,12 @@
 	let loaded = false;
 
 	onMount(async () => {
-		if ($user?.role !== 'admin') {
-			await goto(`/${$user.role}`);
+		if ($user.role !== 'admin') {
+			if ($user.role === 'user') {
+				await goto('/student/dashboard');
+			} else {
+				await goto(`/${$user.role}`);
+			}
 		}
 		loaded = true;
 	});

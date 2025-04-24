@@ -22,7 +22,7 @@
 
 	import { settings, user } from '$lib/stores';
 	import { goto } from '$app/navigation';
-	import AvatarSelection from './AvatarSelection.svelte';
+	import AvatarSelection from '../tutor/AvatarSelection.svelte';
 
 	// Props that must be kept for component compatibility
 	export let createMessagePair: Function;

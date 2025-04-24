@@ -12,7 +12,10 @@
 	import BookOpen from '$lib/components/icons/BookOpen.svelte';
 	import type { ComponentType } from 'svelte';
 	import { writable, type Writable } from 'svelte/store';
-	const i18n = getContext('i18n');
+	import type { i18n as i18nType } from 'i18next';
+
+	// Get the i18n context correctly typed
+	const i18n = getContext<Writable<i18nType>>('i18n');
 
 	// Use a simple boolean for sidebar state instead of a store
 	export let isSidebarOpen = true;
@@ -52,7 +55,13 @@
 		// Set active page based on URL path when component mounts
 		const pathSegments = $page.url.pathname.split('/');
 		if (pathSegments.length >= 3) {
-			const pageFromUrl = pathSegments[2]; // student/dashboard -> "dashboard"
+			// Get the page from URL
+			let pageFromUrl = pathSegments[2]; // student/dashboard -> "dashboard"
+			
+			// Special case: if URL is /student/studyguide, we want to show "support" as active
+			if (pageFromUrl === 'studyguide') {
+				pageFromUrl = 'support';
+			}
 
 			// Update the activePage store if it's a store
 			if (typeof activePage === 'object' && 'subscribe' in activePage) {
@@ -71,7 +80,13 @@
 	$: {
 		const pathSegments = $page.url.pathname.split('/');
 		if (pathSegments.length >= 3) {
-			const pageFromUrl = pathSegments[2];
+			// Get the page from URL
+			let pageFromUrl = pathSegments[2];
+			
+			// Special case: if URL is /student/studyguide, we want to show "support" as active
+			if (pageFromUrl === 'studyguide') {
+				pageFromUrl = 'support';
+			}
 
 			// Only update if it has changed to avoid loops
 			if (currentActivePage !== pageFromUrl) {
@@ -93,7 +108,7 @@
 	}
 
 	// Determine current role from the URL path
-	$: currentRole = $page.url.pathname.split('/')[1] || 'student';
+	$: currentRole = $page.url.pathname.split('/')[1] || 'user';
 
 	function toggleSidebar() {
 		isSidebarOpen = !isSidebarOpen;
@@ -133,7 +148,6 @@
 			{ id: 'dashboard', label: 'Dashboard', icon: Dashboard },
 			{ id: 'classrooms', label: 'My Classrooms', icon: Classroom },
 			{ id: 'support', label: 'Support', icon: Classroom },
-			{ id: 'studyguide', label: 'Study Guide', icon: BookOpen },
 			{ id: 'assignments', label: 'Assignments', icon: Assignment },
 			{ id: 'messages', label: 'Messages', icon: Message },
 			{ id: 'settings', label: 'Profile & Settings', icon: Settings }

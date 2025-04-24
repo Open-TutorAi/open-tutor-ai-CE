@@ -10,13 +10,15 @@
 	import { quartOut } from 'svelte/easing';
 	import MessageInput from '$lib/components/chat/MessageInput.svelte';
 	import Messages from '$lib/components/chat/Messages.svelte';
-	import AvatarChat from '$lib/components/chat/AvatarChat.svelte';
+	import AvatarChat from '$lib/components/tutor/AvatarChat.svelte';
 	import ModelSelector from '$lib/components/chat/ModelSelector.svelte';
 	import { v4 as uuidv4 } from 'uuid';
 	import { generateChatCompletion } from '$lib/apis/ollama';
 	import { settings, models } from '$lib/stores';
 	import { toast } from 'svelte-sonner';
 	import { getModels } from '$lib/apis';
+	import { createNewChat, updateChatById } from '$lib/apis/chats';
+	import { tick } from 'svelte';
 
 	const i18n = getContext<Writable<i18nType>>('i18n');
 
@@ -232,86 +234,10 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 		});
 	};
 
-	// Function to handle direct API calls when server authentication fails
-	const generateDirectCompletion = async (prompt: string, systemMessage: string = '') => {
-		try {
-			// Try to make a direct request to Ollama API
-			// This is a fallback method when the server authentication fails
-			const response = await fetch('http://localhost:11434/api/chat', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					model: 'mistral',
-					messages: [
-						...(systemMessage ? [{ role: 'system', content: systemMessage }] : []),
-						{ role: 'user', content: prompt }
-					],
-					stream: false
-				})
-			});
-			
-			if (!response.ok) {
-				throw new Error(`Failed to get response: ${response.status}`);
-			}
-			
-			const data = await response.json();
-			return data.message?.content || 'No response received';
-		} catch (err) {
-			console.error('Direct API call failed:', err);
-			throw err;
-		}
-	};
-
 	// Replace the existing loadModels function with this one
 	const loadModels = async () => {
 		try {
-			// Try to load models directly from Ollama API first
-			try {
-				const response = await fetch('http://localhost:11434/api/tags');
-				if (response.ok) {
-					const data = await response.json();
-					if (data.models && data.models.length > 0) {
-						// Convert Ollama models to the format expected by the app
-						const availableModels = data.models.map((model: any) => ({
-							id: model.name,
-							name: model.name,
-							model: model.name,
-							info: {
-								meta: {
-									description: `${model.name} (${model.size || 'unknown size'})`,
-									capabilities: {
-										chat: true
-									}
-								}
-							}
-						}));
-						
-						await models.set(availableModels);
-						
-						// Set default model
-						if (selectedModels[0] === '') {
-							// Prefer mistral if available
-							const defaultModel = availableModels.find((m: Model) => 
-								m.id.toLowerCase().includes('mistral')
-							);
-							
-							if (defaultModel) {
-								selectedModels = [defaultModel.id];
-							} else if (availableModels.length > 0) {
-								selectedModels = [availableModels[0].id];
-							}
-						}
-						
-						return; // Successfully loaded models directly
-					}
-				}
-			} catch (directError) {
-				console.warn('Could not connect directly to Ollama:', directError);
-			}
-			
-			// If direct connection failed, fall back to API
+			// Always load models through the backend API which will check permissions
 			const availableModels = await getModels(localStorage.token);
 			if (availableModels && availableModels.length > 0) {
 				await models.set(availableModels);
@@ -325,15 +251,13 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 					}
 				}
 			} else {
-				// If no models are returned, use a fallback
+				// If no models are returned, show error message
 				selectedModels = ['mistral'];
-				toast.warning('No models available. Using fallback model.');
+				toast.warning('No models available. You may not have permission to access any models.');
 			}
 		} catch (error) {
 			console.error('Error loading models:', error);
-			// Set a fallback model if API call fails
-			selectedModels = ['mistral'];
-			toast.error('Failed to load models. Using default fallback.');
+			toast.error('Failed to load models. Please check your permissions.');
 		}
 	};
 	
@@ -397,7 +321,80 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 		return null;
 	};
 
-	// Update the sendDirectMessage function to handle file attachments
+	// Add chat state variables
+	let chatId: string | null = null;
+	let chatTitle = 'Study Guide Chat';
+	
+	// Function to extract messages in the format expected by the API
+	const createMessagesList = (history: ChatHistory, currentId: string | null = null) => {
+		const messages: Array<{id: string, role: string, content: string, timestamp: number}> = [];
+		
+		if (!currentId && history.currentId) {
+			currentId = history.currentId;
+		}
+		
+		if (!currentId || !history.messages[currentId]) {
+			return messages;
+		}
+		
+		let message: Message | null = history.messages[currentId];
+		while (message) {
+			messages.unshift({
+				id: message.id,
+				role: message.role,
+				content: message.content,
+				timestamp: message.timestamp
+			});
+			
+			message = message.parentId && history.messages[message.parentId] ? 
+				history.messages[message.parentId] : null;
+		}
+		
+		return messages;
+	};
+	
+	// Function to create a new chat in the database
+	const initChatHandler = async (history: ChatHistory): Promise<string | null> => {
+		try {
+			const messagesList = createMessagesList(history);
+			
+			const chat = await createNewChat(localStorage.token, {
+				id: uuidv4(),
+				title: chatTitle,
+				models: selectedModels,
+				history: history,
+				messages: messagesList,
+				timestamp: Date.now()
+			});
+			
+			console.log('Created new chat with ID:', chat.id);
+			return chat.id;
+		} catch (error) {
+			console.error('Failed to create new chat:', error);
+			return null;
+		}
+	};
+	
+	// Function to update an existing chat in the database
+	const saveChatHandler = async (id: string, history: ChatHistory): Promise<boolean> => {
+		try {
+			const messagesList = createMessagesList(history);
+			
+			await updateChatById(localStorage.token, id, {
+				models: selectedModels,
+				history: history,
+				messages: messagesList
+			});
+			
+			console.log('Chat updated successfully:', id);
+			return true;
+		} catch (error) {
+			console.error('Failed to update chat:', error);
+			return false;
+		}
+	};
+	
+	// Update the sendDirectMessage function to use backend API
 	const sendDirectMessage = async (messageContent: string, systemPrompt: string = '') => {
 		if ((!prompt.trim() && !messageContent.trim() && files.length === 0) || processing || processingRequest) return;
 		
@@ -421,13 +418,11 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 			})) : [];
 		
 		// Also create a files array for display in the message component
-		// This is what the UserMessage component actually uses to render files in the UI
 		const filesList = files.length > 0 ?
 			files.map(file => ({
 				name: file.name,
 				type: file.type.startsWith('image/') ? 'image' : 'file',
 				size: file.size,
-				// For images, we need to create a data URL
 				url: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined
 			})) : [];
 		
@@ -465,7 +460,6 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 		}
 		
 		// Add user message (with proper parent/child links)
-		// Set both "attachments" and "files" properties - the UI uses "files" for rendering
 		history.messages[userMessageId] = {
 			id: userMessageId,
 			role: 'user',
@@ -506,87 +500,109 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 		// Scroll to bottom after updating messages
 		scrollToBottom();
 		
+		// Create new chat if this is the first message, or update existing chat
 		try {
-			// Use direct streaming if available
+			if (!chatId) {
+				const newChatId = await initChatHandler(history);
+				if (newChatId) {
+					chatId = newChatId;
+					console.log("Created new chat with ID:", chatId);
+				}
+			} else {
+				await saveChatHandler(chatId, history);
+			}
+		} catch (dbError) {
+			console.error("Failed to save chat to database:", dbError);
+			// Continue with the conversation even if DB save fails
+		}
+		
+		try {
+			// Construct the messages to send to the LLM through the backend API
+			const messagesToSend = [
+				...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
+				{ role: 'user', content: llmContent } // Send the content with file information to the LLM
+			];
+			
+			// Use the backend API call that checks permissions
+			const [response, controller] = await generateChatCompletion(localStorage.token, {
+				model: selectedModels[0] || 'mistral',
+				messages: messagesToSend,
+				stream: false
+			});
+			
+			// Check if response is valid
+			if (!response || !(response instanceof Response) || !response.ok) {
+				throw new Error(`Failed to get response: ${response instanceof Response ? response.status : 'No response'}`);
+			}
+			
+			// Process the response
+			const data = await response.json();
+			const content = data.message?.content || 'No response received';
+			
+			console.log("Received response from backend:", content);
+			
+			// Check if it's valid JSON
 			try {
-				// Construct the messages to send to the LLM
-				const messagesToSend = [
-					...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
-					{ role: 'user', content: llmContent } // Send the content with file information to the LLM
-				];
-				
-				const response = await fetch('http://localhost:11434/api/chat', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json'
-					},
-					body: JSON.stringify({
-						model: selectedModels[0] || 'mistral',
-						messages: messagesToSend,
-						stream: false // Changed to false to get complete response at once for proper JSON parsing
-					})
-				});
-				
-				if (!response.ok) {
-					throw new Error(`Failed to get response: ${response.status}`);
-				}
-				
-				const data = await response.json();
-				const content = data.message?.content || 'No response received';
-				
-				console.log("Received response from Ollama:", content);
-				
-				// Check if it's valid JSON
+				const jsonTest = JSON.parse(content);
+				console.log("Response is valid JSON:", jsonTest);
+			} catch (e) {
+				console.warn("Response is not valid JSON:", e);
+			}
+			
+			// Process and update the message
+			if (history.messages[messageId]) {
+				history.messages[messageId].content = content;
+				history.messages[messageId].loading = false;
+				// Force scroll after message is received
+				forceScroll = true;
+			}
+			
+			// Update chat in database with the response
+			if (chatId) {
 				try {
-					const jsonTest = JSON.parse(content);
-					console.log("Response is valid JSON:", jsonTest);
-				} catch (e) {
-					console.warn("Response is not valid JSON:", e);
-				}
-				
-				// Process and update the message
-				if (history.messages[messageId]) {
-					history.messages[messageId].content = content;
-					history.messages[messageId].loading = false;
-					// Force scroll after message is received
-					forceScroll = true;
-				}
-				
-				// Scroll to show new content
-				scrollToBottom();
-				
-				// If we're in avatar mode, set the message after the response is received
-				if (avatarActive) {
-					// First ensure the avatar isn't speaking
-					avatarSpeaking = false;
-					
-					// Set the message after a small delay
-					setTimeout(() => {
-						currentAvatarMessage = content;
-						console.log("Updated currentAvatarMessage:", currentAvatarMessage);
-						
-						// Then trigger speaking
-						setTimeout(() => {
-							avatarSpeaking = true;
-							console.log("Avatar should now be speaking:", currentAvatarMessage);
-						}, 100);
-					}, 50);
-				}
-			} catch (streamError) {
-				console.warn('Direct request failed:', streamError);
-				toast.error('Failed to connect to Ollama. Is it running locally?');
-				
-				if (history.messages[messageId]) {
-					delete history.messages[messageId];
-				}
-				if (history.messages[userMessageId]) {
-					history.messages[userMessageId].childrenIds = [];
+					await saveChatHandler(chatId, history);
+				} catch (saveError) {
+					console.error("Failed to save chat response to database:", saveError);
 				}
 			}
-		} catch (error) {
-			console.error('Direct message failed:', error);
-			toast.error('Failed to connect to Ollama. Is it running locally?');
 			
+			// Scroll to show new content
+			scrollToBottom();
+			
+			// If we're in avatar mode, set the message after the response is received
+			if (avatarActive) {
+				// First ensure the avatar isn't speaking
+				avatarSpeaking = false;
+				
+				// Set the message after a small delay
+				setTimeout(() => {
+					currentAvatarMessage = content;
+					console.log("Updated currentAvatarMessage:", currentAvatarMessage);
+					
+					// Then trigger speaking
+					setTimeout(() => {
+						avatarSpeaking = true;
+						console.log("Avatar should now be speaking:", currentAvatarMessage);
+					}, 100);
+				}, 50);
+			}
+		} catch (error: unknown) {
+			console.error('Message failed:', error);
+			
+			let errorMessage = 'Failed to get a response from the server.';
+			
+			// Check for permission errors
+			if (error instanceof Error) {
+				if (error.message.includes('403')) {
+					errorMessage = 'You do not have permission to use this model.';
+				} else if (error.message.includes('404')) {
+					errorMessage = 'Model not found or you lack permission to access it.';
+				}
+			}
+			
+			toast.error(errorMessage);
+			
+			// Clean up the message structure on error
 			if (history.messages[messageId]) {
 				delete history.messages[messageId];
 			}
