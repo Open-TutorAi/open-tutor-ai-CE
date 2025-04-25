@@ -24,7 +24,7 @@
 		
 		<!-- Toggle button for mobile -->
 		<button
-			class="toggle-rightbar hidden max-[1210px]:block fixed right-4 bottom-4 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2 shadow-lg z-50"
+			class="toggle-rightbar hidden max-[1210px]:block fixed right-4 bottom-4 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2 shadow-lg z-99999"
 			on:click={toggleRightBar}
 			aria-label={isRightBarVisible ? 'Hide sidebar' : 'Show sidebar'}
 		>
@@ -81,7 +81,7 @@
 			right: -320px; /* Start off-screen */
 			top: 0;
 			bottom: 0;
-			z-index: 40;
+			z-index: 9999;
 			background-color: white; /* or your theme color */
 			transition: transform 0.3s ease-in-out;
 		}
