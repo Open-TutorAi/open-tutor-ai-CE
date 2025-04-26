@@ -1,4 +1,4 @@
-﻿<script lang="ts">
+<script lang="ts">
 	import { getContext } from 'svelte';
 
 	import {
@@ -46,7 +46,6 @@
 			</div>
 
 			<div class="">
-				{#if shareEnabled || !!chat?.id}
 					<div
 						class="flex-1 overflow-hidden max-w-full py-0.5"
 						style="top: {$mobile ? '35px' : '40px'};"
@@ -103,7 +102,6 @@
 							</div>
 						</button>
 					</div>
-				{/if}
 			</div>
 		</div>
 	</div>

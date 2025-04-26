@@ -277,8 +277,8 @@
 	<!-- Overlay to close sidebar when clicked (mobile only) -->
 	{#if isSidebarOpen && isMobile}
 		<div
-			class="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
-			on:click={toggleSidebar}
+		class="fixed inset-0 backdrop-blur-sm bg-opacity-50 z-20 md:hidden"
+		on:click={toggleSidebar}
 		></div>
 	{/if}
 </div>
