@@ -1,127 +1,696 @@
-<script>
-	import { onMount, getContext } from 'svelte';
-	import { createEventDispatcher } from 'svelte';
-	
-	// Event dispatcher to communicate with parent component
-	const dispatch = createEventDispatcher();
-	const i18n = getContext('i18n'); 
+import { TUTOR_API_BASE_URL, TUTOR_BASE_URL} from '$lib/constants';
 
-	// Role data structure
-	const roles = [
-		{
-			id: 'user',
-			title: 'Student',
-			icon: '👨‍🎓',
-			features: [
-				'Personalized learning path',
-				'Track your progress',
-				'Access study materials',
-				'Connect with tutors'
-			],
-			buttonColor: 'bg-blue-500 hover:bg-blue-600',
-			iconBgColor: 'bg-blue-100'
-		},
-		{
-			id: 'teacher',
-			title: 'Teacher',
-			icon: '👨‍🏫',
-			features: [
-				'Manage your classes',
-				'Monitor student progress',
-				'Create assignments',
-				'AI teaching assistant'
-			],
-			buttonColor: 'bg-green-500 hover:bg-green-600',
-			iconBgColor: 'bg-green-100'
-		},
-		{
-			id: 'parent',
-			title: 'Parent',
-			icon: '👨‍👧',
-			features: [
-				"Track child's progress",
-				'Communication with teachers',
-				'View performance reports',
-				'Schedule consultations'
-			],
-			buttonColor: 'bg-purple-500 hover:bg-purple-600',
-			iconBgColor: 'bg-purple-100'
+export const getAdminDetails = async (token: string) => {
+	let error = null;
+
+	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/admin/details`, {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`
 		}
-	];
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
 
-	// Function to handle role selection
-	function selectRole(roleId) {
-		console.log(`Selected role: ${roleId}`);
-		// Dispatch event to parent component
-		dispatch('roleSelected', { role: roleId });
+	if (error) {
+		throw error;
 	}
 
-	onMount(() => {
-		// Add any initialization code here if needed
-		console.log('Role selection page mounted');
-	});
-</script>
+	return res;
+};
 
-<div class="min-h-screen bg-[#F0F9FF] border border-blue-200 flex flex-col justify-center items-center p-4 overflow-auto">
-	<!-- Help button -->
-	<div class="absolute top-4 right-4">
-		<button
-			class="rounded-full border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-100 transition"
-		>
-			Help
-		</button>
-	</div>
+export const getAdminConfig = async (token: string) => {
+	let error = null;
 
-	<main class="w-full max-w-6xl mx-auto pt-16">
-		<div class="text-center mb-8">
-			<h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2">{$i18n.t('Choose Your Role')}</h1>
-			<p class="text-gray-600">{$i18n.t('Select the role that best describes you')}</p>
-		</div>
+	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/admin/config`, {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`
+		}
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
 
-		<!-- Role cards container -->
-		<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-			{#each roles as role, i}
-				<div class="bg-white rounded-lg shadow-md p-6 flex flex-col items-center border transition-transform">
-					<div
-						class="w-16 h-16 rounded-full {role.iconBgColor} flex items-center justify-center mb-4 text-3xl"
-					>
-						{role.icon}
-					</div>
+	if (error) {
+		throw error;
+	}
 
-					<h2 class="text-xl font-bold mb-4 text-gray-900">{$i18n.t(role.title)}</h2>
+	return res;
+};
 
-					<ul class="w-full space-y-2 mb-6">
-						{#each role.features as feature}
-							<li class="flex items-start">
-								<span class="text-green-500 mr-2">✓</span>
-								<span class="text-gray-700">{$i18n.t(feature)}</span>
-							</li>
-						{/each}
-					</ul>
+export const updateAdminConfig = async (token: string, body: object) => {
+	let error = null;
 
-					<button
-						on:click={() => selectRole(role.id)}
-						class="{role.buttonColor} w-full py-2 rounded-md text-white font-medium transition-colors duration-300"
-					>
-						{$i18n.t('Select Role')}
-					</button>
-				</div>
-			{/each}
-		</div>
+	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/admin/config`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`
+		},
+		body: JSON.stringify(body)
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
 
-		<!-- Support section -->
-		<div class="text-center mb-4">
-			<p class="text-gray-600">
-				{$i18n.t('Not sure about your role?')}
-				<a href="mailto:support@opentutorai.com" class="text-blue-500 hover:underline">{$i18n.t('Contact Support')}</a>
-			</p>
-		</div>
+	if (error) {
+		throw error;
+	}
 
-		<!-- Note -->
-		<div class="text-center max-w-xl mx-auto">
-			<p class="text-sm text-gray-600">
-				{$i18n.t('Note: Your role determines the features and access levels available to you. You can request a role change later if needed.')}
-			</p>
-		</div>
-	</main>
-</div>
+	return res;
+};
+
+export const getSessionUser = async (token: string) => {
+	let error = null;
+
+	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/`, {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`
+		},
+		credentials: 'include'
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
+export const ldapUserSignIn = async (user: string, password: string) => {
+	let error = null;
+
+	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/ldap`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		credentials: 'include',
+		body: JSON.stringify({
+			user: user,
+			password: password
+		})
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+
+			error = err.detail;
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
+export const getLdapConfig = async (token: string = '') => {
+	let error = null;
+
+	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/admin/config/ldap`, {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+			...(token && { authorization: `Bearer ${token}` })
+		}
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
+export const updateLdapConfig = async (token: string = '', enable_ldap: boolean) => {
+	let error = null;
+
+	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/admin/config/ldap`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			...(token && { authorization: `Bearer ${token}` })
+		},
+		body: JSON.stringify({
+			enable_ldap: enable_ldap
+		})
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
+export const getLdapServer = async (token: string = '') => {
+	let error = null;
+
+	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/admin/config/ldap/server`, {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+			...(token && { authorization: `Bearer ${token}` })
+		}
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
+export const updateLdapServer = async (token: string = '', body: object) => {
+	let error = null;
+
+	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/admin/config/ldap/server`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			...(token && { authorization: `Bearer ${token}` })
+		},
+		body: JSON.stringify(body)
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
+export const userSignIn = async (email: string, password: string) => {
+	let error = null;
+
+	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/signin`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		credentials: 'include',
+		body: JSON.stringify({
+			email: email,
+			password: password
+		})
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+
+			error = err.detail;
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
+export const userSignUp = async (
+	name: string,
+	email: string,
+	password: string,
+	profile_image_url: string,
+	role?: string
+) => {
+	let error = null;
+
+	const res = await fetch(`${TUTOR_BASE_URL}/auths/signup`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		credentials: 'include',
+		body: JSON.stringify({
+			name: name,
+			email: email,
+			password: password,
+			profile_image_url: profile_image_url,
+			role: role
+		})
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
+export const userSignOut = async () => {
+	let error = null;
+
+	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/signout`, {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json'
+		},
+		credentials: 'include'
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res;
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+};
+
+export const addUser = async (
+	token: string,
+	name: string,
+	email: string,
+	password: string,
+	role: string = 'user'
+) => {
+	let error = null;
+
+	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/add`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			...(token && { authorization: `Bearer ${token}` })
+		},
+		body: JSON.stringify({
+			name: name,
+			email: email,
+			password: password,
+			role: role
+		})
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
+export const updateUserProfile = async (token: string, name: string, profileImageUrl: string) => {
+	let error = null;
+
+	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/update/profile`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			...(token && { authorization: `Bearer ${token}` })
+		},
+		body: JSON.stringify({
+			name: name,
+			profile_image_url: profileImageUrl
+		})
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
+export const updateUserPassword = async (token: string, password: string, newPassword: string) => {
+	let error = null;
+
+	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/update/password`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			...(token && { authorization: `Bearer ${token}` })
+		},
+		body: JSON.stringify({
+			password: password,
+			new_password: newPassword
+		})
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
+export const getSignUpEnabledStatus = async (token: string) => {
+	let error = null;
+
+	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/signup/enabled`, {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`
+		}
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
+export const getDefaultUserRole = async (token: string) => {
+	let error = null;
+
+	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/signup/user/role`, {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`
+		}
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
+export const updateDefaultUserRole = async (token: string, role: string) => {
+	let error = null;
+
+	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/signup/user/role`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`
+		},
+		body: JSON.stringify({
+			role: role
+		})
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
+export const toggleSignUpEnabledStatus = async (token: string) => {
+	let error = null;
+
+	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/signup/enabled/toggle`, {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`
+		}
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
+export const getJWTExpiresDuration = async (token: string) => {
+	let error = null;
+
+	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/token/expires`, {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`
+		}
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
+export const updateJWTExpiresDuration = async (token: string, duration: string) => {
+	let error = null;
+
+	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/token/expires/update`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`
+		},
+		body: JSON.stringify({
+			duration: duration
+		})
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
+export const createAPIKey = async (token: string) => {
+	let error = null;
+
+	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/api_key`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`
+		}
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
+	if (error) {
+		throw error;
+	}
+	return res.api_key;
+};
+
+export const getAPIKey = async (token: string) => {
+	let error = null;
+
+	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/api_key`, {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`
+		}
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
+	if (error) {
+		throw error;
+	}
+	return res.api_key;
+};
+
+export const deleteAPIKey = async (token: string) => {
+	let error = null;
+
+	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/api_key`, {
+		method: 'DELETE',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`
+		}
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
+	if (error) {
+		throw error;
+	}
+	return res;
+};

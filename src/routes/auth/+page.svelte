@@ -61,10 +61,13 @@
 			try {
 				if (sessionUser.role) {
 					console.log(`Redirecting to ${sessionUser.role} page`);
-					if (sessionUser.role === 'user') {
+					// window.location.href = `/${sessionUser.role}`;
+					if (sessionUser.role == 'user') {
 						window.location.href = '/student/dashboard';
-					} else {
-						window.location.href = `/${sessionUser.role}`;
+					}else if (sessionUser.role == 'teacher') {
+						window.location.href = '/teacher';
+					}else if (sessionUser.role == 'parent') {
+						window.location.href = '/parent';
 					}
 				} else {
 					console.log('Unknown role, redirecting to default page');
@@ -190,11 +193,10 @@
 	onMount(async () => {
 		if ($user !== undefined) {
 			// Redirect based on user role if already logged in
-			if ($user.role === 'user') {
+			if ($user.role == 'user') {
 				await goto('/student/dashboard');
-			} else {
-				await goto(`/${$user.role}`);
 			}
+			await goto(`/${$user.role}`);
 		}
 		await checkOauthCallback();
 

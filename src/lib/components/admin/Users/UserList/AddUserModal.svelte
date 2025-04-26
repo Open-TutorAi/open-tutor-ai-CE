@@ -21,7 +21,7 @@
 		name: '',
 		email: '',
 		password: '',
-		role: 'user'
+		role: 'student'
 	};
 
 	$: if (show) {
@@ -29,7 +29,7 @@
 			name: '',
 			email: '',
 			password: '',
-			role: 'user'
+			role: 'student'
 		};
 	}
 
@@ -76,7 +76,7 @@
 						if (idx > 0) {
 							if (
 								columns.length === 4 &&
-								['admin', 'user', 'teacher', 'parent'].includes(columns[3].toLowerCase())
+								['admin', 'student', 'teacher', 'parent'].includes(columns[3].toLowerCase())
 							) {
 								const res = await addUser(
 									localStorage.token,

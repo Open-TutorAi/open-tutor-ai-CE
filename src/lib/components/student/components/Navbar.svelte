@@ -76,8 +76,7 @@
 </script>
 
 <header
-	class={`${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'} shadow-sm p-4 flex items-center justify-between transition-colors duration-200 ease-in-out z-10 w-full`}
->
+	class={`${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'} shadow-sm p-4 flex items-center justify-between transition-colors duration-200 ease-in-out z-[999]`}>
 	<div class="flex items-center">
 		<!-- Mobile menu button - visible on mobile only -->
 		<button

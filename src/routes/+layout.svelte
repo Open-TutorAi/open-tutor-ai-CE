@@ -506,8 +506,10 @@
 								await goto('/');
 							} else if (sessionUser.role === 'user') {
 								await goto('/student/dashboard');
-							} else {
-								await goto(`/${sessionUser.role}`);
+							} else if (sessionUser.role === 'parent') {
+								await goto('/parent');
+							} else if (sessionUser.role === 'teacher') {
+								await goto('/teacher');
 							}
 						}
 					} else {

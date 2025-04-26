@@ -1,3 +1,5 @@
+<!-- chat page -->
+
 <script lang="ts">
 	import { v4 as uuidv4 } from 'uuid';
 	import { toast } from 'svelte-sonner';
@@ -76,28 +78,28 @@
 	} from '$lib/apis';
 	import { getTools } from '$lib/apis/tools';
 
-	import Banner from '../common/Banner.svelte';
+	import Banner from '$lib/components/common/Banner.svelte';
 	import MessageInput from '$lib/components/tutor/MessageInput.svelte';
 	import Messages from '$lib/components/chat/Messages.svelte';
-	import Navbar from '$lib/components/tutor/Navbar.svelte';
-	import ChatControls from '../chat/ChatControls.svelte';
-	import EventConfirmDialog from '../common/ConfirmDialog.svelte';
-	import NotificationToast from '../NotificationToast.svelte';
-	import Spinner from '../common/Spinner.svelte';
-	import AvatarChat from '../chat/AvatarChat.svelte';
-	import Rightbar from '$lib/components/tutor/Rightbar.svelte';
+	import Navbar from '$lib/components/tutor/ChatNavbar.svelte';
+	import ChatControls from '$lib/components/chat/ChatControls.svelte';
+	import EventConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
+	import Placeholder from '$lib/components/chat/Placeholder.svelte';
+	import NotificationToast from '$lib/components/NotificationToast.svelte';
+	import Spinner from '$lib/components/common/Spinner.svelte';
+	import AvatarChat from '$lib/components/chat/AvatarChat.svelte';
+
+	// Debug: Print user permissions when they change
+	$: if ($user) {
+		console.log('User Permissions:', {
+			role: $user.role,
+			workspace: $user?.permissions?.workspace,
+			chat: $user?.permissions?.chat,
+			features: $user?.permissions?.features
+		});
+	}
 
 	export let chatIdProp = '';
-
-	// Rightbar props
-	let courseCompletion = 45;
-	let modules = [
-		{ id: 1, name: "Introduction", status: "completed" },
-		{ id: 2, name: "HDFS", status: "completed" },
-		{ id: 3, name: "MapReduce", status: "in-progress" },
-		{ id: 4, name: "YARN", status: "not-started" },
-		{ id: 5, name: "Hive & Pig", status: "not-started" }
-	];
 
 	let loading = false;
 
@@ -163,14 +165,6 @@
 		});
 		// Save to localStorage for persistence
 		localStorage.setItem('settings', JSON.stringify($settings));
-	};
-
-	// Add new state for rightbar visibility
-	let showRightbar = !$mobile;
-
-	// Function to toggle rightbar
-	const toggleRightbar = () => {
-		showRightbar = !showRightbar;
 	};
 
 	$: if (chatIdProp) {
@@ -683,6 +677,7 @@
 
 	const initNewChat = async () => {
 		if ($page.url.searchParams.get('models')) {
+			console.log('here');
 			selectedModels = $page.url.searchParams.get('models')?.split(',');
 		} else if ($page.url.searchParams.get('model')) {
 			const urlModels = $page.url.searchParams.get('model')?.split(',');
@@ -736,8 +731,8 @@
 		await showOverview.set(false);
 		await showArtifacts.set(false);
 
-		if ($page.url.pathname.includes('student/c/')) {
-			window.history.replaceState(history.state, '', `/`);
+		if ($page.url.pathname.includes('/c/')) {
+			window.history.replaceState(history.state, '', `/student/c/`);
 		}
 
 		autoScroll = true;
@@ -2132,6 +2127,15 @@
 			}
 		}
 	};
+
+	$: if ($user) {
+		console.log('User Permissions:', {
+			role: $user.role,
+			workspace: $user?.permissions?.workspace,
+			chat: $user?.permissions?.chat,
+			features: $user?.permissions?.features
+		});
+	}
 </script>
 
 <svelte:head>
@@ -2142,6 +2146,7 @@
 	</title>
 </svelte:head>
 
+<audio id="audioElement" src="" style="display: none;" />
 
 <EventConfirmDialog
 	bind:show={showEventConfirmation}
@@ -2163,18 +2168,51 @@
 />
 
 <div
-	class="h-screen max-h-[50dvh] transition-width duration-200 ease-in-out bg-[#F5F7F9] dark:bg-inherit {$showSidebar
+	class="h-screen max-h-[100dvh] transition-width duration-200 ease-in-out bg-[#F5F7F9] dark:bg-inherit {$showSidebar
 		? 'md:max-w-[calc(100%-260px)]'
 		: ''} w-full max-w-full flex flex-col"
 	id="chat-container"
 >
 	{#if chatIdProp === '' || (!loading && chatIdProp)}
-		<div class="w-full flex">
-			<!-- Main pane with chat -->
-			<div class="flex-1 h-full bg-[#F5F7F9] dark:bg-inherit relative ">
+		{#if $settings?.backgroundImageUrl ?? null}
+			<div
+				class="absolute {$showSidebar
+					? 'md:max-w-[calc(100%-260px)] md:translate-x-[260px]'
+					: ''} top-0 left-0 w-full h-full bg-cover bg-center bg-no-repeat"
+				style="background-image: url({$settings.backgroundImageUrl})  "
+			/>
+
+			<div
+				class="absolute top-0 left-0 w-full h-full bg-linear-to-t from-white to-white/85 dark:from-gray-900 dark:to-gray-900/90 z-0"
+			/>
+		{/if}
+
+		<Navbar
+			bind:this={navbarElement}
+			chat={{
+				id: $chatId,
+				chat: {
+					title: $chatTitle,
+					models: selectedModels,
+					system: $settings.system ?? undefined,
+					params: params,
+					history: history,
+					timestamp: Date.now()
+				}
+			}}
+			title={$chatTitle}
+			bind:selectedModels
+			shareEnabled={!!history.currentId}
+			{initNewChat}
+			{avatarActive}
+			{toggleAvatar}
+		/>
+
+		<PaneGroup direction="horizontal" class="w-full h-full">
+			<Pane defaultSize={50} class="h-full flex w-full relative">
 				{#if !history.currentId && !$chatId && selectedModels.length <= 1 && ($banners.length > 0 || ($config?.license_metadata?.type ?? null) === 'trial' || (($config?.license_metadata?.seats ?? null) !== null && $config?.user_count > $config?.license_metadata?.seats))}
 					<div class="absolute top-12 left-0 right-0 w-full z-30">
-						<div class="flex flex-col gap-1 w-full">
+						<div class=" flex flex-col gap-1 w-full">
 							{#if ($config?.license_metadata?.type ?? null) === 'trial'}
 								<Banner
 									banner={{
@@ -2221,7 +2259,7 @@
 					</div>
 				{/if}
 
-				<div class="flex flex-col flex-auto z-10 w-full h-full @container">
+				<div class="flex flex-col flex-auto z-10 w-full @container">
 					{#if $settings?.landingPageMode === 'chat' || createMessagesList(history, history.currentId).length > 0 || true}
 						{#if avatarActive}
 							<div class="flex flex-col w-full h-full flex-auto relative">
@@ -2234,7 +2272,7 @@
 										on:speechend={() => (avatarSpeaking = false)}
 									/>
 								</div>
-								<div class="absolute bottom-0 left-0 right-0  ">
+								<div class="absolute bottom-0 left-0 right-0 z-20 animate-float">
 									<MessageInput
 										{history}
 										{selectedModels}
@@ -2263,7 +2301,17 @@
 							</div>
 						{:else}
 							<div class="flex flex-col w-full h-full flex-auto relative">
-									<div class="flex flex-col w-full h-full flex-auto relative">
+								<div
+									class="pb-2.5 flex-1 flex flex-col w-full overflow-auto max-w-full z-10 scrollbar-hidden"
+									id="messages-container"
+									bind:this={messagesContainerElement}
+									on:scroll={(e) => {
+										autoScroll =
+											messagesContainerElement.scrollHeight - messagesContainerElement.scrollTop <=
+											messagesContainerElement.clientHeight + 5;
+									}}
+								>
+									<div class="h-full w-full flex flex-col">
 										<Messages
 											chatId={$chatId}
 											bind:history
@@ -2282,7 +2330,8 @@
 											bottomPadding={files.length > 0}
 										/>
 									</div>
-								<div class="fixed w-full pt-2 bg-[#F5F7F9] dark:bg-gray-900 relative z-20">
+								</div>
+								<div class="w-full pt-2 bg-[#F5F7F9] dark:bg-gray-900 relative z-20">
 									<MessageInput
 										{history}
 										{selectedModels}
@@ -2312,51 +2361,32 @@
 						{/if}
 					{/if}
 				</div>
+			</Pane>
 
-				<!-- Toggle button for rightbar on mobile -->
-				<button
-					class="md:hidden fixed right-4 bottom-20 z-50 bg-blue-500 dark:bg-blue-600 text-white p-2 rounded-full shadow-lg"
-					on:click={toggleRightbar}
-					aria-label={showRightbar ? 'Hide sidebar' : 'Show sidebar'}
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						{#if showRightbar}
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-						{:else}
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7M19 19l-7-7 7-7" />
-						{/if}
-					</svg>
-				</button>
-			</div>
-
-			<!-- Rightbar with responsive behavior -->
-			<div class="transition-all duration-300 ease-in-out  {showRightbar ? ' w-60 opacity-100 bg-blue-100 dark:bg-gray-900' : 'w-0 opacity-0 md:w-60 md:opacity-100'} 
-			h-full overflow-hidden border-1 border-gray-200 rounded-lg dark:border-gray-700 px-4 py-2 ">
-				{#if showRightbar || !$mobile}
-				<Navbar
-				bind:this={navbarElement}
-				chat={{
-					id: $chatId,
-					chat: {
-						title: $chatTitle,
-						models: selectedModels,
-						system: $settings.system ?? undefined,
-						params: params,
-						history: history,
-						timestamp: Date.now()
+			<ChatControls
+				bind:this={controlPaneComponent}
+				bind:history
+				bind:chatFiles
+				bind:params
+				bind:files
+				bind:pane={controlPane}
+				chatId={$chatId}
+				modelId={selectedModelIds?.at(0) ?? null}
+				models={selectedModelIds.reduce((a, e, i, arr) => {
+					const model = $models.find((m) => m.id === e);
+					if (model) {
+						return [...a, model];
 					}
-				}}
-				title={$chatTitle}
-				bind:selectedModels
-				shareEnabled={!!history.currentId}
-				{initNewChat}
+					return a;
+				}, [])}
+				{submitPrompt}
+				{stopResponse}
+				{showMessage}
+				{eventTarget}
 				{avatarActive}
-				{toggleAvatar}
+				onAvatarToggle={toggleAvatar}
 			/>
-					<Rightbar {courseCompletion} {modules} />
-				{/if}
-			</div>
-		</div>
+		</PaneGroup>
 	{:else if loading}
 		<div class=" flex items-center justify-center h-full w-full">
 			<div class="m-auto">

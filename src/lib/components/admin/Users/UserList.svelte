@@ -336,7 +336,7 @@
 						>
 							<Badge
 								type={user.role === 'admin' ? 'info' : user.role === 'teacher' ? 'success' : user.role === 'parent' ? 'warning' : 'muted'}
-								content={$i18n.t(user.role)}
+								content={user.role === 'user' ? $i18n.t('student') : $i18n.t(user.role)}
 							/>
 						</button>
 					</td>
