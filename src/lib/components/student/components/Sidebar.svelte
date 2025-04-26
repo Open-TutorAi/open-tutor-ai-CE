@@ -95,8 +95,8 @@
 
 	function checkMobile() {
 		isMobile = window.innerWidth < 768;
-		// Auto-close on mobile initially
-		if (isMobile) {
+		// Auto-close on mobile initially, but don't change state if already set
+		if (isMobile && isSidebarOpen === true) {
 			isSidebarOpen = false;
 		}
 	}
@@ -110,7 +110,7 @@
 
 	function setActivePage(role: string, page: string) {
 		// First close the sidebar on mobile to avoid black overlay issue
-		if (typeof window !== 'undefined' && window.innerWidth < 768) {
+		if (isMobile) {
 			isSidebarOpen = false;
 		}
 
@@ -154,6 +154,31 @@
 <div class="relative flex h-full">
 	<!-- Main content area - padding makes room for the fixed sidebar -->
 	<div class={`w-full transition-all duration-300 ${isSidebarOpen ? 'md:ml-64' : 'md:ml-16'}`}>
+		<!-- Mobile toggle button - visible only on mobile -->
+		<button
+			on:click={toggleSidebar}
+			class={`md:hidden fixed top-4 left-4 z-50 ${isDarkMode ? 'bg-gray-800 text-gray-300 border-gray-700' : 'bg-white text-gray-600 border-gray-200'} shadow-md rounded-full h-10 w-10 flex items-center justify-center border hover:text-blue-500 focus:outline-none`}
+			aria-label={isSidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+		>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="20"
+				height="20"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				{#if isSidebarOpen}
+					<path d="M18 6L6 18M6 6l12 12"></path>
+				{:else}
+					<path d="M3 12h18M3 6h18M3 18h18"></path>
+				{/if}
+			</svg>
+		</button>
+		
 		<slot />
 	</div>
 
@@ -250,12 +275,10 @@
 	</button>
 
 	<!-- Overlay to close sidebar when clicked (mobile only) -->
-	{#if isSidebarOpen}
+	{#if isSidebarOpen && isMobile}
 		<div
 			class="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
-			on:click={() => {
-				isSidebarOpen = false;
-			}}
+			on:click={toggleSidebar}
 		></div>
 	{/if}
 </div>
