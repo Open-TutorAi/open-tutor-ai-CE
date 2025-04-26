@@ -162,7 +162,7 @@
 				<!-- Emoji scale instead of 1-10 -->
 				{#each Array.from({ length: 10 }).map((_, i) => i + 1) as rating}
 					<button
-						class="size-7 text-lg border border-gray-100 dark:border-gray-850 hover:bg-gray-50 dark:hover:bg-gray-850 {detailedRating ===
+						class="size-6 text-lg border border-gray-100 dark:border-gray-850 hover:bg-gray-50 dark:hover:bg-gray-850 {detailedRating ===
 						rating
 							? 'bg-gray-100 dark:bg-gray-800'
 							: ''} transition rounded-full disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-white dark:disabled:bg-gray-900 flex items-center justify-center"
@@ -268,7 +268,7 @@
 		</div>
 
 		<button
-			class="px-3.5 py-1.5 text-sm font-medium bg-black hover:bg-gray-900 text-white dark:bg-white dark:text-black dark:hover:bg-gray-100 transition rounded-full"
+			class="px-3.5 py-1.5 text-sm font-medium bg-black hover:bg-gray-900 text-white dark:bg-white dark:text-black dark:hover:bg-gray-100 transition rounded-xl z-50"
 			on:click={() => {
 				saveHandler();
 			}}

@@ -55,7 +55,7 @@
 	</div>
 	
 	<!-- RightBar with fixed width -->
-	<div class="rightbar-container h-full w-80 border-l border-gray-200 dark:border-gray-700 overflow-y-auto transition-transform duration-300 ease-in-out"
+	<div class="rightbar-container h-auto w-80 border-l border-gray-200 dark:border-gray-700 overflow-y-auto transition-transform duration-300 ease-in-out px-0"
 		class:mobile-visible={isRightBarVisible}
 	>
 		<RightBar {chatData} />
@@ -69,9 +69,15 @@
 		width: 100%;
 	}
 	
-	.chat-container, .rightbar-container {
+	.chat-container {
 		/* Ensure proper scroll containment */
 		height: 100%;
+	}
+	
+	.rightbar-container {
+		/* Let rightbar size to content */
+		height: auto;
+		width: 250px;
 	}
 	
 	/* Mobile styles */

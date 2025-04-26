@@ -39,14 +39,14 @@
 </script>
 
 <!-- Progress Summary Card -->
-<div class="flex flex-col items-center justify-center w-full max-w-md mx-auto space-y-6 p-4">
+<div class="flex flex-col items-center justify-center w-full max-w-md mx-auto space-y-4 p-4">
 	<div
 		class="w-full bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6"
 		role="region"
 		aria-label="Course progress summary"
 	>
 		<div class="text">
-			<h2 class="text-gray-800 dark:text-white font-medium text-xl mb-4">
+			<h2 class="text-gray-800 dark:text-white font-medium text-base mb-6">
 				{$i18n.t('Program Completion')}
 			</h2>
 
@@ -77,11 +77,11 @@
 		role="region"
 		aria-label="Module progress tracker"
 	>
-		<ul class="flex flex-col space-y-8 list-none m-0 p-0">
+		<ul class="flex flex-col space-y-6 list-none m-0 p-0">
 			{#each modules as module, index}
 				<li class="flex items-center">
 					<!-- Status indicator -->
-					<div class="relative flex justify-center w-16">
+					<div class="relative flex justify-center w-10">
 						{#if module.status === 'completed'}
 							<div
 								class="bg-blue-500 dark:bg-blue-600 w-6 h-6 rounded-full flex items-center justify-center z-10"
@@ -118,7 +118,7 @@
 
 						<!-- Vertical connector line -->
 						{#if index < modules.length - 1}
-							<div class="absolute top-6 w-px h-8 bg-blue-600" aria-hidden="true"></div>
+							<div class="absolute top-6 w-px h-6 bg-blue-600" aria-hidden="true"></div>
 						{/if}
 					</div>
 
@@ -147,7 +147,7 @@
 		aria-label="Engagement summary"
 	>
 		<div class="text-center">
-			<h2 class="text-gray-800 dark:text-white font-medium text-xl mb-6">
+			<h2 class="text-gray-800 dark:text-white font-medium text-base mb-6">
 				{$i18n.t('How Engaged Am I?')}
 			</h2>
 
@@ -258,7 +258,7 @@
 						text-anchor="middle"
 						dominant-baseline="middle"
 						class="fill-gray-900 dark:fill-white"
-						font-size="24"
+						font-size="18"
 						font-weight="bold"
 					>
 						{engagement}%
@@ -269,7 +269,7 @@
 						text-anchor="middle"
 						dominant-baseline="middle"
 						class="fill-gray-500 dark:fill-gray-400"
-						font-size="12"
+						font-size="10"
 					>
 						{$i18n.t('Engagement')}
 					</text>
