@@ -842,6 +842,12 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 										placeholder="ask something"
 										disabled={processingRequest}
 										class="flex-1 bg-transparent border-none outline-none text-gray-200 dark:text-gray-300 placeholder-gray-500 dark:placeholder-gray-500 py-1 px-2 text-sm sm:text-base"
+										on:keydown={(e) => {
+											if (e.key === 'Enter' && !e.shiftKey && prompt.trim() && !processingRequest && selectedModels[0]) {
+												e.preventDefault();
+												submitPrompt();
+											}
+										}}
 									/>
 									<div class="flex items-center gap-2 flex-shrink-0">
 										<button 
@@ -928,13 +934,19 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 									</div>
 								{/if}
 								<div class="max-w-3xl mx-auto">
-									<div class="flex items-center w-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full shadow-md hover:shadow-lg py-2 px-4 transition-all duration-200 border border-gray-300/20 dark:border-gray-700/30">
+									<div class="flex items-center w-full bg-gray-800/90 dark:bg-gray-800/90 backdrop-blur-sm bg-opacity-90 dark:bg-opacity-90 rounded-full shadow-md hover:shadow-lg py-2 px-4 transition-all duration-200 border border-gray-300/20 dark:border-gray-700/30">
 										<input 
 											type="text" 
 											bind:value={prompt}
 											placeholder="ask something"
 											disabled={processingRequest}
-											class="flex-1 bg-transparent border-none outline-none text-gray-700 dark:text-gray-300 placeholder-gray-500 dark:placeholder-gray-500 py-1 px-2 text-sm sm:text-base"
+											class="flex-1 bg-transparent border-none outline-none text-gray-200 dark:text-gray-300 placeholder-gray-500 dark:placeholder-gray-500 py-1 px-2 text-sm sm:text-base"
+											on:keydown={(e) => {
+												if (e.key === 'Enter' && !e.shiftKey && prompt.trim() && !processingRequest && selectedModels[0]) {
+													e.preventDefault();
+													submitPrompt();
+												}
+											}}
 										/>
 										<div class="flex items-center gap-2 flex-shrink-0">
 											<button 

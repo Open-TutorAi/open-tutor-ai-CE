@@ -60,8 +60,13 @@
 
 			try {
 				if (sessionUser.role) {
-					console.log(`Redirecting to ${sessionUser.role} page`);
-					window.location.href = `/${sessionUser.role}`;
+					if (sessionUser.role === 'user') {
+						console.log('Redirecting student to dashboard');
+						window.location.href = '/student/dashboard';
+					} else {
+						console.log(`Redirecting to ${sessionUser.role} page`);
+						window.location.href = `/${sessionUser.role}`;
+					}
 				} else {
 					console.log('Unknown role, redirecting to default page');
 					const redirectPath = querystringValue('redirect') || '/';
