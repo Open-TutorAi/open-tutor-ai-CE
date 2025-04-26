@@ -1,4 +1,4 @@
-<script>
+<script >
 	import { onMount } from 'svelte';
 	import { getContext } from 'svelte';
 	// Props for the component
