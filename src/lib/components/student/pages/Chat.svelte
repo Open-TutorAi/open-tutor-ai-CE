@@ -88,19 +88,13 @@
 			top: 0;
 			bottom: 0;
 			z-index: 9999;
-			background-color: white; /* or your theme color */
 			transition: transform 0.3s ease-in-out;
+			background: rgba(255, 255, 255, 0.2);
+			backdrop-filter: blur(5px);
 		}
 
 		.rightbar-container.mobile-visible {
 			transform: translateX(-320px);
-		}
-
-		/* Dark mode support */
-		@media (prefers-color-scheme: dark) {
-			.rightbar-container {
-				background-color: rgb(163, 187, 240); /* dark:bg-gray-900 */
-			}
 		}
 	}
 
