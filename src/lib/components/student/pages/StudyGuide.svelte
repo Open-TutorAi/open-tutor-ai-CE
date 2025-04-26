@@ -750,35 +750,41 @@ DO NOT wrap the JSON in code blocks, markdown, or any other formatting. The enti
 					>
 						<!-- Container for the toggle with a different approach -->
 						<div class="relative flex items-center h-full">
-							<!-- Sliding background pill -->
+							<!-- Sliding background pill with enhanced styling -->
 							<div 
-								class="absolute h-[90%] w-[48%] bg-blue-500 dark:bg-blue-600 rounded-full shadow-sm
-									   transition-transform duration-300 ease-in-out my-auto top-0 bottom-0"
-								style="transform: translateX({avatarActive ? '2%' : '104%'});"
+								class="absolute h-[90%] w-[48%] bg-gradient-to-br from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700 rounded-full shadow-sm
+									   transition-transform duration-300 ease-out my-auto top-0 bottom-0"
+								style="transform: translateX({avatarActive ? '2%' : '104%'}); {avatarActive ? 'box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);' : 'box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);'}"
 							></div>
 							
-							<!-- Left side label - Avatar with icon -->
-							<div class="w-1/2 h-full flex items-center justify-center z-10 gap-1.5">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 flex-shrink-0" style="color: {avatarActive ? 'white' : 'currentColor'}">
+							<!-- Left side label - Avatar with icon - enhanced spacing and alignment -->
+							<div class="w-1/2 h-full flex items-center justify-center z-10 gap-1.5 px-1.5">
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 flex-shrink-0 transition-colors duration-300" style="color: {avatarActive ? 'white' : 'currentColor'}">
 									<path fill-rule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clip-rule="evenodd" />
 								</svg>
-								<span class="font-medium text-sm whitespace-nowrap transition-colors duration-300"
+								<span class="font-medium text-sm whitespace-nowrap transition-colors duration-300 py-0.5 tracking-wide"
 									  style="color: {avatarActive ? 'white' : 'currentColor'}">
 									Avatar
 								</span>
 							</div>
 							
-							<!-- Right side label - Discuss -->
-							<div class="w-1/2 h-full flex items-center justify-center z-10 gap-1.5">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 flex-shrink-0" style="color: {avatarActive ? 'currentColor' : 'white'}">
+							<!-- Center divider for visual separation -->
+							<div class="absolute top-[15%] bottom-[15%] left-1/2 w-px bg-blue-200 dark:bg-blue-700/50 transform -translate-x-1/2 z-10 opacity-50"></div>
+							
+							<!-- Right side label - Discuss - enhanced spacing and alignment -->
+							<div class="w-1/2 h-full flex items-center justify-center z-10 gap-1.5 px-1.5">
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 flex-shrink-0 transition-colors duration-300" style="color: {avatarActive ? 'currentColor' : 'white'}">
 									<path fill-rule="evenodd" d="M4.848 2.771A49.144 49.144 0 0112 2.25c2.43 0 4.817.178 7.152.52 1.978.292 3.348 2.024 3.348 3.97v6.02c0 1.946-1.37 3.678-3.348 3.97a48.901 48.901 0 01-3.476.383.39.39 0 00-.297.17l-2.755 4.133a.75.75 0 01-1.248 0l-2.755-4.133a.39.39 0 00-.297-.17 48.9 48.9 0 01-3.476-.384c-1.978-.29-3.348-2.024-3.348-3.97V6.741c0-1.946 1.37-3.68 3.348-3.97z" clip-rule="evenodd" />
 								</svg>
-								<span class="font-medium text-sm whitespace-nowrap transition-colors duration-300"
+								<span class="font-medium text-sm whitespace-nowrap transition-colors duration-300 py-0.5 tracking-wide"
 									  style="color: {avatarActive ? 'currentColor' : 'white'}">
 									Discuss
 								</span>
 							</div>
 						</div>
+						
+						<!-- Add a subtle pulsing effect to indicate interactivity -->
+						<div class="absolute inset-0 rounded-full {avatarActive ? 'bg-blue-400/10' : 'bg-blue-500/10'} opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
 					</button>
 				</div>
 				

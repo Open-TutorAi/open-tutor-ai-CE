@@ -216,16 +216,16 @@
 						></div>
 						
 						<!-- Left side label - Avatar -->
-						<div class="w-1/2 h-full flex items-center justify-center z-10">
-							<span class="font-medium uppercase text-[10px] sm:text-xs transition-colors duration-300"
+						<div class="w-1/2 h-full flex items-center justify-center z-10 px-1">
+							<span class="font-medium uppercase text-[10px] sm:text-xs transition-colors duration-300 py-0.5"
                                   style="color: {avatarActive ? '#3B82F6' : 'white'}">
                                 {$i18n.t('Avatar')}
                             </span>
 						</div>
 						
 						<!-- Right side label - Chat -->
-						<div class="w-1/2 h-full flex items-center justify-center z-10">
-							<span class="font-medium uppercase text-[10px] sm:text-xs transition-colors duration-300"
+						<div class="w-1/2 h-full flex items-center justify-center z-10 px-1">
+							<span class="font-medium uppercase text-[10px] sm:text-xs transition-colors duration-300 py-0.5"
                                   style="color: {avatarActive ? 'white' : '#3B82F6'}">
                                 {$i18n.t('Chat')}
                             </span>
