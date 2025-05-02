@@ -4,8 +4,8 @@
 	import { goto } from '$app/navigation';
 	import { onMount, tick, getContext } from 'svelte';
 
-	import { WEBUI_BASE_URL } from '$lib/constants';
-	import { WEBUI_NAME, config, user, models, settings, showSidebar } from '$lib/stores';
+	import { TUTOR_BASE_URL } from '$lib/constants';
+	import { TUTOR_NAME, config, user, models, settings, showSidebar } from '$lib/stores';
 	import { chatCompletion } from '$lib/apis/openai';
 
 	import { splitStream } from '$lib/utils';
@@ -52,7 +52,7 @@
 					}
 				]
 			},
-			`${WEBUI_BASE_URL}/api`
+			`${TUTOR_BASE_URL}/api`
 		);
 
 		if (res && res.ok) {

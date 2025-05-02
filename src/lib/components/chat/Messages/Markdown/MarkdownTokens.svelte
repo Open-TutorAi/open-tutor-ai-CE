@@ -9,7 +9,7 @@
 	import { marked, type Token } from 'marked';
 	import { unescapeHtml } from '$lib/utils';
 
-	import { WEBUI_BASE_URL } from '$lib/constants';
+	import { TUTOR_BASE_URL } from '$lib/constants';
 
 	import CodeBlock from '$lib/components/chat/Messages/CodeBlock.svelte';
 	import MarkdownInlineTokens from '$lib/components/chat/Messages/Markdown/MarkdownInlineTokens.svelte';
@@ -259,14 +259,14 @@
 		{@const html = DOMPurify.sanitize(token.text)}
 		{#if html && html.includes('<video')}
 			{@html html}
-		{:else if token.text.includes(`<iframe src="${WEBUI_BASE_URL}/api/v1/files/`)}
+		{:else if token.text.includes(`<iframe src="${TUTOR_BASE_URL}/api/v1/files/`)}
 			{@html `${token.text}`}
 		{:else}
 			{token.text}
 		{/if}
 	{:else if token.type === 'iframe'}
 		<iframe
-			src="{WEBUI_BASE_URL}/api/v1/files/{token.fileId}/content"
+			src="{TUTOR_BASE_URL}/api/v1/files/{token.fileId}/content"
 			title={token.fileId}
 			width="100%"
 			frameborder="0"

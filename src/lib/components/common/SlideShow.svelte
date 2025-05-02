@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 
 	export let imageUrls = [
-		'/assets/images/adam.jpg',
+		'/assets/images/sky.jpg',
 		'/assets/images/galaxy.jpg',
 		'/assets/images/earth.jpg',
 		'/assets/images/space.jpg'

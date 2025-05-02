@@ -39,5 +39,11 @@ export default defineConfig({
 	},
 	worker: {
 		format: 'es'
-	}
+	},
+	server: {
+		fs: {
+			allow: ['./static/avatar', './static/classroom', './static/draco', './static/images/background.jpeg']
+		}
+	},
+	assetsInclude: ['**/*.glb']
 });

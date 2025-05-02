@@ -1,4 +1,4 @@
-import { WEBUI_API_BASE_URL } from '$lib/constants';
+import { TUTOR_API_BASE_URL } from '$lib/constants';
 
 export const createNewKnowledge = async (
 	token: string,
@@ -8,7 +8,7 @@ export const createNewKnowledge = async (
 ) => {
 	let error = null;
 
-	const res = await fetch(`${WEBUI_API_BASE_URL}/knowledge/create`, {
+	const res = await fetch(`${TUTOR_API_BASE_URL}/knowledge/create`, {
 		method: 'POST',
 		headers: {
 			Accept: 'application/json',
@@ -41,7 +41,7 @@ export const createNewKnowledge = async (
 export const getKnowledgeBases = async (token: string = '') => {
 	let error = null;
 
-	const res = await fetch(`${WEBUI_API_BASE_URL}/knowledge/`, {
+	const res = await fetch(`${TUTOR_API_BASE_URL}/knowledge/`, {
 		method: 'GET',
 		headers: {
 			Accept: 'application/json',
@@ -72,7 +72,7 @@ export const getKnowledgeBases = async (token: string = '') => {
 export const getKnowledgeBaseList = async (token: string = '') => {
 	let error = null;
 
-	const res = await fetch(`${WEBUI_API_BASE_URL}/knowledge/list`, {
+	const res = await fetch(`${TUTOR_API_BASE_URL}/knowledge/list`, {
 		method: 'GET',
 		headers: {
 			Accept: 'application/json',
@@ -103,7 +103,7 @@ export const getKnowledgeBaseList = async (token: string = '') => {
 export const getKnowledgeById = async (token: string, id: string) => {
 	let error = null;
 
-	const res = await fetch(`${WEBUI_API_BASE_URL}/knowledge/${id}`, {
+	const res = await fetch(`${TUTOR_API_BASE_URL}/knowledge/${id}`, {
 		method: 'GET',
 		headers: {
 			Accept: 'application/json',
@@ -142,7 +142,7 @@ type KnowledgeUpdateForm = {
 export const updateKnowledgeById = async (token: string, id: string, form: KnowledgeUpdateForm) => {
 	let error = null;
 
-	const res = await fetch(`${WEBUI_API_BASE_URL}/knowledge/${id}/update`, {
+	const res = await fetch(`${TUTOR_API_BASE_URL}/knowledge/${id}/update`, {
 		method: 'POST',
 		headers: {
 			Accept: 'application/json',
@@ -180,7 +180,7 @@ export const updateKnowledgeById = async (token: string, id: string, form: Knowl
 export const addFileToKnowledgeById = async (token: string, id: string, fileId: string) => {
 	let error = null;
 
-	const res = await fetch(`${WEBUI_API_BASE_URL}/knowledge/${id}/file/add`, {
+	const res = await fetch(`${TUTOR_API_BASE_URL}/knowledge/${id}/file/add`, {
 		method: 'POST',
 		headers: {
 			Accept: 'application/json',
@@ -215,7 +215,7 @@ export const addFileToKnowledgeById = async (token: string, id: string, fileId: 
 export const updateFileFromKnowledgeById = async (token: string, id: string, fileId: string) => {
 	let error = null;
 
-	const res = await fetch(`${WEBUI_API_BASE_URL}/knowledge/${id}/file/update`, {
+	const res = await fetch(`${TUTOR_API_BASE_URL}/knowledge/${id}/file/update`, {
 		method: 'POST',
 		headers: {
 			Accept: 'application/json',
@@ -250,7 +250,7 @@ export const updateFileFromKnowledgeById = async (token: string, id: string, fil
 export const removeFileFromKnowledgeById = async (token: string, id: string, fileId: string) => {
 	let error = null;
 
-	const res = await fetch(`${WEBUI_API_BASE_URL}/knowledge/${id}/file/remove`, {
+	const res = await fetch(`${TUTOR_API_BASE_URL}/knowledge/${id}/file/remove`, {
 		method: 'POST',
 		headers: {
 			Accept: 'application/json',
@@ -285,7 +285,7 @@ export const removeFileFromKnowledgeById = async (token: string, id: string, fil
 export const resetKnowledgeById = async (token: string, id: string) => {
 	let error = null;
 
-	const res = await fetch(`${WEBUI_API_BASE_URL}/knowledge/${id}/reset`, {
+	const res = await fetch(`${TUTOR_API_BASE_URL}/knowledge/${id}/reset`, {
 		method: 'POST',
 		headers: {
 			Accept: 'application/json',
@@ -317,7 +317,7 @@ export const resetKnowledgeById = async (token: string, id: string) => {
 export const deleteKnowledgeById = async (token: string, id: string) => {
 	let error = null;
 
-	const res = await fetch(`${WEBUI_API_BASE_URL}/knowledge/${id}/delete`, {
+	const res = await fetch(`${TUTOR_API_BASE_URL}/knowledge/${id}/delete`, {
 		method: 'DELETE',
 		headers: {
 			Accept: 'application/json',

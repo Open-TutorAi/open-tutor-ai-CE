@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { getVersionUpdates } from '$lib/apis';
 	import { getOllamaVersion } from '$lib/apis/ollama';
-	import { WEBUI_BUILD_HASH, WEBUI_VERSION } from '$lib/constants';
-	import { WEBUI_NAME, config, showChangelog } from '$lib/stores';
+	import { TUTOR_BUILD_HASH, TUTOR_VERSION } from '$lib/constants';
+	import { TUTOR_NAME, config, showChangelog } from '$lib/stores';
 	import { compareVersion } from '$lib/utils';
 	import { onMount, getContext } from 'svelte';
 
@@ -22,8 +22,8 @@
 		updateAvailable = null;
 		version = await getVersionUpdates(localStorage.token).catch((error) => {
 			return {
-				current: WEBUI_VERSION,
-				latest: WEBUI_VERSION
+				current: TUTOR_VERSION,
+				latest: TUTOR_VERSION
 			};
 		});
 
@@ -47,19 +47,19 @@
 		<div>
 			<div class=" mb-2.5 text-sm font-medium flex space-x-2 items-center">
 				<div>
-					{$WEBUI_NAME}
+					{$TUTOR_NAME}
 					{$i18n.t('Version')}
 				</div>
 			</div>
 			<div class="flex w-full justify-between items-center">
 				<div class="flex flex-col text-xs text-gray-700 dark:text-gray-200">
 					<div class="flex gap-1">
-						<Tooltip content={WEBUI_BUILD_HASH}>
-							v{WEBUI_VERSION}
+						<Tooltip content={TUTOR_BUILD_HASH}>
+							v{TUTOR_VERSION}
 						</Tooltip>
 
 						<a
-							href="https://github.com/open-webui/open-webui/releases/tag/v{version.latest}"
+							href="httpshttps://github.com/pr-elhajji/open-tutor-ai-CE/releases/tag/v{version.latest}"
 							target="_blank"
 						>
 							{updateAvailable === null
@@ -113,21 +113,21 @@
 		</div>
 
 		<div class="flex space-x-1">
-			<a href="https://discord.gg/5rJgQTnV4s" target="_blank">
+			<a href="https://discord.gg/z5fMfrBzEF" target="_blank">
 				<img
 					alt="Discord"
 					src="https://img.shields.io/badge/Discord-Open_WebUI-blue?logo=discord&logoColor=white"
 				/>
 			</a>
 
-			<a href="https://twitter.com/OpenWebUI" target="_blank">
+			<a href="#" target="_blank">
 				<img
 					alt="X (formerly Twitter) Follow"
 					src="https://img.shields.io/twitter/follow/OpenWebUI"
 				/>
 			</a>
 
-			<a href="https://github.com/open-webui/open-webui" target="_blank">
+			<a href="https://github.com/pr-elhajji/open-tutor-ai-CE" target="_blank">
 				<img
 					alt="Github Repo"
 					src="https://img.shields.io/github/stars/open-webui/open-webui?style=social&label=Star us on Github"
@@ -138,9 +138,9 @@
 		<div>
 			<pre
 				class="text-xs text-gray-400 dark:text-gray-500">Copyright (c) {new Date().getFullYear()} <a
-					href="https://openwebui.com"
+					href="http://opentutorai.com"
 					target="_blank"
-					class="underline">Open WebUI (Timothy Jaeryang Baek)</a
+					class="underline">Open TutorAI (Timothy Jaeryang Baek)</a
 				>
 All rights reserved.
 
@@ -172,8 +172,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 		</div>
 
 		<div class="mt-2 text-xs text-gray-400 dark:text-gray-500">
-			{#if !$WEBUI_NAME.includes('Open WebUI')}
-				<span class=" text-gray-500 dark:text-gray-300 font-medium">{$WEBUI_NAME}</span> -
+			{#if !$TUTOR_NAME.includes('Open TutorAI')}
+				<span class=" text-gray-500 dark:text-gray-300 font-medium">{$TUTOR_NAME}</span> -
 			{/if}
 			{$i18n.t('Created by')}
 			<a

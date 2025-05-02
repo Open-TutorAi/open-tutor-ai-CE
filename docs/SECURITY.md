@@ -1,6 +1,6 @@
 # Security Policy
 
-Our primary goal is to ensure the protection and confidentiality of sensitive data stored by users on open-webui.
+Our primary goal is to ensure the protection and confidentiality of sensitive data stored by users on Open Tutor AI.
 
 ## Supported Versions
 
@@ -37,7 +37,7 @@ Reports not submitted through our designated GitHub repository will be disregard
 
 We regularly audit our internal processes and system architecture for vulnerabilities using a combination of automated and manual testing techniques. We are also planning to implement SAST and SCA scans in our project soon.
 
-For immediate concerns or detailed reports that meet our guidelines, please create an issue in our [issue tracker](/pr-elhajji/open-tutor-ai-CE/issues) or contact us on [Discord](https://discord.gg/KJHC5PcT).
+For immediate concerns or detailed reports that meet our guidelines, please create an issue in our [issue tracker](/pr-elhajji/open-tutor-ai-CE/issues) or contact us on [Discord](https://discord.gg/z5fMfrBzEF).
 
 ---
 
