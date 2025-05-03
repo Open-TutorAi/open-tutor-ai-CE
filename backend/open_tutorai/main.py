@@ -1,7 +1,8 @@
+import os
+os.environ["SUPPRESS_WEBUI_BANNER"] = "true"
+import open_tutorai.patches
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import os
-import open_tutorai.patches
 from open_webui.main import app as webui_app
 from open_webui.config import CORS_ALLOW_ORIGIN
 from open_webui.models.users import Users
@@ -25,7 +26,7 @@ print(
 ██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║       ██║   ██║   ██║   ██║   ██║   ██║██╔══██║  ██╔══██║██║
 ╚██████╔╝██║     ███████╗██║ ╚████║       ██║   ╚██████╔╝   ██║   ╚██████╔╝██║  ██║  ██║  ██║██║
  ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝       ╚═╝    ╚═════╝    ╚═╝    ╚═════╝ ╚═╝  ╚═╝  ╚═╝  ╚═╝╚═╝
-v{VERSION} - building the best open-source AI user interface.
+v{VERSION} - empowering education through open-source AI tutoring.
 
 {f"Commit: {TUTORAI_BUILD_HASH}" if TUTORAI_BUILD_HASH != "dev-build" else ""}
 https://github.com/pr-elhajji/open-tutor-ai-CE
