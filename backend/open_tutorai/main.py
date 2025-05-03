@@ -29,7 +29,7 @@ print(
 v{VERSION} - empowering education through open-source AI tutoring.
 
 {f"Commit: {TUTORAI_BUILD_HASH}" if TUTORAI_BUILD_HASH != "dev-build" else ""}
-https://github.com/pr-elhajji/open-tutor-ai-CE
+https://github.com/R2D-dev/open-tutor-ai-CE
 """
 )
 
