@@ -2300,7 +2300,7 @@
 								</div>
 							</div>
 						{:else}
-							<div class="flex flex-col w-full h-full flex-auto relative">
+							<div class="flex flex-col w-full h-full flex-auto relative bg-[#F5F7F9] dark:bg-gray-900">
 								<div
 									class="pb-2.5 flex-1 flex flex-col w-full overflow-auto max-w-full z-10 scrollbar-hidden"
 									id="messages-container"
@@ -2331,7 +2331,7 @@
 										/>
 									</div>
 								</div>
-								<div class="w-full pt-2 bg-[#F5F7F9] dark:bg-gray-900 relative z-20">
+								<div class="w-full pt-2 relative z-20">
 									<MessageInput
 										{history}
 										{selectedModels}
