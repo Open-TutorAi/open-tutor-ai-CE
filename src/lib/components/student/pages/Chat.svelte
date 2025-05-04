@@ -17,9 +17,9 @@
 	}
 </script>
 
-<div class="chat-layout flex h-full overflow-hidden relative">
+<div class="chat-layout flex h-full overflow-hidden relative bg-gray-50 dark:bg-gray-900 p-2">
 	<!-- Main Chat component takes most of the space -->
-	<div class="chat-container flex-1 h-full overflow-hidden">
+	<div class="chat-container flex-1 h-full overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-sm mr-2">
 		<Chat chatIdProp={$page.params.id} on:chatEvent={handleChatEvent} />
 		
 		<!-- Toggle button for mobile -->
@@ -55,7 +55,7 @@
 	</div>
 	
 	<!-- RightBar with fixed width -->
-	<div class="rightbar-container h-full w-80 border-l border-gray-200 dark:border-gray-700 overflow-y-auto transition-transform duration-300 ease-in-out"
+	<div class="rightbar-container h-full w-80 bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-y-auto transition-transform duration-300 ease-in-out"
 		class:mobile-visible={isRightBarVisible}
 	>
 		<RightBar {chatData} />
@@ -82,13 +82,18 @@
 			top: 0;
 			bottom: 0;
 			z-index: 9999;
-			background: rgba(255, 255, 255, 0.2);
-			backdrop-filter: blur(3px);
+			background: var(--background-color, #ffffff);
+			backdrop-filter: blur(8px);
 			transition: transform 0.3s ease-in-out;
+			border-left: 1px solid rgba(229, 231, 235, 0.1);
 		}
 
 		.rightbar-container.mobile-visible {
 			transform: translateX(-320px);
+		}
+
+		:global(.dark) .rightbar-container {
+			--background-color: rgba(31, 41, 55, 0.95);
 		}
 	}
 
