@@ -86,12 +86,11 @@
 			<!-- Center section with avatar toggle - Responsive for all devices -->
 			{#if shareEnabled || !!chat?.id}
 				<div
-					class="absolute left-1/2 transform -translate-x-1/2 z-20"
-					style="top: {$mobile ? '35px' : '40px'};"
+					class="flex items-center justify-center mx-4"
 				>
 					<button
 						id="avatar-toggle-button"
-						class="relative h-10 sm:h-11 w-48 sm:w-56 rounded-full bg-blue-500 text-white cursor-pointer overflow-hidden
+						class="relative h-9 sm:h-10 w-48 sm:w-56 rounded-full bg-blue-500 text-white cursor-pointer overflow-hidden
            transition-all duration-300 shadow-md hover:shadow-lg active:scale-[0.98]"
 						on:click={() => toggleAvatar()}
 					>
