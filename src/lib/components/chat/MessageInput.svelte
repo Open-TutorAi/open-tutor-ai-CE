@@ -1150,8 +1150,8 @@
 											<div class="flex items-center">
 												<Tooltip content={$i18n.t('Stop')}>
 													<button
-													class="bg-blue-500 hover:bg-blue-400 text-white dark:bg-blue-400 dark:text-white dark:hover:bg-blue-300 transition rounded-full p-1.5"
-													on:click={() => {
+														class="bg-blue-500 hover:bg-blue-400 text-white dark:bg-blue-400 dark:text-white dark:hover:bg-blue-300 transition rounded-full p-1.5"
+														on:click={() => {
 															stopResponse();
 														}}
 													>
