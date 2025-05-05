@@ -21,7 +21,7 @@
 
 	let loaded = false;
 	let showForgotPassword = false;
-	let mode = $config?.features.enable_ldap ? 'ldap' : 'signin'; // Changed default to signin
+	let mode = $config?.features.enable_ldap ? 'ldap' : 'signin'; // Default is signin
 	let firstName = '';
 	let lastName = '';
 	let email = '';
@@ -616,7 +616,6 @@
 								{/if}
 							</div>
 						{/if}
-
 					</div>
 				</div>
 			</div>
