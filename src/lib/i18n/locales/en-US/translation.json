@@ -1355,9 +1355,6 @@
 	"Biology": "Biology",
 	"Physics": "Physics",
 	"Who Can Access This Support?": "Who Can Access This Support?",
-
-
-
 	"Choose Your Role": "",
 	"Select the role that best describes you": "",
 	"Select Role": "",
@@ -1376,5 +1373,6 @@
 	"Communication with teachers": "",
 	"View performance reports": "",
 	"Schedule consultations": "",
-	"Back to Role Selection": ""
+	"Back to Role Selection": "",
+	"Click to view": "Click to view"
 }

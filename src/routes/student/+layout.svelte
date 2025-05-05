@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, setContext } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { get, writable, derived } from 'svelte/store';
@@ -9,6 +9,10 @@
 	import Navbar from '$lib/components/student/components/Navbar.svelte';
 
 	const activePage = writable('dashboard');
+	
+	// Make activePage available to child components via context
+	setContext('activePage', activePage);
+	
 	let isSidebarOpen = true;
 	let username = 'Karim';
 
@@ -45,7 +49,7 @@
 			goto('/auth');
 			return;
 		}
-		if (currentUser.role !== 'student') {
+		if (currentUser.role !== 'user') {
 			goto(`/${currentUser.role}`);
 			return;
 		}

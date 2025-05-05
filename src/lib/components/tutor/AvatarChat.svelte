@@ -2731,7 +2731,8 @@
 			bind:this={classroomComponent}
 			{scene} 
 			{camera} 
-			{classroomModel} 
+			{classroomModel}
+			boardMessage={currentMessage}
 		/>
 	{/if}
 </div>

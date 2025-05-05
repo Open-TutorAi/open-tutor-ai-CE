@@ -85,7 +85,8 @@
 	import Placeholder from './Placeholder.svelte';
 	import NotificationToast from '../NotificationToast.svelte';
 	import Spinner from '../common/Spinner.svelte';
-	import AvatarChat from './AvatarChat.svelte';
+	// import AvatarChat from './AvatarChat.svelte';
+	import AvatarChat from '../tutor/AvatarChat.svelte';
 
 	export let chatIdProp = '';
 

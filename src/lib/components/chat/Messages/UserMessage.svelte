@@ -97,43 +97,7 @@
 	}}
 />
 
-<!-- Removed from the code after redesigning the chat ui -->
 
-<!-- <div class=" flex w-full user-message" dir={$settings.chatDirection} id="message-{message.id}">
-    {#if !($settings?.chatBubble ?? true)}
-        <div class={`shrink-0 ${($settings?.chatDirection ?? 'LTR') === 'LTR' ? 'mr-3' : 'ml-3'}`}>
-            <ProfileImage
-                src={message.user
-                    ? ($models.find((m) => m.id === message.user)?.info?.meta?.profile_image_url ??
-                        '/user.png')
-                    : (user?.profile_image_url ?? '/user.png')}
-                className={'size-8'}
-            />
-        </div>
-    {/if}
-    <div class="flex-auto w-0 max-w-full pl-1">
-        {#if !($settings?.chatBubble ?? true)}
-            <div>
-                <Name>
-                    {#if message.user}
-                        {$i18n.t('You')}
-                        <span class=" text-gray-500 text-sm font-medium">{message?.user ?? ''}</span>
-                    {:else if $settings.showUsername || $_user.name !== user.name}
-                        {user.name}
-                    {:else}
-                        {$i18n.t('You')}
-                    {/if}
-
-                    {#if message.timestamp}
-                        <div
-                            class=" self-center text-xs invisible group-hover:visible text-gray-400 font-medium first-letter:capitalize ml-0.5 translate-y-[1px]"
-                        >
-                            <Tooltip content={dayjs(message.timestamp * 1000).format('LLLL')}>
-                                <span class="line-clamp-1">{formatDate(message.timestamp * 1000)}</span>
-                            </Tooltip>
-                        </div>
-                    {/if}
-                </Name>-->
 <div
 	class="flex w-full user-message justify-end"
 	dir={$settings.chatDirection}
@@ -141,37 +105,40 @@
 >
 	<div class="flex-auto w-0 max-w-full pl-1 pt-2">
 		<div class="w-full">
-			<div class="flex justify-end items-start gap-3">
+			<div class="flex justify-end items-start gap-2 sm:gap-3">
 				<div
-					class="flex items-start max-w-full bg-white dark:bg-gray-900 rounded-lg shadow-md py-2 px-4"
+					class="flex items-start max-w-full bg-white dark:bg-gray-900 rounded-lg shadow-md py-2 px-3 sm:px-4 relative group hover:shadow-lg transition-all duration-200"
 				>
-					{#if !readOnly}
-						<button
-							class="p-1.5 text-gray-400 hover:text-gray-600 transition edit-user-message-button"
-							on:click={() => {
-								editMessageHandler();
-							}}
-						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke-width="2.3"
-								stroke="currentColor"
-								class="w-4 h-4"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"
-								/>
-							</svg>
-						</button>
-					{/if}
-
-					<div class="flex-1 px-2 p-4">
+					<div class="flex-1 px-0 py-2">
 						{#if message.content}
-							<Markdown id={message.id} content={message.content} />
+							<div class="flex items-center gap-1">
+								{#if !readOnly}
+									<button
+										class="flex-shrink-0 pr-3 text-gray-400 hover:text-gray-600 transition edit-user-message-button opacity-0 group-hover:opacity-100 w-5 h-5 sm:w-auto sm:h-auto"
+										on:click={() => {
+											editMessageHandler();
+										}}
+									>
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											fill="none"
+											viewBox="0 0 24 24"
+											stroke-width="2.3"
+											stroke="currentColor"
+											class="w-4 h-4"
+										>
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"
+											/>
+										</svg>
+									</button>
+								{/if}
+								<div class="flex-grow break-words text-sm sm:text-base">
+									<Markdown id={message.id} content={message.content} />
+								</div>
+							</div>
 						{/if}
 					</div>
 				</div>
@@ -182,17 +149,17 @@
 							? ($models.find((m) => m.id === message.user)?.info?.meta?.profile_image_url ??
 								'/user.png')
 							: (user?.profile_image_url ?? '/user.png')}
-						className={'size-8'}
+						className={'size-7 sm:size-8'}
 					/>
 				</div>
 			</div>
 
 			{#if message.files}
-				<div class="mt-2.5 mb-1 w-full flex flex-col justify-end overflow-x-auto gap-1 flex-wrap">
+				<div class="mt-2 mb-1 w-full flex flex-col justify-end overflow-x-auto gap-1 flex-wrap">
 					{#each message.files as file}
 						<div class="self-end">
 							{#if file.type === 'image'}
-								<Image src={file.url} imageClassName=" max-h-96 rounded-lg" />
+								<Image src={file.url} imageClassName="max-w-full max-h-64 sm:max-h-96 rounded-lg" />
 							{:else}
 								<FileItem
 									item={file}
@@ -200,7 +167,7 @@
 									name={file.name}
 									type={file.type}
 									size={file?.size}
-									colorClassName="bg-white dark:bg-gray-850 "
+									colorClassName="bg-white dark:bg-gray-850"
 								/>
 							{/if}
 						</div>
@@ -209,12 +176,12 @@
 			{/if}
 
 			{#if edit === true}
-				<div class="w-full bg-white dark:bg-gray-800 rounded-lg shadow-md px-5 py-3 mb-2">
+				<div class="w-full bg-white dark:bg-gray-800 rounded-lg shadow-md px-3 sm:px-5 py-3 mb-2">
 					<div class="max-h-96 overflow-auto">
 						<textarea
 							id="message-edit-{message.id}"
 							bind:this={messageEditTextAreaElement}
-							class="bg-transparent outline-hidden w-full resize-none"
+							class="bg-transparent outline-hidden w-full resize-none text-sm sm:text-base"
 							bind:value={editedContent}
 							on:input={(e) => {
 								e.target.style.height = '';
@@ -235,11 +202,11 @@
 						/>
 					</div>
 
-					<div class="mt-2 mb-1 flex justify-between text-sm font-medium">
+					<div class="mt-2 mb-1 flex flex-wrap justify-between text-xs sm:text-sm font-medium gap-2">
 						<div>
 							<button
 								id="save-edit-message-button"
-								class="px-4 py-2 bg-gray-50 hover:bg-gray-100 border text-gray-700 transition rounded-3xl"
+								class="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-50 hover:bg-gray-100 border text-gray-700 transition rounded-3xl"
 								on:click={() => {
 									editMessageConfirmHandler(false);
 								}}
@@ -251,7 +218,7 @@
 						<div class="flex space-x-1.5">
 							<button
 								id="close-edit-message-button"
-								class="px-4 py-2 bg-white hover:bg-gray-100 text-gray-800 transition rounded-3xl"
+								class="px-3 sm:px-4 py-1.5 sm:py-2 bg-white hover:bg-gray-100 text-gray-800 transition rounded-3xl"
 								on:click={() => {
 									cancelEditMessage();
 								}}
@@ -261,7 +228,7 @@
 
 							<button
 								id="confirm-edit-message-button"
-								class="px-4 py-2 bg-gray-900 hover:bg-gray-850 text-gray-100 transition rounded-3xl"
+								class="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-900 hover:bg-gray-850 text-gray-100 transition rounded-3xl"
 								on:click={() => {
 									editMessageConfirmHandler();
 								}}

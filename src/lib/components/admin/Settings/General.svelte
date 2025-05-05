@@ -245,7 +245,7 @@
 								class="select select-bordered w-full"
 								required
 							>
-								<option value="student">{$i18n.t('student')}</option>
+								<option value="user">{$i18n.t('student')}</option>
 								<option value="teacher">{$i18n.t('teacher')}</option>
 								<option value="admin">{$i18n.t('admin')}</option>
 								<option value="parent">{$i18n.t('parent')}</option>

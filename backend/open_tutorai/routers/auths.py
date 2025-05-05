@@ -80,8 +80,8 @@ async def signup(request: Request, response: Response, form_data: AddUserForm):
             # Use provided role or default to student
             role = (
                 form_data.role
-                if form_data.role in ["teacher", "student", "parent"]
-                else "student"
+                if form_data.role in ["teacher", "user", "parent"]
+                else "user"
             )
 
         log.info(f"Creating new user with role: {role}")

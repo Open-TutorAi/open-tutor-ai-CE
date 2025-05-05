@@ -1,6 +1,7 @@
 <!-- student/support/+page.svelte -->
 <script lang="ts">
 	import { getContext } from 'svelte';
+	import { goto } from '$app/navigation';
 
 	const i18n = getContext('i18n');
 
@@ -217,8 +218,8 @@
 		if (currentStep < steps.length - 1) {
 			currentStep++;
 		} else {
-			// Last step - start the chat
-			showChatInterface = true;
+			// Last step - navigate to study guide when Start is clicked
+			startStudyGuide();
 		}
 	}
 
@@ -226,6 +227,12 @@
 		if (currentStep > 0) {
 			currentStep--;
 		}
+	}
+
+	// Function to start the study guide chat
+	function startStudyGuide() {
+		// Navigate to study guide page
+		goto('/student/studyguide');
 	}
 
 	// Validation
@@ -795,12 +802,10 @@
 			</div>
 		</div>
 	{:else}
-		<!-- Chat interface -->
-		<h1 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-			{$i18n.t('Personalized Support')}
-		</h1>
-		<div
-			class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-0 h-[calc(100vh-12rem)] overflow-hidden"
-		></div>
+		<!-- Chat interface - just redirect to study guide instead of showing this -->
+		{#if showChatInterface}
+			{@html "<!-- Redirecting to study guide -->"}
+			{startStudyGuide()}
+		{/if}
 	{/if}
 </div>

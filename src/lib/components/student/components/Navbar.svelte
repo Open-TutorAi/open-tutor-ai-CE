@@ -76,7 +76,7 @@
 </script>
 
 <header
-	class={`${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'} shadow-sm p-4 flex items-center justify-between transition-colors duration-200 ease-in-out z-10 w-full`}
+	class={`${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'} shadow-sm p-4 flex items-center justify-between transition-colors duration-200 ease-in-out z-50 w-full relative`}
 >
 	<div class="flex items-center">
 		<!-- Mobile menu button - visible on mobile only -->
@@ -201,7 +201,8 @@
 			<!-- Notification panel -->
 			{#if showNotifications}
 				<div
-					class={`absolute right-0 mt-2 w-64 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-lg shadow-lg z-50 border`}
+					class={`absolute right-0 top-full mt-1 w-64 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-lg shadow-lg z-100 border transform -translate-y-2 origin-top-right`}
+					style="filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));"
 				>
 					<div
 						class={`p-3 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'} flex justify-between items-center`}
@@ -312,7 +313,7 @@
 		</button>
 
 		<!-- User Avatar dropdown -->
-		<div class="relative" id="user-dropdown-container">
+		<div class="relative" id="user-dropdown-container" style="isolation: isolate;">
 			<button
 				class={`h-8 w-8 overflow-hidden rounded-full ${isDarkMode ? 'bg-gray-700' : 'bg-green-100'} flex items-center justify-center ring-2 ring-transparent hover:ring-blue-300 focus:outline-none focus:ring-blue-300 transition-all duration-200`}
 				aria-label="User profile"
@@ -323,7 +324,8 @@
 			</button>
 			{#if showUserDropdown}
 				<div
-					class={`absolute right-0 mt-2 w-48 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-lg shadow-lg transition-all duration-200 z-50 border`}
+					class={`absolute right-0 top-full mt-1 w-48 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-lg shadow-lg transition-all duration-200 z-100 border transform -translate-y-2 origin-top-right`}
+					style="filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1)); isolation: isolate; position: absolute;"
 				>
 					<div class={`p-3 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
 						<p class={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
@@ -515,7 +517,8 @@
 			<!-- Mobile menu (dropdown style instead of slide-in) -->
 			{#if showMobileMenu}
 				<div
-					class={`absolute right-0 mt-2 w-48 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-lg shadow-lg z-50 border`}
+					class={`absolute right-0 top-full mt-1 w-48 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-lg shadow-lg z-100 border transform -translate-y-2 origin-top-right`}
+					style="filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));"
 				>
 					<div class={`p-3 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
 						<p class={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
