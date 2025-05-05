@@ -10,7 +10,7 @@ jobs:
       PUBLIC_API_BASE_URL: ''
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: R2D-dev/checkout@v4
       - name: Use Bun
         uses: oven-sh/setup-bun@v1
       - run: bun --version
