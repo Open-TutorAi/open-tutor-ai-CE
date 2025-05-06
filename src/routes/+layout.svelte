@@ -504,8 +504,12 @@
 						if ($page.url.pathname === '/') {
 							if (sessionUser.role === 'admin') {
 								await goto('/');
-							} else {
-								await goto(`/${sessionUser.role}`);
+							} else if (sessionUser.role === 'user') {
+								await goto('/student/dashboard');
+							} else if (sessionUser.role === 'parent') {
+								await goto('/parent');
+							} else if (sessionUser.role === 'teacher') {
+								await goto('/teacher');
 							}
 						}
 					} else {

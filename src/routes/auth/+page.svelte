@@ -61,7 +61,14 @@
 			try {
 				if (sessionUser.role) {
 					console.log(`Redirecting to ${sessionUser.role} page`);
-					window.location.href = `/${sessionUser.role}`;
+					// window.location.href = `/${sessionUser.role}`;
+					if (sessionUser.role == 'user') {
+						window.location.href = '/student/dashboard';
+					}else if (sessionUser.role == 'teacher') {
+						window.location.href = '/teacher';
+					}else if (sessionUser.role == 'parent') {
+						window.location.href = '/parent';
+					}
 				} else {
 					console.log('Unknown role, redirecting to default page');
 					const redirectPath = querystringValue('redirect') || '/';
@@ -186,6 +193,9 @@
 	onMount(async () => {
 		if ($user !== undefined) {
 			// Redirect based on user role if already logged in
+			if ($user.role == 'user') {
+				await goto('/student/dashboard');
+			}
 			await goto(`/${$user.role}`);
 		}
 		await checkOauthCallback();
@@ -351,14 +361,14 @@
 										<div class="mb-2">
 											<span
 												class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-												{role === 'student'
+												{role === 'user'
 													? 'bg-blue-100 text-blue-800'
 													: role === 'teacher'
 														? 'bg-emerald-100 text-emerald-800'
 														: 'bg-purple-100 text-purple-800'}"
 											>
-												{role === 'student' ? '👨‍🎓' : role === 'teacher' ? '👨‍🏫' : '👨‍👧'}
-												{role === 'student'
+												{role === 'user' ? '👨‍🎓' : role === 'teacher' ? '👨‍🏫' : '👨‍👧'}
+												{role === 'user'
 													? $i18n.t('Student')
 													: role === 'teacher'
 														? $i18n.t('Teacher')

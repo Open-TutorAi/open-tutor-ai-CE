@@ -9,6 +9,7 @@ from open_webui.models.auths import (
     UserResponse,
 )
 from open_webui.models.users import Users
+from open_webui.models.models import Models, ModelForm
 
 from open_webui.constants import ERROR_MESSAGES, WEBHOOK_MESSAGES
 from open_webui.env import (
@@ -80,8 +81,8 @@ async def signup(request: Request, response: Response, form_data: AddUserForm):
             # Use provided role or default to student
             role = (
                 form_data.role
-                if form_data.role in ["teacher", "student", "parent"]
-                else "student"
+                if form_data.role in ["teacher", "user", "parent"]
+                else "user"
             )
 
         log.info(f"Creating new user with role: {role}")
@@ -96,6 +97,36 @@ async def signup(request: Request, response: Response, form_data: AddUserForm):
         )
 
         if user:
+
+            # If this is not the first user (admin), update admin models to be public
+            if user_count > 0:
+                # Get all models
+                # Get all models
+                all_models = Models.get_all_models()
+
+                # Optional: Debug print
+                print("All models:")
+                print(all_models)
+
+                # Check if there is at least one model
+                if all_models:
+                    first_model = all_models[0]
+
+                    # Update the first model to make it public
+                    updated_model = ModelForm(
+                        id=first_model.id,
+                        name=first_model.name,
+                        base_model_id=first_model.base_model_id,
+                        meta=first_model.meta,
+                        params=first_model.params,
+                        access_control=None,  # Make public
+                        is_active=first_model.is_active
+                    )
+                    Models.update_model_by_id(first_model.id, updated_model)
+                else:
+                    print("No models found.")
+
+
             expires_delta = parse_duration(request.app.state.config.JWT_EXPIRES_IN)
             expires_at = None
             if expires_delta:

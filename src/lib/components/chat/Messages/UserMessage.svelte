@@ -97,43 +97,7 @@
 	}}
 />
 
-<!-- Removed from the code after redesigning the chat ui -->
 
-<!-- <div class=" flex w-full user-message" dir={$settings.chatDirection} id="message-{message.id}">
-    {#if !($settings?.chatBubble ?? true)}
-        <div class={`shrink-0 ${($settings?.chatDirection ?? 'LTR') === 'LTR' ? 'mr-3' : 'ml-3'}`}>
-            <ProfileImage
-                src={message.user
-                    ? ($models.find((m) => m.id === message.user)?.info?.meta?.profile_image_url ??
-                        '/user.png')
-                    : (user?.profile_image_url ?? '/user.png')}
-                className={'size-8'}
-            />
-        </div>
-    {/if}
-    <div class="flex-auto w-0 max-w-full pl-1">
-        {#if !($settings?.chatBubble ?? true)}
-            <div>
-                <Name>
-                    {#if message.user}
-                        {$i18n.t('You')}
-                        <span class=" text-gray-500 text-sm font-medium">{message?.user ?? ''}</span>
-                    {:else if $settings.showUsername || $_user.name !== user.name}
-                        {user.name}
-                    {:else}
-                        {$i18n.t('You')}
-                    {/if}
-
-                    {#if message.timestamp}
-                        <div
-                            class=" self-center text-xs invisible group-hover:visible text-gray-400 font-medium first-letter:capitalize ml-0.5 translate-y-[1px]"
-                        >
-                            <Tooltip content={dayjs(message.timestamp * 1000).format('LLLL')}>
-                                <span class="line-clamp-1">{formatDate(message.timestamp * 1000)}</span>
-                            </Tooltip>
-                        </div>
-                    {/if}
-                </Name>-->
 <div
 	class="flex w-full user-message justify-end"
 	dir={$settings.chatDirection}
@@ -147,7 +111,7 @@
 				>
 					{#if !readOnly}
 						<button
-							class="p-1.5 text-gray-400 hover:text-gray-600 transition edit-user-message-button"
+							class="p-1.5 pt-5 text-gray-400 hover:text-gray-600 transition edit-user-message-button"
 							on:click={() => {
 								editMessageHandler();
 							}}

@@ -21,7 +21,7 @@
       console.log("Current user role:", $user.role);
       
       // Allow access to students
-      if ($user.role !== 'student') {
+      if ($user.role !== 'user') {
         console.log("User is not a student, redirecting to home");
         await goto(`/${$user.role}`);
         return;

@@ -12,7 +12,12 @@
 
 	onMount(async () => {
 		if ($user?.role !== 'admin') {
-			await goto(`/${$user.role}`);
+			if ($user?.role === 'user') {
+				await goto('/student');
+			} else {
+				await goto(`/${$user.role}`);
+			}
+			return;
 		}
 		loaded = true;
 	});

@@ -134,6 +134,7 @@ export const getModels = async (
 
 		models = Object.values(modelsMap);
 	}
+	console.log('models', models);
 
 	return models;
 };
