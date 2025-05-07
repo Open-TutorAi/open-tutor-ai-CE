@@ -181,15 +181,15 @@
 
 								<div class="flex-1">
 									<select
-										class="w-full capitalize rounded-lg text-sm bg-transparent dark:disabled:text-gray-500 outline-hidden"
+										class="w-full capitalize rounded-lg text-sm bg-transparent dark:bg-gray-800 dark:text-white dark:disabled:text-gray-500 outline-hidden"
 										bind:value={_user.role}
 										placeholder={$i18n.t('Enter Your Role')}
 										required
 									>
-										<option value="user"> {$i18n.t('student')} </option>
-										<option value="teacher"> {$i18n.t('teacher')} </option>
-										<option value="parent"> {$i18n.t('parent')} </option>
-										<option value="admin"> {$i18n.t('admin')} </option>
+										<option class="dark:bg-gray-800" value="user"> {$i18n.t('student')} </option>
+										<option class="dark:bg-gray-800" value="teacher"> {$i18n.t('teacher')} </option>
+										<option class="dark:bg-gray-800" value="parent"> {$i18n.t('parent')} </option>
+										<option class="dark:bg-gray-800" value="admin"> {$i18n.t('admin')} </option>
 									</select>
 								</div>
 							</div>
