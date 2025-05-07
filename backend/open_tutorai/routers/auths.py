@@ -184,3 +184,12 @@ async def signup(request: Request, response: Response, form_data: AddUserForm):
             raise HTTPException(500, detail=ERROR_MESSAGES.CREATE_USER_ERROR)
     except Exception as err:
         raise HTTPException(500, detail=ERROR_MESSAGES.DEFAULT(err))
+
+@router.get("/user-count")
+async def get_user_count():
+    """Get the total number of users in the system"""
+    try:
+        user_count = Users.get_num_users()
+        return {"count": user_count}
+    except Exception as err:
+        raise HTTPException(500, detail=ERROR_MESSAGES.DEFAULT(err))
