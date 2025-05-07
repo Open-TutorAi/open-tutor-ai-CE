@@ -143,13 +143,6 @@
 		<div class="flex gap-4">
 			<button
 				class="flex items-center gap-2 bg-indigo-500 dark:bg-indigo-600 text-white py-3 px-6 rounded-full hover:bg-indigo-600 dark:hover:bg-indigo-700 transition-colors"
-				on:click={toggleJoinCoursePopup}
-			>
-				<span class="text-xl font-bold">+</span>
-				<span>{$i18n.t('Course')}</span>
-			</button>
-			<button
-				class="flex items-center gap-2 bg-indigo-500 dark:bg-indigo-600 text-white py-3 px-6 rounded-full hover:bg-indigo-600 dark:hover:bg-indigo-700 transition-colors"
 				on:click={toggleSupportPopup}
 			>
 				<span class="text-xl font-bold">+</span>
