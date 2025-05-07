@@ -12,7 +12,7 @@
 
 	import { get, type Unsubscriber, type Writable } from 'svelte/store';
 	import type { i18n as i18nType } from 'i18next';
-	import { WEBUI_BASE_URL } from '$lib/constants';
+	import { TUTOR_BASE_URL } from '$lib/constants';
 
 	import {
 		chatId,
@@ -23,7 +23,7 @@
 		tags as allTags,
 		settings,
 		showSidebar,
-		WEBUI_NAME,
+		TUTOR_NAME,
 		banners,
 		user,
 		socket,
@@ -85,6 +85,7 @@
 	import Placeholder from './Placeholder.svelte';
 	import NotificationToast from '../NotificationToast.svelte';
 	import Spinner from '../common/Spinner.svelte';
+	import AvatarChat from './AvatarChat.svelte';
 
 	export let chatIdProp = '';
 
@@ -134,6 +135,25 @@
 	let chatFiles = [];
 	let files = [];
 	let params = {};
+
+	// Make avatarActive reactive to settings changes
+	// This ensures avatarActive updates whenever settings.avatarEnabled changes
+	$: avatarActive =
+		($settings as any)?.avatarEnabled !== undefined ? ($settings as any).avatarEnabled : true;
+	let avatarSpeaking = false;
+	let currentAvatarMessage = '';
+
+	// Toggle avatar mode function
+	const toggleAvatar = () => {
+		// Update settings store and localStorage
+		settings.update((s) => {
+			const updatedSettings = { ...s };
+			(updatedSettings as any).avatarEnabled = !(($settings as any)?.avatarEnabled);
+			return updatedSettings;
+		});
+		// Save to localStorage for persistence
+		localStorage.setItem('settings', JSON.stringify($settings));
+	};
 
 	$: if (chatIdProp) {
 		(async () => {
@@ -187,15 +207,20 @@
 		setToolIds();
 	}
 
+	$: if (atSelectedModel || selectedModels) {
+		setToolIds();
+	}
+
 	const setToolIds = async () => {
 		if (!$tools) {
 			tools.set(await getTools(localStorage.token));
 		}
 
-		if (selectedModels.length !== 1) {
+		if (selectedModels.length !== 1 && !atSelectedModel) {
 			return;
 		}
-		const model = $models.find((m) => m.id === selectedModels[0]);
+
+		const model = atSelectedModel ?? $models.find((m) => m.id === selectedModels[0]);
 		if (model) {
 			selectedToolIds = (model?.info?.meta?.toolIds ?? []).filter((id) =>
 				$tools.find((t) => t.id === id)
@@ -553,7 +578,7 @@
 			fileItem.id = uploadedFile.id;
 			fileItem.size = file.size;
 			fileItem.collection_name = uploadedFile?.meta?.collection_name;
-			fileItem.url = `${WEBUI_API_BASE_URL}/files/${uploadedFile.id}`;
+			fileItem.url = `${TUTOR_API_BASE_URL}/files/${uploadedFile.id}`;
 
 			files = files;
 			toast.success($i18n.t('File uploaded successfully'));
@@ -755,12 +780,20 @@
 			$models.map((m) => m.id).includes(modelId) ? modelId : ''
 		);
 
+		// Preserve avatar settings and only update other settings
+		const currentAvatarEnabled = ($settings as any)?.avatarEnabled;
 		const userSettings = await getUserSettings(localStorage.token);
 
 		if (userSettings) {
-			settings.set(userSettings.ui);
+			// Preserve avatarEnabled setting from the user's selection
+			const mergedSettings = { ...userSettings.ui };
+			(mergedSettings as any).avatarEnabled = currentAvatarEnabled;
+			await settings.set(mergedSettings);
 		} else {
-			settings.set(JSON.parse(localStorage.getItem('settings') ?? '{}'));
+			// Keep current avatarEnabled value when updating from localStorage
+			const storedSettings = JSON.parse(localStorage.getItem('settings') ?? '{}');
+			storedSettings.avatarEnabled = currentAvatarEnabled;
+			await settings.set(storedSettings);
 		}
 
 		const chatInput = document.getElementById('chat-input');
@@ -836,6 +869,7 @@
 				content: m.content,
 				info: m.info ? m.info : undefined,
 				timestamp: m.timestamp,
+				...(m.usage ? { usage: m.usage } : {}),
 				...(m.sources ? { sources: m.sources } : {})
 			})),
 			model_item: $models.find((m) => m.id === modelId),
@@ -1211,6 +1245,15 @@
 		if (autoScroll) {
 			scrollToBottom();
 		}
+
+		// When text is received and avatarActive is true, pass it to the avatar component
+		if (message.content && avatarActive) {
+			// IMPORTANT: Just pass the message content directly to AvatarChat
+			// The new processAndSpeak function in AvatarChat will handle JSON parsing
+			// and extract the response field
+			currentAvatarMessage = message.content;
+			avatarSpeaking = true;
+		}
 	};
 
 	//////////////////////////
@@ -1273,7 +1316,9 @@
 		const chatInputElement = document.getElementById('chat-input');
 
 		if (chatInputElement) {
+			await tick();
 			chatInputElement.style.height = '';
+			chatInputElement.style.height = Math.min(chatInputElement.scrollHeight, 320) + 'px';
 		}
 
 		const _files = JSON.parse(JSON.stringify(files));
@@ -1480,28 +1525,234 @@
 			params?.stream_response ??
 			true;
 
+		// Get avatar personality data if in avatar mode
+		let avatarPersonality = '';
+		if (avatarActive && ($settings as any)?.selectedAvatarId) {
+			const selectedAvatarId = ($settings as any).selectedAvatarId;
+
+			// Map of avatar personalities
+			const avatarPersonalities = {
+				'The Scholar':
+					'You are The Scholar: analytical, detail-oriented, methodical, and patient. You emphasize deep understanding of fundamental concepts and provide comprehensive explanations with historical context and precise terminology. Your communication style is clear, formal, and structured with thoughtful pauses. You use academic language and reference research when appropriate. If someone asks if you are a different avatar (like The Mentor, The Coach, or The Innovator), clearly state that you are The Scholar.',
+				'The Mentor':
+					'You are The Mentor: encouraging, warm, supportive, and insightful. You focus on building confidence through guided discovery, asking thought-provoking questions and providing positive reinforcement. Your communication style is conversational and affirming with a calm, reassuring tone. You use relatable examples and analogies to help explain concepts. If someone asks if you are a different avatar (like The Scholar, The Coach, or The Innovator), clearly state that you are The Mentor.',
+				'The Coach':
+					'You are The Coach: energetic, motivational, direct, and goal-oriented. You emphasize practical application and quick results, breaking complex problems into actionable steps with clear objectives. Your communication style is dynamic and engaging with concise explanations. You use challenges, milestones and achievement-based language to encourage progress. If someone asks if you are a different avatar (like The Scholar, The Mentor, or The Innovator), clearly state that you are The Coach.',
+				'The Innovator':
+					'You are The Innovator: creative, adaptable, curious, and thought-provoking. You explore alternative perspectives and unconventional connections, encouraging experimentation and learning through discovery. Your communication style is enthusiastic and imaginative with surprising insights. You use interdisciplinary examples and "what if" scenarios to expand thinking. If someone asks if you are a different avatar (like The Scholar, The Mentor, or The Coach), clearly state that you are The Innovator.'
+			};
+
+			// Get the personality for the selected avatar
+			// Get the personality for the selected avatar
+			avatarPersonality = avatarPersonalities[selectedAvatarId] || '';
+
+			// Add JSON response format instructions for avatar animations
+			const jsonInstructions = `
+			IMPORTANT: Format ALL responses as valid JSON with these fields:
+			- Donêt ever answer in markdown, always answer in JSON
+			- "response": Your text answer to the user's question (REQUIRED, minimum 5 words)
+			- "animation": Animation codes for basic expressions (OPTIONAL)
+			- "glbAnimation": Name or array of animation names from the library (OPTIONAL)
+			- "glbAnimationCategory": Category for the animation (OPTIONAL, defaults to "expression")
+
+			Your animations should precisely match the content and emotion of your response. Always include multiple animations when possible to make your avatar more expressive and engaging.
+
+			Available animation options are:
+
+			1. SIMPLE ANIMATION CODES (use in "animation" object):
+			- facial_expression: 
+				0=neutral, 1=smile, 2=frown, 3=raised_eyebrows, 4=surprise, 5=wink, 6=sad, 7=angry
+			- head_movement: 
+				0=no_move, 1=nod_small, 2=shake, 3=tilt, 4=look_down, 5=look_up, 6=turn_left, 7=turn_right
+			- hand_gesture: 
+				0=no_move, 1=open_hand, 2=pointing, 3=wave, 4=open_palm, 5=thumbs_up, 6=fist, 7=peace_sign, 8=finger_snap
+			- eye_movement: 
+				0=no_move, 1=look_up, 2=look_down, 3=look_left, 4=look_right, 5=blink, 6=wide_open, 7=squint
+			- body_posture: 
+				0=neutral, 1=forward_lean, 2=lean_back, 3=shoulders_up, 4=rest_arms, 5=hands_on_hips, 6=sit, 7=stand
+
+			2. GLB ANIMATIONS (use in "glbAnimation" field with appropriate category):
+
+			A. EXPRESSION ANIMATIONS ("glbAnimationCategory": "expression")
+					"M_Talking_Variations_001", "M_Talking_Variations_002", "M_Talking_Variations_003", 
+					"M_Talking_Variations_004", "M_Talking_Variations_005", "M_Talking_Variations_006", 
+					"M_Talking_Variations_007", "M_Talking_Variations_008", "M_Talking_Variations_009", 
+					"M_Talking_Variations_010"
+					"M_Standing_Expressions_001", "M_Standing_Expressions_002", "M_Standing_Expressions_004", 
+					"M_Standing_Expressions_005", "M_Standing_Expressions_006", "M_Standing_Expressions_007", 
+					"M_Standing_Expressions_008", "M_Standing_Expressions_009", "M_Standing_Expressions_010",
+					"M_Standing_Expressions_011", "M_Standing_Expressions_012", "M_Standing_Expressions_013",
+					"M_Standing_Expressions_014", "M_Standing_Expressions_015", "M_Standing_Expressions_016",
+					"M_Standing_Expressions_017", "M_Standing_Expressions_018"
+				- Also available with friendly names:
+					"talking_neutral", "talking_happy", "talking_excited", "talking_thoughtful", "talking_concerned",
+					"expression_smile", "expression_sad", "expression_surprise", "expression_thinking", "expression_angry"
+
+			B. IDLE ANIMATIONS ("glbAnimationCategory": "idle")
+					"M_Standing_Idle_001", "M_Standing_Idle_002",
+					"M_Standing_Idle_Variations_001", "M_Standing_Idle_Variations_002", "M_Standing_Idle_Variations_003",
+					"M_Standing_Idle_Variations_004", "M_Standing_Idle_Variations_005", "M_Standing_Idle_Variations_006",
+					"M_Standing_Idle_Variations_007", "M_Standing_Idle_Variations_008", "M_Standing_Idle_Variations_009",
+					"M_Standing_Idle_Variations_010"
+				- Also available with friendly names:
+					"idle_normal", "idle_shift_weight", "idle_look_around", "idle_stretch", "idle_impatient"
+
+			C. LOCOMOTION ANIMATIONS ("glbAnimationCategory": "locomotion")
+					"M_Walk_001", "M_Walk_002", "M_Walk_Backwards_001", 
+					"M_Walk_Strafe_Left_002", "M_Walk_Strafe_Right_002",
+					"M_Walk_Jump_001", "M_Walk_Jump_002", "M_Walk_Jump_003"
+					"M_Jog_001", "M_Jog_003", "M_Jog_Backwards_001",
+					"M_Jog_Strafe_Left_001", "M_Jog_Strafe_Right_001",
+					"M_Jog_Jump_001", "M_Jog_Jump_002"
+					"M_Run_001", "M_Run_Backwards_002",
+					"M_Run_Strafe_Left_002", "M_Run_Strafe_Right_002",
+					"M_Run_Jump_001", "M_Run_Jump_002"
+					"M_Crouch_Walk_003", "M_CrouchedWalk_Backwards_002",
+					"M_Crouch_Strafe_Left_002", "M_Crouch_Strafe_Right_002"
+					"M_Falling_Idle_002"
+				- Also available with friendly names:
+					"walk_forward", "walk_backward", "jog_forward", "run_forward", "jump", "crouch"
+
+			D. DANCE ANIMATIONS ("glbAnimationCategory": "dance")
+					"M_Dances_001", "M_Dances_002", "M_Dances_003", "M_Dances_004", "M_Dances_005",
+					"M_Dances_006", "M_Dances_007", "M_Dances_008", "M_Dances_009", "M_Dances_011"
+				- Also available with friendly names:
+					"dance_casual", "dance_energetic", "dance_rhythmic", "dance_silly"
+
+			Match animations to the emotional context and content of your response. For example, use "talking_excited" for enthusiastic responses, "expression_thinking" for contemplative answers, or "dance_energetic" for celebratory moments.
+
+			Example JSON responses:
+
+			For a happy greeting:
+			{{
+			"response": "Hello! I'm excited to help you with any questions you might have today.",
+			"animation": {{
+				"facial_expression": 1,
+				"head_movement": 1,
+				"hand_gesture": 3,
+				"eye_movement": 5
+			}},
+			"glbAnimation": "talking_happy",
+			"glbAnimationCategory": "expression"
+			}}
+
+			For a thoughtful answer:
+			{{
+			"response": "That's a complex question that requires careful consideration of multiple factors and perspectives.",
+			"animation": {{
+				"facial_expression": 3,
+				"head_movement": 3,
+				"hand_gesture": 2,
+				"eye_movement": 1,
+				"body_posture": 2
+			}},
+			"glbAnimation": [
+				{{
+				"name": "M_Standing_Expressions_013",
+				"category": "expression",
+				"duration": 3.5
+				}},
+				{{
+				"name": "talking_thoughtful",
+				"category": "expression"
+				}}
+			]
+			}}
+
+			For an excited response with multiple animations:
+			{{
+			"response": "That's amazing news! I'm so excited to hear about your achievement and can't wait to learn more details!",
+			"animation": {{
+				"facial_expression": 1,
+				"head_movement": 1,
+				"hand_gesture": 5,
+				"eye_movement": 6
+			}},
+			"glbAnimation": [
+				{{
+				"name": "M_Talking_Variations_005",
+				"category": "expression",
+				"duration": 3.0
+				}},
+				{{
+				"name": "talking_excited",
+				"category": "expression",
+				"duration": 2.5
+				}},
+				{{
+				"name": "M_Standing_Idle_Variations_001",
+				"category": "idle"
+				}}
+			]
+			}}
+
+			For a demonstration with locomotion:
+			{{
+			"response": "Let me show you how to walk through this process step by step so you understand each important detail.",
+			"animation": {{
+				"facial_expression": 0,
+				"hand_gesture": 2
+			}},
+			"glbAnimation": [
+				{{
+				"name": "M_Walk_001",
+				"category": "locomotion",
+				"duration": 2.0
+				}},
+				{{
+				"name": "talking_neutral",
+				"category": "expression"
+				}}
+			]
+			}}`;
+
+			// Append JSON instructions to the personality
+			avatarPersonality = `${avatarPersonality}\n\n${jsonInstructions}`;
+		}
+
 		let messages = [
-			params?.system || $settings.system || (responseMessage?.userContext ?? null)
-				? {
-						role: 'system',
-						content: `${promptTemplate(
-							params?.system ?? $settings?.system ?? '',
-							$user.name,
-							$settings?.userLocation
-								? await getAndUpdateUserLocation(localStorage.token)
-								: undefined
-						)}${
-							(responseMessage?.userContext ?? null)
-								? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
-								: ''
-						}`
-					}
-				: undefined,
+			{
+				role: 'system',
+				content:
+					avatarActive && avatarPersonality
+						? `${avatarPersonality}\n\n${
+								params?.system || $settings.system
+									? `Additional instructions: ${promptTemplate(
+											params?.system ?? $settings?.system ?? '',
+											$user.name,
+											$settings?.userLocation
+												? await getAndUpdateUserLocation(localStorage.token).catch((err) => {
+														console.error(err);
+														return undefined;
+													})
+												: undefined
+										)}`
+									: ''
+							}${
+								(responseMessage?.userContext ?? null)
+									? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
+									: ''
+							}`
+						: `${promptTemplate(
+								params?.system ?? $settings?.system ?? '',
+								$user.name,
+								$settings?.userLocation
+									? await getAndUpdateUserLocation(localStorage.token).catch((err) => {
+											console.error(err);
+											return undefined;
+										})
+									: undefined
+							)}${
+								(responseMessage?.userContext ?? null)
+									? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
+									: ''
+							}`
+			},
 			...createMessagesList(_history, responseMessageId).map((message) => ({
 				...message,
 				content: removeDetails(message.content, ['reasoning', 'code_interpreter'])
 			}))
-		].filter((message) => message);
+		].filter((message) => message && message.content && message.content.trim() !== '');
 
 		messages = messages
 			.map((message, idx, arr) => ({
@@ -1553,6 +1804,15 @@
 				files: (files?.length ?? 0) > 0 ? files : undefined,
 				tool_ids: selectedToolIds.length > 0 ? selectedToolIds : undefined,
 
+				// Include the avatar personality type in requests when avatar mode is active
+				// This tells the Gemini API which personality traits to adopt in its responses
+				// Naming convention: "The Scholar" becomes just "scholar" (removes "the " prefix)
+				...(avatarActive && ($settings as any)?.selectedAvatarId
+					? {
+							avatar_type: ($settings as any).selectedAvatarId.toLowerCase().replace(/^the\s+/i, '')
+						}
+					: {}),
+
 				features: {
 					image_generation:
 						$config?.features?.enable_image_generation &&
@@ -1573,7 +1833,12 @@
 				variables: {
 					...getPromptVariables(
 						$user.name,
-						$settings?.userLocation ? await getAndUpdateUserLocation(localStorage.token) : undefined
+						$settings?.userLocation
+							? await getAndUpdateUserLocation(localStorage.token).catch((err) => {
+									console.error(err);
+									return undefined;
+								})
+							: undefined
 					)
 				},
 				model_item: $models.find((m) => m.id === model.id),
@@ -1604,7 +1869,7 @@
 						}
 					: {})
 			},
-			`${WEBUI_BASE_URL}/api`
+			`${TUTOR_BASE_URL}/api`
 		).catch((error) => {
 			toast.error(`${error}`);
 
@@ -1854,8 +2119,8 @@
 <svelte:head>
 	<title>
 		{$chatTitle
-			? `${$chatTitle.length > 30 ? `${$chatTitle.slice(0, 30)}...` : $chatTitle} | ${$WEBUI_NAME}`
-			: `${$WEBUI_NAME}`}
+			? `${$chatTitle.length > 30 ? `${$chatTitle.slice(0, 30)}...` : $chatTitle} | ${$TUTOR_NAME}`
+			: `${$TUTOR_NAME}`}
 	</title>
 </svelte:head>
 
@@ -1881,9 +2146,9 @@
 />
 
 <div
-	class="h-screen max-h-[100dvh] transition-width duration-200 ease-in-out {$showSidebar
-		? '  md:max-w-[calc(100%-260px)]'
-		: ' '} w-full max-w-full flex flex-col"
+	class="h-screen max-h-[100dvh] transition-width duration-200 ease-in-out bg-[#F5F7F9] dark:bg-inherit {$showSidebar
+		? 'md:max-w-[calc(100%-260px)]'
+		: ''} w-full max-w-full flex flex-col"
 	id="chat-container"
 >
 	{#if chatIdProp === '' || (!loading && chatIdProp)}
@@ -1917,13 +2182,39 @@
 			bind:selectedModels
 			shareEnabled={!!history.currentId}
 			{initNewChat}
+			{avatarActive}
+			{toggleAvatar}
 		/>
 
 		<PaneGroup direction="horizontal" class="w-full h-full">
 			<Pane defaultSize={50} class="h-full flex w-full relative">
-				{#if $banners.length > 0 && !history.currentId && !$chatId && selectedModels.length <= 1}
+				{#if !history.currentId && !$chatId && selectedModels.length <= 1 && ($banners.length > 0 || ($config?.license_metadata?.type ?? null) === 'trial' || (($config?.license_metadata?.seats ?? null) !== null && $config?.user_count > $config?.license_metadata?.seats))}
 					<div class="absolute top-12 left-0 right-0 w-full z-30">
 						<div class=" flex flex-col gap-1 w-full">
+							{#if ($config?.license_metadata?.type ?? null) === 'trial'}
+								<Banner
+									banner={{
+										type: 'info',
+										title: 'Trial License',
+										content: $i18n.t(
+											'You are currently using a trial license. Please contact support to upgrade your license.'
+										)
+									}}
+								/>
+							{/if}
+
+							{#if ($config?.license_metadata?.seats ?? null) !== null && $config?.user_count > $config?.license_metadata?.seats}
+								<Banner
+									banner={{
+										type: 'error',
+										title: 'License Error',
+										content: $i18n.t(
+											'Exceeded the number of seats in your license. Please contact support to increase the number of seats.'
+										)
+									}}
+								/>
+							{/if}
+
 							{#each $banners.filter( (b) => (b.dismissible ? !JSON.parse(localStorage.getItem('dismissedBannerIds') ?? '[]').includes(b.id) : true) ) as banner}
 								<Banner
 									{banner}
@@ -1948,87 +2239,104 @@
 
 				<div class="flex flex-col flex-auto z-10 w-full @container">
 					{#if $settings?.landingPageMode === 'chat' || createMessagesList(history, history.currentId).length > 0}
-						<div
-							class=" pb-2.5 flex flex-col justify-between w-full flex-auto overflow-auto h-0 max-w-full z-10 scrollbar-hidden"
-							id="messages-container"
-							bind:this={messagesContainerElement}
-							on:scroll={(e) => {
-								autoScroll =
-									messagesContainerElement.scrollHeight - messagesContainerElement.scrollTop <=
-									messagesContainerElement.clientHeight + 5;
-							}}
-						>
-							<div class=" h-full w-full flex flex-col">
-								<Messages
-									chatId={$chatId}
-									bind:history
-									bind:autoScroll
-									bind:prompt
-									{selectedModels}
-									{sendPrompt}
-									{showMessage}
-									{submitMessage}
-									{continueResponse}
-									{regenerateResponse}
-									{mergeResponses}
-									{chatActionHandler}
-									{addMessages}
-									bottomPadding={files.length > 0}
-								/>
+						{#if avatarActive}
+							<div class="flex flex-col w-full h-full flex-auto relative">
+								<div class="flex-1 overflow-hidden bg-transparent">
+									<AvatarChat
+										className="h-full flex"
+										{history}
+										currentMessage={currentAvatarMessage}
+										speaking={avatarSpeaking}
+										on:speechend={() => (avatarSpeaking = false)}
+									/>
+								</div>
+								<div class="absolute bottom-0 left-0 right-0 z-20 animate-float">
+									<MessageInput
+										{history}
+										{selectedModels}
+										bind:files
+										bind:prompt
+										bind:autoScroll
+										bind:selectedToolIds
+										bind:imageGenerationEnabled
+										bind:codeInterpreterEnabled
+										bind:webSearchEnabled
+										bind:atSelectedModel
+										transparentBackground={true}
+										{stopResponse}
+										on:submit={async (e) => {
+											if (e.detail || files.length > 0) {
+												await tick();
+												submitPrompt(
+													($settings?.richTextInput ?? true)
+														? e.detail.replaceAll('\n\n', '\n')
+														: e.detail
+												);
+											}
+										}}
+									/>
+								</div>
 							</div>
-						</div>
-
-						<div class=" pb-[1rem]">
-							<MessageInput
-								{history}
-								{selectedModels}
-								bind:files
-								bind:prompt
-								bind:autoScroll
-								bind:selectedToolIds
-								bind:imageGenerationEnabled
-								bind:codeInterpreterEnabled
-								bind:webSearchEnabled
-								bind:atSelectedModel
-								transparentBackground={$settings?.backgroundImageUrl ?? false}
-								{stopResponse}
-								{createMessagePair}
-								onChange={(input) => {
-									if (input.prompt) {
-										localStorage.setItem(`chat-input-${$chatId}`, JSON.stringify(input));
-									} else {
-										localStorage.removeItem(`chat-input-${$chatId}`);
-									}
-								}}
-								on:upload={async (e) => {
-									const { type, data } = e.detail;
-
-									if (type === 'web') {
-										await uploadWeb(data);
-									} else if (type === 'youtube') {
-										await uploadYoutubeTranscription(data);
-									} else if (type === 'google-drive') {
-										await uploadGoogleDriveFile(data);
-									}
-								}}
-								on:submit={async (e) => {
-									if (e.detail || files.length > 0) {
-										await tick();
-										submitPrompt(
-											($settings?.richTextInput ?? true)
-												? e.detail.replaceAll('\n\n', '\n')
-												: e.detail
-										);
-									}
-								}}
-							/>
-
-							<div
-								class="absolute bottom-1 text-xs text-gray-500 text-center line-clamp-1 right-0 left-0"
-							>
-								<!-- {$i18n.t('LLMs can make mistakes. Verify important information.')} -->
+						{:else}
+							<div class="flex flex-col w-full h-full flex-auto relative">
+								<div
+									class="pb-2.5 flex-1 flex flex-col w-full overflow-auto max-w-full z-10 scrollbar-hidden"
+									id="messages-container"
+									bind:this={messagesContainerElement}
+									on:scroll={(e) => {
+										autoScroll =
+											messagesContainerElement.scrollHeight - messagesContainerElement.scrollTop <=
+											messagesContainerElement.clientHeight + 5;
+									}}
+								>
+									<div class="h-full w-full flex flex-col">
+										<Messages
+											chatId={$chatId}
+											bind:history
+											bind:autoScroll
+											bind:prompt
+											{selectedModels}
+											{atSelectedModel}
+											{sendPrompt}
+											{showMessage}
+											{submitMessage}
+											{continueResponse}
+											{regenerateResponse}
+											{mergeResponses}
+											{chatActionHandler}
+											{addMessages}
+											bottomPadding={files.length > 0}
+										/>
+									</div>
+								</div>
+								<div class="w-full pt-2 bg-[#F5F7F9] dark:bg-gray-900 relative z-20">
+									<MessageInput
+										{history}
+										{selectedModels}
+										bind:files
+										bind:prompt
+										bind:autoScroll
+										bind:selectedToolIds
+										bind:imageGenerationEnabled
+										bind:codeInterpreterEnabled
+										bind:webSearchEnabled
+										bind:atSelectedModel
+										transparentBackground={$settings?.backgroundImageUrl ?? false}
+										{stopResponse}
+										on:submit={async (e) => {
+											if (e.detail || files.length > 0) {
+												await tick();
+												submitPrompt(
+													($settings?.richTextInput ?? true)
+														? e.detail.replaceAll('\n\n', '\n')
+														: e.detail
+												);
+											}
+										}}
+									/>
+								</div>
 							</div>
-						</div>
+						{/if}
 					{:else}
 						<div class="overflow-auto w-full h-full flex items-center">
 							<Placeholder
@@ -2055,6 +2363,8 @@
 									}
 								}}
 								on:submit={async (e) => {
+									// This is triggered when the user selects a chat type
+									// Force chat creation even with empty/minimal content
 									if (e.detail || files.length > 0) {
 										await tick();
 										submitPrompt(
@@ -2062,6 +2372,15 @@
 												? e.detail.replaceAll('\n\n', '\n')
 												: e.detail
 										);
+									} else {
+										// Even with no prompt, create a new chat with default state
+										await initNewChat();
+										// After a moment, navigate to ensure the chat interface appears
+										setTimeout(() => {
+											const initialMessage = 'Hello';
+											prompt = initialMessage;
+											submitPrompt(initialMessage);
+										}, 300);
 									}
 								}}
 							/>
@@ -2090,6 +2409,8 @@
 				{stopResponse}
 				{showMessage}
 				{eventTarget}
+				{avatarActive}
+				onAvatarToggle={toggleAvatar}
 			/>
 		</PaneGroup>
 	{:else if loading}

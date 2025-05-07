@@ -19,7 +19,7 @@
 	import { getBanners } from '$lib/apis/configs';
 	import { getUserSettings } from '$lib/apis/users';
 
-	import { WEBUI_VERSION } from '$lib/constants';
+	import { TUTOR_VERSION } from '$lib/constants';
 	import { compareVersion } from '$lib/utils';
 
 	import {
@@ -55,7 +55,7 @@
 	onMount(async () => {
 		if ($user === undefined) {
 			await goto('/auth');
-		} else if (['user', 'admin'].includes($user.role)) {
+		} else if (['admin'].includes($user.role)) {
 			try {
 				// Check if IndexedDB exists
 				DB = await openDB('Chats', 1);
@@ -208,14 +208,27 @@
 			await tick();
 		}
 
+		// Add role-based redirection
+		if ($page.url.pathname === '/') {
+			if ($user.role === 'admin') {
+				await goto('/');
+			}else if ($user.role === 'user') {
+				await goto('/student/dashboard');
+			} else if ($user.role === 'parent') {
+				await goto('/parent');
+			} else if ($user.role === 'teacher') {
+				await goto('/teacher');
+			}
+		}
+
 		loaded = true;
 	});
 
 	const checkForVersionUpdates = async () => {
 		version = await getVersionUpdates(localStorage.token).catch((error) => {
 			return {
-				current: WEBUI_VERSION,
-				latest: WEBUI_VERSION
+				current: TUTOR_VERSION,
+				latest: TUTOR_VERSION
 			};
 		});
 	};
@@ -241,7 +254,7 @@
 		class=" text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-900 h-screen max-h-[100dvh] overflow-auto flex flex-row justify-end"
 	>
 		{#if loaded}
-			{#if !['user', 'admin'].includes($user.role)}
+			{#if !['admin'].includes($user.role)}
 				<AccountPending />
 			{:else if localDBChats.length > 0}
 				<div class="fixed w-full h-full flex z-50">

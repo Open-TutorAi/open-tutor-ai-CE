@@ -15,7 +15,7 @@
 
 	import { settings, user, shortCodesToEmojis } from '$lib/stores';
 
-	import { WEBUI_BASE_URL } from '$lib/constants';
+	import { TUTOR_BASE_URL } from '$lib/constants';
 
 	import Markdown from '$lib/components/chat/Messages/Markdown.svelte';
 	import ProfileImage from '$lib/components/chat/Messages/ProfileImage.svelte';
@@ -144,7 +144,7 @@
 					<ProfilePreview user={message.user}>
 						<ProfileImage
 							src={message.user?.profile_image_url ??
-								($i18n.language === 'dg-DG' ? `/doge.png` : `${WEBUI_BASE_URL}/static/favicon.png`)}
+								($i18n.language === 'dg-DG' ? `/doge.png` : `${TUTOR_BASE_URL}/static/favicon.png`)}
 							className={'size-8 translate-y-1 ml-0.5'}
 						/>
 					</ProfilePreview>

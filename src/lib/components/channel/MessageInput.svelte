@@ -14,7 +14,7 @@
 	import VoiceRecording from '../chat/MessageInput/VoiceRecording.svelte';
 	import InputMenu from './MessageInput/InputMenu.svelte';
 	import { uploadFile } from '$lib/apis/files';
-	import { WEBUI_API_BASE_URL } from '$lib/constants';
+	import { TUTOR_API_BASE_URL } from '$lib/constants';
 	import FileItem from '../common/FileItem.svelte';
 	import Image from '../common/Image.svelte';
 	import { transcribeAudio } from '$lib/apis/audio';
@@ -195,7 +195,7 @@
 				fileItem.id = uploadedFile.id;
 				fileItem.collection_name =
 					uploadedFile?.meta?.collection_name || uploadedFile?.collection_name;
-				fileItem.url = `${WEBUI_API_BASE_URL}/files/${uploadedFile.id}`;
+				fileItem.url = `${TUTOR_API_BASE_URL}/files/${uploadedFile.id}`;
 
 				files = files;
 			} else {
