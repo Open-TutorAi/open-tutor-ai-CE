@@ -537,8 +537,7 @@
 	>
 		<div class={`shrink-0 ${($settings?.chatDirection ?? 'LTR') === 'LTR' ? 'mr-3' : 'ml-3'}`}>
 			<ProfileImage
-				src={model?.info?.meta?.profile_image_url ??
-					($i18n.language === 'dg-DG' ? `/doge.png` : `${TUTOR_BASE_URL}/static/favicon.png`)}
+				src={model?.info?.meta?.profile_image_url ?? `${TUTOR_BASE_URL}/static/favicon.png`}
 				className={'size-14'}
 			/>
 		</div>
