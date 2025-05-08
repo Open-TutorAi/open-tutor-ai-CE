@@ -132,7 +132,7 @@
 			<div class=" self-center mr-2">
 				<DocumentChartBar />
 			</div>
-			<div class=" self-center">{$i18n.t('Evaluations')}</div>
+			<div class=" self-center">{$i18n.t('Arena Models')}</div>
 		</button>
 
 		<button
