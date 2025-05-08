@@ -13,6 +13,10 @@ from open_tutorai.routers import (
     auths,
 )
 
+from open_tutorai.env import (
+    CHANGELOG,
+)
+
 # Version info
 VERSION = "1.0.0"
 TUTORAI_BUILD_HASH = os.getenv("TUTORAI_BUILD_HASH", "dev-build")
@@ -64,10 +68,12 @@ async def health_check():
 
 
 # Include routers of open_tutorai
-app.include_router(
-    response_feedbacks.router, prefix="/api/v1", tags=["response-feedbacks"]
-)
+app.include_router(response_feedbacks.router, prefix="/api/v1", tags=["response-feedbacks"])
 app.include_router(auths.router, prefix="/auths", tags=["auths"])
+
+@app.get("/api/changelog")
+async def get_app_changelog():
+    return {key: CHANGELOG[key] for idx, key in enumerate(CHANGELOG) if idx < 5}
 
 
 # Mount the entire OpenWebUI app
