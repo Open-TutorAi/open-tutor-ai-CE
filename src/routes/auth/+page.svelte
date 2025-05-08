@@ -4,6 +4,8 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import ForgotPassword from '$lib/components/ForgotPassword.svelte';
+	import TermsOfServiceModal from '$lib/components/legal/TermsOfServiceModal.svelte';
+	import PrivacyPolicyModal from '$lib/components/legal/PrivacyPolicyModal.svelte';
 
 	import { getBackendConfig } from '$lib/apis';
 	import { ldapUserSignIn, getSessionUser, userSignIn, userSignUp } from '$lib/apis/auths';
@@ -21,6 +23,8 @@
 
 	let loaded = false;
 	let showForgotPassword = false;
+	let showTermsModal = false;
+	let showPrivacyModal = false;
 	let mode = $config?.features.enable_ldap ? 'ldap' : 'signin'; // Default is signin
 	let firstName = '';
 	let lastName = '';
@@ -234,6 +238,8 @@
 {#if showForgotPassword}
 	<ForgotPassword on:close={() => (showForgotPassword = false)} />
 {/if}
+<TermsOfServiceModal bind:open={showTermsModal} />
+<PrivacyPolicyModal bind:open={showPrivacyModal} />
 <OnBoarding
 	bind:show={onboarding}
 	getStartedHandler={() => {
@@ -502,19 +508,21 @@
 										/>
 										<label for="terms" class="ml-2 block text-sm text-gray-800 dark:text-gray-200">
 											{$i18n.t('I agree to the')}
-											<a
-												href="#"
+											<button
+												type="button"
 												class="text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
+												on:click={() => (showTermsModal = true)}
 											>
 												{$i18n.t('Terms of Service')}
-											</a>
+											</button>
 											{$i18n.t('and')}
-											<a
-												href="#"
+											<button
+												type="button"
 												class="text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
+												on:click={() => (showPrivacyModal = true)}
 											>
 												{$i18n.t('Privacy Policy')}
-											</a>
+											</button>
 										</label>
 									</div>
 								{/if}
