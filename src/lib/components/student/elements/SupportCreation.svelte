@@ -1,6 +1,7 @@
 <!-- student/support/+page.svelte -->
 <script lang="ts">
 	import { getContext } from 'svelte';
+	import { goto } from '$app/navigation';
 
 	const i18n = getContext('i18n');
 
@@ -217,8 +218,8 @@
 		if (currentStep < steps.length - 1) {
 			currentStep++;
 		} else {
-			// Last step - start the chat
-			showChatInterface = true;
+			// Navigate to student chat page
+			goto('/student/chat');
 		}
 	}
 
