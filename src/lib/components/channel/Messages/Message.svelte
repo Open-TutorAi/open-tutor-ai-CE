@@ -143,8 +143,7 @@
 				{#if showUserProfile}
 					<ProfilePreview user={message.user}>
 						<ProfileImage
-							src={message.user?.profile_image_url ??
-								($i18n.language === 'dg-DG' ? `/doge.png` : `${TUTOR_BASE_URL}/static/favicon.png`)}
+							src={message.user?.profile_image_url ?? `${TUTOR_BASE_URL}/static/favicon.png`}
 							className={'size-8 translate-y-1 ml-0.5'}
 						/>
 					</ProfilePreview>
