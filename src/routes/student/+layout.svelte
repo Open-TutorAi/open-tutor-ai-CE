@@ -13,7 +13,13 @@
 
 	const activePage = writable('dashboard');
 	let isSidebarOpen = true;
-	let username = 'Karim';
+	let username = '';
+
+	// Extract first name from user's full name
+	$: if ($user && $user.name) {
+		// Split the name and get the first part as the first name
+		username = $user.name.split(' ')[0];
+	}
 
 	let windowWidth: number;
 	let isMobile: boolean = false;
