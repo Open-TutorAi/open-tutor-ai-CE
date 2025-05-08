@@ -16,7 +16,7 @@
 	"Return to Login": "العودة إلى تسجيل الدخول",
 	"About": "عن",
 	"Administrator": "المسؤول",
-	"You are the first user to register. You will be created as an administrator.": "أنت أول مستخدم يقوم بالتسجيل. سيتم إنشاؤك كمسؤول.",
+	"You are the first user to register, so your account will be created with administrator privileges.": "أنت أول مستخدم يقوم بالتسجيل، لذلك سيتم إنشاء حسابك بامتيازات المسؤول.",
 	"First User Setup": "إعداد المستخدم الأول",
 	"Access": "",
 	"Password Recovery": "استعادة كلمة المرور",

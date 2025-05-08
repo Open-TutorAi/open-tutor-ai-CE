@@ -384,7 +384,7 @@
 											{#if isFirstUser}
 												<div class="mb-4 p-3 bg-blue-50 text-blue-800 rounded-md">
 													<p class="font-medium">{$i18n.t('First User Setup')}</p>
-													<p class="text-sm">{$i18n.t('You are the first user to register. You will be created as an administrator.')}</p>
+													<p class="text-sm">{$i18n.t('You are the first user to register, so your account will be created with administrator privileges.')}</p>
 												</div>
 											{/if}
 											<span

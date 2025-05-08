@@ -23,7 +23,7 @@
 	"Account Type": "Type de compte",
 	"Actions": "Actions",
 	"Administrator": "Administrateur",
-	"You are the first user to register. You will be created as an administrator.": "Vous êtes le premier utilisateur à vous inscrire. Vous serez créé en tant qu'administrateur.",
+	"You are the first user to register, so your account will be created with administrator privileges.": "Vous êtes le premier utilisateur à vous inscrire, votre compte sera donc créé avec des privilèges d'administrateur.",
 	"First User Setup": "Configuration du premier utilisateur",
 	"Activate": "",
 	"Activate this command by typing \"/{{COMMAND}}\" to chat input.": "Activez cette commande en tapant \"/{{COMMAND}}\" dans l'entrée de chat.",
