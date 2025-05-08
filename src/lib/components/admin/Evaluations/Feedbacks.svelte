@@ -22,8 +22,13 @@
 
 	export let feedbacks = [];
 
+	// Filter out feedbacks without rating values
+	$: filteredFeedbacks = feedbacks.filter(feedback => 
+		feedback.data && feedback.data.rating !== null && feedback.data.rating !== undefined
+	);
+
 	let page = 1;
-	$: paginatedFeedbacks = feedbacks.slice((page - 1) * 10, page * 10);
+	$: paginatedFeedbacks = filteredFeedbacks.slice((page - 1) * 10, page * 10);
 
 	type Feedback = {
 		id: string;
@@ -134,7 +139,7 @@
 <div
 	class="scrollbar-hidden relative whitespace-nowrap overflow-x-auto max-w-full rounded-sm pt-0.5"
 >
-	{#if (feedbacks ?? []).length === 0}
+	{#if (filteredFeedbacks ?? []).length === 0}
 		<div class="text-center text-xs text-gray-500 dark:text-gray-400 py-1">
 			{$i18n.t('No feedbacks found')}
 		</div>
@@ -223,8 +228,6 @@
 									{:else if feedback.data.rating.toString() === '-1'}
 										<Badge type="error" content={$i18n.t('Lost')} />
 									{/if}
-								{:else}
-									<Badge type="muted" content={$i18n.t('No Rating')} />
 								{/if}
 							</div>
 						</td>
@@ -253,7 +256,7 @@
 	{/if}
 </div>
 
-{#if feedbacks.length > 0}
+{#if filteredFeedbacks.length > 0}
 	<div class=" flex flex-col justify-end w-full text-right gap-1">
 		<div class="line-clamp-1 text-gray-500 text-xs">
 			{$i18n.t('Help us create the best community leaderboard by sharing your feedback history!')}
@@ -284,6 +287,6 @@
 	</div>
 {/if}
 
-{#if feedbacks.length > 10}
-	<Pagination bind:page count={feedbacks.length} perPage={10} />
+{#if filteredFeedbacks.length > 10}
+	<Pagination bind:page count={filteredFeedbacks.length} perPage={10} />
 {/if}
