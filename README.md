@@ -18,29 +18,40 @@
 
 For more information, be sure to check out our [Open TutorAI Documentation](https://opentutorai.com/docs/intro).
 
-## Key Features of Open TutorAI ⭐
+## ⭐ Key Features of Open TutorAI
 
-- 🚀 **Effortless Setup**: Install seamlessly using Docker or Kubernetes (kubectl, kustomize or helm) for a hassle-free experience with support for both `:ollama` and `:cuda` tagged images.
+Open TutorAI-CE is packed with powerful features designed for educational and collaborative AI experiences. Here’s what makes it stand out:
 
-- 🤝 **Ollama/OpenAI API Integration**: Effortlessly integrate OpenAI-compatible APIs for versatile conversations alongside Ollama models. Customize the OpenAI API URL to link with **LMStudio, GroqCloud, Mistral, OpenRouter, and more**.
+- 🚀 **Effortless Setup with Docker**  
+  Set up your environment in minutes using Docker with support for `:ollama` and `:cuda` tagged images, ensuring a streamlined and hassle-free deployment.
 
-- 🛡️ **Granular Permissions and User Groups**: By allowing administrators to create detailed user roles and permissions, we ensure a secure user environment. This granularity not only enhances security but also allows for customized user experiences, fostering a sense of ownership and responsibility amongst users.
+- 🤖 **Ollama & OpenAI API Compatibility**  
+  Easily integrate OpenAI-compatible APIs for flexible conversations. Customize the API endpoint to connect with services like **LMStudio**, **GroqCloud**, **Mistral**, **OpenRouter**, and more—alongside local **Ollama** models.
 
-- 📱 **Responsive Design**: Enjoy a seamless experience across Desktop PC, Laptop, and Mobile devices.
+- 🛡️ **Granular Permissions & User Groups**  
+  Admins can define detailed roles and permissions, allowing for secure, customized user experiences while promoting accountability and collaboration.
 
-- 📱 **Progressive Web App (PWA) for Mobile**: Enjoy a native app-like experience on your mobile device with our PWA, providing offline access on localhost and a seamless user interface.
+- 🧑‍💻 **Responsive & Mobile-Optimized Design**  
+  Enjoy a smooth user experience across desktops, laptops, and mobile devices with a fully responsive interface.
 
-- ✒️🔢 **Full Markdown and LaTeX Support**: Elevate your LLM experience with comprehensive Markdown and LaTeX capabilities for enriched interaction.
+- 📱 **Progressive Web App (PWA) Support**  
+  Install Open TutorAI on your mobile device for an app-like experience, including **offline mode** on localhost and full access to core functionality.
 
-- 🎤📹 **Hands-Free Voice/Video Call**: Experience seamless communication with integrated hands-free voice and video call features, allowing for a more dynamic and interactive chat environment.
+- 🎤📹 **Voice, Video & Avatar Discussion Mode**  
+  Interact hands-free using integrated **voice and video calls**, or dive into an engaging experience with our **avatar-powered discussion mode**—a lifelike conversational interface that brings your AI to life.
 
-- 🛠️ **Model Builder**: Easily create Ollama models via the Web UI. Create and add custom characters/agents, customize chat elements, and import models effortlessly through [Open TutorAI Community](https://oepntutorai.com.com/) integration.
+- 🧑‍🏫 **Personalized Learning Experience**  
+  Open TutorAI is purpose-built for education:  
+  - 🎓 **Customize learning support** to meet individual learner needs.  
+  - 🧠 **Generate a personalized LLM**, optionally paired with a user-selected **avatar**, tailored to each learner's style, personality, or curriculum.
 
-- 🐍 **Native Python Function Calling Tool**: Enhance your LLMs with built-in code editor support in the tools workspace. Bring Your Own Function (BYOF) by simply adding your pure Python functions, enabling seamless integration with LLMs.
+- 🛠️ **Model Builder**: Easily create Ollama models. Create and add custom characters/agents, customize chat elements, and import models effortlessly.
 
-- 📚 **Local RAG Integration**: Dive into the future of chat interactions with groundbreaking Retrieval Augmented Generation (RAG) support. This feature seamlessly integrates document interactions into your chat experience. You can load documents directly into the chat or add files to your document library, effortlessly accessing them using the `#` command before a query.
-
-- 🔍 **Web Search for RAG**: Perform web searches using providers like `SearXNG`, `Google PSE`, `Brave Search`, `serpstack`, `serper`, `Serply`, `DuckDuckGo`, `TavilySearch`, `SearchApi` and `Bing` and inject the results directly into your chat experience.
+- 📚 **Local RAG Integration for Educational Content**  
+  Empower learners and educators with **Retrieval-Augmented Generation (RAG)** tailored for education. Seamlessly integrate textbooks, lecture notes, assignments, and research papers into the chat experience. Students can load documents directly into the conversation or access classroom resources from their document library using the `#` command—enabling **context-aware tutoring**, **assignment help**, and **in-depth discussion of study material**.
+  
+- 🔍 **Educational Web Search for RAG**  
+  Enhance learning with real-time **web search integration**. Students and educators can perform targeted research using providers like `Google PSE`, `SearXNG`, `Brave`, `DuckDuckGo`, and more—right from the chat. The search results are automatically injected into the conversation, enabling **fact-checking**, **discovery of up-to-date information**, and **exploration of external academic resources** without leaving the tutoring environment.
 
 - 🌐 **Web Browsing Capability**: Seamlessly integrate websites into your chat experience using the `#` command followed by a URL. This feature allows you to incorporate web content directly into your conversations, enhancing the richness and depth of your interactions.
 
@@ -52,159 +63,74 @@ For more information, be sure to check out our [Open TutorAI Documentation](http
 
 - 🌐🌍 **Multilingual Support**: Experience Open TutorAI in your preferred language with our internationalization (i18n) support. Join us in expanding our supported languages! We're actively seeking contributors!
 
-- 🧩 **Pipelines, Open TutorAI Plugin Support**: Seamlessly integrate custom logic and Python libraries into Open TutorAI using [Pipelines Plugin Framework](#). Launch your Pipelines instance, set the OpenAI URL to the Pipelines URL, and explore endless possibilities. [Examples](#) include **Function Calling**, User **Rate Limiting** to control access, **Usage Monitoring** with tools like Langfuse, **Live Translation with LibreTranslate** for multilingual support, **Toxic Message Filtering** and much more.
-
 - 🌟 **Continuous Updates**: We are committed to improving Open TutorAI with regular updates, fixes, and new features.
 
 Want to learn more about Open TutorAI's features? Check out our [Open TutorAI documentation](https://opentutorai.com/docs/intro) for a comprehensive overview!
 
 ## 🔗 Also Check Out Open TutorAI Community!
 
-Don't forget to explore our sibling project, [Open TutorAI Community](https://opentutorai.com/docs/intro), where you can discover, download, and explore customized Modelfiles. Open TutorAI Community offers a wide range of exciting possibilities for enhancing your chat interactions with Open TutorAI! 🚀
+Don't forget to explore our sibling project, [Open TutorAI Community](https://discord.gg/BTQtE2deEm), where you can discover, download, and explore customized Modelfiles. Open TutorAI Community offers a wide range of exciting possibilities for enhancing your chat interactions with Open TutorAI! 🚀
 
 ## How to Install 🚀
 
-### Installation via Python pip 🐍
+Below is a list of essential steps and resources to help you get started, manage, and develop with Open TutorAI.
 
-Open TutorAI can be installed using pip, the Python package installer. Before proceeding, ensure you're using **Python 3.11** to avoid compatibility issues.
+### 🛠️ Setup Guide
+Follow these steps to set up the project locally:
 
-1. **Install Open TutorAI**:
-   Open your terminal and run the following command to install Open TutorAI:
+1. **Fork and Clone the Repository**
+   - Go to [GitHub Repository](https://github.com/R2D-dev/open-tutor-ai-CE)
+   - Click on **Fork**, then clone your forked repo:
+     ```bash
+     git clone https://github.com/YOUR_USERNAME/open-tutor-ai-CE.git
+     cd open-tutor-ai-CE
+     ```
 
-   ```bash
-   pip install open-tutorai
-   ```
+2. **Backend Setup**
+   - Navigate to the backend folder:
+     ```bash
+     cd backend
+     ```
+   - Create and activate a new Conda environment:
+     ```bash
+     conda create -n tutorai-env python=3.11
+     conda activate tutorai-env
+     ```
+   - Install the required packages:
+     ```bash
+     pip install -r requirements.txt
+     ```
 
-2. **Running Open TutorAI**:
-   After installation, you can start Open TutorAI by executing:
+   - For development:
+     ```bash
+     ./dev.sh
+     ```
+   - Or for production:
+     ```bash
+     ./start.sh
+     ```
 
-   ```bash
-   open-tutorai serve
-   ```
-
-This will start the Open TutorAI server, which you can access at [http://localhost:8080](http://localhost:8080)
-
-### Quick Start with Docker 🐳
-
-> [!NOTE]  
-> Please note that for certain Docker environments, additional configurations might be needed. If you encounter any connection issues, our detailed guide on [Open TutorAI Documentation](https://docs.########.com/) is ready to assist you.
-
-> [!WARNING]
-> When using Docker to install Open TutorAI, make sure to include the `-v open-tutorai:/app/backend/data` in your Docker command. This step is crucial as it ensures your database is properly mounted and prevents any loss of data.
-
-> [!TIP]  
-> If you wish to utilize Open TutorAI with Ollama included or CUDA acceleration, we recommend utilizing our official images tagged with either `:cuda` or `:ollama`. To enable CUDA, you must install the [Nvidia CUDA container toolkit](https://docs.nvidia.com/dgx/nvidia-container-runtime-upgrade/) on your Linux/WSL system.
-
-### Installation with Default Configuration
-
-- **If Ollama is on your computer**, use this command:
-
-  ```bash
-  docker run -d -p 3000:8080 --add-host=host.docker.internal:host-gateway -v open-tutorai:/app/backend/data --name open-tutorai --restart always ghcr.io/open-tutorai/open-tutorai:main
-  ```
-
-- **If Ollama is on a Different Server**, use this command:
-
-  To connect to Ollama on another server, change the `OLLAMA_BASE_URL` to the server's URL:
-
-  ```bash
-  docker run -d -p 3000:8080 -e OLLAMA_BASE_URL=https://example.com -v open-tutorai:/app/backend/data --name open-tutorai --restart always ghcr.io/open-tutorai/open-tutorai:main
-  ```
-
-- **To run Open TutorAI with Nvidia GPU support**, use this command:
-
-  ```bash
-  docker run -d -p 3000:8080 --gpus all --add-host=host.docker.internal:host-gateway -v open-tutorai:/app/backend/data --name open-tutorai --restart always ghcr.io/open-tutorai/open-tutorai:cuda
-  ```
-
-### Installation for OpenAI API Usage Only
-
-- **If you're only using OpenAI API**, use this command:
-
-  ```bash
-  docker run -d -p 3000:8080 -e OPENAI_API_KEY=your_secret_key -v open-tutorai:/app/backend/data --name open-tutorai --restart always ghcr.io/open-tutorai/open-tutorai:main
-  ```
-
-### Installing Open TutorAI with Bundled Ollama Support
-
-This installation method uses a single container image that bundles Open TutorAI with Ollama, allowing for a streamlined setup via a single command. Choose the appropriate command based on your hardware setup:
-
-- **With GPU Support**:
-  Utilize GPU resources by running the following command:
-
-  ```bash
-  docker run -d -p 3000:8080 --gpus=all -v ollama:/root/.ollama -v open-tutorai:/app/backend/data --name open-tutorai --restart always ghcr.io/open-tutorai/open-tutorai:ollama
-  ```
-
-- **For CPU Only**:
-  If you're not using a GPU, use this command instead:
-
-  ```bash
-  docker run -d -p 3000:8080 -v ollama:/root/.ollama -v open-tutorai:/app/backend/data --name open-tutorai --restart always ghcr.io/open-tutorai/open-tutorai:ollama
-  ```
-
-Both commands facilitate a built-in, hassle-free installation of both Open TutorAI and Ollama, ensuring that you can get everything up and running swiftly.
-
-After installation, you can access Open TutorAI at [http://localhost:3000](http://localhost:3000). Enjoy! 😄
-
-### Other Installation Methods
-
-We offer various installation alternatives, including non-Docker native installation methods, Docker Compose, Kustomize, and Helm. Visit our [Open TutorAI Documentation](https://opentutorai.com/docs/getting-started/) or join our [Discord community](https://discord.gg/BTQtE2deEm) for comprehensive guidance.
+3. **Frontend Setup**
+   - From the root of the project (or navigate to the frontend folder):
+     ```bash
+     npm install
+     npm run dev
+     ```
+---
 
 ### Troubleshooting
 
 Encountering connection issues? Our [Open TutorAI Documentation](https://opentutorai.com/docs/troubleshooting/) has got you covered. For further assistance and to join our vibrant community, visit the [Open TutorAI Discord](https://discord.gg/BTQtE2deEm).
 
-#### Open TutorAI: Server Connection Error
-
-If you're experiencing connection issues, it’s often due to the TutorAI docker container not being able to reach the Ollama server at 127.0.0.1:11434 (host.docker.internal:11434) inside the container . Use the `--network=host` flag in your docker command to resolve this. Note that the port changes from 3000 to 8080, resulting in the link: `http://localhost:8080`.
-
-**Example Docker Command**:
-
-```bash
-docker run -d --network=host -v open-tutorai:/app/backend/data -e OLLAMA_BASE_URL=http://127.0.0.1:11434 --name open-tutorai --restart always ghcr.io/open-tutorai/open-tutorai:main
-```
-
-### Keeping Your Docker Installation Up-to-Date
-
-In case you want to update your local Docker installation to the latest version, you can do it with [Watchtower](https://containrrr.dev/watchtower/):
-
-```bash
-docker run --rm --volume /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --run-once open-tutorai
-```
-
-In the last part of the command, replace `open-tutorai` with your container name if it is different.
-
-Check our Updating Guide available in our [Open TutorAI Documentation](https://opentutorai.com/docs/getting-started/).
-
-### Using the Dev Branch 🌙
-
-> [!WARNING]
-> The `:dev` branch contains the latest unstable features and changes. Use it at your own risk as it may have bugs or incomplete features.
-
-If you want to try out the latest bleeding-edge features and are okay with occasional instability, you can use the `:dev` tag like this:
-
-```bash
-docker run -d -p 3000:8080 -v open-tutorai:/app/backend/data --name open-tutorai --add-host=host.docker.internal:host-gateway --restart always ghcr.io/open-tutorai/open-tutorai:dev
-```
-
-### Offline Mode
-
-If you are running Open TutorAI in an offline environment, you can set the `HF_HUB_OFFLINE` environment variable to `1` to prevent attempts to download models from the internet.
-
-```bash
-export HF_HUB_OFFLINE=1
-```
-
-## What's Next? 🌟
+## 🌟 What's Next? 
 
 Discover upcoming features on our roadmap in the [Open TutorAI Documentation](https://opentutorai.com/docs/roadmap).
 
-## License 📜
+## 📜 License
 
 This project is licensed under the [BSD-3-Clause License](LICENSE) - see the [LICENSE](LICENSE) file for details. 📄
 
-## Support 💬
+## 💬 Support
 
 If you have any questions, suggestions, or need assistance, please open an issue or join our
 [Open TutorAI Discord community](https://discord.gg/BTQtE2deEm) to connect with us! 🤝
