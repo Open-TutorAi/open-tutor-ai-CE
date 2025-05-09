@@ -3,7 +3,13 @@ import { browser, dev } from '$app/environment';
 
 export const APP_NAME = 'Open TutorAI';
 
-export const TUTOR_HOSTNAME = browser ? (dev ? `${location.hostname}:5173` : ``) : '';
+// Backend server for API calls
+export const TUTOR_HOSTNAME = browser ? (dev ? `${location.hostname}:8080` : ``) : '';
+
+// Frontend server for static assets (Vite dev server)
+export const TUTOR_FRONT_HOSTNAME = browser ? (dev ? `${location.hostname}:5173` : ``) : '';
+export const TUTOR_FRONT_URL = browser ? (dev ? `http://${TUTOR_FRONT_HOSTNAME}` : ``) : ``;
+
 export const TUTOR_BASE_URL = browser ? (dev ? `http://${TUTOR_HOSTNAME}` : ``) : ``;
 export const TUTOR_API_BASE_URL = `${TUTOR_BASE_URL}/api/v1`;
 

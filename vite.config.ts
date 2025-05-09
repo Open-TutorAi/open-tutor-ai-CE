@@ -40,14 +40,6 @@ export default defineConfig({
 		format: 'es'
 	},
 	server: {
-		port: 5173,
-		host: true, // This enables listening on all network interfaces
-		proxy: {
-			'/api': {
-				target: 'http://localhost:8080',
-				changeOrigin: true
-			}
-		},
 		fs: {
 			allow: ['./static/avatar', './static/classroom', './static/draco', './static/images/background.jpeg']
 		}
