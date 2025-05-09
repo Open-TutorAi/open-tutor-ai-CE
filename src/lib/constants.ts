@@ -3,7 +3,7 @@ import { browser, dev } from '$app/environment';
 
 export const APP_NAME = 'Open TutorAI';
 
-export const TUTOR_HOSTNAME = browser ? (dev ? `${location.hostname}:5173` : ``) : '';
+export const TUTOR_HOSTNAME = browser ? (dev ? `${location.hostname}:8080` : ``) : '';
 export const TUTOR_BASE_URL = browser ? (dev ? `http://${TUTOR_HOSTNAME}` : ``) : ``;
 export const TUTOR_API_BASE_URL = `${TUTOR_BASE_URL}/api/v1`;
 
