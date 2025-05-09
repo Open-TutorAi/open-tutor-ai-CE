@@ -10,7 +10,7 @@
 	import { getBackendConfig } from '$lib/apis';
 	import { ldapUserSignIn, getSessionUser, userSignIn, userSignUp, getUserCount } from '$lib/apis/auths';
 
-	import { TUTOR_API_BASE_URL, TUTOR_BASE_URL } from '$lib/constants';
+	import { TUTOR_FRONT_URL, TUTOR_BASE_URL } from '$lib/constants';
 	import { TUTOR_NAME, config, user, socket } from '$lib/stores';
 
 	import { generateInitialsImage, canvasPixelTest } from '$lib/utils';
@@ -297,7 +297,7 @@
 					<div class="flex items-center justify-center mb-3">
 						<img
 							crossorigin="anonymous"
-							src="{TUTOR_BASE_URL}/static/splash.png"
+							src="{TUTOR_FRONT_URL}/static/splash.png"
 							class="w-28 h-28 rounded-full bg-white p-3 shadow-lg"
 							alt="logo"
 						/>
