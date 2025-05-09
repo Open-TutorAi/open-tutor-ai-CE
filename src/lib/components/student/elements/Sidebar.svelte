@@ -252,7 +252,7 @@
 	<!-- Overlay to close sidebar when clicked (mobile only) -->
 	{#if isSidebarOpen}
 		<div
-			class="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
+			class="fixed inset-0 bg-white/30 backdrop-blur-sm z-20 md:hidden"
 			on:click={() => {
 				isSidebarOpen = false;
 			}}
