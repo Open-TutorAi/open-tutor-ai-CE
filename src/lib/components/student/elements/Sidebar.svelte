@@ -1,5 +1,6 @@
 <!-- Sidebar.svelte -->
 <script lang="ts">
+	import { TUTOR_FRONT_URL } from '$lib/constants';
 	import { TUTOR_BASE_URL } from '$lib/constants';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
@@ -166,11 +167,11 @@
 			<div class="flex items-center justify-center h-12">
 				{#if isSidebarOpen}
 					<a href="/" class="flex items-center">
-						<img src="{TUTOR_BASE_URL}/static/favicon.png" alt="Logo" class="h-20 mr-2" />
+						<img src="{TUTOR_FRONT_URL}/static/favicon.png" alt="Logo" class="h-20 mr-2" />
 					</a>
 				{:else}
 					<a href="/" class="flex items-center md:block hidden">
-						<img src="{TUTOR_BASE_URL}/static/favicon.png" alt="Logo" class="h-8" />
+						<img src="{TUTOR_FRONT_URL}/static/favicon.png" alt="Logo" class="h-8" />
 					</a>
 				{/if}
 			</div>

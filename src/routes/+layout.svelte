@@ -28,6 +28,7 @@
 		appInfo
 	} from '$lib/stores';
 	import { goto } from '$app/navigation';
+	import { TUTOR_FRONT_URL } from '$lib/constants';
 	import { page } from '$app/stores';
 	import { Toaster, toast } from 'svelte-sonner';
 
@@ -570,7 +571,7 @@
 
 <svelte:head>
 	<title>{$TUTOR_NAME}</title>
-	<link crossorigin="anonymous" rel="icon" href="{TUTOR_BASE_URL}/static/favicon.png" />
+	<link crossorigin="anonymous" rel="icon" href="{TUTOR_FRONT_URL}/static/favicon.png" />
 
 	<!-- rosepine themes have been disabled as it's not up to date with our latest version. -->
 	<!-- feel free to make a PR to fix if anyone wants to see it return -->
