@@ -1,35 +1,48 @@
-### Installing Both Ollama and Open WebUI Using Kustomize
+# Getting Started with Open TutorAI
 
-For cpu-only pod
+Welcome to the **Open TutorAI - Getting started** Below is a list of essential steps and resources to help you get started, manage, and develop with Open TutorAI.
 
-```bash
-kubectl apply -f ./kubernetes/manifest/base
-```
+## 🛠️ Setup Guide
 
-For gpu-enabled pod
+Follow these steps to set up the project locally:
 
-```bash
-kubectl apply -k ./kubernetes/manifest
-```
+1. **Fork and Clone the Repository**
+   - Go to [GitHub Repository](https://github.com/R2D-dev/open-tutor-ai-CE)
+   - Click on **Fork**, then clone your forked repo:
+     ```bash
+     git clone https://github.com/YOUR_USERNAME/open-tutor-ai-CE.git
+     cd open-tutor-ai-CE
+     ```
 
-### Installing Both Ollama and Open WebUI Using Helm
+2. **Backend Setup**
+   - Navigate to the backend folder:
+     ```bash
+     cd backend
+     ```
+   - Create and activate a new Conda environment:
+     ```bash
+     conda create -n tutorai-env python=3.11
+     conda activate tutorai-env
+     ```
+   - Install the required packages:
+     ```bash
+     pip install -r requirements.txt
+     ```
 
-Package Helm file first
+   - For development:
+     ```bash
+     ./dev.sh
+     ```
+   - Or for production:
+     ```bash
+     ./start.sh
+     ```
 
-```bash
-helm package ./kubernetes/helm/
-```
+3. **Frontend Setup**
+   - From the root of the project (or navigate to the frontend folder):
+     ```bash
+     npm install
+     npm run dev
+     ```
 
-For cpu-only pod
-
-```bash
-helm install ollama-webui ./ollama-webui-*.tgz
-```
-
-For gpu-enabled pod
-
-```bash
-helm install ollama-webui ./ollama-webui-*.tgz --set ollama.resources.limits.nvidia.com/gpu="1"
-```
-
-Check the `kubernetes/helm/values.yaml` file to know which parameters are available for customization
+---

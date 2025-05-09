@@ -4,12 +4,12 @@
 	const dispatch = createEventDispatcher();
 	const i18n = getContext('i18n');
 
-	import { WEBUI_VERSION } from '$lib/constants';
+	import { TUTOR_VERSION } from '$lib/constants';
 	import XMark from '../icons/XMark.svelte';
 
 	export let version = {
-		current: WEBUI_VERSION,
-		latest: WEBUI_VERSION
+		current: TUTOR_VERSION,
+		latest: TUTOR_VERSION
 	};
 </script>
 
@@ -21,7 +21,11 @@
 			LATEST_VERSION: version.latest
 		})}
 
-		<a href="https://github.com/open-webui/open-webui/releases" target="_blank" class="underline">
+		<a
+			href="https://github.com/pr-elhajji/open-tutor-ai-CE/releases"
+			target="_blank"
+			class="underline"
+		>
 			{$i18n.t('Update for the latest features and improvements.')}</a
 		>
 	</div>

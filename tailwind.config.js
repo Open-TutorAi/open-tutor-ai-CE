@@ -7,6 +7,9 @@ export default {
 	content: ['./src/**/*.{html,js,svelte,ts}'],
 	theme: {
 		extend: {
+			fontFamily: {
+				jersey: ['Jersey', 'sans-serif']
+			},
 			colors: {
 				gray: {
 					50: 'var(--color-gray-50, #f9f9f9)',
@@ -36,6 +39,15 @@ export default {
 			},
 			padding: {
 				'safe-bottom': 'env(safe-area-inset-bottom)'
+			},
+			keyframes: {
+				float: {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-5px)' },
+				},
+			},
+			animation: {
+				float: 'float 6s ease-in-out infinite',
 			}
 		}
 	},

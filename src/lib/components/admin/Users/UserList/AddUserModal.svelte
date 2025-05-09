@@ -4,7 +4,7 @@
 	import { onMount, getContext } from 'svelte';
 	import { addUser } from '$lib/apis/auths';
 
-	import { WEBUI_BASE_URL } from '$lib/constants';
+	import { TUTOR_BASE_URL } from '$lib/constants';
 
 	import Modal from '$lib/components/common/Modal.svelte';
 
@@ -21,7 +21,7 @@
 		name: '',
 		email: '',
 		password: '',
-		role: 'user'
+		role: 'student'
 	};
 
 	$: if (show) {
@@ -29,7 +29,7 @@
 			name: '',
 			email: '',
 			password: '',
-			role: 'user'
+			role: 'student'
 		};
 	}
 
@@ -76,7 +76,7 @@
 						if (idx > 0) {
 							if (
 								columns.length === 4 &&
-								['admin', 'user', 'pending'].includes(columns[3].toLowerCase())
+								['admin', 'student', 'teacher', 'parent'].includes(columns[3].toLowerCase())
 							) {
 								const res = await addUser(
 									localStorage.token,
@@ -181,20 +181,21 @@
 
 								<div class="flex-1">
 									<select
-										class="w-full capitalize rounded-lg text-sm bg-transparent dark:disabled:text-gray-500 outline-hidden"
+										class="w-full capitalize rounded-lg text-sm bg-transparent dark:bg-gray-800 dark:text-white dark:disabled:text-gray-500 outline-hidden"
 										bind:value={_user.role}
 										placeholder={$i18n.t('Enter Your Role')}
 										required
 									>
-										<option value="pending"> {$i18n.t('pending')} </option>
-										<option value="user"> {$i18n.t('user')} </option>
-										<option value="admin"> {$i18n.t('admin')} </option>
+										<option class="dark:bg-gray-800" value="user"> {$i18n.t('student')} </option>
+										<option class="dark:bg-gray-800" value="teacher"> {$i18n.t('teacher')} </option>
+										<option class="dark:bg-gray-800" value="parent"> {$i18n.t('parent')} </option>
+										<option class="dark:bg-gray-800" value="admin"> {$i18n.t('admin')} </option>
 									</select>
 								</div>
 							</div>
 
 							<div class="flex flex-col w-full mt-1">
-								<div class=" mb-1 text-xs text-gray-500">{$i18n.t('Name')}</div>
+								<div class=" mb-1 text-xs text-gray-500">{$i18n.t('Full Name')}</div>
 
 								<div class="flex-1">
 									<input
@@ -269,7 +270,7 @@
 									)}
 									<a
 										class="underline dark:text-gray-200"
-										href="{WEBUI_BASE_URL}/static/user-import.csv"
+										href="{TUTOR_BASE_URL}/static/user-import.csv"
 									>
 										{$i18n.t('Click here to download user import template file.')}
 									</a>

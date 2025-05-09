@@ -29,6 +29,8 @@
 	export let showMessage: Function;
 	export let files;
 	export let modelId;
+	export let avatarActive = false;
+	export let onAvatarToggle = () => {};
 
 	export let pane;
 

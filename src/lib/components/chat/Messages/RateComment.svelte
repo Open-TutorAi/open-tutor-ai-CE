@@ -12,34 +12,49 @@
 	export let message;
 	export let show = false;
 
-	let LIKE_REASONS = [
-		'accurate_information',
-		'followed_instructions_perfectly',
-		'showcased_creativity',
-		'positive_attitude',
-		'attention_to_detail',
-		'thorough_explanation',
+	let LIKE_REASONS: string[] = [
+		'clear_explanation',
+		'helpful_teaching_approach',
+		'effective_learning_guidance',
+		'solved_my_problem',
+		'well_structured_answer',
+		'encouraged_critical_thinking',
 		'other'
 	];
-	let DISLIKE_REASONS = [
-		'dont_like_the_style',
-		'too_verbose',
-		'not_helpful',
-		'not_factually_correct',
-		'didnt_fully_follow_instructions',
-		'refused_when_it_shouldnt_have',
-		'being_lazy',
+	let DISLIKE_REASONS: string[] = [
+		'confusing_explanation',
+		'too_complex',
+		'too_simplistic',
+		'didnt_address_my_question',
+		'needs_more_examples',
+		'not_helpful_for_learning',
 		'other'
 	];
 
-	let tags = [];
+	let tags: { name: string }[] = [];
 
-	let reasons = [];
-	let selectedReason = null;
+	let reasons: string[] = [];
+	let selectedReason: string | null = null;
 	let comment = '';
 
-	let detailedRating = null;
-	let selectedModel = null;
+	let detailedRating: number | null = null;
+	let selectedModel: any = null;
+
+	// Define emoji representations for ratings 1-10
+	const emojiRatings = [
+		'😖', // 1 - Not helpful
+		'😟', // 2
+		'😕', // 3
+		'😐', // 4
+		'🙂', // 5
+		'😊', // 6
+		'😄', // 7
+		'😁', // 8
+		'🤩', // 9
+		'🌟' // 10 - Very helpful
+	];
+
+	let isSubmitting = false;
 
 	$: if (message?.annotation?.rating === 1) {
 		reasons = LIKE_REASONS;
@@ -60,7 +75,7 @@
 			comment = message?.annotation?.comment ?? '';
 		}
 
-		tags = (message?.annotation?.tags ?? []).map((tag) => ({
+		tags = (message?.annotation?.tags ?? []).map((tag: string) => ({
 			name: tag
 		}));
 
@@ -87,6 +102,8 @@
 		// 	return;
 		// }
 
+		isSubmitting = true;
+
 		dispatch('save', {
 			reason: selectedReason,
 			comment: comment,
@@ -98,6 +115,9 @@
 
 		toast.success($i18n.t('Thanks for your feedback!'));
 		show = false;
+		setTimeout(() => {
+			isSubmitting = false;
+		}, 300);
 	};
 </script>
 
@@ -114,9 +134,9 @@
 	id="message-feedback-{message.id}"
 >
 	<div class="flex justify-between items-center">
-		<div class="text-sm font-medium">{$i18n.t('How would you rate this response?')}</div>
-
-		<!-- <div class=" text-sm">{$i18n.t('Tell us more:')}</div> -->
+		<div class="text-sm font-medium">
+			{$i18n.t('How helpful was this response for your learning?')}
+		</div>
 
 		<button
 			on:click={() => {
@@ -138,31 +158,32 @@
 
 	<div class="w-full flex justify-center">
 		<div class=" relative w-fit">
-			<div class="mt-1.5 w-fit flex gap-1 pb-5">
-				<!-- 1-10 scale -->
+			<div class="mt-4 w-fit flex gap-0.5 pb-5">
+				<!-- Emoji scale instead of 1-10 -->
 				{#each Array.from({ length: 10 }).map((_, i) => i + 1) as rating}
 					<button
-						class="size-7 text-sm border border-gray-100 dark:border-gray-850 hover:bg-gray-50 dark:hover:bg-gray-850 {detailedRating ===
+						class="size-5.5 text-lg border border-gray-100 dark:border-gray-850 hover:bg-gray-50 dark:hover:bg-gray-850 {detailedRating ===
 						rating
 							? 'bg-gray-100 dark:bg-gray-800'
-							: ''} transition rounded-full disabled:cursor-not-allowed disabled:text-gray-500 disabled:bg-white dark:disabled:bg-gray-900"
+							: ''} transition rounded-full disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-white dark:disabled:bg-gray-900 flex items-center justify-center"
 						on:click={() => {
 							detailedRating = rating;
 						}}
 						disabled={message?.annotation?.rating === -1 ? rating > 5 : rating < 6}
+						title={`Rating: ${rating}`}
 					>
-						{rating}
+						{emojiRatings[rating - 1]}
 					</button>
 				{/each}
 			</div>
 
 			<div class="absolute bottom-0 left-0 right-0 flex justify-between text-xs">
 				<div>
-					1 - {$i18n.t('Awful')}
+					{emojiRatings[0]} - {$i18n.t('Not helpful')}
 				</div>
 
 				<div>
-					10 - {$i18n.t('Amazing')}
+					{emojiRatings[9]} - {$i18n.t('Very helpful')}
 				</div>
 			</div>
 		</div>
@@ -170,7 +191,7 @@
 
 	<div>
 		{#if reasons.length > 0}
-			<div class="text-sm mt-1.5 font-medium">{$i18n.t('Why?')}</div>
+			<div class="text-sm mt-4 font-medium">{$i18n.t('Why?')}</div>
 
 			<div class="flex flex-wrap gap-1.5 text-sm mt-1.5">
 				{#each reasons as reason}
@@ -183,32 +204,30 @@
 							selectedReason = reason;
 						}}
 					>
-						{#if reason === 'accurate_information'}
-							{$i18n.t('Accurate information')}
-						{:else if reason === 'followed_instructions_perfectly'}
-							{$i18n.t('Followed instructions perfectly')}
-						{:else if reason === 'showcased_creativity'}
-							{$i18n.t('Showcased creativity')}
-						{:else if reason === 'positive_attitude'}
-							{$i18n.t('Positive attitude')}
-						{:else if reason === 'attention_to_detail'}
-							{$i18n.t('Attention to detail')}
-						{:else if reason === 'thorough_explanation'}
-							{$i18n.t('Thorough explanation')}
-						{:else if reason === 'dont_like_the_style'}
-							{$i18n.t("Don't like the style")}
-						{:else if reason === 'too_verbose'}
-							{$i18n.t('Too verbose')}
-						{:else if reason === 'not_helpful'}
-							{$i18n.t('Not helpful')}
-						{:else if reason === 'not_factually_correct'}
-							{$i18n.t('Not factually correct')}
-						{:else if reason === 'didnt_fully_follow_instructions'}
-							{$i18n.t("Didn't fully follow instructions")}
-						{:else if reason === 'refused_when_it_shouldnt_have'}
-							{$i18n.t("Refused when it shouldn't have")}
-						{:else if reason === 'being_lazy'}
-							{$i18n.t('Being lazy')}
+						{#if reason === 'clear_explanation'}
+							{$i18n.t('Clear explanation')}
+						{:else if reason === 'helpful_teaching_approach'}
+							{$i18n.t('Helpful teaching approach')}
+						{:else if reason === 'effective_learning_guidance'}
+							{$i18n.t('Effective learning guidance')}
+						{:else if reason === 'solved_my_problem'}
+							{$i18n.t('Solved my problem')}
+						{:else if reason === 'well_structured_answer'}
+							{$i18n.t('Well structured answer')}
+						{:else if reason === 'encouraged_critical_thinking'}
+							{$i18n.t('Encouraged critical thinking')}
+						{:else if reason === 'confusing_explanation'}
+							{$i18n.t('Confusing explanation')}
+						{:else if reason === 'too_complex'}
+							{$i18n.t('Too complex')}
+						{:else if reason === 'too_simplistic'}
+							{$i18n.t('Too simplistic')}
+						{:else if reason === 'didnt_address_my_question'}
+							{$i18n.t("Didn't address my question")}
+						{:else if reason === 'needs_more_examples'}
+							{$i18n.t('Needs more examples')}
+						{:else if reason === 'not_helpful_for_learning'}
+							{$i18n.t('Not helpful for learning')}
 						{:else if reason === 'other'}
 							{$i18n.t('Other')}
 						{:else}
@@ -224,7 +243,9 @@
 		<textarea
 			bind:value={comment}
 			class="w-full text-sm px-1 py-2 bg-transparent outline-hidden resize-none rounded-xl"
-			placeholder={$i18n.t('Feel free to add specific details')}
+			placeholder={$i18n.t(
+				'How could this response be improved for your learning? Feel free to share your thoughts!🤗'
+			)}
 			rows="3"
 		/>
 	</div>
@@ -247,7 +268,7 @@
 		</div>
 
 		<button
-			class="px-3.5 py-1.5 text-sm font-medium bg-black hover:bg-gray-900 text-white dark:bg-white dark:text-black dark:hover:bg-gray-100 transition rounded-full"
+			class="px-3.5 py-1.5 text-sm font-medium bg-black hover:bg-gray-900 text-white dark:bg-white dark:text-black dark:hover:bg-gray-100 transition rounded-xl z-50"
 			on:click={() => {
 				saveHandler();
 			}}

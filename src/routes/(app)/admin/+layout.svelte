@@ -2,7 +2,7 @@
 	import { onMount, getContext } from 'svelte';
 	import { goto } from '$app/navigation';
 
-	import { WEBUI_NAME, showSidebar, user } from '$lib/stores';
+	import { TUTOR_NAME, showSidebar, user } from '$lib/stores';
 	import MenuLines from '$lib/components/icons/MenuLines.svelte';
 	import { page } from '$app/stores';
 
@@ -12,7 +12,12 @@
 
 	onMount(async () => {
 		if ($user?.role !== 'admin') {
-			await goto('/');
+			if ($user?.role === 'user') {
+				await goto('/student');
+			} else {
+				await goto(`/${$user.role}`);
+			}
+			return;
 		}
 		loaded = true;
 	});
@@ -20,7 +25,7 @@
 
 <svelte:head>
 	<title>
-		{$i18n.t('Admin Panel')} | {$WEBUI_NAME}
+		{$i18n.t('Admin Panel')} | {$TUTOR_NAME}
 	</title>
 </svelte:head>
 
@@ -59,10 +64,27 @@
 						>
 
 						<a
+							class="min-w-fit rounded-full p-1.5 {$page.url.pathname.includes(
+								'/admin/paired-responses'
+							)
+								? ''
+								: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition"
+							href="/admin/paired-responses">{$i18n.t('Paired Responses')}</a
+						>
+						<a
+							class="min-w-fit rounded-full p-1.5 {$page.url.pathname.includes(
+								'/admin/response-feedbacks'
+							)
+								? ''
+								: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition"
+							href="/admin/response-feedbacks">{$i18n.t('Response Feedbacks')}</a
+						>
+
+						<a
 							class="min-w-fit rounded-full p-1.5 {$page.url.pathname.includes('/admin/evaluations')
 								? ''
 								: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition"
-							href="/admin/evaluations">{$i18n.t('Evaluations')}</a
+							href="/admin/evaluations">{$i18n.t('Models Evaluations')}</a
 						>
 
 						<a
