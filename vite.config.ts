@@ -3,19 +3,19 @@ import { defineConfig } from 'vite';
 
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 
-// /** @type {import('vite').Plugin} */
-// const viteServerConfig = {
-// 	name: 'log-request-middleware',
-// 	configureServer(server) {
-// 		server.middlewares.use((req, res, next) => {
-// 			res.setHeader('Access-Control-Allow-Origin', '*');
-// 			res.setHeader('Access-Control-Allow-Methods', 'GET');
-// 			res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-// 			res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
-// 			next();
-// 		});
-// 	}
-// };
+/** @type {import('vite').Plugin} */
+const viteServerConfig = {
+	name: 'log-request-middleware',
+	configureServer(server) {
+		server.middlewares.use((req, res, next) => {
+			res.setHeader('Access-Control-Allow-Origin', '*');
+			res.setHeader('Access-Control-Allow-Methods', 'GET');
+ 			res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+ 			res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+ 			next();
+		});
+	}
+};
 
 export default defineConfig({
 	plugins: [
@@ -24,7 +24,6 @@ export default defineConfig({
 			targets: [
 				{
 					src: 'node_modules/onnxruntime-web/dist/*.jsep.*',
-
 					dest: 'wasm'
 				}
 			]
@@ -41,6 +40,14 @@ export default defineConfig({
 		format: 'es'
 	},
 	server: {
+		port: 5173,
+		host: true, // This enables listening on all network interfaces
+		proxy: {
+			'/api': {
+				target: 'http://localhost:8080',
+				changeOrigin: true
+			}
+		},
 		fs: {
 			allow: ['./static/avatar', './static/classroom', './static/draco', './static/images/background.jpeg']
 		}

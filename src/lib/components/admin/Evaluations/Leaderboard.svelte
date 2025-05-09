@@ -114,9 +114,15 @@
 		}
 
 		feedbacks.forEach((feedback) => {
+			if (!feedback.data || !feedback.data.model_id) return;
+			
 			const modelA = feedback.data.model_id;
 			const statsA = getOrDefaultStats(modelA);
 			let outcome: number;
+
+			if (feedback.data.rating === null || feedback.data.rating === undefined) {
+				return; // Skip feedbacks with null/undefined ratings
+			}
 
 			switch (feedback.data.rating.toString()) {
 				case '1':
