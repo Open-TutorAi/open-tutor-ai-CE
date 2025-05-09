@@ -62,7 +62,9 @@
 				if (sessionUser.role) {
 					console.log(`Redirecting to ${sessionUser.role} page`);
 					// window.location.href = `/${sessionUser.role}`;
-					if (sessionUser.role == 'user') {
+					if (sessionUser.role == 'admin') {
+						window.location.href = '/admin/users';
+					}else if (sessionUser.role == 'user') {
 						window.location.href = '/student/dashboard';
 					}else if (sessionUser.role == 'teacher') {
 						window.location.href = '/teacher';
