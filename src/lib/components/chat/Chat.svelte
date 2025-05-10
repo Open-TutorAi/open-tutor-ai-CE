@@ -413,6 +413,22 @@
 
 	onMount(async () => {
 		console.log('mounted');
+		
+		if (typeof window !== 'undefined' && !window.openTutorEvents) {
+			console.log('Creating global openTutorEvents EventTarget');
+			window.openTutorEvents = new EventTarget();
+		}
+		
+		window.openTutorEvents.addEventListener('chatCreated', (event: CustomEvent) => {
+			if (event.detail && event.detail.success === false) {
+				console.log('Detected failed chat creation, cleaning up');
+				if (window.localStorage.getItem('pendingSupportData')) {
+					window.localStorage.removeItem('pendingSupportData');
+					toast.error($i18n.t('Support linking canceled due to chat creation failure'));
+				}
+			}
+		});
+		
 		window.addEventListener('message', onMessageHandler);
 		$socket?.on('chat-events', chatEventHandler);
 
@@ -2070,33 +2086,79 @@
 	const initChatHandler = async (history) => {
 		let _chatId = $chatId;
 
-		if (!$temporaryChatEnabled) {
-			chat = await createNewChat(localStorage.token, {
-				id: _chatId,
-				title: $i18n.t('New Chat'),
-				models: selectedModels,
-				system: $settings.system ?? undefined,
-				params: params,
-				history: history,
-				messages: createMessagesList(history, history.currentId),
-				tags: [],
-				timestamp: Date.now()
-			});
+		try {
+			if (selectedModels.length === 0 || selectedModels.some(model => !model)) {
+				console.error('Invalid model selection. Setting default model...');
+				if ($models.length > 0) {
+					selectedModels = [$models[0].id];
+				} else {
+					throw new Error('No models available');
+				}
+			}
 
-			_chatId = chat.id;
-			await chatId.set(_chatId);
+			if (!$temporaryChatEnabled) {
+				chat = await createNewChat(localStorage.token, {
+					id: _chatId,
+					title: $i18n.t('New Chat'),
+					models: selectedModels,
+					system: $settings.system ?? undefined,
+					params: params,
+					history: history,
+					messages: createMessagesList(history, history.currentId),
+					tags: [],
+					timestamp: Date.now()
+				});
 
-			await chats.set(await getChatList(localStorage.token, $currentChatPage));
-			currentChatPage.set(1);
+				_chatId = chat.id;
+				await chatId.set(_chatId);
 
-			window.history.replaceState(history.state, '', `/c/${_chatId}`);
-		} else {
-			_chatId = 'local';
-			await chatId.set('local');
+				await chats.set(await getChatList(localStorage.token, $currentChatPage));
+				currentChatPage.set(1);
+
+				window.history.replaceState(history.state, '', `/c/${_chatId}`);
+				
+				if (typeof window !== 'undefined' && window.openTutorEvents) {
+					console.log('Dispatching chatCreated event with ID:', _chatId);
+					window.openTutorEvents.dispatchEvent(
+						new CustomEvent('chatCreated', { 
+							detail: { 
+								chatId: _chatId,
+								timestamp: Date.now(),
+								success: true
+							} 
+						})
+					);
+				}
+			} else {
+				_chatId = 'local';
+				await chatId.set('local');
+			}
+			await tick();
+
+			return _chatId;
+		} catch (error) {
+			console.error('Error in initChatHandler:', error);
+			
+			if (typeof window !== 'undefined' && window.localStorage) {
+				window.localStorage.removeItem('pendingSupportData');
+			}
+			
+			if (typeof window !== 'undefined' && window.openTutorEvents) {
+				window.openTutorEvents.dispatchEvent(
+					new CustomEvent('chatCreated', { 
+						detail: { 
+							chatId: null,
+							timestamp: Date.now(),
+							success: false,
+							error: error?.message || 'Chat initialization failed'
+						} 
+					})
+				);
+			}
+			
+			toast.error($i18n.t('Failed to initialize chat'));
+			return null;
 		}
-		await tick();
-
-		return _chatId;
 	};
 
 	const saveChatHandler = async (_chatId, history) => {
