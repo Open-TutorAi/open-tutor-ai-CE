@@ -194,7 +194,7 @@
 								<!-- Card background with subtle pattern -->
 								<div
 									class="card-bg"
-									style="background-image: url('static/images/background.jpeg')"
+									style="background-image: url('/images/background.jpeg')"
 								></div>
 
 								<!-- Avatar image with glow effect -->
@@ -262,7 +262,7 @@
 										<!-- Card background with library image -->
 										<div
 											class="card-bg"
-											style="background-image: url('static/images/background.jpeg')"
+											style="background-image: url('/images/background.jpeg')"
 										></div>
 
 										<!-- Glow effect for selected avatar -->
