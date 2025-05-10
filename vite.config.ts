@@ -10,9 +10,9 @@ const viteServerConfig = {
 		server.middlewares.use((req, res, next) => {
 			res.setHeader('Access-Control-Allow-Origin', '*');
 			res.setHeader('Access-Control-Allow-Methods', 'GET');
- 			res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
- 			res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
- 			next();
+			res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+			res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+			next();
 		});
 	}
 };
@@ -42,6 +42,12 @@ export default defineConfig({
 	server: {
 		fs: {
 			allow: ['./static/avatar', './static/classroom', './static/draco', './static/images/background.jpeg']
+		},
+		host: true,
+		port: 5173,
+		strictPort: true,
+		watch: {
+			usePolling: true
 		}
 	},
 	assetsInclude: ['**/*.glb']
