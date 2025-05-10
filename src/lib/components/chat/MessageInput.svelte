@@ -14,7 +14,7 @@
 	import { generateAutoCompletion } from '$lib/apis';
 	import { deleteFileById } from '$lib/apis/files';
 
-	import { TUTOR_BASE_URL, TUTOR_API_BASE_URL, PASTED_TEXT_CHARACTER_LIMIT } from '$lib/constants';
+	import { TUTOR_FRONT_URL, TUTOR_BASE_URL, TUTOR_API_BASE_URL, PASTED_TEXT_CHARACTER_LIMIT } from '$lib/constants';
 
 	import InputMenu from '../chat/MessageInput/InputMenu.svelte';
 	import VoiceRecording from '../chat/MessageInput/VoiceRecording.svelte';
@@ -457,7 +457,7 @@
 											alt="model profile"
 											class="size-3.5 max-w-[28px] object-cover rounded-full"
 											src={$models.find((model) => model.id === atSelectedModel.id)?.info?.meta
-												?.profile_image_url ?? `${TUTOR_BASE_URL}/static/favicon.png`}
+												?.profile_image_url ?? `${TUTOR_FRONT_URL}/static/favicon.png`}
 										/>
 										<div class="translate-y-[0.5px]">
 											Talking to <span class=" font-medium">{atSelectedModel.name}</span>
