@@ -63,14 +63,6 @@
 </script>
 
 <div class="min-h-screen bg-[#F0F9FF] border border-blue-200 flex flex-col justify-center items-center p-4 overflow-auto">
-	<!-- Help button -->
-	<div class="absolute top-4 right-4">
-		<button
-			class="rounded-full border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-100 transition"
-		>
-			Help
-		</button>
-	</div>
 
 	<main class="w-full max-w-6xl mx-auto pt-16">
 		<div class="text-center mb-8">
@@ -107,14 +99,6 @@
 					</button>
 				</div>
 			{/each}
-		</div>
-
-		<!-- Support section -->
-		<div class="text-center mb-4">
-			<p class="text-gray-600">
-				{$i18n.t('Not sure about your role?')}
-				<a href="mailto:support@opentutorai.com" class="text-blue-500 hover:underline">{$i18n.t('Contact Support')}</a>
-			</p>
 		</div>
 
 		<!-- Note -->

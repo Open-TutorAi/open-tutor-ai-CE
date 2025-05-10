@@ -389,18 +389,17 @@
 <style>
 	/* Fixed layout for better visibility on all screen sizes */
 	.page-container {
-		height: 100vh;
+		height: 100%;
 		width: 100%;
-		max-height: 100vh;
-		overflow-y: auto;
-		padding-top: 1rem; /* Add padding to ensure header is visible */
+		display: flex;
+		justify-content: center;
+		align-items: center;
 	}
 
 	.content-wrapper {
-		min-height: 100%;
 		width: 100%;
 		display: flex;
-		align-items: flex-start; /* Start from top on small screens */
+		align-items: center;
 		justify-content: center;
 		padding: 0.5rem 0;
 	}
@@ -408,7 +407,6 @@
 	/* Adjust for larger screens */
 	@media (min-height: 700px) {
 		.content-wrapper {
-			align-items: center; /* Center on larger screens */
 			padding: 2rem 0;
 		}
 	}

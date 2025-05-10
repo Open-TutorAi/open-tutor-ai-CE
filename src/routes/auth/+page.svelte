@@ -4,11 +4,13 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import ForgotPassword from '$lib/components/ForgotPassword.svelte';
+	import TermsOfServiceModal from '$lib/components/legal/TermsOfServiceModal.svelte';
+	import PrivacyPolicyModal from '$lib/components/legal/PrivacyPolicyModal.svelte';
 
 	import { getBackendConfig } from '$lib/apis';
-	import { ldapUserSignIn, getSessionUser, userSignIn, userSignUp } from '$lib/apis/auths';
+	import { ldapUserSignIn, getSessionUser, userSignIn, userSignUp, getUserCount } from '$lib/apis/auths';
 
-	import { TUTOR_API_BASE_URL, TUTOR_BASE_URL } from '$lib/constants';
+	import { TUTOR_FRONT_URL, TUTOR_BASE_URL } from '$lib/constants';
 	import { TUTOR_NAME, config, user, socket } from '$lib/stores';
 
 	import { generateInitialsImage, canvasPixelTest } from '$lib/utils';
@@ -21,6 +23,8 @@
 
 	let loaded = false;
 	let showForgotPassword = false;
+	let showTermsModal = false;
+	let showPrivacyModal = false;
 	let mode = $config?.features.enable_ldap ? 'ldap' : 'signin'; // Default is signin
 	let firstName = '';
 	let lastName = '';
@@ -31,6 +35,7 @@
 	let rememberMe = false;
 	let ldapUsername = '';
 	let onboarding = false;
+	let isFirstUser = false;
 
 	// State to track signup steps
 	let signupStep = 1; // 1: Role selection, 2: Account information
@@ -62,7 +67,9 @@
 				if (sessionUser.role) {
 					console.log(`Redirecting to ${sessionUser.role} page`);
 					// window.location.href = `/${sessionUser.role}`;
-					if (sessionUser.role == 'user') {
+					if (sessionUser.role == 'admin') {
+						window.location.href = '/admin/users';
+					}else if (sessionUser.role == 'user') {
 						window.location.href = '/student/dashboard';
 					}else if (sessionUser.role == 'teacher') {
 						window.location.href = '/teacher';
@@ -169,6 +176,22 @@
 		};
 	}
 
+	// Check if this is the first user to register
+	const checkIfFirstUser = async () => {
+		try {
+			const userCountResult = await getUserCount();
+			isFirstUser = userCountResult && userCountResult.count === 0;
+			console.log('Is first user:', isFirstUser);
+			// If first user, set role to admin and skip to step 2
+			if (isFirstUser && mode === 'signup') {
+				role = 'admin';
+				signupStep = 2;
+			}
+		} catch (error) {
+			console.error('Error checking user count:', error);
+		}
+	};
+
 	// Handle role selection from the RoleSelection component
 	const handleRoleSelected = (event) => {
 		role = event.detail.role;
@@ -187,6 +210,8 @@
 
 	// Function to go back to role selection from account info
 	const goBackToRoleSelection = () => {
+		// Don't allow going back to role selection if first user (admin)
+		if (isFirstUser) return;
 		signupStep = 1;
 	};
 
@@ -206,9 +231,9 @@
 		} else {
 			onboarding = $config?.onboarding ?? false;
 
-			// If signup mode, show role selection first
+			// Check user count when entering signup mode
 			if (mode === 'signup') {
-				signupStep = 1; // Start with role selection
+				await checkIfFirstUser();
 			}
 		}
 	});
@@ -234,13 +259,18 @@
 {#if showForgotPassword}
 	<ForgotPassword on:close={() => (showForgotPassword = false)} />
 {/if}
+<TermsOfServiceModal bind:open={showTermsModal} />
+<PrivacyPolicyModal bind:open={showPrivacyModal} />
 <OnBoarding
 	bind:show={onboarding}
-	getStartedHandler={() => {
+	getStartedHandler={async () => {
 		onboarding = false;
 		mode = $config?.features.enable_ldap ? 'ldap' : 'signup';
 		if (mode === 'signup') {
-			signupStep = 1; // Show role selection first
+			await checkIfFirstUser();
+			if (!isFirstUser) {
+				signupStep = 1; // Show role selection first if not first user
+			}
 		}
 	}}
 />
@@ -252,8 +282,8 @@
 	<div class="w-full absolute top-0 left-0 right-0 h-8 drag-region" />
 
 	{#if loaded}
-		<!-- Show Role Selection Page if in signup mode and on step 1 -->
-		{#if mode === 'signup' && signupStep === 1}
+		<!-- Show Role Selection Page if in signup mode and on step 1 and not first user -->
+		{#if mode === 'signup' && signupStep === 1 && !isFirstUser}
 			<RoleSelection on:roleSelected={handleRoleSelected} on:goBack={handleGoBack} />
 		{:else}
 			<div class="flex flex-col md:flex-row w-full" style="min-height: calc(100vh - 8px);">
@@ -267,7 +297,7 @@
 					<div class="flex items-center justify-center mb-3">
 						<img
 							crossorigin="anonymous"
-							src="{TUTOR_BASE_URL}/static/splash.png"
+							src="{TUTOR_FRONT_URL}/static/splash.png"
 							class="w-28 h-28 rounded-full bg-white p-3 shadow-lg"
 							alt="logo"
 						/>
@@ -314,8 +344,8 @@
 							</div>
 						{:else}
 							<div class="mb-8">
-								<!-- Show back button if in signup mode step 2 -->
-								{#if mode === 'signup' && signupStep === 2}
+								<!-- Show back button if in signup mode step 2 and not the first user -->
+								{#if mode === 'signup' && signupStep === 2 && !isFirstUser}
 									<button
 										on:click={goBackToRoleSelection}
 										class="flex items-center text-blue-600 hover:text-blue-700 mb-4"
@@ -356,23 +386,39 @@
 
 							<form class="space-y-5" on:submit|preventDefault={submitHandler}>
 								{#if mode === 'signup'}
-									<!-- Show chosen role badge -->
+									<!-- Show chosen role badge or admin notification -->
 									{#if role}
 										<div class="mb-2">
+											{#if isFirstUser}
+												<div class="mb-4 p-3 bg-blue-50 text-blue-800 rounded-md">
+													<p class="font-medium">{$i18n.t('First User Setup')}</p>
+													<p class="text-sm">{$i18n.t('You are the first user to register, so your account will be created with administrator privileges.')}</p>
+												</div>
+											{/if}
 											<span
 												class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
 												{role === 'user'
 													? 'bg-blue-100 text-blue-800'
 													: role === 'teacher'
 														? 'bg-emerald-100 text-emerald-800'
-														: 'bg-purple-100 text-purple-800'}"
+														: role === 'admin'
+															? 'bg-purple-100 text-purple-800'
+															: 'bg-purple-100 text-purple-800'}"
 											>
-												{role === 'user' ? '👨‍🎓' : role === 'teacher' ? '👨‍🏫' : '👨‍👧'}
+												{role === 'user' 
+													? '👨‍🎓' 
+													: role === 'teacher' 
+														? '👨‍🏫' 
+														: role === 'admin'
+															? '👨‍💼'
+															: '👨‍👧'}
 												{role === 'user'
 													? $i18n.t('Student')
 													: role === 'teacher'
 														? $i18n.t('Teacher')
-														: $i18n.t('Parent')}
+														: role === 'admin'
+															? $i18n.t('Administrator')
+															: $i18n.t('Parent')}
 											</span>
 										</div>
 									{/if}
@@ -502,19 +548,21 @@
 										/>
 										<label for="terms" class="ml-2 block text-sm text-gray-800 dark:text-gray-200">
 											{$i18n.t('I agree to the')}
-											<a
-												href="#"
+											<button
+												type="button"
 												class="text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
+												on:click={() => (showTermsModal = true)}
 											>
 												{$i18n.t('Terms of Service')}
-											</a>
+											</button>
 											{$i18n.t('and')}
-											<a
-												href="#"
+											<button
+												type="button"
 												class="text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
+												on:click={() => (showPrivacyModal = true)}
 											>
 												{$i18n.t('Privacy Policy')}
-											</a>
+											</button>
 										</label>
 									</div>
 								{/if}
@@ -610,9 +658,12 @@
 										{$i18n.t("Don't have an account?")}
 										<button
 											class="text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200 font-medium ml-1"
-											on:click={() => {
+											on:click={async () => {
 												mode = 'signup';
-												signupStep = 1; // Start with role selection
+												await checkIfFirstUser(); // Check if first user when clicking signup
+												if (!isFirstUser) {
+													signupStep = 1; // Start with role selection if not first user
+												}
 											}}
 										>
 											{$i18n.t('Sign up')}

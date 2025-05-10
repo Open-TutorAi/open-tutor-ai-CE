@@ -110,6 +110,33 @@ export const getSessionUser = async (token: string) => {
 	return res;
 };
 
+export const getUserCount = async () => {
+	let error = null;
+	console.log("checking user count");
+
+	const res = await fetch(`${TUTOR_BASE_URL}/auths/user-count`, {
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json'
+		}
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			error = err.detail;
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
 export const ldapUserSignIn = async (user: string, password: string) => {
 	let error = null;
 
