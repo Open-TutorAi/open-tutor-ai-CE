@@ -20,7 +20,7 @@ log.setLevel("INFO")
 router = APIRouter()
 
 # Make sure upload directory exists
-UPLOAD_DIR = os.path.join("uploads", "support_files")
+UPLOAD_DIR = "data/uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # Models for request and response
@@ -176,12 +176,10 @@ async def upload_support_file(
         file_extension = os.path.splitext(file.filename)[1]
         save_path = os.path.join(UPLOAD_DIR, f"{file_id}{file_extension}")
         
-        # Save the file
         with open(save_path, "wb") as f:
             contents = await file.read()
             f.write(contents)
         
-        # Save file info to database
         file_record = SupportFile(
             id=file_id,
             support_id=support_id,
@@ -192,7 +190,6 @@ async def upload_support_file(
             created_at=datetime.now()
         )
         
-        # Save to database
         session = get_db_session()
         
         try:
@@ -218,11 +215,9 @@ async def get_support_requests(
         session = get_db_session()
         
         try:
-            # Use default filter if user is None
             if user:
                 query = session.query(Support).filter(Support.user_id == user.id)
             else:
-                # For anonymous users, show only public records or none
                 query = session.query(Support).filter(Support.access_type == "Public")
             
             if status:
@@ -276,14 +271,12 @@ async def get_support_by_id(
         session = get_db_session()
         
         try:
-            # Build query based on user
             if user:
                 support = session.query(Support).filter(
                     Support.id == support_id,
                     Support.user_id == user.id
                 ).first()
             else:
-                # For anonymous users, only get public records
                 support = session.query(Support).filter(
                     Support.id == support_id,
                     Support.access_type == "Public"
@@ -343,14 +336,12 @@ async def update_support_chat_id(
         session = get_db_session()
         
         try:
-            # First check if the support exists and belongs to the user
             if user:
                 support = session.query(Support).filter(
                     Support.id == support_id,
                     Support.user_id == user.id
                 ).first()
             else:
-                # For anonymous users, only update public records
                 support = session.query(Support).filter(
                     Support.id == support_id,
                     Support.access_type == "Public"
@@ -360,7 +351,6 @@ async def update_support_chat_id(
                 log.warning(f"Support {support_id} not found for user {user.id if user else 'anonymous'}")
                 raise HTTPException(status_code=404, detail="Support request not found")
             
-            # Log current values
             log.info(f"Updating support {support_id} - Current chat_id: {support.chat_id}, New chat_id: {chat_id}")
             
             # Update the chat_id

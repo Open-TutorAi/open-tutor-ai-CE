@@ -8,7 +8,6 @@ from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Bool
 from sqlalchemy.orm import relationship
 from open_webui.internal.db import Base, get_db, JSONField
 
-# Prefix for OpenTutorAI tables to avoid conflicts with OpenWebUI tables
 PREFIX = "opentutorai_"
 
 class Support(Base):
@@ -26,24 +25,21 @@ class Support(Base):
     custom_subject = Column(String, nullable=True)
     course_id = Column(String, nullable=True)
     learning_objective = Column(Text, nullable=True)
-    learning_type = Column(String, nullable=True)  # exam, course, skill
-    level = Column(String, nullable=False)  # primary, middle, high, university
+    learning_type = Column(String, nullable=True)
+    level = Column(String, nullable=False)
     content_language = Column(String, nullable=True, default="English")
     estimated_duration = Column(String, nullable=True)
     access_type = Column(String, nullable=True, default="Private")
-    keywords = Column(String, nullable=True)  # Store as comma-separated values
+    keywords = Column(String, nullable=True)
     start_date = Column(String, nullable=True)
     end_date = Column(String, nullable=True)
     avatar_id = Column(String, nullable=True)
-    status = Column(String, nullable=False, default="open")  # open, in_progress, completed, closed
+    status = Column(String, nullable=False, default="open")
     created_at = Column(DateTime, nullable=False, server_default=func.now())
     updated_at = Column(DateTime, nullable=True, onupdate=func.now())
-    meta_data = Column(JSONField, nullable=True)  # For storing additional info
+    meta_data = Column(JSONField, nullable=True)
     
-    # Link to the Open WebUI chat table
-    chat_id = Column(String, index=True, nullable=True)  # References the id column in the chat table
-    
-    # Files can be handled in a separate table with a relationship
+    chat_id = Column(String, ForeignKey("chat.id", ondelete="CASCADE"), index=True, nullable=True)
     
     def __repr__(self):
         return f"<Support(id={self.id}, user_id={self.user_id}, title={self.title})>"
@@ -62,17 +58,10 @@ class SupportFile(Base):
     file_size = Column(Integer, nullable=True)
     created_at = Column(DateTime, nullable=False, server_default=func.now())
     
-    # Relationship to parent support request
     support = relationship("Support", backref="files")
     
     def __repr__(self):
         return f"<SupportFile(id={self.id}, support_id={self.support_id}, filename={self.filename})>"
-
-# Additional models can be added here as needed
-
-
-# You can add more models here as needed for your application
-# Make sure to prefix table names with PREFIX to avoid conflicts with OpenWebUI
 
 def init_database():
     """
@@ -84,7 +73,6 @@ def init_database():
     """
     from open_webui.internal.db import engine
     
-    # Create tables if they don't exist
     Base.metadata.create_all(bind=engine, checkfirst=True)
     print("OpenTutorAI database tables initialized successfully")
     

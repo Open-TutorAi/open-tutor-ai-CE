@@ -24,9 +24,6 @@
 	let currentPath = '';
 	let chatIdFromURL = '';
 
-	// Sample progress data (keeping this for UI)
-	const progressData = [75, 45, 60, 30, 85, 40, 55, 65];
-
 	// Clear chat ID and support data when the dashboard is loaded
 	onMount(async () => {
 		if (browser) {
@@ -453,7 +450,7 @@
 				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 card-container">
 					{#each currentSupports as support, index (support.id)}
 						<div 
-							class="cursor-pointer card-item"
+							class="cursor-pointer card-item h-full"
 							class:card-slide-enter-from-right={animationDirection === 'right'}
 							class:card-slide-enter-from-left={animationDirection === 'left'}
 							on:click={() => handleCardClick(support, index)}
@@ -464,8 +461,8 @@
 						>
 							<CourseCard
 								title={support.title}
-								progress={progressData[index % progressData.length]}
-								subject={index % 2 === 0 ? 'computer-science' : 'mathematics'}
+								subject={support.subject || 'mathematics'}
+								progress={0}
 								href="#"
 							/>
 						</div>
@@ -649,6 +646,12 @@
 		transform-origin: center center;
 		backface-visibility: hidden;
 		transition: transform 0.2s ease;
+		display: flex; /* Make the card item a flex container */
+	}
+	
+	.card-item > :global(*) {
+		flex: 1; /* Make child components expand to fill the space */
+		height: 100%; /* Ensure full height */
 	}
 	
 	.card-item:hover {

@@ -370,32 +370,25 @@
 	// Sample course data
 	const courses = [
 		{
-			id: 'algo101',
-			title: 'Introduction to Algorithmic',
-			image: '/images/courses/algorithmic.jpg',
-			instructor: { name: 'Samia AHMED', avatar: '/images/avatars/samia.jpg' },
-			level: 'Beginner'
-		},
-		{
-			id: 'islam101',
-			title: 'The rise and explanation of Islam',
-			image: '/images/courses/islam.jpg',
-			instructor: { name: 'Ibrahim AMINE', avatar: '/images/avatars/ibrahim.jpg' },
-			level: 'Advanced'
-		},
-		{
-			id: 'math101',
-			title: 'Number Sense and Calculations',
-			image: '/images/courses/math.jpg',
-			instructor: { name: 'Ahmed SAMI', avatar: '/images/avatars/ahmed.jpg' },
-			level: 'Intermediate'
-		},
-		{
 			id: 'physics101',
 			title: 'Introduction to Physics',
 			image: '/images/courses/physics.jpg',
 			instructor: { name: 'Maria JOHNSON', avatar: '/images/avatars/maria.jpg' },
 			level: 'Beginner'
+		},
+		{
+			id: 'chemistry101',
+			title: 'Introduction to Chemistry',
+			image: '/images/courses/chemistry.jpg',
+			instructor: { name: 'David ROBERTS', avatar: '/images/avatars/david.jpg' },
+			level: 'Beginner'
+		},
+		{
+			id: 'biology101',
+			title: 'Fundamentals of Biology',
+			image: '/images/courses/biology.jpg',
+			instructor: { name: 'Sarah WONG', avatar: '/images/avatars/sarah.jpg' },
+			level: 'Intermediate'
 		}
 	];
 
@@ -497,7 +490,6 @@
 				short_description: shortDescription || undefined,
 				subject: selectedSubject || customSubject,
 				custom_subject: customSubject || undefined,
-				course_id: selectedCourse || undefined,
 				learning_objective: learningObjective || undefined,
 				learning_type: selectedLearningType || undefined,
 				level: selectedLevel || undefined,
@@ -612,7 +604,7 @@
 	// Validation
 	$: isTitleValid = supportTitle.trim().length > 0;
 	$: isSubjectSelected = selectedSubject || customSubject.trim().length > 0;
-	$: isCourseSelected = selectedCourse || uploadedFiles.length > 0;
+	$: isCourseSelected = uploadedFiles.length > 0 || true; // Make this always return true since we're not requiring course selection anymore
 	$: isObjectiveValid = learningObjective.trim().length > 0;
 	$: isLearningTypeSelected = selectedLearningType !== null;
 	$: isLevelSelected = selectedLevel.trim().length > 0;
@@ -921,92 +913,12 @@
 							<!-- Course Selection step -->
 							<div class="space-y-6 step-content-enter">
 						<h3 class="text-xl font-medium text-gray-800 dark:text-gray-200">
-							{$i18n.t('Select Your Base Course')}
+							{$i18n.t('Course Materials')}
 						</h3>
 
-						<div class="relative">
-							<!-- Left arrow -->
-							<button
-								class="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-6 p-1 rounded-full bg-white dark:bg-gray-700 shadow-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 z-10 transition-opacity"
-								style={coursePageIndex === 0 ? 'opacity: 0.5; cursor: not-allowed;' : 'opacity: 1;'}
-								on:click={prevCoursePage}
-								disabled={coursePageIndex === 0}
-							>
-								<span class="sr-only">{$i18n.t('Previous courses')}</span>
-								&lt;
-							</button>
-
-							<!-- Course cards -->
-							<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 py-4">
-								{#each visibleCourses as course}
-									<div
-										class={`rounded-lg shadow-md overflow-hidden transition-all ${selectedCourse === course.id ? 'border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border border-transparent bg-white dark:bg-gray-700'}`}
-									>
-										<!-- Course Image -->
-										<div class="h-32 bg-gray-300 dark:bg-gray-600 relative">
-											<!-- Placeholder image with gradient until real images are available -->
-											<div
-												class="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500"
-											></div>
-
-											<!-- Instructor info -->
-											<div class="absolute bottom-3 left-3 flex items-center">
-												<div
-													class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-500 flex items-center justify-center overflow-hidden border-2 border-white"
-												>
-													<!-- Placeholder avatar -->
-													<span class="text-xs font-bold"
-														>{course.instructor.name.substring(0, 2)}</span
-													>
-												</div>
-												<span class="ml-2 text-xs text-white font-medium"
-													>{course.instructor.name}</span
-												>
-											</div>
-										</div>
-
-										<!-- Course details -->
-										<div class="p-4">
-											<h4 class="text-gray-800 dark:text-gray-100 font-medium mb-2">
-												{course.title}
-											</h4>
-
-											<div class="flex items-center justify-between mt-3">
-												<span
-													class={`text-xs px-2 py-1 rounded-full ${course.level === 'Beginner' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : course.level === 'Intermediate' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'}`}
-												>
-													{course.level}
-												</span>
-
-												<button
-													class={`text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-md transition-colors ${selectedCourse === course.id ? 'bg-green-500 hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600'} text-white min-w-[4rem] sm:min-w-[5rem]`}
-													on:click={() => (selectedCourse = course.id)}
-												>
-													{selectedCourse === course.id ? $i18n.t('Selected') : $i18n.t('Select')}
-												</button>
-											</div>
-										</div>
-									</div>
-								{/each}
-							</div>
-
-							<!-- Right arrow -->
-							<button
-								class="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-6 p-1 rounded-full bg-white dark:bg-gray-700 shadow-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 z-10 transition-opacity"
-								style={coursePageIndex >= totalCoursePages - 1
-									? 'opacity: 0.5; cursor: not-allowed;'
-									: 'opacity: 1;'}
-								on:click={nextCoursePage}
-								disabled={coursePageIndex >= totalCoursePages - 1}
-							>
-								<span class="sr-only">{$i18n.t('More courses')}</span>
-								&gt;
-							</button>
-						</div>
-
-						<div class="mt-8">
-							<h4 class="text-gray-700 dark:text-gray-300 mb-4">
-								{$i18n.t('Or Attach Any course Materiel')}
+						<div class="mt-2">
+							<h4 class="text-gray-700 dark:text-gray-300 mb-6">
+								{$i18n.t('Attach Course Materials')}
 							</h4>
 
 							<!-- File upload area -->
@@ -1064,6 +976,10 @@
 									{/if}
 								</div>
 							</div>
+							
+							<p class="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+								{$i18n.t('Upload your course materials to get personalized learning assistance')}
+							</p>
 						</div>
 					</div>
 				{:else if currentStep === 2}
