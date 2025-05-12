@@ -134,7 +134,7 @@
 									</Tooltip>
 
 									<a
-										href="https://github.com/pr-elhajji/open-tutor-ai-CE/releases/tag/v{version.latest}"
+										href="https://github.com/R2D-dev/open-tutor-ai-CE/releases/tag/v{version.latest}"
 										target="_blank"
 									>
 										{updateAvailable === null
