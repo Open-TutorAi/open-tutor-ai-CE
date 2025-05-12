@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { TUTOR_FRONT_URL } from '$lib/constants';
+	import { TUTOR_FRONT_URL, TUTOR_BASE_URL } from '$lib/constants';
 
 	export let className = 'size-8';
 	export let src = `${TUTOR_FRONT_URL}/static/favicon.png`;
