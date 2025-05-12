@@ -3,7 +3,7 @@
 	import { createEventDispatcher } from 'svelte';
 
 	import { flyAndScale } from '$lib/utils/transitions';
-	import { TUTOR_BASE_URL TUTOR_FRONT_URL } from '$lib/constants';
+	import { TUTOR_BASE_URL, TUTOR_FRONT_URL } from '$lib/constants';
 	import { activeUserIds } from '$lib/stores';
 
 	export let side = 'right';
