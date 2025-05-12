@@ -331,8 +331,6 @@
 	let showSupportPopup = false;
 	let dontShowAgain = false;
 
-	import { onMount } from 'svelte';
-
 	onMount(() => {
 		dontShowAgain = localStorage.getItem('dontShowSupportPopup') === 'true';
 	});
@@ -380,7 +378,7 @@
 		// Save preference when checkbox changes
 		localStorage.setItem('dontShowSupportPopup', dontShowAgain.toString());
 	}
-	
+
 	// Handle card click - open chat if exists or save support ID and navigate to chat page
 	function handleCardClick(support: SupportResponse, index: number) {
 		if (support.chat_id) {
