@@ -218,7 +218,7 @@
 							{$i18n.t('Mark all as read')}
 						</button>
 					</div>
-					<div class="p-2 max-h-64 overflow-y-auto">
+					<!-- <div class="p-2 max-h-64 overflow-y-auto">
 						<div class={`p-2 ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'} rounded-lg`}>
 							<p class={`text-sm font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
 								{$i18n.t('New course available')}
@@ -241,7 +241,7 @@
 								{$i18n.t('Yesterday')}
 							</p>
 						</div>
-					</div>
+					</div> -->
 					<div class={`p-2 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
 						<button
 							class={`w-full text-center text-sm ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-500 hover:text-blue-700'}`}
