@@ -54,6 +54,16 @@
 	const startChat = async (type: 'text' | 'avatar') => {
 		selectedChatType = type;
 
+		if (selectedModels.length === 0 || selectedModels.every(model => !model || model === '')) {
+			toast.error($i18n.t('Please select a model before starting a chat'));
+			return;
+		}
+		
+		if (typeof window !== 'undefined' && window.sessionStorage) {
+			console.log('Saving selected models to sessionStorage:', selectedModels);
+			window.sessionStorage.setItem('selectedModels', JSON.stringify(selectedModels));
+		}
+
 		if (type === 'text') {
 			// For text chat, update settings and start immediately
 			settings.update((s) => {
@@ -65,9 +75,6 @@
 			// Save settings to localStorage for persistence
 			localStorage.setItem('settings', JSON.stringify($settings));
 
-			// Notify user of the selection
-			toast.success('Text-only chat enabled');
-
 			// Force UI update before submitting
 			await tick();
 
@@ -75,7 +82,14 @@
 			const initialPrompt = 'Hello';
 			dispatch('submit', initialPrompt);
 		} else {
-			// For avatar chat, show the avatar selection screen
+			settings.update((s) => {
+				const updatedSettings = { ...s };
+				(updatedSettings as any).avatarEnabled = true;
+				return updatedSettings;
+			});
+			
+			localStorage.setItem('settings', JSON.stringify($settings));
+			
 			showingAvatarSelection = true;
 		}
 	};
@@ -85,13 +99,37 @@
 		// Avatar selection already updated settings, now initialize chat
 		await tick();
 
-		// Send a default prompt to initialize the chat with the selected avatar
+		if (selectedModels.length === 0 || selectedModels.every(model => !model || model === '')) {
+			// No model selected, show error and prevent further actions
+			toast.error($i18n.t('A model must be selected before starting the chat'));
+			showingAvatarSelection = false; // Go back to chat type selection
+			
+			if (typeof window !== 'undefined' && window.localStorage) {
+				window.localStorage.removeItem('pendingSupportData');
+			}
+			
+			return;
+		}
+
 		const initialPrompt = 'Hello';
-		dispatch('submit', initialPrompt);
+		
+		try {
+			dispatch('submit', initialPrompt);
+		} catch (error) {
+			console.error('Error starting chat with avatar:', error);
+			toast.error($i18n.t('Failed to start avatar chat. Please try again.'));
+			
+			if (typeof window !== 'undefined' && window.localStorage) {
+				window.localStorage.removeItem('pendingSupportData');
+			}
+		}
 
 		// Fallback navigation if chat doesn't initialize
 		setTimeout(() => {
 			if (history && !history.currentId) {
+				if (typeof window !== 'undefined' && window.localStorage) {
+					window.localStorage.removeItem('pendingSupportData');
+				}
 				goto('/');
 			}
 		}, 300);

@@ -1,5 +1,15 @@
 import os
 import builtins
+from pathlib import Path
+
+# Set DATA_DIR to backend/data by default
+backend_dir = Path(__file__).parent.parent
+data_dir = backend_dir / "data"
+data_dir.mkdir(exist_ok=True)
+
+if "DATA_DIR" not in os.environ:
+    os.environ["DATA_DIR"] = str(data_dir.absolute())
+    print(f"Setting default DATA_DIR to: {os.environ['DATA_DIR']}")
 
 original_print = builtins.print
 

@@ -12,7 +12,7 @@
 
 	// State
 	let searchQuery: string = '';
-	let notificationCount: number = 2;
+	let notificationCount: number = 0;
 	let isSearchFocused: boolean = false;
 	let showNotifications: boolean = false;
 	let showMobileMenu: boolean = false;
