@@ -113,24 +113,24 @@
 		</div>
 
 		<div class="flex space-x-1">
-			<a href="https://discord.gg/z5fMfrBzEF" target="_blank">
+			<a href="https://discord.gg/BTQtE2deEm" target="_blank">
 				<img
 					alt="Discord"
-					src="https://img.shields.io/badge/Discord-Open_WebUI-blue?logo=discord&logoColor=white"
+					src="https://img.shields.io/badge/Discord-Open_TutorAI-blue?logo=discord&logoColor=white"
 				/>
 			</a>
 
 			<a href="#" target="_blank">
 				<img
 					alt="X (formerly Twitter) Follow"
-					src="https://img.shields.io/twitter/follow/OpenWebUI"
+					src="https://img.shields.io/twitter/follow/OpenTutorAI"
 				/>
 			</a>
 
-			<a href="https://github.com/pr-elhajji/open-tutor-ai-CE" target="_blank">
+			<a href="https://github.com/R2D-dev/open-tutor-ai-CE" target="_blank">
 				<img
 					alt="Github Repo"
-					src="https://img.shields.io/github/stars/open-webui/open-webui?style=social&label=Star us on Github"
+					src="https://img.shields.io/github/stars/R2D-dev/open-tutor-ai-CE?style=social&label=Star us on Github"
 				/>
 			</a>
 		</div>
@@ -140,7 +140,7 @@
 				class="text-xs text-gray-400 dark:text-gray-500">Copyright (c) {new Date().getFullYear()} <a
 					href="http://opentutorai.com"
 					target="_blank"
-					class="underline">Open TutorAI (Timothy Jaeryang Baek)</a
+					class="underline">Open TutorAI by R2D</a
 				>
 All rights reserved.
 
@@ -178,8 +178,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 			{$i18n.t('Created by')}
 			<a
 				class=" text-gray-500 dark:text-gray-300 font-medium"
-				href="https://github.com/tjbck"
-				target="_blank">Timothy J. Baek</a
+				href="https://github.com/R2D-dev"
+				target="_blank">R2D</a
 			>
 		</div>
 	</div>
