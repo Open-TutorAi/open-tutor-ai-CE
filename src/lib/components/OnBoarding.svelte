@@ -4,7 +4,7 @@
 	import { cubicOut } from 'svelte/easing';
 	const i18n = getContext('i18n');
 
-	import { TUTOR_BASE_URL } from '$lib/constants';
+	import { TUTOR_FRONT_URL } from '$lib/constants';
 
 	import Marquee from './common/Marquee.svelte';
 	import SlideShow from './common/SlideShow.svelte';
@@ -74,7 +74,7 @@
 		>
 			<img
 				crossorigin="anonymous"
-				src="{TUTOR_BASE_URL}/static/favicon.png"
+				src="{TUTOR_FRONT_URL}/static/favicon.png"
 				class="w-8 h-8 rounded-full"
 				alt="Open TutorAI logo"
 				on:load={handleImagesLoaded}
