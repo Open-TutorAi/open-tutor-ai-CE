@@ -27,7 +27,7 @@
 		{
 			id: 'The Scholar',
 			name: $i18n.t(`The Scholar`),
-			image: 'images/The Scholar.png',
+			image: '/images/The Scholar.png',
 			accentColor: '#2196F3',
 			gradientEnd: '#3D5E94',
 			description: $i18n.t(
@@ -37,7 +37,7 @@
 		{
 			id: 'The Mentor',
 			name: $i18n.t(`The Mentor`),
-			image: 'images/The Mentor.png',
+			image: '/images/The Mentor.png',
 			accentColor: '#F59E0B',
 			gradientEnd: '#3D5E94',
 			description: $i18n.t(
@@ -47,7 +47,7 @@
 		{
 			id: 'The Coach',
 			name: $i18n.t(`The Coach`),
-			image: 'images/The Coach.png',
+			image: '/images/The Coach.png',
 			accentColor: '#10B981',
 			gradientEnd: '#3D5E94',
 			description: $i18n.t(
@@ -57,7 +57,7 @@
 		{
 			id: 'The Innovator',
 			name: $i18n.t(`The Innovator`),
-			image: 'images/The Innovator.png',
+			image: '/images/The Innovator.png',
 			accentColor: '#EF4444',
 			gradientEnd: '#3D5E94',
 			description: $i18n.t(
@@ -194,7 +194,7 @@
 								<!-- Card background with subtle pattern -->
 								<div
 									class="card-bg"
-									style="background-image: url('static/images/background.jpeg')"
+									style="background-image: url('/images/background.jpeg')"
 								></div>
 
 								<!-- Avatar image with glow effect -->
@@ -262,7 +262,7 @@
 										<!-- Card background with library image -->
 										<div
 											class="card-bg"
-											style="background-image: url('static/images/background.jpeg')"
+											style="background-image: url('/images/background.jpeg')"
 										></div>
 
 										<!-- Glow effect for selected avatar -->
