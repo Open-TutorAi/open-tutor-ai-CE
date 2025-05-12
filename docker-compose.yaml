@@ -1,9 +1,13 @@
+networks:
+  app-network:
+    driver: bridge
+
 services:
   open-tutor-backend:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    image: open-tutorai
+    image: open-tutorai-with-webui
     container_name: open-tutor-backend
     ports:
       - "8080:8080"
@@ -12,23 +16,40 @@ services:
       - .:/app
     env_file:
       - .env
-    command: >
-      uvicorn open_tutorai.main:app
-      --host 0.0.0.0
-      --port 8080
-      --reload
-
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: uvicorn open_tutorai.main:app --host 0.0.0.0 --port 8080 --reload
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
   open-tutor-frontend:
-      build:
-        context: .
-        dockerfile: Dockerfile.frontend
-      container_name: open-tutor-frontend
-      ports:
-        - "5173:5173"
-      working_dir: /app
-      volumes:
-        - .:/app
-      command: npm run dev -- --host
-      depends_on:
-      - open-tutor-backend
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: open-tutor-frontend
+    ports:
+      - "5173:5173"
+    working_dir: /app
+    volumes:
+      - ./src:/app/src
+      - ./static:/app/static
+      - ./vite.config.js:/app/vite.config.js
+      - ./svelte.config.js:/app/svelte.config.js
+      - ./package.json:/app/package.json
+      - ./package-lock.json:/app/package-lock.json
+      - ./.env:/app/.env
+    environment:
+      - VITE_API_URL=http://open-tutor-backend:8080
+      - NODE_ENV=development
+    command: npm run dev
+    depends_on:
+      open-tutor-backend:
+        condition: service_healthy
+    networks:
+      - app-network
