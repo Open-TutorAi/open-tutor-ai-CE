@@ -116,6 +116,41 @@
 	const startChatWithAvatar = (avatarId: string) => {
 		selectedAvatar = avatarId;
 
+		const modelSelectorEl = document.querySelector('div.model-selector-value');
+		const visibleModelName = modelSelectorEl?.textContent?.trim() || '';
+		
+		if (visibleModelName && visibleModelName !== 'Select a model') {
+			console.log('Ensuring model is set in sessionStorage:', visibleModelName);
+			
+			const existingModelsStr = window.sessionStorage?.getItem('selectedModels');
+			const existingModels = existingModelsStr ? JSON.parse(existingModelsStr) : [];
+			
+			if (!existingModels || existingModels.length === 0 || existingModels[0] === '') {
+				console.log('Setting model in sessionStorage');
+				window.sessionStorage.setItem('selectedModels', JSON.stringify([visibleModelName]));
+			}
+		}
+		
+		if (typeof window !== 'undefined' && window.sessionStorage) {
+			const selectedModelsStr = window.sessionStorage.getItem('selectedModels');
+			const selectedModels = selectedModelsStr ? JSON.parse(selectedModelsStr) : [];
+			
+			if (!selectedModels || selectedModels.length === 0 || selectedModels.every((model: string) => !model || model === '')) {
+				if (visibleModelName && visibleModelName !== 'Select a model') {
+					console.log('Force setting model as last resort:', visibleModelName);
+					window.sessionStorage.setItem('selectedModels', JSON.stringify([visibleModelName]));
+				} else {
+					toast.error(t('Please select a model before starting a chat'));
+					
+					if (window.localStorage.getItem('pendingSupportData')) {
+						window.localStorage.removeItem('pendingSupportData');
+					}
+					
+					return;
+				}
+			}
+		}
+
 		// Update app settings with avatar preferences
 		settings.update((s) => {
 			const updatedSettings = { ...s };
