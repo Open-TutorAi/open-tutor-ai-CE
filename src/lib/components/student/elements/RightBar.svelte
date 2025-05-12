@@ -2,8 +2,8 @@
 	import { onMount } from 'svelte';
 	import { getContext } from 'svelte';
 	// Props for the component
-	export let courseCompletion = 45;
-	export let engagement = 75; // New prop for engagement
+	export let courseCompletion = 0; // TODO  calcul this indicator Dynamiquely
+	export let engagement = 0; // New prop for engagement
 	export let modules = [
 		{ id: 1, name: 'Introduction', status: 'completed' },
 		{ id: 2, name: 'HDFS', status: 'completed' },
