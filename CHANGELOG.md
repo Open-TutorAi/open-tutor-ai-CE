@@ -26,4 +26,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 📁 Corrected data directory structure — now handled in backend, not `openweb-ui`.
 
 ### Changed
-- 🎨 Updated OpenTutor AI interface and features from `open_webui`.
+- 🎨 Updated OpenTutor AI interface and features.
