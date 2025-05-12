@@ -5,6 +5,7 @@
 	import type { i18n as i18nType } from 'i18next';
 	import { goto } from '$app/navigation';
 	import CourseCard from '../elements/CourseCard.svelte';
+	import { fade, scale } from 'svelte/transition';
 
 	const i18n = getContext<Writable<i18nType>>('i18n');
 
@@ -97,8 +98,15 @@
 	// State to control the join course popup
 	let showJoinCoursePopup = false;
 
-	// State to control the support popup
+	// State for popups and preferences
 	let showSupportPopup = false;
+	let dontShowAgain = false;
+
+	import { onMount } from 'svelte';
+
+	onMount(() => {
+		dontShowAgain = localStorage.getItem('dontShowSupportPopup') === 'true';
+	});
 
 	// Toggle the popups
 	function toggleJoinCoursePopup() {
@@ -107,15 +115,17 @@
 	}
 
 	function toggleSupportPopup() {
-		showSupportPopup = !showSupportPopup;
-		if (showSupportPopup) showJoinCoursePopup = false;
+		if (dontShowAgain) {
+			goto('/student/support');
+		} else {
+			showSupportPopup = !showSupportPopup;
+			if (showSupportPopup) showJoinCoursePopup = false;
+		}
 	}
 
 	// Course code input
 	let courseCode = '';
 
-	// Don't show again state
-	let dontShowAgain = false;
 
 	// Handle joining a course
 	function handleJoinCourse() {
@@ -135,6 +145,11 @@
 		// Navigate to student support page
 		goto('/student/support');
 		showSupportPopup = false;
+	}
+
+	function handleDontShowAgainChange() {
+		// Save preference when checkbox changes
+		localStorage.setItem('dontShowSupportPopup', dontShowAgain.toString());
 	}
 </script>
 
@@ -272,10 +287,12 @@
 <!-- Support Popup Modal -->
 {#if showSupportPopup}
 	<div
-		class="fixed inset-0 backdrop-blur-sm bg-white/30 dark:bg-black/30 flex items-center justify-center z-50"
+	class="fixed inset-0 backdrop-blur-sm bg-white/30 dark:bg-black/30 flex items-center justify-center z-[1000]"
+	transition:fade={{ duration: 200 }}
 	>
 		<div
 			class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md mx-auto relative"
+			transition:scale={{ start: 0.95, duration: 200 }}
 		>
 			<!-- Close Button -->
 			<button
@@ -355,6 +372,7 @@
 					type="checkbox"
 					id="dontShow"
 					bind:checked={dontShowAgain}
+					on:change={handleDontShowAgainChange}
 					class="h-4 w-4 text-indigo-600 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-indigo-500"
 				/>
 				<label for="dontShow" class="text-sm text-gray-500 dark:text-gray-400"
