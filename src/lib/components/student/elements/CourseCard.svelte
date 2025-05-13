@@ -65,6 +65,7 @@
 </button>
 
 <style>
+	/* Add tailwind line-clamp utility if not already included in your project */
 	.line-clamp-2 {
 		display: -webkit-box;
 		-webkit-line-clamp: 2;

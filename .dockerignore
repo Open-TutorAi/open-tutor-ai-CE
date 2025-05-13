@@ -18,7 +18,6 @@ uploads
 .ipynb_checkpoints
 **/*.db
 _test
-<<<<<<< HEAD
 backend/data/*
 
 npm-debug.log
@@ -29,6 +28,3 @@ Dockerfile*
 README.md
 docker-compose*
 dist
-=======
-backend/data/*
->>>>>>> origin/main

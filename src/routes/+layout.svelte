@@ -14,7 +14,6 @@
 		settings,
 		theme,
 		TUTOR_NAME,
-		TUTOR_NAME,
 		mobile,
 		socket,
 		activeUserIds,
@@ -29,7 +28,6 @@
 		appInfo
 	} from '$lib/stores';
 	import { goto } from '$app/navigation';
-	import { TUTOR_FRONT_URL } from '$lib/constants';
 	import { page } from '$app/stores';
 	import { Toaster, toast } from 'svelte-sonner';
 
@@ -58,7 +56,6 @@
 	const BREAKPOINT = 768;
 
 	const setupSocket = async (enableWebsocket) => {
-		const _socket = io(`${TUTOR_BASE_URL}` || undefined, {
 		const _socket = io(`${TUTOR_BASE_URL}` || undefined, {
 			reconnection: true,
 			reconnectionDelay: 1000,
@@ -231,7 +228,6 @@
 					if ($isLastActiveTab) {
 						if ($settings?.notificationEnabled ?? false) {
 							new Notification(`${title} | Open TutorAI`, {
-							new Notification(`${title} | Open TutorAI`, {
 								body: content,
 								icon: `${TUTOR_FRONT_URL}/static/favicon.png`
 							});
@@ -378,7 +374,6 @@
 				if ($isLastActiveTab) {
 					if ($settings?.notificationEnabled ?? false) {
 						new Notification(`${data?.user?.name} (#${event?.channel?.name}) | Open TutorAI`, {
-						new Notification(`${data?.user?.name} (#${event?.channel?.name}) | Open TutorAI`, {
 							body: data?.content,
 							icon: data?.user?.profile_image_url ?? `${TUTOR_FRONT_URL}/static/favicon.png`
 						});
@@ -484,7 +479,6 @@
 			// Save Backend Status to Store
 			await config.set(backendConfig);
 			await TUTOR_NAME.set('Open TutorAI');
-			await TUTOR_NAME.set('Open TutorAI');
 
 			if ($config) {
 				await setupSocket($config.features?.enable_websocket ?? true);
@@ -505,19 +499,6 @@
 
 						await user.set(sessionUser);
 						await config.set(await getBackendConfig());
-
-						// Role-based redirection
-						if ($page.url.pathname === '/') {
-							if (sessionUser.role === 'admin') {
-								await goto('/');
-							} else if (sessionUser.role === 'user') {
-								await goto('/student/dashboard');
-							} else if (sessionUser.role === 'parent') {
-								await goto('/parent');
-							} else if (sessionUser.role === 'teacher') {
-								await goto('/teacher');
-							}
-						}
 
 						// Role-based redirection
 						if ($page.url.pathname === '/') {
@@ -588,8 +569,6 @@
 </script>
 
 <svelte:head>
-	<title>{$TUTOR_NAME}</title>
-	<link crossorigin="anonymous" rel="icon" href="{TUTOR_FRONT_URL}/static/favicon.png" />
 	<title>{$TUTOR_NAME}</title>
 	<link crossorigin="anonymous" rel="icon" href="{TUTOR_FRONT_URL}/static/favicon.png" />
 
