@@ -43,7 +43,6 @@ export default defineConfig({
 	server: {
 		fs: {
 			allow: ['./static/avatar', './static/classroom', './static/draco', './static/images/background.jpeg']
-<<<<<<< HEAD
 		},
 		host: true,
 		port: 5173,
@@ -79,9 +78,5 @@ export default defineConfig({
 		include: ['pyodide', 'onnxruntime-web'],
 		exclude: ['@sveltejs/kit', 'svelte']
 	},
-=======
-		}
-	},
->>>>>>> origin/main
 	assetsInclude: ['**/*.glb']
 });
