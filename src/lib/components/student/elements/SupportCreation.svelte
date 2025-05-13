@@ -865,7 +865,6 @@
 										</button>
 									{/each}
 								</div>
-
 									<!-- Pager controls with better design -->
 									<div class="flex justify-center mt-5 gap-2">
 								<button
@@ -893,7 +892,6 @@
 								</button>
 							</div>
 						</div>
-
 								<div class="mt-5">
 									<p class="text-gray-700 dark:text-gray-300 text-sm mb-2">
 										{$i18n.t("Don't see your subject? Create a custom one")}
@@ -975,8 +973,7 @@
 										</div>
 									{/if}
 								</div>
-							</div>
-							
+							</div>	
 							<p class="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
 								{$i18n.t('Upload your course materials to get personalized learning assistance')}
 							</p>
@@ -1007,7 +1004,7 @@
 										xmlns="http://www.w3.org/2000/svg"
 										class="h-5 w-5"
 										viewBox="0 0 20 20"
-												fill="currentColor"
+										fill="currentColor"
 									>
 												<path d="M11 17a1 1 0 001.447.894l4-2A1 1 0 0017 15V9.236a1 1 0 00-1.447-.894l-4 2a1 1 0 00-.553.894V17zM15.211 6.276a1 1 0 000-1.788l-4.764-2.382a1 1 0 00-.894 0L4.789 4.488a1 1 0 000 1.788l4.764 2.382a1 1 0 00.894 0l4.764-2.382zM4.447 8.342A1 1 0 003 9.236V15a1 1 0 00.553.894l4 2A1 1 0 009 17v-5.764a1 1 0 00-.553-.894l-4-2z" />
 									</svg>
@@ -1026,7 +1023,7 @@
 								id="learningObjective"
 								bind:value={learningObjective}
 								placeholder={$i18n.t('By the end of this support, I should be able to...')}
-									class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white h-32 resize-none"
+								class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white h-32 resize-none"
 							></textarea>
 						</div>
 
@@ -1044,7 +1041,7 @@
 								<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
 								{#each learningTypes as type}
 									<button
-											class={`flex items-center p-4 rounded-lg border-2 transition-all ${
+										class={`flex items-center p-4 rounded-lg border-2 transition-all ${
 												selectedLearningType === type.id 
 													? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-sm' 
 													: 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
@@ -1106,6 +1103,7 @@
 											{$i18n.t(level.description)}
 										</p>
 										</div>
+
 									</div>
 								</button>
 							{/each}
@@ -1154,12 +1152,15 @@
 							<!-- Estimated Duration -->
 							<div>
 										<label class="block text-gray-800 dark:text-gray-200 font-medium mb-2 text-sm">
+
 									{$i18n.t('Estimated Duration')}
 								</label>
 								<div class="relative">
 									<select
 										bind:value={estimatedDuration}
+
 												class="appearance-none w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white pr-8"
+
 									>
 										{#each durations as duration}
 											<option value={duration}>{duration}</option>
@@ -1186,14 +1187,14 @@
 								<p class="mb-4 text-sm text-gray-600 dark:text-gray-400">
 									{$i18n.t('Add relevant keywords to help find this support later')}
 								</p>
-								
+							
 							<div class="flex flex-col sm:flex-row gap-2 sm:gap-0">
 								<input
 									type="text"
 									bind:value={keywordInput}
 									on:keydown={handleKeyDown}
 									placeholder={$i18n.t('Add keywords...')}
-										class="w-full sm:flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-r-none focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
+									class="w-full sm:flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-r-none focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
 								/>
 								<button
 									on:click={addKeyword}
@@ -1204,11 +1205,13 @@
 							</div>
 
 							<!-- Keywords display -->
+
 								{#if keywords.length > 0}
 									<div class="flex flex-wrap gap-2 mt-4 p-3 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
 								{#each keywords as keyword}
 									<div
 												class="bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 px-3 py-1.5 rounded-full text-sm flex items-center gap-2 hover:bg-blue-200 dark:hover:bg-blue-700 transition-colors"
+
 									>
 										{keyword}
 										<button

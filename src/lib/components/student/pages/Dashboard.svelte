@@ -1,5 +1,6 @@
 <!-- Dashboard.svelte -->
 <script lang="ts">
+
 	import { getContext, onMount, onDestroy } from 'svelte';
 	import type { Writable } from 'svelte/store';
 	import type { i18n as i18nType } from 'i18next';
@@ -286,15 +287,18 @@
 		}
 	}
 
+
 	// State for pagination
 	let currentPage = 0;
 	const cardsPerPage = 4;
 
 	// Calculate total pages
+
 	$: totalPages = Math.ceil(userSupports.length / cardsPerPage);
 
 	// Get current page courses/supports
 	$: currentSupports = userSupports.slice(
+
 		currentPage * cardsPerPage,
 		(currentPage + 1) * cardsPerPage
 	);
@@ -313,7 +317,6 @@
 	function previousPage() {
 		if (currentPage > 0) {
 			animationDirection = 'left';
-			currentPage -= 1;
 		}
 	}
 
@@ -352,7 +355,6 @@
 
 	// Course code input
 	let courseCode = '';
-
 
 	// Handle joining a course
 	function handleJoinCourse() {
@@ -481,6 +483,7 @@
 						</div>
 					{/each}
 				</div>
+
 			</div>
 		{/if}
 	</div>
@@ -555,6 +558,7 @@
 <!-- Support Popup Modal -->
 {#if showSupportPopup}
 	<div
+
 	class="fixed inset-0 backdrop-blur-sm bg-white/30 dark:bg-black/30 flex items-center justify-center z-[1000]"
 	transition:fade={{ duration: 200 }}
 	>

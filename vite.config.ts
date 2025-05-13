@@ -8,11 +8,18 @@ const viteServerConfig = {
 	configureServer(server) {
 		server.middlewares.use((req, res, next) => {
 			res.setHeader('Access-Control-Allow-Origin', '*');
+<<<<<<< HEAD
 			res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
 			res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 			res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
 			res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
 			next();
+=======
+			res.setHeader('Access-Control-Allow-Methods', 'GET');
+ 			res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+ 			res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+ 			next();
+>>>>>>> origin/main
 		});
 	}
 };
@@ -43,6 +50,7 @@ export default defineConfig({
 	server: {
 		fs: {
 			allow: ['./static/avatar', './static/classroom', './static/draco', './static/images/background.jpeg']
+<<<<<<< HEAD
 		},
 		host: true,
 		port: 5173,
@@ -78,5 +86,9 @@ export default defineConfig({
 		include: ['pyodide', 'onnxruntime-web'],
 		exclude: ['@sveltejs/kit', 'svelte']
 	},
+=======
+		}
+	},
+>>>>>>> origin/main
 	assetsInclude: ['**/*.glb']
 });

@@ -79,6 +79,7 @@
 	import { getTools } from '$lib/apis/tools';
 	import { getSupportById } from '$lib/apis/supports';
 
+
 	import Banner from '$lib/components/common/Banner.svelte';
 	import MessageInput from '$lib/components/chat/MessageInput.svelte';
 	import Messages from '$lib/components/chat/Messages.svelte';
@@ -444,7 +445,7 @@
 				}
 			}
 		});
-		
+
 		window.addEventListener('message', onMessageHandler);
 		$socket?.on('chat-events', chatEventHandler);
 
@@ -837,6 +838,7 @@
 		}
 	}
 
+
 	const initNewChat = async () => {
 		if ($page.url.searchParams.get('models')) {
 			console.log('here');
@@ -973,6 +975,7 @@
 
 		const chatInput = document.getElementById('chat-input');
 		setTimeout(() => chatInput?.focus(), 0);
+
 		
 		// Check for pending support data and add system prompt if exists
 		const pendingSupportData = localStorage.getItem('pendingSupportData');
@@ -2012,15 +2015,18 @@
 			...createMessagesList(_history, responseMessageId)
 				.filter(message => message.role !== 'system')
 				.map((message) => ({
+
 				...message,
 				content: removeDetails(message.content, ['reasoning', 'code_interpreter'])
 			}))
 		].filter((message) => message && message.content && message.content.trim() !== '');
 
+
 		// Log info about system context
 		if (combinedSystemPrompt) {
 			console.log('Using support context as system prompt');
 		}
+
 
 		messages = messages
 			.map((message, idx, arr) => ({
@@ -2454,7 +2460,7 @@
 			toast.error($i18n.t('Failed to initialize chat'));
 			return null;
 		}
-	};
+
 
 	const saveChatHandler = async (_chatId, history) => {
 		if ($chatId == _chatId) {

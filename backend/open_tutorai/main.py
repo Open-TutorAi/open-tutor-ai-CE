@@ -7,12 +7,18 @@ from open_webui.main import app as webui_app
 from open_webui.config import CORS_ALLOW_ORIGIN
 from open_webui.models.users import Users
 from open_tutorai.config import AppConfig
+<<<<<<< HEAD
 from open_tutorai.models.database import init_database
+=======
+>>>>>>> origin/main
 
 from open_tutorai.routers import (
     response_feedbacks,
     auths,
+<<<<<<< HEAD
     supports
+=======
+>>>>>>> origin/main
 )
 
 from open_tutorai.env import (

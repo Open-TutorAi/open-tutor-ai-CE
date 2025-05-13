@@ -38,10 +38,6 @@
 			id: 'The Mentor',
 			name: $i18n.t(`The Mentor`),
 			image: '/images/The Mentor.png',
-			accentColor: '#F59E0B',
-			gradientEnd: '#3D5E94',
-			description: $i18n.t(
-				`Encouraging, warm, supportive, insightful. Focuses on building confidence through guided discovery.`
 			)
 		},
 		{
