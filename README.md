@@ -1,3 +1,8 @@
+<div align="center">
+<br/>
+<img src="static/static/splash.png" width="120px" alt="">
+<br/>
+
 # Open TutorAI 👋
 
 ![GitHub stars](https://img.shields.io/github/stars/R2D-dev/open-tutor-ai-CE?style=social)
@@ -9,10 +14,14 @@
 ![GitHub last commit](https://img.shields.io/github/last-commit/R2D-dev/open-tutor-ai-CE)
 [![Discord](https://img.shields.io/badge/Discord-Open_TutorAI-blue?logo=discord&logoColor=white)](https://discord.gg/BTQtE2deEm)
 
-**OpenTutorAI-CE ** (Community Edition) is an open-source project designed to provide an educational and collaborative AI-powered platform. This public edition is the foundation for a proprietary Enterprise Edition (EE) and is built to encourage community contributions.
+</div>
+<br>
+<div align="left">
+
+**OpenTutorAI-CE** (Community Edition) is an open-source project designed to provide an educational and collaborative AI-powered platform. This public edition is the foundation for a proprietary Enterprise Edition (EE) and is built to encourage community contributions.
 
 > [!TIP]  
-> **Looking for an [Enterprise Plan](https://opentutorai.com)?** – **[Speak with Our Sales Team Today!](mailto:sales@oepntutorai.com)**
+> **Looking for an [Enterprise Plan](https://opentutorai.com)?** – **[Speak with Our Sales Team Today!](mailto:sales@opentutorai.com)**
 >
 > Get **enhanced capabilities**, including **custom theming and branding**, **Service Level Agreement (SLA) support**, **Long-Term Support (LTS) versions**, and **more!**
 
