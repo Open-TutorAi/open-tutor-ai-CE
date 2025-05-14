@@ -146,12 +146,12 @@ If you have any questions, suggestions, or need assistance, please open an issue
 
 ## Star History
 
-<a href="https://star-history.com/#open-tutorai/open-tutorai&Date">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=open-tutorai/open-tutorai&type=Date&theme=dark" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=open-tutorai/open-tutorai&type=Date" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=open-tutorai/open-tutorai&type=Date" />
-  </picture>
+<a href="https://www.star-history.com/#R2D-dev/open-tutor-ai-CE&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=R2D-dev/open-tutor-ai-CE&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=R2D-dev/open-tutor-ai-CE&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=R2D-dev/open-tutor-ai-CE&type=Date" />
+ </picture>
 </a>
 
 ---
