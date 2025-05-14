@@ -79,6 +79,113 @@ export const sanitizeResponseContent = (content: string) => {
 };
 
 export const processResponseContent = (content: string) => {
+	if (!content || typeof content !== 'string') {
+		console.log('processResponseContent: Input is not a string or is empty');
+		return content || '';
+	}
+
+	// Direct regex extraction of "response" field - enhanced to handle escaped quotes and multi-line responses
+	const directResponseMatch = content.match(/"response"\s*:\s*"((?:\\"|[^"])*?)"/);
+	if (directResponseMatch && directResponseMatch[1]) {
+		console.log('processResponseContent: Extracted response via direct regex pattern');
+		// Unescape the extracted content
+		return directResponseMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n');
+	}
+	
+	// Check for markdown code blocks with JSON
+	if (content.trim().startsWith('```json') || content.includes('```json')) {
+		console.log('processResponseContent: Found markdown code block with JSON');
+		// Extract JSON content from code block
+		let jsonText = '';
+		
+		// Pattern 1: Standard markdown code block
+		const codeBlockMatch = content.match(/```json\s*([\s\S]*?)```/);
+		if (codeBlockMatch && codeBlockMatch[1]) {
+			jsonText = codeBlockMatch[1].trim();
+			console.log('processResponseContent: Extracted JSON from standard code block');
+		} 
+		// Pattern 2: If the closing ``` is missing
+		else if (content.includes('```json')) {
+			jsonText = content.split('```json')[1].trim();
+			console.log('processResponseContent: Extracted JSON from code block without closing backticks');
+		}
+		
+		if (jsonText) {
+			try {
+				const parsedJson = JSON.parse(jsonText);
+				if (parsedJson.response) {
+					console.log('processResponseContent: Found response field in code block JSON');
+					return parsedJson.response;
+				}
+			} catch (e) {
+				console.log('processResponseContent: Error parsing JSON from code block', e);
+				// If parsing fails, continue with other checks
+			}
+		}
+	}
+	
+	// Check if the content is raw JSON
+	if (content.trim().startsWith('{') && content.trim().endsWith('}')) {
+		console.log('processResponseContent: Content appears to be raw JSON');
+		try {
+			const parsedJson = JSON.parse(content);
+			if (parsedJson.response) {
+				console.log('processResponseContent: Found response field in raw JSON');
+				return parsedJson.response;
+			}
+		} catch (e) {
+			console.log('processResponseContent: Error parsing raw JSON', e);
+			// If parsing fails, try a more robust approach for malformed JSON
+			try {
+				// Try to extract just the response field with a more flexible regex
+				const responseMatch = content.match(/"response"\s*:\s*"((?:\\"|[^"])*?)"/);
+				if (responseMatch && responseMatch[1]) {
+					console.log('processResponseContent: Extracted response via fallback regex pattern');
+					return responseMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n');
+				}
+			} catch (innerError) {
+				console.log('processResponseContent: Error with fallback regex extraction', innerError);
+				// If all parsing attempts fail, use the original content
+			}
+		}
+	}
+	
+	// Check if the content might be an array containing JSON objects
+	if (content.trim().startsWith('[') && content.trim().endsWith(']')) {
+		console.log('processResponseContent: Content appears to be a JSON array');
+		try {
+			const parsedArray = JSON.parse(content);
+			// Look for the first object in the array with a response field
+			for (const item of parsedArray) {
+				if (item && typeof item === 'object' && item.response) {
+					console.log('processResponseContent: Found response field in array item');
+					return item.response;
+				}
+			}
+		} catch (e) {
+			console.log('processResponseContent: Error parsing JSON array', e);
+			// If parsing fails, continue with original content
+		}
+	}
+	
+	// Final check for any JSON-like structure in the content
+	const jsonObjectMatch = content.match(/\{[\s\S]*?\}/);
+	if (jsonObjectMatch) {
+		console.log('processResponseContent: Found potential JSON object in content');
+		try {
+			const parsedJson = JSON.parse(jsonObjectMatch[0]);
+			if (parsedJson.response) {
+				console.log('processResponseContent: Extracted response from embedded JSON object');
+				return parsedJson.response;
+			}
+		} catch (e) {
+			console.log('processResponseContent: Error parsing embedded JSON object', e);
+			// If parsing fails, use the original content
+		}
+	}
+
+	console.log('processResponseContent: No JSON structure detected, returning original content');
+	// If no JSON structure detected or no response field found, return the original content
 	return content.trim();
 };
 

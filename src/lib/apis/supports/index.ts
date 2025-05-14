@@ -261,3 +261,79 @@ export const updateSupportChatId = async (token: string, supportId: string, chat
         throw error;
     }
 }; 
+
+
+/**
+ * Update an existing support request
+ * @param token - Authentication token
+ * @param supportId - ID of the support to update
+ * @param data - Updated support request data
+ * @returns A promise that resolves to the updated support
+ */
+export const updateSupport = async (token: string, supportId: string, data: SupportCreateRequest) => {
+    let error = null;
+
+    console.log(`Updating support request ${supportId} with token: ${token.substring(0, 5)}...`);
+    console.log('Support data:', JSON.stringify(data));
+
+    const res = await fetch(`${TUTOR_API_BASE_URL}/supports/${supportId}`, {
+        method: 'PATCH',
+        headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+    })
+        .then(async (res) => {
+            if (!res.ok) throw await res.json();
+            return res.json();
+        })
+        .catch((err) => {
+            error = err.detail;
+            console.log(err);
+            return null;
+        });
+
+    if (error) {
+        throw error;
+    }
+
+    return res;
+};
+
+/**
+ * Delete a support request
+ * @param token - Authentication token
+ * @param supportId - ID of the support to delete
+ * @returns A promise that resolves when the support is deleted
+ */
+export const deleteSupport = async (token: string, supportId: string) => {
+    let error = null;
+
+    console.log(`Deleting support request ${supportId} with token: ${token.substring(0, 5)}...`);
+
+    const res = await fetch(`${TUTOR_API_BASE_URL}/supports/${supportId}`, {
+        method: 'DELETE',
+        headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            authorization: `Bearer ${token}`
+        }
+    })
+        .then(async (res) => {
+            if (!res.ok) throw await res.json();
+            return res.json();
+        })
+        .catch((err) => {
+            error = err.detail;
+            console.log(err);
+            return null;
+        });
+
+    if (error) {
+        throw error;
+    }
+
+    return res;
+};

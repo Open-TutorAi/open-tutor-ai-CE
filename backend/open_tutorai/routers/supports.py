@@ -374,3 +374,141 @@ async def update_support_chat_id(
     except Exception as e:
         log.error(f"Error updating support chat ID: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to update support chat ID: {str(e)}") 
+    
+
+@router.patch("/supports/{support_id}")
+async def update_support(
+    support_id: str,
+    support_data: SupportCreateRequest,
+    user = Depends(get_verified_user)
+):
+    """
+    Update an existing support request
+    """
+    try:
+        # Verify user has permission to update this support
+        session = get_db_session()
+        
+        try:
+            if user:
+                support = session.query(Support).filter(
+                    Support.id == support_id,
+                    Support.user_id == user.id
+                ).first()
+            else:
+                raise HTTPException(status_code=403, detail="Authentication required")
+            
+            if not support:
+                raise HTTPException(status_code=404, detail="Support request not found")
+            
+            # Prepare keywords
+            keywords_str = ",".join(support_data.keywords) if support_data.keywords else None
+            
+            # Update support fields
+            support.title = support_data.title
+            support.short_description = support_data.short_description
+            support.subject = support_data.subject
+            support.custom_subject = support_data.custom_subject
+            support.course_id = support_data.course_id
+            support.learning_objective = support_data.learning_objective
+            support.learning_type = support_data.learning_type
+            support.level = support_data.level
+            support.content_language = support_data.content_language
+            support.estimated_duration = support_data.estimated_duration
+            support.access_type = support_data.access_type
+            support.keywords = keywords_str
+            support.start_date = support_data.start_date
+            support.end_date = support_data.end_date
+            support.avatar_id = support_data.avatar_id
+            support.updated_at = datetime.now()
+            
+            session.commit()
+            
+            # Create response object
+            response = SupportResponse(
+                id=support.id,
+                user_id=support.user_id,
+                title=support.title,
+                short_description=support.short_description,
+                subject=support.subject,
+                custom_subject=support.custom_subject,
+                course_id=support.course_id,
+                learning_objective=support.learning_objective,
+                learning_type=support.learning_type,
+                level=support.level,
+                content_language=support.content_language,
+                estimated_duration=support.estimated_duration,
+                access_type=support.access_type,
+                keywords=support.keywords.split(",") if support.keywords else None,
+                start_date=support.start_date,
+                end_date=support.end_date,
+                avatar_id=support.avatar_id,
+                status=support.status,
+                chat_id=support.chat_id,
+                created_at=support.created_at,
+                updated_at=support.updated_at
+            )
+            
+            return response
+        finally:
+            session.close()
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error(f"Error updating support request: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to update support request: {str(e)}")
+
+@router.delete("/supports/{support_id}")
+async def delete_support(
+    support_id: str,
+    user = Depends(get_verified_user)
+):
+    """
+    Delete a support request
+    """
+    try:
+        # Verify user has permission to delete this support
+        session = get_db_session()
+        
+        try:
+            if user:
+                support = session.query(Support).filter(
+                    Support.id == support_id,
+                    Support.user_id == user.id
+                ).first()
+            else:
+                raise HTTPException(status_code=403, detail="Authentication required")
+            
+            if not support:
+                raise HTTPException(status_code=404, detail="Support request not found")
+            
+            # First delete any associated files
+            files = session.query(SupportFile).filter(
+                SupportFile.support_id == support_id
+            ).all()
+            
+            # Delete physical files
+            for file in files:
+                try:
+                    if os.path.exists(file.file_path):
+                        os.remove(file.file_path)
+                except Exception as e:
+                    log.warning(f"Error deleting file {file.file_path}: {str(e)}")
+            
+            # Delete file records
+            session.query(SupportFile).filter(SupportFile.support_id == support_id).delete()
+            
+            # Delete the support request
+            session.delete(support)
+            session.commit()
+            
+            return JSONResponse(content={"status": "success", "message": "Support request deleted"})
+        finally:
+            session.close()
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        log.error(f"Error deleting support request: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete support request: {str(e)}")
