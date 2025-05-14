@@ -3,14 +3,21 @@
   import * as THREE from 'three';
   import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
   import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+  import { CSS3DRenderer } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
+  import BoardText from './BoardText.svelte';
+	import { Container } from 'postcss';
 
   // Props
   export let classroomModel: 'default' | 'alternative' = 'default';
   export let scene: THREE.Scene | null = null;
   export let camera: THREE.PerspectiveCamera | null = null;
+  export let boardMessage: string = "";
+  export let customBoardPosition: { x: number, y: number, z: number } | null = null;
 
   // Variables
   let classroom: THREE.Group | null = null;
+  let cssRenderer: CSS3DRenderer | null = null;
+  let container: HTMLElement;
   
   // Constants for positioning the classroom
   const classroomPositions = {
@@ -38,13 +45,44 @@
     }
   };
 
-
-
-
-
-  onMount(async () => {
-    if (scene) {
-      await loadClassroom();
+  onMount(() => {
+    if (scene && container) {
+      // Initialize CSS3D renderer for HTML content
+      cssRenderer = new CSS3DRenderer();
+      cssRenderer.setSize(window.innerWidth, window.innerHeight);
+      cssRenderer.domElement.style.position = 'absolute';
+      cssRenderer.domElement.style.top = '0';
+      cssRenderer.domElement.style.left = '0';
+      cssRenderer.domElement.style.pointerEvents = 'none';
+      cssRenderer.domElement.style.zIndex = '10'; // Increased z-index to ensure it's on top
+      container.appendChild(cssRenderer.domElement);
+      
+      // Set up window resize handler
+      const handleResize = () => {
+        if (cssRenderer && camera) {
+          cssRenderer.setSize(window.innerWidth, window.innerHeight);
+        }
+      };
+      
+      window.addEventListener('resize', handleResize);
+      
+      // Load classroom without awaiting
+      loadClassroom();
+      
+      // Set up animation loop to render CSS3D content
+      if (camera) {
+        const animate = () => {
+          requestAnimationFrame(animate);
+          if (cssRenderer && scene && camera) {
+            cssRenderer.render(scene, camera);
+          }
+        };
+        animate();
+      }
+      
+      return () => {
+        window.removeEventListener('resize', handleResize);
+      };
     }
   });
 
@@ -52,6 +90,9 @@
     // Clean up resources
     if (classroom && scene) {
       scene.remove(classroom);
+    }
+    if (cssRenderer && container) {
+      container.removeChild(cssRenderer.domElement);
     }
   });
 
@@ -78,30 +119,46 @@
 
   async function loadClassroom() {
     if (!scene) return;
-    
-    // Set up DRACO loader for compressed models
-    const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath('/static/draco/'); // Path to draco decoder
-    
-    // Initialize GLTF loader with DRACO
-    const loader = new GLTFLoader();
-    loader.setDRACOLoader(dracoLoader);
-    
-    const modelPath = `/static/classroom/classroom_${classroomModel}.glb`;
 
     try {
+      console.log("Starting classroom load process");
+      
+      // Set up DRACO loader for compressed models
+      const dracoLoader = new DRACOLoader();
+      
+      // Try to use the static draco folders if available, with fallback
+      dracoLoader.setDecoderPath('/static/draco/');
+      console.log("DracoLoader path set");
+      
+      // Initialize GLTF loader with DRACO
+      const loader = new GLTFLoader();
+      loader.setDRACOLoader(dracoLoader);
+      
+      const modelPath = `/static/classroom/classroom_${classroomModel}.glb`;
+      console.log("Attempting to load model from:", modelPath);
       // Remove existing classroom if present
       if (classroom && scene) {
         scene.remove(classroom);
         classroom = null;
       }
+            // Add a placeholder board (colored plane) until the model loads
+            const boardGeometry = new THREE.PlaneGeometry(3, 1.5);
+      const boardMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0x1a5e1a, 
+        side: THREE.DoubleSide 
+      });
+      const tempBoard = new THREE.Mesh(boardGeometry, boardMaterial);
+      const boardPos = getBoardPosition();
+      tempBoard.position.set(boardPos.x, boardPos.y, boardPos.z);
+      scene.add(tempBoard);
 
-      console.log(`Loading classroom model: ${modelPath}`);
-      
       const gltf = await new Promise<any>((resolve, reject) => {
         loader.load(
           modelPath,
-          (gltf) => resolve(gltf),
+          (gltf) => {
+            scene.remove(tempBoard);
+            resolve(gltf);
+          },
           (xhr) => {
             console.log(`Classroom loading: ${(xhr.loaded / (xhr.total || 1)) * 100}% loaded`);
           },
@@ -146,12 +203,36 @@
       
       // Set camera to student view
       setCameraToStudentView();
-      
     } catch (error) {
       console.error('Failed to load classroom model:', error);
+      
+      // Add a fallback classroom environment - just a green board and floor
+      const boardGeometry = new THREE.PlaneGeometry(3, 1.5);
+      const boardMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0x1a5e1a, 
+        side: THREE.DoubleSide 
+      });
+      const board = new THREE.Mesh(boardGeometry, boardMaterial);
+      const boardPos = getBoardPosition();
+      board.position.set(boardPos.x, boardPos.y, boardPos.z);
+      
+      const floorGeometry = new THREE.PlaneGeometry(10, 10);
+      const floorMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0xd2b48c,
+        side: THREE.DoubleSide
+      });
+      const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+      floor.rotation.x = Math.PI / 2;
+      floor.position.y = -0.5;
+      
+      classroom = new THREE.Group();
+      classroom.add(board);
+      classroom.add(floor);
+      scene.add(classroom);
+      
+      console.log('Using fallback classroom environment');
+      
     } finally {
-      // Clean up DRACO loader
-      dracoLoader.dispose();
     }
   }
 
@@ -162,11 +243,55 @@
   
   // Export function to get board position for avatar placement
   export function getBoardPosition() {
-    return classroomModel === 'default' 
-      ? { x: 0, y: 0.1, z: -3.5 } 
-      : { x: 0, y: 0.1, z: -3.2 };
+    if (classroomModel === 'default') {
+      // Front-facing classroom with large green board
+      return { 
+        x: 0.3, 
+        y: 1.8, 
+        z: -5 // Moved further back to align with the board surface
+      };
+    } else {
+      // Alternative classroom model
+      return { 
+        x: 3.3, 
+        y: 1.8, 
+        z: -0.4 // Also moved back for side view
+      };
+    }
   }
+  
+  // Function to detect which classroom model or view is being displayed
+  function detectClassroomModel() {
+    // If we don't have access to the classroom model yet, use default
+    if (!classroom) return 'default';
+    
+    // Try to detect based on classroom properties
+    return classroomModel === 'alternative' ? 'side-view' : 'front-view';
+  }
+
 </script>
+
+<div bind:this={container} class="classroom-container">
+  <!-- The 3D scene will be rendered here -->
+</div>
+
+{#if scene}
+  <BoardText 
+    {scene} 
+    {camera}
+    message={boardMessage} 
+    position={getBoardPosition()} 
+    viewType={classroomModel === 'default' ? 'front-view' : 'side-view'}
+  />
+{/if}
+
+<style>
+  .classroom-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+</style>
 
 <script context="module" lang="ts">
   // Preload classroom models
