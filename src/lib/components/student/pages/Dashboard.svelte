@@ -7,7 +7,6 @@
 	import { browser } from '$app/environment';
 	import { chatId as storeChatId } from '$lib/stores';
 	import CourseCard from '../elements/CourseCard.svelte';
-	import { fade, scale } from 'svelte/transition';
 	import { getSupportRequests, type SupportResponse, updateSupportChatId } from '$lib/apis/supports';
 	import { page } from '$app/stores';
 	import { toast } from 'svelte-sonner';
@@ -327,13 +326,8 @@
 	// State to control the join course popup
 	let showJoinCoursePopup = false;
 
-	// State for popups and preferences
+	// State to control the support popup
 	let showSupportPopup = false;
-	let dontShowAgain = false;
-
-	onMount(() => {
-		dontShowAgain = localStorage.getItem('dontShowSupportPopup') === 'true';
-	});
 
 	// Toggle the popups
 	function toggleJoinCoursePopup() {
@@ -342,17 +336,15 @@
 	}
 
 	function toggleSupportPopup() {
-		if (dontShowAgain) {
-			goto('/student/support');
-		} else {
-			showSupportPopup = !showSupportPopup;
-			if (showSupportPopup) showJoinCoursePopup = false;
-		}
+		showSupportPopup = !showSupportPopup;
+		if (showSupportPopup) showJoinCoursePopup = false;
 	}
 
 	// Course code input
 	let courseCode = '';
 
+	// Don't show again state
+	let dontShowAgain = false;
 
 	// Handle joining a course
 	function handleJoinCourse() {
@@ -370,34 +362,13 @@
 	// Handle creating support
 	function handleCreateSupport() {
 		// Navigate to student support page
-		goto('/student/support');
+		goto('/student/support/create');
 		showSupportPopup = false;
 	}
-
-	function handleDontShowAgainChange() {
-		// Save preference when checkbox changes
-		localStorage.setItem('dontShowSupportPopup', dontShowAgain.toString());
-	}
-
-	// Handle card click - open chat if exists or save support ID and navigate to chat page
+	
+	// Handle card click - open support details page
 	function handleCardClick(support: SupportResponse, index: number) {
-		if (support.chat_id) {
-			// If the support already has a chat linked, open it
-			goto(`/student/c/${support.chat_id}`);
-		} else {
-			// No chat linked yet, save the support ID and navigate to chat page
-			const supportData = {
-				id: support.id,
-				timestamp: Date.now(),
-				attempts: 0
-			};
-			
-			localStorage.setItem('pendingSupportData', JSON.stringify(supportData));
-			pendingSupportId = support.id;
-			console.log('Saved support ID to localStorage:', support.id);
-			
-			goto('/student/chat');
-		}
+		goto(`/student/support/${support.id}`);
 	}
 </script>
 
@@ -555,12 +526,10 @@
 <!-- Support Popup Modal -->
 {#if showSupportPopup}
 	<div
-	class="fixed inset-0 backdrop-blur-sm bg-white/30 dark:bg-black/30 flex items-center justify-center z-[1000]"
-	transition:fade={{ duration: 200 }}
+		class="fixed inset-0 backdrop-blur-sm bg-white/30 dark:bg-black/30 flex items-center justify-center z-50"
 	>
 		<div
 			class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md mx-auto relative"
-			transition:scale={{ start: 0.95, duration: 200 }}
 		>
 			<!-- Close Button -->
 			<button
@@ -640,7 +609,6 @@
 					type="checkbox"
 					id="dontShow"
 					bind:checked={dontShowAgain}
-					on:change={handleDontShowAgainChange}
 					class="h-4 w-4 text-indigo-600 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-indigo-500"
 				/>
 				<label for="dontShow" class="text-sm text-gray-500 dark:text-gray-400"
