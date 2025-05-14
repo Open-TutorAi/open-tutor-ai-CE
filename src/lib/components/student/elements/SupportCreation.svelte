@@ -418,11 +418,11 @@
 
 	// Predefined subjects
 	const subjects = [
-		{ id: 'mathematics', name: 'Mathematics', icon: '📊' },
-		{ id: 'science', name: 'Science', icon: '🔬' },
-		{ id: 'history', name: 'History', icon: '🏛️' },
-		{ id: 'computer-science', name: 'Computer Science', icon: '💻' },
-		{ id: 'english', name: 'English', icon: '📚' },
+		{ id: 'Mathematics', name: 'Mathematics', icon: '📊' },
+		{ id: 'Science', name: 'Science', icon: '🔬' },
+		{ id: 'History', name: 'History', icon: '🏛️' },
+		{ id: 'Computer-science', name: 'Computer Science', icon: '💻' },
+		{ id: 'English', name: 'English', icon: '📚' },
 		{ id: 'Geography', name: 'Geography', icon: '🌍' },
 		{ id: 'Chemistry', name: 'Chemistry', icon: '🔬' },
 		{ id: 'Biology', name: 'Biology', icon: '🌿' },
