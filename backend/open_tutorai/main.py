@@ -7,10 +7,12 @@ from open_webui.main import app as webui_app
 from open_webui.config import CORS_ALLOW_ORIGIN
 from open_webui.models.users import Users
 from open_tutorai.config import AppConfig
+from open_tutorai.models.database import init_database
 
 from open_tutorai.routers import (
     response_feedbacks,
     auths,
+    supports
 )
 
 from open_tutorai.env import (
@@ -60,6 +62,16 @@ app.add_middleware(
 app.state.config = AppConfig()
 # app.state.USER_COUNT = 10
 
+# Initialize the database tables on startup
+@app.on_event("startup")
+async def startup_db_client():
+    """Initialize the database tables when the app starts"""
+    try:
+        init_database()
+        print("Support database tables initialized successfully")
+    except Exception as e:
+        print(f"Error initializing database tables: {str(e)}")
+
 
 # Health check endpoint
 @app.post("/tutorai/health")
@@ -70,11 +82,11 @@ async def health_check():
 # Include routers of open_tutorai
 app.include_router(response_feedbacks.router, prefix="/api/v1", tags=["response-feedbacks"])
 app.include_router(auths.router, prefix="/auths", tags=["auths"])
+app.include_router(supports.router, prefix="/api/v1", tags=["supports"])
 
 @app.get("/api/changelog")
 async def get_app_changelog():
     return {key: CHANGELOG[key] for idx, key in enumerate(CHANGELOG) if idx < 5}
-
 
 # Mount the entire OpenWebUI app
 app.mount("/", webui_app)

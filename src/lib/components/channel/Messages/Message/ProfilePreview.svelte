@@ -3,7 +3,7 @@
 	import { createEventDispatcher } from 'svelte';
 
 	import { flyAndScale } from '$lib/utils/transitions';
-	import { TUTOR_BASE_URL } from '$lib/constants';
+	import { TUTOR_BASE_URL, TUTOR_FRONT_URL } from '$lib/constants';
 	import { activeUserIds } from '$lib/stores';
 
 	export let side = 'right';
@@ -40,7 +40,7 @@
 					<div class="py-8 relative bg-gray-900 rounded-t-lg">
 						<img
 							crossorigin="anonymous"
-							src={user?.profile_image_url ?? `${TUTOR_BASE_URL}/static/favicon.png`}
+							src={user?.profile_image_url ?? `${TUTOR_FRONT_URL}/static/favicon.png`}
 							class=" absolute -bottom-5 left-3 size-12 ml-0.5 object-cover rounded-full -translate-y-[1px]"
 							alt="profile"
 						/>

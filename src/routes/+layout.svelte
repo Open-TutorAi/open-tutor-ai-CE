@@ -28,7 +28,6 @@
 		appInfo
 	} from '$lib/stores';
 	import { goto } from '$app/navigation';
-	import { TUTOR_FRONT_URL } from '$lib/constants';
 	import { page } from '$app/stores';
 	import { Toaster, toast } from 'svelte-sonner';
 
@@ -40,7 +39,7 @@
 
 	import 'tippy.js/dist/tippy.css';
 
-	import { TUTOR_BASE_URL, TUTOR_HOSTNAME } from '$lib/constants';
+	import { TUTOR_BASE_URL, TUTOR_FRONT_URL } from '$lib/constants';
 	import i18n, { initI18n, getLanguages } from '$lib/i18n';
 	import { bestMatchingLanguage } from '$lib/utils';
 	import { getAllTags, getChatList } from '$lib/apis/chats';
@@ -230,7 +229,7 @@
 						if ($settings?.notificationEnabled ?? false) {
 							new Notification(`${title} | Open TutorAI`, {
 								body: content,
-								icon: `${TUTOR_BASE_URL}/static/favicon.png`
+								icon: `${TUTOR_FRONT_URL}/static/favicon.png`
 							});
 						}
 					}
@@ -376,7 +375,7 @@
 					if ($settings?.notificationEnabled ?? false) {
 						new Notification(`${data?.user?.name} (#${event?.channel?.name}) | Open TutorAI`, {
 							body: data?.content,
-							icon: data?.user?.profile_image_url ?? `${TUTOR_BASE_URL}/static/favicon.png`
+							icon: data?.user?.profile_image_url ?? `${TUTOR_FRONT_URL}/static/favicon.png`
 						});
 					}
 				}

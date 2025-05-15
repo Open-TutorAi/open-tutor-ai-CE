@@ -27,7 +27,7 @@
 		{
 			id: 'The Scholar',
 			name: $i18n.t(`The Scholar`),
-			image: 'images/The Scholar.png',
+			image: '/images/The Scholar.png',
 			accentColor: '#2196F3',
 			gradientEnd: '#3D5E94',
 			description: $i18n.t(
@@ -37,7 +37,7 @@
 		{
 			id: 'The Mentor',
 			name: $i18n.t(`The Mentor`),
-			image: 'images/The Mentor.png',
+			image: '/images/The Mentor.png',
 			accentColor: '#F59E0B',
 			gradientEnd: '#3D5E94',
 			description: $i18n.t(
@@ -47,7 +47,7 @@
 		{
 			id: 'The Coach',
 			name: $i18n.t(`The Coach`),
-			image: 'images/The Coach.png',
+			image: '/images/The Coach.png',
 			accentColor: '#10B981',
 			gradientEnd: '#3D5E94',
 			description: $i18n.t(
@@ -57,7 +57,7 @@
 		{
 			id: 'The Innovator',
 			name: $i18n.t(`The Innovator`),
-			image: 'images/The Innovator.png',
+			image: '/images/The Innovator.png',
 			accentColor: '#EF4444',
 			gradientEnd: '#3D5E94',
 			description: $i18n.t(
@@ -115,6 +115,41 @@
 	// 4. Triggering the parent component to start the chat session
 	const startChatWithAvatar = (avatarId: string) => {
 		selectedAvatar = avatarId;
+
+		const modelSelectorEl = document.querySelector('div.model-selector-value');
+		const visibleModelName = modelSelectorEl?.textContent?.trim() || '';
+		
+		if (visibleModelName && visibleModelName !== 'Select a model') {
+			console.log('Ensuring model is set in sessionStorage:', visibleModelName);
+			
+			const existingModelsStr = window.sessionStorage?.getItem('selectedModels');
+			const existingModels = existingModelsStr ? JSON.parse(existingModelsStr) : [];
+			
+			if (!existingModels || existingModels.length === 0 || existingModels[0] === '') {
+				console.log('Setting model in sessionStorage');
+				window.sessionStorage.setItem('selectedModels', JSON.stringify([visibleModelName]));
+			}
+		}
+		
+		if (typeof window !== 'undefined' && window.sessionStorage) {
+			const selectedModelsStr = window.sessionStorage.getItem('selectedModels');
+			const selectedModels = selectedModelsStr ? JSON.parse(selectedModelsStr) : [];
+			
+			if (!selectedModels || selectedModels.length === 0 || selectedModels.every((model: string) => !model || model === '')) {
+				if (visibleModelName && visibleModelName !== 'Select a model') {
+					console.log('Force setting model as last resort:', visibleModelName);
+					window.sessionStorage.setItem('selectedModels', JSON.stringify([visibleModelName]));
+				} else {
+					toast.error(t('Please select a model before starting a chat'));
+					
+					if (window.localStorage.getItem('pendingSupportData')) {
+						window.localStorage.removeItem('pendingSupportData');
+					}
+					
+					return;
+				}
+			}
+		}
 
 		// Update app settings with avatar preferences
 		settings.update((s) => {
@@ -194,7 +229,7 @@
 								<!-- Card background with subtle pattern -->
 								<div
 									class="card-bg"
-									style="background-image: url('static/images/background.jpeg')"
+									style="background-image: url('/images/background.jpeg')"
 								></div>
 
 								<!-- Avatar image with glow effect -->
@@ -262,7 +297,7 @@
 										<!-- Card background with library image -->
 										<div
 											class="card-bg"
-											style="background-image: url('static/images/background.jpeg')"
+											style="background-image: url('/images/background.jpeg')"
 										></div>
 
 										<!-- Glow effect for selected avatar -->

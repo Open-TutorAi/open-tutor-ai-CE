@@ -26,7 +26,7 @@
 		createMessagesList,
 		formatDate
 	} from '$lib/utils';
-	import { TUTOR_BASE_URL } from '$lib/constants';
+	import { TUTOR_FRONT_URL } from '$lib/constants';
 
 	import Name from './Name.svelte';
 	import ProfileImage from './ProfileImage.svelte';
@@ -537,7 +537,7 @@
 	>
 		<div class={`shrink-0 ${($settings?.chatDirection ?? 'LTR') === 'LTR' ? 'mr-3' : 'ml-3'}`}>
 			<ProfileImage
-				src={model?.info?.meta?.profile_image_url ?? `${TUTOR_BASE_URL}/static/favicon.png`}
+				src={model?.info?.meta?.profile_image_url ?? `${TUTOR_FRONT_URL}/static/favicon.png`}
 				className={'size-14'}
 			/>
 		</div>

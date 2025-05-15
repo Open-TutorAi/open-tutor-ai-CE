@@ -130,7 +130,7 @@
 {/if}
 
 <div
-	class=" my-2.5 rounded-xl px-4 py-3 border border-gray-100 dark:border-gray-850"
+	class=" m-6 rounded-xl p-4 border border-gray-100 dark:border-gray-850"
 	id="message-feedback-{message.id}"
 >
 	<div class="flex justify-between items-center">
@@ -158,33 +158,56 @@
 
 	<div class="w-full flex justify-center">
 		<div class=" relative w-fit">
-			<div class="mt-4 w-fit flex gap-0.5 pb-5">
-				<!-- Emoji scale instead of 1-10 -->
-				{#each Array.from({ length: 10 }).map((_, i) => i + 1) as rating}
-					<button
-						class="size-5.5 text-lg border border-gray-100 dark:border-gray-850 hover:bg-gray-50 dark:hover:bg-gray-850 {detailedRating ===
-						rating
-							? 'bg-gray-100 dark:bg-gray-800'
-							: ''} transition rounded-full disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-white dark:disabled:bg-gray-900 flex items-center justify-center"
-						on:click={() => {
-							detailedRating = rating;
-						}}
-						disabled={message?.annotation?.rating === -1 ? rating > 5 : rating < 6}
-						title={`Rating: ${rating}`}
-					>
-						{emojiRatings[rating - 1]}
-					</button>
-				{/each}
+			<div class="mt-5 w-fit flex gap-5 pb-6">
+				{#if message?.annotation?.rating === -1}
+					{#each Array.from({ length: 5 }).map((_, i) => i + 1) as rating}
+						<button
+							class="size-6 text-lg border border-gray-200 dark:border-gray-850 hover:bg-gray-50 dark:hover:bg-gray-850 {detailedRating ===
+							rating
+								? 'bg-yellow-400 dark:bg-gray-100'
+								: ''} transition-all duration-150 transform active:scale-90 hover:shadow rounded-full flex items-center justify-center p-0.5"
+							on:click={() => {
+								detailedRating = rating;
+							}}
+							title={`Rating: ${rating}`}
+						>
+							{emojiRatings[rating - 1]}
+						</button>
+					{/each}
+				{:else if message?.annotation?.rating === 1}
+					{#each Array.from({ length: 5 }).map((_, i) => i + 6) as rating}
+						<button
+							class="size-6 text-lg border border-gray-100 dark:border-gray-850 hover:bg-gray-50 dark:hover:bg-gray-850 {detailedRating ===
+							rating
+							? 'bg-yellow-400 dark:bg-gray-100'
+							: ''} transition-all duration-150 transform active:scale-90 hover:shadow rounded-full disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-white dark:disabled:bg-gray-900 flex items-center justify-center p-1"
+							on:click={() => {
+								detailedRating = rating;
+							}}
+							title={`Rating: ${rating}`}
+						>
+							{emojiRatings[rating - 1]}
+						</button>
+					{/each}
+				{/if}
 			</div>
 
-			<div class="absolute bottom-0 left-0 right-0 flex justify-between text-xs">
-				<div>
-					{emojiRatings[0]} - {$i18n.t('Not helpful')}
-				</div>
-
-				<div>
-					{emojiRatings[9]} - {$i18n.t('Very helpful')}
-				</div>
+			<div class="absolute bottom-0 left-0 right-0 flex justify-between text-xs mt-1.5 px-1">
+				{#if message?.annotation?.rating === -1}
+					<div>
+						{emojiRatings[0]} - {$i18n.t('Not helpful')}
+					</div>
+					<div>
+						{emojiRatings[4]} - {$i18n.t('Less helpful')}
+					</div>
+				{:else if message?.annotation?.rating === 1}
+					<div>
+						{emojiRatings[5]} - {$i18n.t('Helpful')}
+					</div>
+					<div>
+						{emojiRatings[9]} - {$i18n.t('Very helpful')}
+					</div>
+				{/if}
 			</div>
 		</div>
 	</div>

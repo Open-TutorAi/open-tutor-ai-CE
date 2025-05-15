@@ -134,7 +134,7 @@
 									</Tooltip>
 
 									<a
-										href="https://github.com/pr-elhajji/open-tutor-ai-CE/releases/tag/v{version.latest}"
+										href="https://github.com/R2D-dev/open-tutor-ai-CE/releases/tag/v{version.latest}"
 										target="_blank"
 									>
 										{updateAvailable === null
@@ -179,14 +179,14 @@
 								</div>
 							</div>
 
-							<a class="flex-shrink-0 text-xs font-medium underline" href="#" target="_blank">
+							<a class="flex-shrink-0 text-xs font-medium underline" href="https://opentutorai.com/docs/intro" target="_blank">
 								{$i18n.t('Documentation')}
 							</a>
 						</div>
 
 						<div class="mt-1">
 							<div class="flex space-x-1">
-								<a href="https://discord.gg/z5fMfrBzEF" target="_blank">
+								<a href="https://discord.gg/BTQtE2deEm" target="_blank">
 									<img
 										alt="Discord"
 										src="https://img.shields.io/badge/Discord-Open_TutorAI-blue?logo=discord&logoColor=white"
@@ -200,10 +200,10 @@
 									/>
 								</a>
 
-								<a href="https://github.com/pr-elhajji/open-tutor-ai-CE" target="_blank">
+								<a href="https://github.com/R2D-dev/open-tutor-ai-CE" target="_blank">
 									<img
 										alt="Github Repo"
-										src="https://img.shields.io/github/stars/pr-elhajji/open-tutor-ai-CE?style=social&label=Star us on Github"
+										src="https://img.shields.io/github/stars/R2D-dev/open-tutor-ai-CE?style=social&label=Star us on Github"
 									/>
 								</a>
 							</div>

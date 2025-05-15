@@ -57,6 +57,12 @@
 			if (pageFromUrl === 'chat' || pageFromUrl === 'c') {
 				pageFromUrl = 'support';
 			}
+			
+			// Mark support nav item as active for support pages
+			// Format: /student/support/ID, /student/support/ID/edit, /student/support/create
+			if (pageFromUrl === 'support') {
+				pageFromUrl = 'supports';
+			}
 
 			// Update the activePage store if it's a store
 			if (typeof activePage === 'object' && 'subscribe' in activePage) {
@@ -80,6 +86,12 @@
 			// Map chat routes to support
 			if (pageFromUrl === 'chat' || pageFromUrl === 'c') {
 				pageFromUrl = 'support';
+			}
+			
+			// Mark support nav item as active for support pages
+			// Format: /student/support/ID, /student/support/ID/edit, /student/support/create
+			if (pageFromUrl === 'support') {
+				pageFromUrl = 'supports';
 			}
 
 			// Only update if it has changed to avoid loops
@@ -141,7 +153,7 @@
 		student: [
 			{ id: 'dashboard', label: 'Dashboard', icon: Dashboard },
 			{ id: 'classrooms', label: 'My Classrooms', icon: Classroom },
-			{ id: 'support', label: 'Support', icon: Classroom },
+			{ id: 'supports', label: 'Support', icon: Classroom },
 			{ id: 'assignments', label: 'Assignments', icon: Assignment },
 			{ id: 'messages', label: 'Messages', icon: Message },
 			{ id: 'settings', label: 'Profile & Settings', icon: Settings }
