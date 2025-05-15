@@ -21,7 +21,7 @@
 **OpenTutorAI-CE** (Community Edition) is an open-source project designed to provide an educational and collaborative AI-powered platform. This public edition is the foundation for a proprietary Enterprise Edition (EE) and is built to encourage community contributions.
 
 > [!TIP]  
-> **Looking for an [Enterprise Plan](https://opentutorai.com)?** – **[Speak with Our Sales Team Today!](mailto:sales@opentutorai.com)**
+> **Looking for an [Support Plan](https://opentutorai.com)?** – **[Speak with Our support Team Today!](mailto:opentutorai@gmail.com)**
 >
 > Get **enhanced capabilities**, including **custom theming and branding**, **Service Level Agreement (SLA) support**, **Long-Term Support (LTS) versions**, and **more!**
 
@@ -145,6 +145,10 @@ If you have any questions, suggestions, or need assistance, please open an issue
 [Open TutorAI Discord community](https://discord.gg/BTQtE2deEm) to connect with us! 🤝
 
 ## Star History
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=R2D-dev/open-tutor-ai-CE&type=Date)](https://www.star-history.com/#R2D-dev/open-tutor-ai-CE&Date)
 
 <a href="https://www.star-history.com/#R2D-dev/open-tutor-ai-CE&Date">
  <picture>
