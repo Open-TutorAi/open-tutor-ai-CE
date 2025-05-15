@@ -146,8 +146,6 @@ If you have any questions, suggestions, or need assistance, please open an issue
 
 ## Star History
 
-## Star History
-
 <a href="https://www.star-history.com/#Open-TutorAi/open-tutor-ai-CE&Date">
  <picture>
    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Open-TutorAi/open-tutor-ai-CE&type=Date&theme=dark" />
