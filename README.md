@@ -148,8 +148,6 @@ If you have any questions, suggestions, or need assistance, please open an issue
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=R2D-dev/open-tutor-ai-CE&type=Date)](https://www.star-history.com/#R2D-dev/open-tutor-ai-CE&Date)
-
 <a href="https://www.star-history.com/#R2D-dev/open-tutor-ai-CE&Date">
  <picture>
    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=R2D-dev/open-tutor-ai-CE&type=Date&theme=dark" />
