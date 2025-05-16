@@ -1,18 +1,27 @@
+<div align="center">
+<br/>
+<img src="static/static/splash.png" width="120px" alt="">
+<br/>
+
 # Open TutorAI 👋
 
-![GitHub stars](https://img.shields.io/github/stars/R2D-dev/open-tutor-ai-CE?style=social)
-![GitHub forks](https://img.shields.io/github/forks/R2D-dev/open-tutor-ai-CE?style=social)
-![GitHub watchers](https://img.shields.io/github/watchers/R2D-dev/open-tutor-ai-CE?style=social)
-![GitHub repo size](https://img.shields.io/github/repo-size/R2D-dev/open-tutor-ai-CE)
-![GitHub language count](https://img.shields.io/github/languages/count/R2D-dev/open-tutor-ai-CE)
-![GitHub top language](https://img.shields.io/github/languages/top/R2D-dev/open-tutor-ai-CE)
-![GitHub last commit](https://img.shields.io/github/last-commit/R2D-dev/open-tutor-ai-CE)
+![GitHub stars](https://img.shields.io/github/stars/Open-TutorAi/open-tutor-ai-CE?style=social)
+![GitHub forks](https://img.shields.io/github/forks/Open-TutorAi/open-tutor-ai-CE?style=social)
+![GitHub watchers](https://img.shields.io/github/watchers/Open-TutorAi/open-tutor-ai-CE?style=social)
+![GitHub repo size](https://img.shields.io/github/repo-size/Open-TutorAi/open-tutor-ai-CE)
+![GitHub language count](https://img.shields.io/github/languages/count/Open-TutorAi/open-tutor-ai-CE)
+![GitHub top language](https://img.shields.io/github/languages/top/Open-TutorAi/open-tutor-ai-CE)
+![GitHub last commit](https://img.shields.io/github/last-commit/Open-TutorAi/open-tutor-ai-CE)
 [![Discord](https://img.shields.io/badge/Discord-Open_TutorAI-blue?logo=discord&logoColor=white)](https://discord.gg/BTQtE2deEm)
 
-**OpenTutorAI-CE ** (Community Edition) is an open-source project designed to provide an educational and collaborative AI-powered platform. This public edition is the foundation for a proprietary Enterprise Edition (EE) and is built to encourage community contributions.
+</div>
+<br>
+<div align="left">
+
+**OpenTutorAI-CE** (Community Edition) is an open-source project designed to provide an educational and collaborative AI-powered platform. This public edition is the foundation for a proprietary Enterprise Edition (EE) and is built to encourage community contributions.
 
 > [!TIP]  
-> **Looking for an [Enterprise Plan](https://opentutorai.com)?** – **[Speak with Our Sales Team Today!](mailto:sales@oepntutorai.com)**
+> **Looking for a Support?** – **[Speak with Our support Team Today!](mailto:opentutorai@gmail.com)**
 >
 > Get **enhanced capabilities**, including **custom theming and branding**, **Service Level Agreement (SLA) support**, **Long-Term Support (LTS) versions**, and **more!**
 
@@ -79,7 +88,7 @@ Below is a list of essential steps and resources to help you get started, manage
 Follow these steps to set up the project locally:
 
 1. **Fork and Clone the Repository**
-   - Go to [GitHub Repository](https://github.com/R2D-dev/open-tutor-ai-CE)
+   - Go to [GitHub Repository](https://github.com/Open-TutorAi/open-tutor-ai-CE)
    - Click on **Fork**, then clone your forked repo:
      ```bash
      git clone https://github.com/YOUR_USERNAME/open-tutor-ai-CE.git
@@ -137,11 +146,11 @@ If you have any questions, suggestions, or need assistance, please open an issue
 
 ## Star History
 
-<a href="https://www.star-history.com/#R2D-dev/open-tutor-ai-CE&Date">
+<a href="https://www.star-history.com/#Open-TutorAi/open-tutor-ai-CE&Date">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=R2D-dev/open-tutor-ai-CE&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=R2D-dev/open-tutor-ai-CE&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=R2D-dev/open-tutor-ai-CE&type=Date" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Open-TutorAi/open-tutor-ai-CE&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=Open-TutorAi/open-tutor-ai-CE&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=Open-TutorAi/open-tutor-ai-CE&type=Date" />
  </picture>
 </a>
 
