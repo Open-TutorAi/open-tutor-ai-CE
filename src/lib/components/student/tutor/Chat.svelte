@@ -77,6 +77,7 @@
 		stopTask
 	} from '$lib/apis';
 	import { getTools } from '$lib/apis/tools';
+	import { getSupportById } from '$lib/apis/supports';
 
 	import Banner from '$lib/components/common/Banner.svelte';
 	import MessageInput from '$lib/components/chat/MessageInput.svelte';
@@ -425,6 +426,25 @@
 
 	onMount(async () => {
 		console.log('mounted');
+		
+		// Initialize global event target if it doesn't exist
+		if (typeof window !== 'undefined' && !window.openTutorEvents) {
+			console.log('Creating global openTutorEvents EventTarget');
+			window.openTutorEvents = new EventTarget();
+		}
+		
+		// Listen for chat creation errors to cleanup pending supports
+		window.openTutorEvents.addEventListener('chatCreated', (event: CustomEvent) => {
+			if (event.detail && event.detail.success === false) {
+				console.log('Detected failed chat creation, cleaning up');
+				// Clean up any pending support data
+				if (window.localStorage.getItem('pendingSupportData')) {
+					window.localStorage.removeItem('pendingSupportData');
+					toast.error($i18n.t('Support linking canceled due to chat creation failure'));
+				}
+			}
+		});
+		
 		window.addEventListener('message', onMessageHandler);
 		$socket?.on('chat-events', chatEventHandler);
 
@@ -671,9 +691,151 @@
 		}
 	};
 
-	//////////////////////////
-	// Web functions
-	//////////////////////////
+	/**
+	 * Generates a system prompt based on support details
+	 * @param {string} supportId - The ID of the support
+	 * @returns {Promise<string|null>} - The generated system prompt or null if failed
+	 */
+	const generateSupportSystemPrompt = async (supportId) => {
+		try {
+			console.log(`Fetching support details for ID: ${supportId}`);
+			const token = localStorage.getItem('token');
+			if (!token) {
+				console.error('No token found, cannot fetch support details');
+				return null;
+			}
+			
+			// Fetch support details from API
+			const supportDetails = await getSupportById(token, supportId);
+			if (!supportDetails) {
+				console.error('Failed to fetch support details');
+				return null;
+			}
+			
+			console.log('Support details fetched:', supportDetails);
+			
+			// Construct system prompt
+			let systemPrompt = `You are an educational tutor specializing in ${supportDetails.subject || 'various subjects'}`;
+			
+			if (supportDetails.custom_subject) {
+				systemPrompt += `, particularly in ${supportDetails.custom_subject}`;
+			}
+			
+			systemPrompt += `.\n\n`;
+			
+			// Add directive to acknowledge context in first response
+			systemPrompt += `IMPORTANT INSTRUCTIONS: This is a learning session about ${supportDetails.title}. In your FIRST response, introduce yourself as a tutor for this specific topic and briefly mention what you'll be covering based on the learning objective. Even if the user's first message is generic (like "hello"), you should respond by acknowledging the course topic and learning goals described below.\n\n`;
+			
+			// Important note about not asking for information already provided - STRENGTHENED
+			systemPrompt += `CRITICAL INSTRUCTION: DO NOT ask the student about their educational level, background, prior knowledge, or learning objectives. This information has ALREADY been provided below and you must use it directly without asking the student to repeat it. Your first message should immediately begin teaching based on these details without asking any preliminary questions about the student's goals or background.\n\n`;
+			
+			// Add explicit first message format
+			systemPrompt += `Begin your first message by saying: "I'm your tutor for ${supportDetails.title}. We'll be working on ${supportDetails.learning_objective || 'this topic'} today." Then immediately start providing relevant content. Do not ask what they want to learn or what their background is.\n\n`;
+			
+			// Add title and description
+			systemPrompt += `TOPIC: ${supportDetails.title}\n`;
+			
+			if (supportDetails.short_description) {
+				systemPrompt += `DESCRIPTION: ${supportDetails.short_description}\n`;
+			}
+			
+			// Add learning objective
+			if (supportDetails.learning_objective) {
+				systemPrompt += `\nLEARNING OBJECTIVE: ${supportDetails.learning_objective}\n`;
+			}
+			
+			// Add learning type
+			if (supportDetails.learning_type) {
+				systemPrompt += `LEARNING TYPE: ${supportDetails.learning_type}\n`;
+				
+				// Add specific guidance based on learning type
+				if (supportDetails.learning_type === 'exam') {
+					systemPrompt += `Focus on exam preparation, practice questions, and assessment strategies.\n`;
+				} else if (supportDetails.learning_type === 'course') {
+					systemPrompt += `Focus on comprehensive understanding of course material and concepts.\n`;
+				} else if (supportDetails.learning_type === 'skill') {
+					systemPrompt += `Focus on practical skill-building and application of knowledge.\n`;
+				}
+			}
+			
+			// Add education level with stronger emphasis
+			if (supportDetails.level) {
+				systemPrompt += `EDUCATION LEVEL: ${supportDetails.level}\n`;
+				
+				// Adjust language and complexity based on level
+				if (supportDetails.level === 'primary') {
+					systemPrompt += `Use simple language and explanations appropriate for young learners.\n`;
+				} else if (supportDetails.level === 'middle') {
+					systemPrompt += `Use moderately complex explanations with clear examples.\n`;
+				} else if (supportDetails.level === 'high') {
+					systemPrompt += `Use more detailed explanations and challenging concepts appropriate for high school students.\n`;
+				} else if (supportDetails.level === 'university') {
+					systemPrompt += `Use advanced concepts and academic language appropriate for university-level education.\n`;
+				}
+				
+				// Add explicit note about education level
+				systemPrompt += `NOTE: The student is at the ${supportDetails.level} education level. Do not ask them about their level.\n`;
+			}
+			
+			// Add language preference
+			if (supportDetails.content_language) {
+				systemPrompt += `PREFERRED LANGUAGE: ${supportDetails.content_language}\n`;
+				systemPrompt += `Please respond in ${supportDetails.content_language} unless the student asks otherwise.\n`;
+			}
+			
+			// Add keywords
+			if (supportDetails.keywords && supportDetails.keywords.length > 0) {
+				systemPrompt += `\nKEY CONCEPTS: ${supportDetails.keywords.join(', ')}\n`;
+			}
+			
+			// Check for files and try to enhance context with file content if possible
+			if (supportDetails.files && supportDetails.files.length > 0) {
+				systemPrompt += `\nCOURSE MATERIALS: The student has uploaded ${supportDetails.files.length} file(s) as course materials:\n`;
+				
+				// List the files
+				for (const file of supportDetails.files) {
+					systemPrompt += `- ${file.filename} (${file.file_type || 'unknown type'})\n`;
+				}
+				
+				// Add a note about using the content of these materials
+				systemPrompt += `\nWhen answering questions, you should reference and use the content from these materials whenever relevant. The content will be made available through the chat interface. If the student asks about content from these materials, prioritize information from them in your answers.\n`;
+				
+				// Try to extract text content from text-based files if possible
+				try {
+					for (const file of supportDetails.files) {
+						if (file.file_type && 
+							(file.file_type.includes('text') || 
+							file.file_type.includes('pdf') || 
+							file.file_type.includes('document'))) {
+							
+							// In a real implementation, you would fetch and process text content from files
+							// For now, we just add a note that the content will be referenced
+							systemPrompt += `\nNote: Content from ${file.filename} will be made available for reference.\n`;
+						}
+					}
+				} catch (fileError) {
+					console.error('Error processing file content:', fileError);
+				}
+			}
+			
+			// Add estimated duration if available to guide session planning
+			if (supportDetails.estimated_duration) {
+				systemPrompt += `\nESTIMATED DURATION: This learning session is planned for ${supportDetails.estimated_duration}. Please pace your teaching accordingly.\n`;
+			}
+			
+			// Add general instruction
+			systemPrompt += `\nYour goal is to help the student achieve their learning objective by providing clear explanations, examples, analogies, and guided practice appropriate for their level. Adjust your teaching style, complexity, and examples based on their interactions. Be engaging, supportive, and patient throughout the learning process.\n\n`;
+			
+			// Add reminder to stay focused on the topic and not ask redundant questions - STRENGTHENED
+			systemPrompt += `FINAL REMINDER: DO NOT ask the student about information they've already provided such as their educational level, background, or learning goals. Instead, directly begin helping them with their learning objective. Always keep your responses relevant to the topic (${supportDetails.title}) and learning objectives described above. Your role is to provide structured guidance on this specific subject matter. If the student says only "hello" or provides a very brief message, jump straight into teaching the topic - don't waste time with preliminary questions.`;
+			
+			console.log('Generated system prompt:', systemPrompt);
+			return systemPrompt;
+		} catch (error) {
+			console.error('Error generating support system prompt:', error);
+			return null;
+		}
+	}
 
 	const initNewChat = async () => {
 		if ($page.url.searchParams.get('models')) {
@@ -811,6 +973,62 @@
 
 		const chatInput = document.getElementById('chat-input');
 		setTimeout(() => chatInput?.focus(), 0);
+		
+		// Check for pending support data and add system prompt if exists
+		const pendingSupportData = localStorage.getItem('pendingSupportData');
+		if (pendingSupportData) {
+			try {
+				const supportData = JSON.parse(pendingSupportData);
+				if (supportData && supportData.id) {
+					console.log('Found pending support data:', supportData);
+					
+					// Generate system prompt from support data
+					const systemPrompt = await generateSupportSystemPrompt(supportData.id);
+					if (systemPrompt) {
+						// Create a system message with the support context
+						const systemMessageId = uuidv4();
+						history.messages[systemMessageId] = {
+							id: systemMessageId,
+							role: 'system',
+							content: systemPrompt,
+							done: true,
+							timestamp: Date.now()
+						};
+						
+						console.log('Added system prompt to chat history');
+					}
+					
+					// Fetch support details to get associated files
+					try {
+						const token = localStorage.getItem('token');
+						const supportDetails = await getSupportById(token, supportData.id);
+						
+						// Process support files
+						if (supportDetails && supportDetails.files && supportDetails.files.length > 0) {
+							console.log('Support has associated files:', supportDetails.files);
+							
+							// Add files to chat
+							for (const file of supportDetails.files) {
+								chatFiles.push({
+									id: file.id,
+									name: file.filename,
+									type: file.file_type || 'application/octet-stream',
+									size: file.file_size || 0,
+									url: `${TUTOR_API_BASE_URL}/files/${file.id}`,
+									from_support: true
+								});
+							}
+							
+							console.log('Added support files to chat:', chatFiles);
+						}
+					} catch (fileError) {
+						console.error('Error fetching support files:', fileError);
+					}
+				}
+			} catch (error) {
+				console.error('Error processing pendingSupportData:', error);
+			}
+		}
 	};
 
 	const loadChat = async () => {
@@ -1723,49 +1941,86 @@
 			avatarPersonality = `${avatarPersonality}\n\n${jsonInstructions}`;
 		}
 
+		// Extract system messages
+		let systemMessages = [];
+		let conversationMessages = [];
+		
+		// Check if we have system messages in the history
+		for (const messageId in _history.messages) {
+			const message = _history.messages[messageId];
+			if (message.role === 'system') {
+				systemMessages.push(message);
+			} else {
+				conversationMessages.push(message);
+			}
+		}
+		
+		// Sort system messages by timestamp if available
+		if (systemMessages.length > 0) {
+			systemMessages.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+		}
+		
+		// Combine system messages into a single system prompt if there are any
+		let combinedSystemPrompt = '';
+		if (systemMessages.length > 0) {
+			combinedSystemPrompt = systemMessages.map(msg => msg.content).join('\n\n');
+			console.log('Found system messages in history, using for context');
+		}
+
+		// Create the base system message content
+		const baseSystemContent = avatarActive && avatarPersonality
+			? `${avatarPersonality}\n\n${
+					params?.system || $settings.system
+						? `Additional instructions: ${promptTemplate(
+							params?.system ?? $settings?.system ?? '',
+							$user.name,
+							$settings?.userLocation
+								? await getAndUpdateUserLocation(localStorage.token).catch((err) => {
+										console.error(err);
+										return undefined;
+									})
+								: undefined
+						)}`
+						: ''
+				}${
+					(responseMessage?.userContext ?? null)
+						? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
+						: ''
+				}`
+			: `${promptTemplate(
+					params?.system ?? $settings?.system ?? '',
+					$user.name,
+					$settings?.userLocation
+						? await getAndUpdateUserLocation(localStorage.token).catch((err) => {
+								console.error(err);
+								return undefined;
+							})
+						: undefined
+				)}${
+					(responseMessage?.userContext ?? null)
+						? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
+						: ''
+				}`;
+
 		let messages = [
 			{
 				role: 'system',
-				content:
-					avatarActive && avatarPersonality
-						? `${avatarPersonality}\n\n${
-								params?.system || $settings.system
-									? `Additional instructions: ${promptTemplate(
-											params?.system ?? $settings?.system ?? '',
-											$user.name,
-											$settings?.userLocation
-												? await getAndUpdateUserLocation(localStorage.token).catch((err) => {
-														console.error(err);
-														return undefined;
-													})
-												: undefined
-										)}`
-									: ''
-							}${
-								(responseMessage?.userContext ?? null)
-									? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
-									: ''
-							}`
-						: `${promptTemplate(
-								params?.system ?? $settings?.system ?? '',
-								$user.name,
-								$settings?.userLocation
-									? await getAndUpdateUserLocation(localStorage.token).catch((err) => {
-											console.error(err);
-											return undefined;
-										})
-									: undefined
-							)}${
-								(responseMessage?.userContext ?? null)
-									? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
-									: ''
-							}`
+				// If we have system messages from support context, prioritize them
+				content: combinedSystemPrompt || baseSystemContent
 			},
-			...createMessagesList(_history, responseMessageId).map((message) => ({
+			// Only include non-system messages in the conversation
+			...createMessagesList(_history, responseMessageId)
+				.filter(message => message.role !== 'system')
+				.map((message) => ({
 				...message,
 				content: removeDetails(message.content, ['reasoning', 'code_interpreter'])
 			}))
 		].filter((message) => message && message.content && message.content.trim() !== '');
+
+		// Log info about system context
+		if (combinedSystemPrompt) {
+			console.log('Using support context as system prompt');
+		}
 
 		messages = messages
 			.map((message, idx, arr) => ({
@@ -2083,33 +2338,122 @@
 	const initChatHandler = async (history) => {
 		let _chatId = $chatId;
 
-		if (!$temporaryChatEnabled) {
-			chat = await createNewChat(localStorage.token, {
-				id: _chatId,
-				title: $i18n.t('New Chat'),
-				models: selectedModels,
-				system: $settings.system ?? undefined,
-				params: params,
-				history: history,
-				messages: createMessagesList(history, history.currentId),
-				tags: [],
-				timestamp: Date.now()
-			});
+		try {
+			// Validate models before proceeding
+			if (selectedModels.length === 0 || selectedModels.some(model => !model)) {
+				console.error('Invalid model selection. Setting default model...');
+				if ($models.length > 0) {
+					selectedModels = [$models[0].id];
+				} else {
+					throw new Error('No models available');
+				}
+			}
 
-			_chatId = chat.id;
-			await chatId.set(_chatId);
+			if (!$temporaryChatEnabled) {
+				// Check for pending support ID to link with the chat
+				let supportId = null;
+				let supportTitle = null;
+				try {
+					const pendingSupportData = localStorage.getItem('pendingSupportData');
+					if (pendingSupportData) {
+						const supportData = JSON.parse(pendingSupportData);
+						supportId = supportData?.id || null;
+						
+						// Try to get support title to use as chat title
+						if (supportId) {
+							try {
+								const token = localStorage.getItem('token');
+								const supportDetails = await getSupportById(token, supportId);
+								if (supportDetails && supportDetails.title) {
+									supportTitle = supportDetails.title;
+									console.log(`Using support title for chat: ${supportTitle}`);
+								}
+							} catch (titleError) {
+								console.error('Error getting support title:', titleError);
+							}
+						}
+					}
+				} catch (error) {
+					console.error('Error parsing pendingSupportData:', error);
+				}
+				
+				chat = await createNewChat(localStorage.token, {
+					id: _chatId,
+					title: supportTitle || $i18n.t('New Chat'),
+					models: selectedModels,
+					system: $settings.system ?? undefined,
+					params: params,
+					history: history,
+					messages: createMessagesList(history, history.currentId),
+					tags: [],
+					files: chatFiles,
+					support_id: supportId, // Link to support if exists
+					timestamp: Date.now()
+				});
 
-			await chats.set(await getChatList(localStorage.token, $currentChatPage));
-			currentChatPage.set(1);
+				_chatId = chat.id;
+				await chatId.set(_chatId);
 
-			window.history.replaceState(history.state, '', `/student/c/${_chatId}`);
-		} else {
-			_chatId = 'local';
-			await chatId.set('local');
+				await chats.set(await getChatList(localStorage.token, $currentChatPage));
+				currentChatPage.set(1);
+
+				// If the chat was successfully created AND we had a supportId, we 
+				// can safely remove the pendingSupportData now as other components
+				// will handle updating the support with the chat ID via event listeners
+				if (supportId) {
+					console.log('Successfully created chat with support ID, cleanup can proceed');
+					// We don't immediately remove pendingSupportData here because the updateSupportWithChatId
+					// functions in SupportCreation and Dashboard components need it to update the support
+					// They will remove it after they successfully update the support through the API
+				}
+
+				window.history.replaceState(history.state, '', `/student/c/${_chatId}`);
+				
+				// Dispatch a global event for chat creation that other components can listen for
+				if (typeof window !== 'undefined' && window.openTutorEvents) {
+					console.log('Dispatching chatCreated event with ID:', _chatId);
+					window.openTutorEvents.dispatchEvent(
+						new CustomEvent('chatCreated', { 
+							detail: { 
+								chatId: _chatId,
+								timestamp: Date.now(),
+								success: true
+							} 
+						})
+					);
+				}
+			} else {
+				_chatId = 'local';
+				await chatId.set('local');
+			}
+			await tick();
+
+			return _chatId;
+		} catch (error) {
+			console.error('Error in initChatHandler:', error);
+			
+			// Clear any pending support data when chat initialization fails
+			if (typeof window !== 'undefined' && window.localStorage) {
+				window.localStorage.removeItem('pendingSupportData');
+			}
+			
+			// Notify that chat creation failed
+			if (typeof window !== 'undefined' && window.openTutorEvents) {
+				window.openTutorEvents.dispatchEvent(
+					new CustomEvent('chatCreated', { 
+						detail: { 
+							chatId: null,
+							timestamp: Date.now(),
+							success: false,
+							error: error?.message || 'Chat initialization failed'
+						} 
+					})
+				);
+			}
+			
+			toast.error($i18n.t('Failed to initialize chat'));
+			return null;
 		}
-		await tick();
-
-		return _chatId;
 	};
 
 	const saveChatHandler = async (_chatId, history) => {
