@@ -16,10 +16,7 @@
         console.log("No user found, redirecting to auth page");
         await goto('/auth');
         return;
-      }
-
-      console.log("Current user role:", $user.role);
-      
+      }      
       // Allow access to students
       if ($user.role !== 'user') {
         console.log("User is not a student, redirecting to home");

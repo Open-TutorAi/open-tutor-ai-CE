@@ -15,6 +15,8 @@
 	import { get, type Unsubscriber, type Writable } from 'svelte/store';
 	import type { i18n as i18nType } from 'i18next';
 	import { TUTOR_BASE_URL } from '$lib/constants';
+	import promptData  from './prompt.json';
+
 
 	import {
 		chatId,
@@ -711,11 +713,10 @@
 				console.error('Failed to fetch support details');
 				return null;
 			}
-			
-			console.log('Support details fetched:', supportDetails);
-			
+						
 			// Construct system prompt
-			let systemPrompt = `You are an educational tutor specializing in ${supportDetails.subject || 'various subjects'}`;
+			let systemPrompt = `You are a highly experienced educator, instructional designer, and tutor. You specialize in creating clear, engaging, and progressive step-by-step lessons for any topic and any academic level. You combine best practices in pedagogy (e.g., scaffolding, active recall, formative feedback) with adaptive teaching strategies. Your role is to guide me through a structured learning path, You guide the learner one concept at a time, combining effective teaching strategies,  personalized communication style, and the most suitable reasoning method, in a way that is tailored to my needs, level, and learning goals.`
+			systemPrompt+=`You are an educational tutor specializing in ${supportDetails.subject || 'various subjects'}`;
 			
 			if (supportDetails.custom_subject) {
 				systemPrompt += `, particularly in ${supportDetails.custom_subject}`;
@@ -826,10 +827,12 @@
 			// Add general instruction
 			systemPrompt += `\nYour goal is to help the student achieve their learning objective by providing clear explanations, examples, analogies, and guided practice appropriate for their level. Adjust your teaching style, complexity, and examples based on their interactions. Be engaging, supportive, and patient throughout the learning process.\n\n`;
 			
+			//systemPrompt+= promptData;
 			// Add reminder to stay focused on the topic and not ask redundant questions - STRENGTHENED
 			systemPrompt += `FINAL REMINDER: DO NOT ask the student about information they've already provided such as their educational level, background, or learning goals. Instead, directly begin helping them with their learning objective. Always keep your responses relevant to the topic (${supportDetails.title}) and learning objectives described above. Your role is to provide structured guidance on this specific subject matter. If the student says only "hello" or provides a very brief message, jump straight into teaching the topic - don't waste time with preliminary questions.`;
-			
-			console.log('Generated system prompt:', systemPrompt);
+			systemPrompt += promptData.prompt;
+
+				console.log('Generated system prompt:', systemPrompt);
 			return systemPrompt;
 		} catch (error) {
 			console.error('Error generating support system prompt:', error);
