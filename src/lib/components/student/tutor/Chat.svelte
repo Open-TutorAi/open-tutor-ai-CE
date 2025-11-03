@@ -2710,7 +2710,7 @@
 									/>
 							</div>
 							<!-- Pedagogical Shortcut Buttons -->
-						<div class="absolute bottom-0 left-0 right-0 z-20 animate-float px-6 pb-6">
+						<div class="absolute bottom-0 left-0 right-0 z-20 px-6 pb-6">
 							<PedagogicalShortcuts 
 								onAction={(actionId, promptText) => {
 									// Set the prompt and submit it
