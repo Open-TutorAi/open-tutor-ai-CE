@@ -9,6 +9,7 @@
 	import CourseCard from '../elements/CourseCard.svelte';
 	import { getSupportRequests, type SupportResponse, updateSupportChatId } from '$lib/apis/supports';
 	import { page } from '$app/stores';
+	import { fade, scale } from 'svelte/transition';
 	import { toast } from 'svelte-sonner';
 
 	const i18n = getContext<Writable<i18nType>>('i18n');
@@ -336,6 +337,11 @@
 	}
 
 	function toggleSupportPopup() {
+		if (dontShowAgain || (browser && localStorage.getItem('hideSupportPopup') === 'true')) {
+			goto('/student/support/create');
+			return;
+		}
+
 		showSupportPopup = !showSupportPopup;
 		if (showSupportPopup) showJoinCoursePopup = false;
 	}
@@ -345,6 +351,14 @@
 
 	// Don't show again state
 	let dontShowAgain = false;
+
+	// Load persisted preference
+	if (browser) {
+		const storedFlag = localStorage.getItem('hideSupportPopup') === 'true';
+		if (storedFlag) {
+			dontShowAgain = true;
+		}
+	}
 
 	// Handle joining a course
 	function handleJoinCourse() {
@@ -356,6 +370,15 @@
 			// For other valid codes, you would implement the actual join logic here
 			// For now, just close the popup
 			showJoinCoursePopup = false;
+		}
+	}
+
+	// Persist don't show again preference reactively
+	$: if (browser) {
+		if (dontShowAgain) {
+			localStorage.setItem('hideSupportPopup', 'true');
+		} else {
+			localStorage.removeItem('hideSupportPopup');
 		}
 	}
 
@@ -376,11 +399,22 @@
 	<div class="flex justify-end">
 		<div class="flex gap-4">
 			<button
-				class="flex items-center gap-2 bg-indigo-500 dark:bg-indigo-600 text-white py-3 px-6 rounded-full hover:bg-indigo-600 dark:hover:bg-indigo-700 transition-colors"
+				class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 rounded-full transition"
 				on:click={toggleSupportPopup}
 			>
-				<span class="text-xl font-bold">+</span>
-				<span>{$i18n.t('Support')}</span>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-5 w-5"
+					viewBox="0 0 20 20"
+					fill="currentColor"
+				>
+					<path
+						fill-rule="evenodd"
+						d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+						clip-rule="evenodd"
+					/>
+				</svg>
+				{$i18n.t('Support')}
 			</button>
 		</div>
 	</div>
@@ -460,10 +494,10 @@
 <!-- Join Course Popup Modal -->
 {#if showJoinCoursePopup}
 	<div
-		class="fixed inset-0 backdrop-blur-sm bg-white/30 dark:bg-black/30 flex items-center justify-center z-50"
+		class="fixed inset-0 backdrop-blur-sm bg-white/30 dark:bg-black/30 flex items-center justify-center z-50" role="dialog" aria-modal="true" in:fade
 	>
 		<div
-			class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md mx-auto relative"
+			class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-11/12 sm:w-full max-w-md mx-auto relative overflow-y-auto max-h-[90vh] ring-1 ring-gray-200 dark:ring-gray-700" transition:scale={{ duration: 200 }}
 		>
 			<!-- Close Button -->
 			<button
@@ -526,77 +560,72 @@
 <!-- Support Popup Modal -->
 {#if showSupportPopup}
 	<div
-		class="fixed inset-0 backdrop-blur-sm bg-white/30 dark:bg-black/30 flex items-center justify-center z-50"
+		class="fixed inset-0 backdrop-blur-sm bg-white/30 dark:bg-black/30 flex items-center justify-center z-50" role="dialog" aria-modal="true" in:fade
 	>
 		<div
-			class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md mx-auto relative"
+			class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 w-11/12 sm:w-full max-w-sm mx-auto relative overflow-y-auto max-h-[90vh] ring-1 ring-gray-200 dark:ring-gray-700" transition:scale={{ duration: 200 }}
 		>
 			<!-- Close Button -->
 			<button
-				class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
+				class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
 				on:click={toggleSupportPopup}
 			>
-				<span class="text-2xl font-light">×</span>
+				<span class="text-xl font-light">×</span>
 			</button>
 
 			<!-- OT Logo -->
-			<div class="flex justify-center mb-8">
-				<img src="/favicon.png" alt="OT Logo" class="w-26 h-26" />
+			<div class="flex justify-center mb-4">
+				<img src="/favicon.png" alt="OT Logo" class="w-20 h-20" />
 			</div>
 
 			<!-- Title -->
-			<h2 class="text-center text-xl font-bold text-gray-900 dark:text-white">
+			<h2 class="text-center text-lg font-bold text-gray-900 dark:text-white mb-4">
 				{$i18n.t('Create Personalized Tutorials for any Subject or Topic')}
 			</h2>
 
-			<!-- Divider -->
-			<div class="my-8">
-				<hr class="border-gray-200 dark:border-gray-600" />
-			</div>
-
 			<!-- Learning Path Section -->
-			<h3 class="text-center text-lg font-medium mb-6 text-gray-900 dark:text-white">
-				{$i18n.t('Create Tour Learning Path')}
+			<h3 class="text-center text-md font-medium mb-4 text-gray-900 dark:text-white">
+				{$i18n.t('Create Your Learning Path')}
 			</h3>
 
 			<!-- Steps -->
-			<div class="space-y-4 mb-10 px-4">
-				<div class="flex items-center gap-4">
+			<div class="space-y-3 mb-6 px-2">
+				<div class="flex items-center gap-3">
 					<div
-						class="flex-shrink-0 bg-[#004AAD] text-white rounded-full w-7 h-7 flex items-center justify-center"
+						class="flex-shrink-0 bg-[#004AAD] text-white rounded-full w-6 h-6 flex items-center justify-center"
 					>
-						<span class="font-bold">1</span>
+						<span class="font-bold text-sm">1</span>
 					</div>
-					<span class="text-gray-800 dark:text-gray-200"
-						>{$i18n.t('Choose your topic and difficulty level')}</span
+					<span class="text-sm text-gray-800 dark:text-gray-200"
+						>{$i18n.t('Choose your topic and level')}</span
 					>
 				</div>
-				<div class="flex items-center gap-4">
+				<div class="flex items-center gap-3">
 					<div
-						class="flex-shrink-0 bg-[#004AAD] text-white rounded-full w-7 h-7 flex items-center justify-center"
+						class="flex-shrink-0 bg-[#004AAD] text-white rounded-full w-6 h-6 flex items-center justify-center"
 					>
-						<span class="font-bold">2</span>
+						<span class="font-bold text-sm">2</span>
 					</div>
-					<span class="text-gray-800 dark:text-gray-200"
+					<span class="text-sm text-gray-800 dark:text-gray-200"
 						>{$i18n.t('Set your learning objectives')}</span
 					>
 				</div>
-				<div class="flex items-center gap-4">
+				<div class="flex items-center gap-3">
 					<div
-						class="flex-shrink-0 bg-[#004AAD] text-white rounded-full w-7 h-7 flex items-center justify-center"
+						class="flex-shrink-0 bg-[#004AAD] text-white rounded-full w-6 h-6 flex items-center justify-center"
 					>
-						<span class="font-bold">3</span>
+						<span class="font-bold text-sm">3</span>
 					</div>
-					<span class="text-gray-800 dark:text-gray-200"
+					<span class="text-sm text-gray-800 dark:text-gray-200"
 						>{$i18n.t('Enjoy AI-powered personalized learning')}</span
 					>
 				</div>
 			</div>
 
 			<!-- Create Support Button -->
-			<div class="flex justify-center mb-8">
+			<div class="flex justify-center mb-4">
 				<button
-					class="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 text-white py-3 px-12 rounded-full font-medium"
+					class="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 text-white py-2 px-8 rounded-full font-medium text-sm"
 					on:click={handleCreateSupport}
 				>
 					{$i18n.t('Create My support')}
@@ -604,14 +633,14 @@
 			</div>
 
 			<!-- Don't Show Again Checkbox -->
-			<div class="flex items-center justify-center gap-2 mt-4">
+			<div class="flex items-center justify-center gap-2">
 				<input
 					type="checkbox"
 					id="dontShow"
 					bind:checked={dontShowAgain}
-					class="h-4 w-4 text-indigo-600 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-indigo-500"
+					class="h-3 w-3 text-indigo-600 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-indigo-500"
 				/>
-				<label for="dontShow" class="text-sm text-gray-500 dark:text-gray-400"
+				<label for="dontShow" class="text-xs text-gray-500 dark:text-gray-400"
 					>{$i18n.t('Don\'t show me again')}</label
 				>
 			</div>

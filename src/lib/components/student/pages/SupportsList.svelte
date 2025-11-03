@@ -72,11 +72,11 @@
 
 			<button
 				on:click={() => goto('/student/support/create')}
-				class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm"
+				class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white dark:bg-gradient-to-r dark:from-blue-600 dark:to-indigo-600 dark:hover:from-blue-700 dark:hover:to-indigo-700 rounded-full transition"
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
-					class="h-5 w-5 mr-2"
+					class="h-5 w-5"
 					viewBox="0 0 20 20"
 					fill="currentColor"
 				>
@@ -108,7 +108,7 @@
 					/>
 				</svg>
 				<span class="ml-2 text-gray-700 dark:text-gray-300 font-medium">
-					{$i18n.t('All Support')}
+					{$i18n.t('All Supports')}
 				</span>
 			</div>
 			
