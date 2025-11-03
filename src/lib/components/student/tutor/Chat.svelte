@@ -39,7 +39,9 @@
 		showOverview,
 		chatTitle,
 		showArtifacts,
-		tools
+		tools,
+		messageQueue,
+		type QueuedMessage
 	} from '$lib/stores';
 	import {
 		convertMessagesToHistory,
@@ -92,6 +94,7 @@
 	import Spinner from '$lib/components/common/Spinner.svelte';
 	import AvatarChat from '$lib/components/chat/AvatarChat.svelte';
 	import PedagogicalShortcuts from '$lib/components/chat/PedagogicalShortcuts.svelte';
+	import QueuedMessages from '$lib/components/chat/QueuedMessages.svelte';
 
 	// Debug: Print user permissions when they change
 	$: if ($user) {
@@ -1445,6 +1448,10 @@
 				await tick();
 				document.getElementById(`speak-button-${message.id}`)?.click();
 			}
+			
+			// Process next queued message if any
+			await tick();
+			processNextQueuedMessage();
 
 			// Emit chat event for TTS
 			let lastMessageContentPart =
@@ -1495,6 +1502,38 @@
 	// Chat functions
 	//////////////////////////
 
+	// Process next queued message
+	const processNextQueuedMessage = async () => {
+		const queue = $messageQueue;
+		if (queue.length > 0) {
+			const nextMessage = queue[0];
+			
+			// Remove from queue
+			messageQueue.update(q => q.filter(msg => msg.id !== nextMessage.id));
+			
+			// Restore files if any
+			if (nextMessage.files) {
+				files = JSON.parse(JSON.stringify(nextMessage.files));
+			}
+			
+			// Submit the message
+			await tick();
+			await submitPrompt(nextMessage.content);
+		}
+	};
+	
+	// Handle send now from queue
+	const handleSendNow = async (message: QueuedMessage) => {
+		// Restore files if any
+		if (message.files) {
+			files = JSON.parse(JSON.stringify(message.files));
+		}
+		
+		// Submit immediately
+		await tick();
+		await submitPrompt(message.content);
+	};
+	
 	const submitPrompt = async (userPrompt, { _raw = false } = {}) => {
 		console.log('submitPrompt', userPrompt, $chatId);
 
@@ -1516,7 +1555,20 @@
 		}
 
 		if (messages.length != 0 && messages.at(-1).done != true) {
-			// Response not done
+			// Response not done - Add to queue instead
+			const queuedMsg: QueuedMessage = {
+				id: uuidv4(),
+				content: userPrompt,
+				timestamp: Date.now(),
+				files: files.length > 0 ? JSON.parse(JSON.stringify(files)) : undefined
+			};
+			messageQueue.update(queue => [...queue, queuedMsg]);
+			
+			// Clear input
+			prompt = '';
+			files = [];
+			
+			toast.success($i18n.t('Message added to queue'));
 			return;
 		}
 		if (messages.length != 0 && messages.at(-1).error && !messages.at(-1).content) {
@@ -2621,19 +2673,22 @@
 									/>
 							</div>
 							<div class="absolute bottom-0 left-0 right-0 z-20 animate-float">
-								<!-- Pedagogical Shortcut Buttons -->
-								<PedagogicalShortcuts 
-									onAction={(actionId, promptText) => {
-										// Set the prompt and submit it
-										prompt = promptText;
-										tick().then(() => {
-											submitPrompt(promptText);
-										});
-									}}
-									disabled={processing !== ''}
-								/>
-								
-								<MessageInput
+							<!-- Queued Messages Display -->
+							<QueuedMessages onSendNow={handleSendNow} />
+							
+							<!-- Pedagogical Shortcut Buttons -->
+							<PedagogicalShortcuts 
+								onAction={(actionId, promptText) => {
+									// Set the prompt and submit it
+									prompt = promptText;
+									tick().then(() => {
+										submitPrompt(promptText);
+									});
+								}}
+								disabled={processing !== ''}
+							/>
+							
+							<MessageInput
 									{history}
 									{selectedModels}
 									bind:files

@@ -231,3 +231,13 @@ type SessionUser = {
 	role: string;
 	profile_image_url: string;
 };
+
+// Message Queue for handling multiple user messages
+export interface QueuedMessage {
+	id: string;
+	content: string;
+	timestamp: number;
+	files?: any[];
+}
+
+export const messageQueue = writable<QueuedMessage[]>([]);
