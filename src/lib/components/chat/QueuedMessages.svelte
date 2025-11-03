@@ -46,12 +46,13 @@
 </script>
 
 {#if $messageQueue.length > 0}
-	<div class="queue-compact mb-1.5 px-6">
+	<div class="queue-compact mb-2">
 		<!-- Collapsed View -->
 		<button
 			on:click={toggleExpanded}
 			class="w-full flex items-center justify-between px-3 py-1.5 bg-black/15 backdrop-blur-sm 
-			       border border-white/10 rounded-lg hover:bg-black/20 transition-colors group"
+			       border border-white/10 rounded-t-lg hover:bg-black/20 transition-colors group
+			       {expanded ? 'rounded-b-none' : 'rounded-lg'}"
 		>
 			<div class="flex items-center gap-2">
 				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 text-white/60">
@@ -73,7 +74,7 @@
 		
 		<!-- Expanded View -->
 		{#if expanded}
-			<div class="mt-1.5 max-h-40 overflow-y-auto bg-black/10 backdrop-blur-sm border border-white/10 rounded-lg">
+			<div class="max-h-40 overflow-y-auto bg-black/10 backdrop-blur-sm border border-white/10 border-t-0 rounded-b-lg">
 				{#each $messageQueue as message, index (message.id)}
 					<div class="group relative px-3 py-2 border-b border-white/5 last:border-b-0 hover:bg-black/10 transition-colors">
 						{#if editingId === message.id}

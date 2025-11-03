@@ -2673,9 +2673,6 @@
 									/>
 							</div>
 							<div class="absolute bottom-0 left-0 right-0 z-20 animate-float">
-							<!-- Queued Messages Display -->
-							<QueuedMessages onSendNow={handleSendNow} />
-							
 							<!-- Pedagogical Shortcut Buttons -->
 							<PedagogicalShortcuts 
 								onAction={(actionId, promptText) => {
@@ -2688,7 +2685,12 @@
 								disabled={processing !== ''}
 							/>
 							
-							<MessageInput
+							<!-- Message Input with Queue attached -->
+							<div class="relative">
+								<!-- Queued Messages Display (above input) -->
+								<QueuedMessages onSendNow={handleSendNow} />
+								
+								<MessageInput
 									{history}
 									{selectedModels}
 									bind:files
