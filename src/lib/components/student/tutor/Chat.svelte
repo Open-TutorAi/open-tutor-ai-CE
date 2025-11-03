@@ -2245,12 +2245,25 @@
 		});
 
 	console.log('generateOpenAIChatCompletion response:', res);
+	console.log('Stream mode:', stream);
 
 	if (res) {
-		taskId = res.task_id;
-		console.log('taskId set to:', taskId);
+		// For streaming responses, task_id might be in different locations
+		if (res.task_id) {
+			taskId = res.task_id;
+			console.log('taskId set from res.task_id:', taskId);
+		} else if (res.id) {
+			// Sometimes the response message ID can be used as taskId
+			taskId = res.id || responseMessageId;
+			console.log('taskId set from res.id or responseMessageId:', taskId);
+		} else {
+			// Fallback: use responseMessageId as taskId for tracking
+			taskId = responseMessageId;
+			console.log('taskId set to responseMessageId as fallback:', taskId);
+		}
 	} else {
-		console.warn('No response from generateOpenAIChatCompletion, taskId not set');
+		console.warn('No response from generateOpenAIChatCompletion, using responseMessageId as taskId');
+		taskId = responseMessageId;
 	}
 
 	await tick();
@@ -2297,35 +2310,45 @@
 	};
 
 	const stopResponse = () => {
-		console.log('stopResponse called, taskId:', taskId);
-		if (taskId) {
-			stopTask(localStorage.token, taskId).then((res) => {
-				if (res) {
-					taskId = null;
-
-					const responseMessage = history.messages[history.currentId];
-					responseMessage.done = true;
-
-					history.messages[history.currentId] = responseMessage;
-
-					if (autoScroll) {
-						scrollToBottom();
-					}
-					
-					// Process next queued message after stopping
-					tick().then(() => {
-						processNextQueuedMessage();
-					});
-				}
-			}).catch((error) => {
-				console.error('Error stopping task:', error);
-				toast.error('Failed to stop response');
-				return null;
-			});
-		} else {
+		console.log('stopResponse called, taskId:', taskId, 'currentId:', history.currentId);
+		
+		if (!taskId) {
 			console.warn('No taskId available to stop');
 			toast.warning('Cannot stop - no active task');
+			return;
 		}
+		
+		// Try to stop the task via API
+		stopTask(localStorage.token, taskId)
+			.then((res) => {
+				console.log('stopTask API response:', res);
+				completeCurrentMessage();
+			})
+			.catch((error) => {
+				console.error('Error stopping task via API:', error);
+				// Even if API fails, still mark message as done locally
+				completeCurrentMessage();
+			});
+	};
+	
+	// Helper function to complete the current message and process queue
+	const completeCurrentMessage = () => {
+		taskId = null;
+
+		if (history.currentId && history.messages[history.currentId]) {
+			const responseMessage = history.messages[history.currentId];
+			responseMessage.done = true;
+			history.messages[history.currentId] = responseMessage;
+		}
+
+		if (autoScroll) {
+			scrollToBottom();
+		}
+		
+		// Process next queued message after stopping
+		tick().then(() => {
+			processNextQueuedMessage();
+		});
 	};
 
 	const submitMessage = async (parentId, prompt) => {
