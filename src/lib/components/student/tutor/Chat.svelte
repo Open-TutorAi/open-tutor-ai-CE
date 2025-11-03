@@ -2310,6 +2310,11 @@
 				if (autoScroll) {
 					scrollToBottom();
 				}
+				
+				// Process next queued message after stopping
+				tick().then(() => {
+					processNextQueuedMessage();
+				});
 			}
 		}
 	};
