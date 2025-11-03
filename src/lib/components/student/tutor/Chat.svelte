@@ -1534,6 +1534,29 @@
 		await submitPrompt(message.content);
 	};
 	
+	// Track which message is being edited
+	let editingQueuedMessageId: string | null = null;
+	
+	// Handle edit from queue - place content in input
+	const handleEditQueued = (message: QueuedMessage) => {
+		// Set the prompt to the message content
+		prompt = message.content;
+		
+		// Restore files if any
+		if (message.files) {
+			files = JSON.parse(JSON.stringify(message.files));
+		}
+		
+		// Track that we're editing this message
+		editingQueuedMessageId = message.id;
+		
+		// Focus the input
+		tick().then(() => {
+			const chatInput = document.getElementById('chat-input');
+			chatInput?.focus();
+		});
+	};
+	
 	const submitPrompt = async (userPrompt, { _raw = false } = {}) => {
 		console.log('submitPrompt', userPrompt, $chatId);
 
@@ -1555,20 +1578,34 @@
 		}
 
 		if (messages.length != 0 && messages.at(-1).done != true) {
-			// Response not done - Add to queue instead
-			const queuedMsg: QueuedMessage = {
-				id: uuidv4(),
-				content: userPrompt,
-				timestamp: Date.now(),
-				files: files.length > 0 ? JSON.parse(JSON.stringify(files)) : undefined
-			};
-			messageQueue.update(queue => [...queue, queuedMsg]);
+			// Response not done - Add to queue or update existing if editing
+			if (editingQueuedMessageId) {
+				// Update existing queued message
+				messageQueue.update(queue => 
+					queue.map(msg => 
+						msg.id === editingQueuedMessageId 
+							? { ...msg, content: userPrompt, files: files.length > 0 ? JSON.parse(JSON.stringify(files)) : undefined }
+							: msg
+					)
+				);
+				editingQueuedMessageId = null;
+				toast.success($i18n.t('Message updated in queue'));
+			} else {
+				// Add new message to queue
+				const queuedMsg: QueuedMessage = {
+					id: uuidv4(),
+					content: userPrompt,
+					timestamp: Date.now(),
+					files: files.length > 0 ? JSON.parse(JSON.stringify(files)) : undefined
+				};
+				messageQueue.update(queue => [...queue, queuedMsg]);
+				toast.success($i18n.t('Message added to queue'));
+			}
 			
 			// Clear input
 			prompt = '';
 			files = [];
 			
-			toast.success($i18n.t('Message added to queue'));
 			return;
 		}
 		if (messages.length != 0 && messages.at(-1).error && !messages.at(-1).content) {
@@ -2672,11 +2709,23 @@
 										on:speechend={() => (avatarSpeaking = false)}
 									/>
 							</div>
-							<!-- Message Input Container with Queue -->
+							<!-- Pedagogical Shortcut Buttons -->
 						<div class="absolute bottom-0 left-0 right-0 z-20 animate-float px-6 pb-6">
-						<div class="message-input-wrapper w-full max-w-2xl mx-auto relative">
+							<PedagogicalShortcuts 
+								onAction={(actionId, promptText) => {
+									// Set the prompt and submit it
+									prompt = promptText;
+									tick().then(() => {
+										submitPrompt(promptText);
+									});
+								}}
+								disabled={processing !== ''}
+							/>
+							
+							<!-- Message Input Container with Queue -->
+						<div class="message-input-wrapper w-full max-w-2xl mx-auto">
 								<!-- Queued Messages Display integrated with input -->
-								<QueuedMessages onSendNow={handleSendNow} />
+								<QueuedMessages onSendNow={handleSendNow} onEdit={handleEditQueued} />
 								
 								<MessageInput
 									{history}
@@ -2702,20 +2751,6 @@
 										}
 									}}
 							/>
-							
-							<!-- Pedagogical Shortcuts Dropdown Button (positioned inside input area) -->
-							<div class="absolute bottom-4 left-4">
-								<PedagogicalShortcuts 
-									onAction={(actionId, promptText) => {
-										// Set the prompt and submit it
-										prompt = promptText;
-										tick().then(() => {
-											submitPrompt(promptText);
-										});
-									}}
-									disabled={processing !== ''}
-								/>
-							</div>
 						</div>
 					</div>
 				</div>

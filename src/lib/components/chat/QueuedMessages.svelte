@@ -6,30 +6,9 @@
 	const i18n = getContext('i18n');
 	
 	export let onSendNow: (message: QueuedMessage) => void = () => {};
+	export let onEdit: (message: QueuedMessage) => void = () => {};
 	
 	let expanded = false;
-	let editingId: string | null = null;
-	let editContent: string = '';
-	
-	function startEdit(message: QueuedMessage) {
-		editingId = message.id;
-		editContent = message.content;
-	}
-	
-	function saveEdit(id: string) {
-		messageQueue.update(queue => 
-			queue.map(msg => 
-				msg.id === id ? { ...msg, content: editContent } : msg
-			)
-		);
-		editingId = null;
-		editContent = '';
-	}
-	
-	function cancelEdit() {
-		editingId = null;
-		editContent = '';
-	}
 	
 	function deleteMessage(id: string) {
 		messageQueue.update(queue => queue.filter(msg => msg.id !== id));
@@ -38,6 +17,10 @@
 	function sendNow(message: QueuedMessage) {
 		messageQueue.update(queue => queue.filter(msg => msg.id !== message.id));
 		onSendNow(message);
+	}
+	
+	function editMessage(message: QueuedMessage) {
+		onEdit(message);
 	}
 	
 	function toggleExpanded() {
@@ -77,33 +60,8 @@
 			<div class="max-h-32 overflow-y-auto bg-black/10 backdrop-blur-md border-x border-white/10">
 				{#each $messageQueue as message, index (message.id)}
 					<div class="group relative px-3 py-1.5 border-b border-white/5 hover:bg-black/10 transition-colors">
-						{#if editingId === message.id}
-							<!-- Edit Mode -->
-							<div class="flex flex-col gap-1.5">
-								<textarea
-									bind:value={editContent}
-									class="w-full px-2 py-1.5 bg-white/10 border border-white/20 rounded text-white text-xs resize-none focus:outline-none focus:border-blue-400/50"
-									rows="2"
-									placeholder="Edit..."
-								/>
-								<div class="flex items-center gap-1.5">
-									<button
-										on:click={() => saveEdit(message.id)}
-										class="px-2 py-1 bg-blue-500/80 hover:bg-blue-500 text-white text-xs rounded transition-colors"
-									>
-										Save
-									</button>
-									<button
-										on:click={cancelEdit}
-										class="px-2 py-1 bg-gray-500/80 hover:bg-gray-500 text-white text-xs rounded transition-colors"
-									>
-										Cancel
-									</button>
-								</div>
-							</div>
-						{:else}
-							<!-- Display Mode -->
-							<div class="flex items-start gap-1.5">
+						<!-- Display Mode -->
+						<div class="flex items-start gap-1.5">
 								<span class="flex-shrink-0 w-3.5 h-3.5 flex items-center justify-center bg-white/10 rounded-full text-white/50 text-[9px] font-medium mt-0.5">
 									{index + 1}
 								</span>
@@ -119,11 +77,11 @@
 											</svg>
 										</button>
 									</Tooltip>
-									<Tooltip content="Edit" placement="top">
-										<button
-											on:click={() => startEdit(message)}
-											class="p-0.5 hover:bg-white/10 rounded transition-colors"
-										>
+								<Tooltip content="Edit" placement="top">
+									<button
+										on:click={() => editMessage(message)}
+										class="p-0.5 hover:bg-white/10 rounded transition-colors"
+									>
 											<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-2.5 h-2.5 text-blue-400">
 												<path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
 											</svg>
@@ -141,7 +99,6 @@
 									</Tooltip>
 								</div>
 							</div>
-						{/if}
 					</div>
 				{/each}
 			</div>
