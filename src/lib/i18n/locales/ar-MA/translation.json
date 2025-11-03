@@ -1522,5 +1522,21 @@
 	"Review your support": "مراجعة دعمك",
 	"Verify all details before creating your support": "تأكد من صحة كل التفاصيل قبل إنشاء دعمك",
 	"Support created successfully": "تم إنشاء الدعم بنجاح",
-	"OK": "موافق"
+	"OK": "موافق",
+	"Re-explain": "أعد الشرح",
+	"Please re-explain the last concept we discussed using simpler terms, analogies, and step-by-step breakdowns. Make it easier to understand.": "الرجاء إعادة شرح المفهوم الأخير الذي ناقشناه باستخدام مصطلحات أبسط وتشبيهات وتفصيل خطوة بخطوة. اجعله أسهل للفهم.",
+	"Next Step": "الخطوة التالية",
+	"Next": "التالي",
+	"I understand the current concept. Please advance to the next stage of the personalized learning support based on the lesson plan.": "أفهم المفهوم الحالي. يرجى الانتقال إلى المرحلة التالية من الدعم التعليمي المخصص بناءً على خطة الدرس.",
+	"Example": "مثال",
+	"Can you provide a real-world or illustrative example related to what we just discussed? I learn better with concrete examples.": "هل يمكنك تقديم مثال من الواقع أو توضيحي يتعلق بما ناقشناه للتو؟ أتعلم بشكل أفضل مع الأمثلة الملموسة.",
+	"Quiz Me": "اختبرني",
+	"Quiz": "اختبار",
+	"Please provide a short quiz or exercise to reinforce the concepts we've covered. Include 3 questions from the current lesson and 2 from previous topics.": "يرجى تقديم اختبار قصير أو تمرين لتعزيز المفاهيم التي تناولناها. قم بتضمين 3 أسئلة من الدرس الحالي و 2 من المواضيع السابقة.",
+	"Summary": "ملخص",
+	"Can you generate a summary of the key points we've discussed so far? Help me consolidate my understanding.": "هل يمكنك إنشاء ملخص للنقاط الرئيسية التي ناقشناها حتى الآن؟ ساعدني على توحيد فهمي.",
+	"Difficulty": "الصعوبة",
+	"Level": "المستوى",
+	"I would like to adjust the difficulty level of our learning session. Please ask me if I want simpler explanations (beginner), current level (intermediate), or more advanced content (expert), then adjust accordingly.": "أرغب في تعديل مستوى صعوبة جلسة التعلم الخاصة بنا. يرجى سؤالي إذا كنت أريد تفسيرات أبسط (مبتدئ) أو المستوى الحالي (متوسط) أو محتوى أكثر تقدمًا (خبير)، ثم قم بالتعديل وفقًا لذلك.",
+	"queued": "في الانتظار"
 }

@@ -41,7 +41,7 @@
 				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3 text-white/50">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
 				</svg>
-				<span class="text-[11px] text-white/60">{$messageQueue.length} queued</span>
+				<span class="text-[11px] text-white/60">{$messageQueue.length} {$i18n.t('queued')}</span>
 			</div>
 			<svg 
 				xmlns="http://www.w3.org/2000/svg" 
@@ -67,7 +67,7 @@
 								</span>
 								<p class="flex-1 text-[11px] text-white/70 line-clamp-1 leading-relaxed">{message.content}</p>
 								<div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-									<Tooltip content="Send" placement="top">
+									<Tooltip content={$i18n.t('Send')} placement="top">
 										<button
 											on:click={() => sendNow(message)}
 											class="p-0.5 hover:bg-white/10 rounded transition-colors"
@@ -77,7 +77,7 @@
 											</svg>
 										</button>
 									</Tooltip>
-								<Tooltip content="Edit" placement="top">
+								<Tooltip content={$i18n.t('Edit')} placement="top">
 									<button
 										on:click={() => editMessage(message)}
 										class="p-0.5 hover:bg-white/10 rounded transition-colors"
@@ -87,7 +87,7 @@
 											</svg>
 										</button>
 									</Tooltip>
-									<Tooltip content="Delete" placement="top">
+									<Tooltip content={$i18n.t('Delete')} placement="top">
 										<button
 											on:click={() => deleteMessage(message.id)}
 											class="p-0.5 hover:bg-white/10 rounded transition-colors"

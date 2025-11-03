@@ -1506,5 +1506,15 @@
 	"I want to build a new skill": "Je veux apprendre une nouvelle compétence",
 	"Verify all details before creating your support": "Vérifiez toutes les informations avant de créer votre soutien",
 	"Review your support": "Révisez votre soutien",
-	"Support created successfully": "Soutien créé avec succès"
+	"Support created successfully": "Soutien créé avec succès",
+	"Re-explain": "Ré-expliquer",
+	"Please re-explain the last concept we discussed using simpler terms, analogies, and step-by-step breakdowns. Make it easier to understand.": "Veuillez ré-expliquer le dernier concept que nous avons discuté en utilisant des termes plus simples, des analogies et des explications étape par étape. Rendez-le plus facile à comprendre.",
+	"Next Step": "Étape suivante",
+	"I understand the current concept. Please advance to the next stage of the personalized learning support based on the lesson plan.": "Je comprends le concept actuel. Veuillez passer à l'étape suivante du soutien d'apprentissage personnalisé basé sur le plan de leçon.",
+	"Can you provide a real-world or illustrative example related to what we just discussed? I learn better with concrete examples.": "Pouvez-vous fournir un exemple concret ou illustratif lié à ce que nous venons de discuter ? J'apprends mieux avec des exemples concrets.",
+	"Quiz Me": "Testez-moi",
+	"Please provide a short quiz or exercise to reinforce the concepts we've covered. Include 3 questions from the current lesson and 2 from previous topics.": "Veuillez fournir un quiz court ou un exercice pour renforcer les concepts que nous avons couverts. Incluez 3 questions de la leçon actuelle et 2 des sujets précédents.",
+	"Can you generate a summary of the key points we've discussed so far? Help me consolidate my understanding.": "Pouvez-vous générer un résumé des points clés que nous avons discutés jusqu'à présent ? Aidez-moi à consolider ma compréhension.",
+	"I would like to adjust the difficulty level of our learning session. Please ask me if I want simpler explanations (beginner), current level (intermediate), or more advanced content (expert), then adjust accordingly.": "Je voudrais ajuster le niveau de difficulté de notre session d'apprentissage. Veuillez me demander si je veux des explications plus simples (débutant), le niveau actuel (intermédiaire) ou un contenu plus avancé (expert), puis ajustez en conséquence.",
+	"queued": "en attente"
 }

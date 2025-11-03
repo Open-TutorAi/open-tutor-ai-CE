@@ -1498,5 +1498,21 @@
 	"Click \"Start Learning\" below to create your support and begin your personalized learning experience.": "",
 	"Start Learning": "",
 	"I want to build a new skill": "",
-	"Support created successfully": ""
+	"Support created successfully": "",
+	"Re-explain": "Re-explain",
+	"Please re-explain the last concept we discussed using simpler terms, analogies, and step-by-step breakdowns. Make it easier to understand.": "Please re-explain the last concept we discussed using simpler terms, analogies, and step-by-step breakdowns. Make it easier to understand.",
+	"Next Step": "Next Step",
+	"Next": "Next",
+	"I understand the current concept. Please advance to the next stage of the personalized learning support based on the lesson plan.": "I understand the current concept. Please advance to the next stage of the personalized learning support based on the lesson plan.",
+	"Example": "Example",
+	"Can you provide a real-world or illustrative example related to what we just discussed? I learn better with concrete examples.": "Can you provide a real-world or illustrative example related to what we just discussed? I learn better with concrete examples.",
+	"Quiz Me": "Quiz Me",
+	"Quiz": "Quiz",
+	"Please provide a short quiz or exercise to reinforce the concepts we've covered. Include 3 questions from the current lesson and 2 from previous topics.": "Please provide a short quiz or exercise to reinforce the concepts we've covered. Include 3 questions from the current lesson and 2 from previous topics.",
+	"Summary": "Summary",
+	"Can you generate a summary of the key points we've discussed so far? Help me consolidate my understanding.": "Can you generate a summary of the key points we've discussed so far? Help me consolidate my understanding.",
+	"Difficulty": "Difficulty",
+	"Level": "Level",
+	"I would like to adjust the difficulty level of our learning session. Please ask me if I want simpler explanations (beginner), current level (intermediate), or more advanced content (expert), then adjust accordingly.": "I would like to adjust the difficulty level of our learning session. Please ask me if I want simpler explanations (beginner), current level (intermediate), or more advanced content (expert), then adjust accordingly.",
+	"queued": "queued"
 }

@@ -1344,6 +1344,11 @@
 	const chatCompletionEventHandler = async (data, message, chatId) => {
 		const { id, done, choices, content, sources, selected_model_id, error, usage } = data;
 
+		if (message.done && !done) {
+			console.log('Ignoring chunk for already-completed message:', message.id);
+			return;
+		}
+
 		if (error) {
 			await handleOpenAIError(error, message);
 		}
@@ -2244,26 +2249,9 @@
 			return null;
 		});
 
-	console.log('generateOpenAIChatCompletion response:', res);
-	console.log('Stream mode:', stream);
-
-	if (res) {
-		// For streaming responses, task_id might be in different locations
-		if (res.task_id) {
-			taskId = res.task_id;
-			console.log('taskId set from res.task_id:', taskId);
-		} else if (res.id) {
-			// Sometimes the response message ID can be used as taskId
-			taskId = res.id || responseMessageId;
-			console.log('taskId set from res.id or responseMessageId:', taskId);
-		} else {
-			// Fallback: use responseMessageId as taskId for tracking
-			taskId = responseMessageId;
-			console.log('taskId set to responseMessageId as fallback:', taskId);
-		}
-	} else {
-		console.warn('No response from generateOpenAIChatCompletion, using responseMessageId as taskId');
-		taskId = responseMessageId;
+	if (res && res.task_id) {
+		taskId = res.task_id;
+		console.log('taskId set from response:', taskId);
 	}
 
 	await tick();
@@ -2310,28 +2298,23 @@
 	};
 
 	const stopResponse = () => {
-		console.log('stopResponse called, taskId:', taskId, 'currentId:', history.currentId);
+		console.log('stopResponse called');
 		
-		if (!taskId) {
-			console.warn('No taskId available to stop');
-			toast.warning('Cannot stop - no active task');
+		if (!history.currentId || !history.messages[history.currentId]) {
+			console.warn('No active message to stop');
 			return;
 		}
 		
-		// Try to stop the task via API
-		stopTask(localStorage.token, taskId)
-			.then((res) => {
-				console.log('stopTask API response:', res);
-				completeCurrentMessage();
-			})
-			.catch((error) => {
-				console.error('Error stopping task via API:', error);
-				// Even if API fails, still mark message as done locally
-				completeCurrentMessage();
-			});
+		if (taskId) {
+			stopTask(localStorage.token, taskId)
+				.catch((error) => {
+					console.log('Stream stop: marking message as done locally');
+				});
+		}
+		
+		completeCurrentMessage();
 	};
 	
-	// Helper function to complete the current message and process queue
 	const completeCurrentMessage = () => {
 		taskId = null;
 
