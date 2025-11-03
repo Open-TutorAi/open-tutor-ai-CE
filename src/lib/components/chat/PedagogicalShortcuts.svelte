@@ -7,6 +7,19 @@
 	export let onAction: (action: string, prompt: string) => void;
 	export let disabled: boolean = false;
 	
+	let isOpen = false;
+	
+	function toggleMenu() {
+		isOpen = !isOpen;
+	}
+	
+	function handleAction(shortcut: any) {
+		if (!disabled) {
+			onAction(shortcut.id, shortcut.prompt);
+			isOpen = false; // Close menu after action
+		}
+	}
+	
 	const shortcuts = [
 		{
 			id: 're-explain',
@@ -51,28 +64,35 @@
 			svg: '<path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />'
 		}
 	];
-	
-	function handleAction(shortcut: any) {
-		if (!disabled) {
-			onAction(shortcut.id, shortcut.prompt);
-		}
-	}
 </script>
 
-<div class="shortcuts-wrapper w-full mb-3">
-	<div class="flex items-center justify-center gap-2.5">
-		{#each shortcuts as shortcut}
-			<Tooltip content={shortcut.label} placement="top">
+<div class="relative inline-block">
+	<!-- Trigger Button -->
+	<Tooltip content="Quick Learning Actions" placement="top">
+		<button
+			on:click={toggleMenu}
+			class="p-2 rounded-lg bg-black/15 hover:bg-black/25 border border-white/10 
+			       transition-all duration-200 {disabled ? 'opacity-30 cursor-not-allowed' : ''}"
+			disabled={disabled}
+			aria-label="Open quick actions"
+		>
+			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-white/80">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
+			</svg>
+		</button>
+	</Tooltip>
+	
+	<!-- Dropdown Menu -->
+	{#if isOpen}
+		<div class="absolute bottom-full mb-2 left-0 min-w-[240px] bg-gray-800/95 backdrop-blur-md 
+		            border border-white/10 rounded-lg shadow-xl overflow-hidden z-50 animate-slideUp">
+			{#each shortcuts as shortcut}
 				<button
-					class="shortcut-btn group flex items-center gap-2 px-3.5 py-2 
-					       bg-black/20 backdrop-blur-md
-					       border border-white/10
-					       rounded-lg text-white/90 text-sm font-normal
-					       transition-all duration-200 ease-in-out
-					       {disabled ? 'opacity-30 cursor-not-allowed' : 'hover:bg-black/30 hover:border-white/20 hover:text-white'}"
 					on:click={() => handleAction(shortcut)}
+					class="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm text-white/90
+					       hover:bg-white/10 transition-colors border-b border-white/5 last:border-b-0
+					       {disabled ? 'opacity-50 cursor-not-allowed' : ''}"
 					disabled={disabled}
-					aria-label={shortcut.label}
 				>
 					<svg 
 						xmlns="http://www.w3.org/2000/svg" 
@@ -80,44 +100,40 @@
 						viewBox="0 0 24 24" 
 						stroke-width="1.5" 
 						stroke="currentColor" 
-						class="w-4 h-4 opacity-80 group-hover:opacity-100 transition-opacity"
+						class="w-4 h-4 text-white/60 flex-shrink-0"
 					>
 						{@html shortcut.svg}
 					</svg>
-					<span class="hidden md:inline whitespace-nowrap">{shortcut.shortLabel}</span>
+					<span class="flex-1">{shortcut.label}</span>
 				</button>
-			</Tooltip>
-		{/each}
-	</div>
+			{/each}
+		</div>
+		
+		<!-- Click Outside to Close -->
+		<button
+			class="fixed inset-0 z-40"
+			on:click={() => isOpen = false}
+			aria-label="Close menu"
+		/>
+	{/if}
 </div>
 
 <style>
-	.shortcuts-wrapper {
-		animation: fadeIn 0.5s ease-out;
-	}
-	
-	@keyframes fadeIn {
+	@keyframes slideUp {
 		from {
 			opacity: 0;
+			transform: translateY(10px);
 		}
 		to {
 			opacity: 1;
+			transform: translateY(0);
 		}
 	}
 	
-	.shortcut-btn {
-		backdrop-filter: blur(12px);
-		-webkit-backdrop-filter: blur(12px);
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-	}
-	
-	.shortcut-btn:hover:not(:disabled) {
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-	}
-	
-	.shortcut-btn:active:not(:disabled) {
-		transform: translateY(1px);
+	.animate-slideUp {
+		animation: slideUp 0.2s ease-out;
 	}
 </style>
+
 
 

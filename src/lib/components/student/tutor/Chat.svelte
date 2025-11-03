@@ -2672,21 +2672,9 @@
 										on:speechend={() => (avatarSpeaking = false)}
 									/>
 							</div>
-							<!-- Pedagogical Shortcut Buttons -->
+							<!-- Message Input Container with Queue -->
 						<div class="absolute bottom-0 left-0 right-0 z-20 animate-float px-6 pb-6">
-							<PedagogicalShortcuts 
-								onAction={(actionId, promptText) => {
-									// Set the prompt and submit it
-									prompt = promptText;
-									tick().then(() => {
-										submitPrompt(promptText);
-									});
-								}}
-								disabled={processing !== ''}
-							/>
-							
-						<!-- Message Input Container with Queue -->
-						<div class="message-input-wrapper w-full max-w-2xl mx-auto">
+						<div class="message-input-wrapper w-full max-w-2xl mx-auto relative">
 								<!-- Queued Messages Display integrated with input -->
 								<QueuedMessages onSendNow={handleSendNow} />
 								
@@ -2714,6 +2702,20 @@
 										}
 									}}
 							/>
+							
+							<!-- Pedagogical Shortcuts Dropdown Button (positioned inside input area) -->
+							<div class="absolute bottom-4 left-4">
+								<PedagogicalShortcuts 
+									onAction={(actionId, promptText) => {
+										// Set the prompt and submit it
+										prompt = promptText;
+										tick().then(() => {
+											submitPrompt(promptText);
+										});
+									}}
+									disabled={processing !== ''}
+								/>
+							</div>
 						</div>
 					</div>
 				</div>
