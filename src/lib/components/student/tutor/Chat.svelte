@@ -91,6 +91,7 @@
 	import NotificationToast from '$lib/components/NotificationToast.svelte';
 	import Spinner from '$lib/components/common/Spinner.svelte';
 	import AvatarChat from '$lib/components/chat/AvatarChat.svelte';
+	import PedagogicalShortcuts from '$lib/components/chat/PedagogicalShortcuts.svelte';
 
 	// Debug: Print user permissions when they change
 	$: if ($user) {
@@ -2618,33 +2619,45 @@
 										speaking={avatarSpeaking}
 										on:speechend={() => (avatarSpeaking = false)}
 									/>
-								</div>
-								<div class="absolute bottom-0 left-0 right-0 z-20 animate-float">
-									<MessageInput
-										{history}
-										{selectedModels}
-										bind:files
-										bind:prompt
-										bind:autoScroll
-										bind:selectedToolIds
-										bind:imageGenerationEnabled
-										bind:codeInterpreterEnabled
-										bind:webSearchEnabled
-										bind:atSelectedModel
-										transparentBackground={true}
-										{stopResponse}
-										on:submit={async (e) => {
-											if (e.detail || files.length > 0) {
-												await tick();
-												submitPrompt(
-													($settings?.richTextInput ?? true)
-														? e.detail.replaceAll('\n\n', '\n')
-														: e.detail
-												);
-											}
-										}}
-									/>
-								</div>
+							</div>
+							<div class="absolute bottom-0 left-0 right-0 z-20 animate-float">
+								<!-- Pedagogical Shortcut Buttons -->
+								<PedagogicalShortcuts 
+									onAction={(actionId, promptText) => {
+										// Set the prompt and submit it
+										prompt = promptText;
+										tick().then(() => {
+											submitPrompt(promptText);
+										});
+									}}
+									disabled={processing !== ''}
+								/>
+								
+								<MessageInput
+									{history}
+									{selectedModels}
+									bind:files
+									bind:prompt
+									bind:autoScroll
+									bind:selectedToolIds
+									bind:imageGenerationEnabled
+									bind:codeInterpreterEnabled
+									bind:webSearchEnabled
+									bind:atSelectedModel
+									transparentBackground={true}
+									{stopResponse}
+									on:submit={async (e) => {
+										if (e.detail || files.length > 0) {
+											await tick();
+											submitPrompt(
+												($settings?.richTextInput ?? true)
+													? e.detail.replaceAll('\n\n', '\n')
+													: e.detail
+											);
+										}
+									}}
+								/>
+							</div>
 							</div>
 						{:else}
 							<div class="flex flex-col w-full h-full flex-auto relative bg-[#F5F7F9] dark:bg-gray-900">
