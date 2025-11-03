@@ -46,13 +46,13 @@
 </script>
 
 {#if $messageQueue.length > 0}
-	<div class="queue-compact mb-2">
+	<div class="queue-integrated mb-1">
 		<!-- Collapsed View -->
 		<button
 			on:click={toggleExpanded}
-			class="w-full flex items-center justify-between px-3 py-1.5 bg-black/15 backdrop-blur-sm 
-			       border border-white/10 rounded-t-lg hover:bg-black/20 transition-colors group
-			       {expanded ? 'rounded-b-none' : 'rounded-lg'}"
+			class="w-full flex items-center justify-between px-4 py-2 bg-black/15 backdrop-blur-md 
+			       border border-white/10 rounded-t-xl hover:bg-black/20 transition-colors group
+			       {expanded ? '' : 'rounded-b-xl'}"
 		>
 			<div class="flex items-center gap-2">
 				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 text-white/60">
@@ -74,9 +74,9 @@
 		
 		<!-- Expanded View -->
 		{#if expanded}
-			<div class="max-h-40 overflow-y-auto bg-black/10 backdrop-blur-sm border border-white/10 border-t-0 rounded-b-lg">
+			<div class="max-h-40 overflow-y-auto bg-black/10 backdrop-blur-md border-x border-white/10">
 				{#each $messageQueue as message, index (message.id)}
-					<div class="group relative px-3 py-2 border-b border-white/5 last:border-b-0 hover:bg-black/10 transition-colors">
+					<div class="group relative px-4 py-2 border-b border-white/5 hover:bg-black/10 transition-colors">
 						{#if editingId === message.id}
 							<!-- Edit Mode -->
 							<div class="flex flex-col gap-1.5">

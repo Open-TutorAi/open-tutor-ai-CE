@@ -59,8 +59,8 @@
 	}
 </script>
 
-<div class="shortcuts-wrapper w-full mb-4">
-	<div class="flex items-center justify-center gap-2.5 px-6">
+<div class="shortcuts-wrapper w-full mb-3">
+	<div class="flex items-center justify-center gap-2.5">
 		{#each shortcuts as shortcut}
 			<Tooltip content={shortcut.label} placement="top">
 				<button
