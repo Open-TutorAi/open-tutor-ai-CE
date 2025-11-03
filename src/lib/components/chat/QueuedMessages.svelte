@@ -46,7 +46,7 @@
 </script>
 
 {#if $messageQueue.length > 0}
-	<div class="queue-integrated mb-0.5 max-w-xs">
+	<div class="queue-integrated mb-0.5">
 		<!-- Collapsed View -->
 		<button
 			on:click={toggleExpanded}
