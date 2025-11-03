@@ -2244,14 +2244,17 @@
 			return null;
 		});
 
-		console.log(res);
+	console.log('generateOpenAIChatCompletion response:', res);
 
-		if (res) {
-			taskId = res.task_id;
-		}
+	if (res) {
+		taskId = res.task_id;
+		console.log('taskId set to:', taskId);
+	} else {
+		console.warn('No response from generateOpenAIChatCompletion, taskId not set');
+	}
 
-		await tick();
-		scrollToBottom();
+	await tick();
+	scrollToBottom();
 	};
 
 	const handleOpenAIError = async (error, responseMessage) => {
@@ -2294,28 +2297,34 @@
 	};
 
 	const stopResponse = () => {
+		console.log('stopResponse called, taskId:', taskId);
 		if (taskId) {
-			const res = stopTask(localStorage.token, taskId).catch((error) => {
+			stopTask(localStorage.token, taskId).then((res) => {
+				if (res) {
+					taskId = null;
+
+					const responseMessage = history.messages[history.currentId];
+					responseMessage.done = true;
+
+					history.messages[history.currentId] = responseMessage;
+
+					if (autoScroll) {
+						scrollToBottom();
+					}
+					
+					// Process next queued message after stopping
+					tick().then(() => {
+						processNextQueuedMessage();
+					});
+				}
+			}).catch((error) => {
+				console.error('Error stopping task:', error);
+				toast.error('Failed to stop response');
 				return null;
 			});
-
-			if (res) {
-				taskId = null;
-
-				const responseMessage = history.messages[history.currentId];
-				responseMessage.done = true;
-
-				history.messages[history.currentId] = responseMessage;
-
-				if (autoScroll) {
-					scrollToBottom();
-				}
-				
-				// Process next queued message after stopping
-				tick().then(() => {
-					processNextQueuedMessage();
-				});
-			}
+		} else {
+			console.warn('No taskId available to stop');
+			toast.warning('Cannot stop - no active task');
 		}
 	};
 
