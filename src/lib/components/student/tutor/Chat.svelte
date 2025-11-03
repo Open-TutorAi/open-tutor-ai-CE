@@ -2685,8 +2685,8 @@
 								disabled={processing !== ''}
 							/>
 							
-							<!-- Message Input Container with Queue -->
-							<div class="message-input-wrapper">
+						<!-- Message Input Container with Queue -->
+						<div class="message-input-wrapper w-full max-w-3xl mx-auto">
 								<!-- Queued Messages Display integrated with input -->
 								<QueuedMessages onSendNow={handleSendNow} />
 								
