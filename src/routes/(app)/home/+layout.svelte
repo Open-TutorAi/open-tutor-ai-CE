@@ -10,9 +10,7 @@
 </script>
 
 <svelte:head>
-	<title>
-		{$i18n.t('Home')} | {$TUTOR_NAME}
-	</title>
+<title>{$i18n.t('Home')} | {$TUTOR_NAME}</title>
 </svelte:head>
 
 <div
