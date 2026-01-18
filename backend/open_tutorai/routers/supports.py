@@ -40,6 +40,7 @@ class SupportCreateRequest(BaseModel):
     start_date: Optional[str] = None
     end_date: Optional[str] = None
     avatar_id: Optional[str] = None
+    avatar_type: Optional[str] = None #this is what is added to fix to avatar bug issue.
     chat_id: Optional[str] = None
 
 # Support response model
