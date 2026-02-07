@@ -40,17 +40,19 @@
 </script>
 
 {#key id}
-	<MarkdownTokens
-		{tokens}
-		{id}
-		{save}
-		{onTaskClick}
-		{onSourceClick}
-		on:update={(e) => {
-			dispatch('update', e.detail);
-		}}
-		on:code={(e) => {
-			dispatch('code', e.detail);
-		}}
-	/>
+	<div class="markdown markdown-prose">
+		<MarkdownTokens
+			{tokens}
+			{id}
+			{save}
+			{onTaskClick}
+			{onSourceClick}
+			on:update={(e) => {
+				dispatch('update', e.detail);
+			}}
+			on:code={(e) => {
+				dispatch('code', e.detail);
+			}}
+		/>
+	</div>
 {/key}

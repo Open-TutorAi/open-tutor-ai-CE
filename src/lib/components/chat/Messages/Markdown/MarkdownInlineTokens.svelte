@@ -51,7 +51,7 @@
 		<!-- svelte-ignore a11y-click-events-have-key-events -->
 		<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 		<code
-			class="codespan cursor-pointer"
+			class="codespan cursor-pointer inline-block px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono text-sm border border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
 			on:click={() => {
 				copyToClipboard(unescapeHtml(token.text));
 				toast.success($i18n.t('Copied to clipboard'));

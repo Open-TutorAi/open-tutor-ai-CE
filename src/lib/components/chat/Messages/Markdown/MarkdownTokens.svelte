@@ -169,14 +169,14 @@
 			</div>
 		</div>
 	{:else if token.type === 'blockquote'}
-		<blockquote dir="auto">
+		<blockquote dir="auto" class="pl-4 border-l-4 border-gray-200 dark:border-gray-700 italic text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-900/10 rounded-md py-2 my-2">
 			<svelte:self id={`${id}-${tokenIdx}`} tokens={token.tokens} {onTaskClick} {onSourceClick} />
 		</blockquote>
 	{:else if token.type === 'list'}
 		{#if token.ordered}
-			<ol start={token.start || 1}>
+			<ol start={token.start || 1} class="list-decimal ml-6 space-y-1">
 				{#each token.items as item, itemIdx}
-					<li dir="auto" class="text-start">
+					<li dir="auto" class="text-start leading-6 text-gray-800 dark:text-gray-200">
 						{#if item?.task}
 							<input
 								class=" translate-y-[1px] -translate-x-1"
@@ -208,7 +208,7 @@
 		{:else}
 			<ul>
 				{#each token.items as item, itemIdx}
-					<li dir="auto" class="text-start">
+					<li dir="auto" class="text-start leading-6 text-gray-800 dark:text-gray-200">
 						{#if item?.task}
 							<input
 								class=" translate-y-[1px] -translate-x-1"
