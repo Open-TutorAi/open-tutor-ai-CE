@@ -40,9 +40,16 @@
 		chatTitle,
 		showArtifacts,
 		tools,
+<<<<<<< feature/pedagogical-shortcut-buttons
 		messageQueue,
 		type QueuedMessage
+=======
+		isDemo,
+		demoData,
+		isFullscreenAvatar
+>>>>>>> dev
 	} from '$lib/stores';
+	import { simulateAIResponse, generateMockAvatarResponse } from '$lib/utils/mockLLM';
 	import {
 		convertMessagesToHistory,
 		copyToClipboard,
@@ -93,8 +100,12 @@
 	import NotificationToast from '$lib/components/NotificationToast.svelte';
 	import Spinner from '$lib/components/common/Spinner.svelte';
 	import AvatarChat from '$lib/components/chat/AvatarChat.svelte';
+<<<<<<< feature/pedagogical-shortcut-buttons
 	import PedagogicalShortcuts from '$lib/components/chat/PedagogicalShortcuts.svelte';
 	import QueuedMessages from '$lib/components/chat/QueuedMessages.svelte';
+=======
+	import FullscreenButton from '$lib/components/chat/FullscreenButton.svelte';
+>>>>>>> dev
 
 	// Debug: Print user permissions when they change
 	$: if ($user) {
@@ -162,6 +173,26 @@
 	let avatarSpeaking = false;
 	let currentAvatarMessage = '';
 
+	// Add demo model when in demo mode
+	$: if ($isDemo) {
+		const demoModel = {
+			id: 'demo',
+			name: 'Demo AI Assistant',
+			owned_by: 'openai',
+			external: false
+		};
+		
+		// Add demo model to models if not already there
+		if (!$models.some(m => m.id === 'demo')) {
+			models.set([demoModel, ...$models]);
+		}
+		
+		// Auto-select demo model if no model selected
+		if (selectedModels.length === 0 || selectedModels.includes('')) {
+			selectedModels = ['demo'];
+		}
+	}
+
 	// Toggle avatar mode function
 	const toggleAvatar = () => {
 		// Update settings store and localStorage
@@ -172,6 +203,82 @@
 		});
 		// Save to localStorage for persistence
 		localStorage.setItem('settings', JSON.stringify($settings));
+	};
+
+	// Cross-browser fullscreen request helper
+	function requestFullscreen(element: HTMLElement): Promise<void> {
+		if (element.requestFullscreen) {
+			return element.requestFullscreen();
+		} else if ((element as any).webkitRequestFullscreen) {
+			return (element as any).webkitRequestFullscreen();
+		} else if ((element as any).mozRequestFullScreen) {
+			return (element as any).mozRequestFullScreen();
+		} else if ((element as any).msRequestFullscreen) {
+			return (element as any).msRequestFullscreen();
+		}
+		return Promise.reject(new Error('Fullscreen not supported'));
+	}
+
+	// Cross-browser exit fullscreen helper
+	function exitFullscreen(): Promise<void> {
+		if (document.exitFullscreen) {
+			return document.exitFullscreen();
+		} else if ((document as any).webkitExitFullscreen) {
+			return (document as any).webkitExitFullscreen();
+		} else if ((document as any).mozCancelFullScreen) {
+			return (document as any).mozCancelFullScreen();
+		} else if ((document as any).msExitFullscreen) {
+			return (document as any).msExitFullscreen();
+		}
+		return Promise.reject(new Error('Exit fullscreen not supported'));
+	}
+
+	// Toggle fullscreen mode
+	function toggleFullscreen() {
+		const isCurrentlyFullscreen = $isFullscreenAvatar;
+		
+		if (!isCurrentlyFullscreen) {
+			// Enter fullscreen
+			requestFullscreen(document.documentElement)
+				.then(() => {
+					isFullscreenAvatar.set(true);
+				})
+				.catch(err => {
+					console.error('Fullscreen request failed:', err);
+					toast.error('Unable to enter fullscreen mode');
+				});
+		} else {
+			// Exit fullscreen
+			exitFullscreen()
+				.then(() => {
+					isFullscreenAvatar.set(false);
+				})
+				.catch(err => {
+					console.error('Exit fullscreen failed:', err);
+					toast.error('Unable to exit fullscreen mode');
+				});
+		}
+	}
+
+	// Fullscreen event handlers
+	const handleKeyDown = (e: KeyboardEvent) => {
+		if (e.key === 'Escape' && $isFullscreenAvatar && avatarActive) {
+			toggleFullscreen();
+		}
+	};
+	
+	// Listen for fullscreen change events (user might press ESC or F11 directly)
+	const handleFullscreenChange = () => {
+		const isFullscreenActive = !!(
+			document.fullscreenElement || 
+			(document as any).webkitFullscreenElement || 
+			(document as any).mozFullScreenElement || 
+			(document as any).msFullscreenElement
+		);
+		
+		if (!isFullscreenActive && $isFullscreenAvatar) {
+			isFullscreenAvatar.set(false);
+		}
 	};
 
 	$: if (chatIdProp) {
@@ -506,6 +613,13 @@
 		const chatInput = document.getElementById('chat-input');
 		chatInput?.focus();
 
+		// Register fullscreen event listeners
+		document.addEventListener('keydown', handleKeyDown);
+		document.addEventListener('fullscreenchange', handleFullscreenChange);
+		document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+		document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+		document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
 		chats.subscribe(() => {});
 	});
 
@@ -513,6 +627,18 @@
 		chatIdUnsubscriber?.();
 		window.removeEventListener('message', onMessageHandler);
 		$socket?.off('chat-events', chatEventHandler);
+		
+		// Clean up fullscreen event listeners
+		document.removeEventListener('keydown', handleKeyDown);
+		document.removeEventListener('fullscreenchange', handleFullscreenChange);
+		document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+		document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+		document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+		
+		// Reset fullscreen state if active
+		if ($isFullscreenAvatar) {
+			isFullscreenAvatar.set(false);
+		}
 	});
 
 	// File upload functions
@@ -1039,6 +1165,48 @@
 	};
 
 	const loadChat = async () => {
+		if ($isDemo) {
+			if (chatIdProp && chatIdProp.startsWith('demo-chat-')) {
+				const demoChat = $demoData.chats.find(c => c.id === chatIdProp);
+				if (demoChat) {
+					chatId.set(chatIdProp);
+					selectedModels = demoChat.models || [$models[0]?.id || ''];
+					chatTitle.set(demoChat.title);
+					
+					// Convert demo messages to history format with proper parent-child relationships
+					const historyObj = {
+						messages: {},
+						currentId: null
+					};
+					
+					demoChat.messages.forEach((msg, idx) => {
+						const isLast = idx === demoChat.messages.length - 1;
+						const parentId = idx > 0 ? demoChat.messages[idx - 1].id : null;
+						const childrenIds = !isLast ? [demoChat.messages[idx + 1].id] : [];
+						
+						historyObj.messages[msg.id] = {
+							id: msg.id,
+							role: msg.role,
+							content: msg.content,
+							timestamp: msg.timestamp,
+							done: true,
+							parentId: parentId,
+							childrenIds: childrenIds,
+							models: demoChat.models
+						};
+						
+						if (isLast) {
+							historyObj.currentId = msg.id;
+						}
+					});
+					
+					history = historyObj;
+					return true;
+				}
+			}
+			return true;
+		}
+		
 		chatId.set(chatIdProp);
 		chat = await getChatById(localStorage.token, $chatId).catch(async (error) => {
 			await goto('/');
@@ -1099,6 +1267,10 @@
 		}
 	};
 	const chatCompletedHandler = async (chatId, modelId, responseMessageId, messages) => {
+		if ($isDemo) {
+			return;
+		}
+		
 		const res = await chatCompleted(localStorage.token, {
 			model: modelId,
 			messages: messages.map((m) => ({
@@ -1209,6 +1381,10 @@
 	};
 
 	const getChatEventEmitter = async (modelId: string, chatId: string = '') => {
+		if ($isDemo) {
+			return null;
+		}
+		
 		return setInterval(() => {
 			$socket?.emit('usage', {
 				action: 'chat',
@@ -1222,7 +1398,10 @@
 		prompt = '';
 		if (selectedModels.length === 0) {
 			toast.error($i18n.t('Model not selected'));
-		} else {
+			return;
+		}
+		
+		if (selectedModels.length > 0) {
 			const modelId = selectedModels[0];
 			const model = $models.filter((m) => m.id === modelId).at(0);
 
@@ -1808,7 +1987,7 @@
 					const chatEventEmitter = await getChatEventEmitter(model.id, _chatId);
 
 					scrollToBottom();
-					await sendPromptSocket(_history, model, responseMessageId, _chatId);
+					await sendPromptOrMock(_history, model, responseMessageId, _chatId);
 
 					if (chatEventEmitter) clearInterval(chatEventEmitter);
 				} else {
@@ -1817,8 +1996,54 @@
 			})
 		);
 
-		currentChatPage.set(1);
-		chats.set(await getChatList(localStorage.token, $currentChatPage));
+		if (!$isDemo) {
+			currentChatPage.set(1);
+			chats.set(await getChatList(localStorage.token, $currentChatPage));
+		} else {
+			chats.set($demoData.chats);
+		}
+	};
+
+	const sendPromptOrMock = async (_history, model, responseMessageId, _chatId) => {
+		if ($isDemo) {
+			const responseMessage = _history.messages[responseMessageId];
+			const userMessage = _history.messages[responseMessage.parentId];
+			
+			if (avatarActive) {
+				const mockData = generateMockAvatarResponse(userMessage.content);
+				const fullResponse = JSON.stringify(mockData);
+				
+				await simulateAIResponse(
+					fullResponse,
+					(chunk) => {
+						responseMessage.content += chunk;
+						history.messages[responseMessageId] = responseMessage;
+					},
+					() => {
+						responseMessage.done = true;
+						history.messages[responseMessageId] = responseMessage;
+						currentAvatarMessage = responseMessage.content;
+						avatarSpeaking = true;
+					}
+				);
+			} else {
+				// Regular chat mode
+				await simulateAIResponse(
+					userMessage.content,
+					(chunk) => {
+						responseMessage.content += chunk;
+						history.messages[responseMessageId] = responseMessage;
+						scrollToBottom();
+					},
+					() => {
+						responseMessage.done = true;
+						history.messages[responseMessageId] = responseMessage;
+					}
+				);
+			}
+		} else {
+			await sendPromptSocket(_history, model, responseMessageId, _chatId);
+		}
 	};
 
 	const sendPromptSocket = async (_history, model, responseMessageId, _chatId) => {
@@ -2396,7 +2621,7 @@
 				.at(0);
 
 			if (model) {
-				await sendPromptSocket(history, model, responseMessage.id, _chatId);
+				await sendPromptOrMock(history, model, responseMessage.id, _chatId);
 			}
 		}
 	};
@@ -2449,6 +2674,10 @@
 	};
 
 	const initChatHandler = async (history) => {
+		if ($isDemo) {
+			return 'demo-chat-' + Date.now();
+		}
+		
 		let _chatId = $chatId;
 
 		try {
@@ -2570,6 +2799,10 @@
 	};
 
 	const saveChatHandler = async (_chatId, history) => {
+		if ($isDemo) {
+			return;
+		}
+		
 		if ($chatId == _chatId) {
 			if (!$temporaryChatEnabled) {
 				chat = await updateChatById(localStorage.token, _chatId, {
@@ -2625,7 +2858,7 @@
 />
 
 <div
-	class="h-screen max-h-[100dvh] transition-width duration-200 ease-in-out bg-[#F5F7F9] dark:bg-inherit {$showSidebar
+	class="h-screen max-h-[100dvh] transition-width duration-200 ease-in-out bg-[#F5F7F9] dark:bg-inherit {($showSidebar && !($isFullscreenAvatar && avatarActive))
 		? 'md:max-w-[calc(100%-260px)]'
 		: ''} w-full max-w-full flex flex-col shadow-md"
 	id="chat-container"
@@ -2644,26 +2877,29 @@
 			/>
 		{/if}
 
-		<Navbar
-			bind:this={navbarElement}
-			chat={{
-				id: $chatId,
-				chat: {
-					title: $chatTitle,
-					models: selectedModels,
-					system: $settings.system ?? undefined,
-					params: params,
-					history: history,
-					timestamp: Date.now()
-				}
-			}}
-			title={$chatTitle}
-			bind:selectedModels
-			shareEnabled={!!history.currentId}
-			{initNewChat}
-			{avatarActive}
-			{toggleAvatar}
-		/>
+		<!-- Hide navbar when in fullscreen avatar mode -->
+		{#if !($isFullscreenAvatar && avatarActive)}
+			<Navbar
+				bind:this={navbarElement}
+				chat={{
+					id: $chatId,
+					chat: {
+						title: $chatTitle,
+						models: selectedModels,
+						system: $settings.system ?? undefined,
+						params: params,
+						history: history,
+						timestamp: Date.now()
+					}
+				}}
+				title={$chatTitle}
+				bind:selectedModels
+				shareEnabled={!!history.currentId}
+				{initNewChat}
+				{avatarActive}
+				{toggleAvatar}
+			/>
+		{/if}
 
 		<PaneGroup direction="horizontal" class="w-full h-full">
 			<Pane defaultSize={50} class="h-full flex w-full relative shadow-md">
@@ -2728,6 +2964,39 @@
 										speaking={avatarSpeaking}
 										on:speechend={() => (avatarSpeaking = false)}
 									/>
+<<<<<<< feature/pedagogical-shortcut-buttons
+=======
+									
+									<!-- Floating fullscreen button -->
+									<FullscreenButton onClick={toggleFullscreen} />
+								</div>
+								<div class="absolute bottom-0 left-0 right-0 z-20 animate-float {$isFullscreenAvatar ? 'px-8 pb-8' : ''}">
+									<MessageInput
+										{history}
+										{selectedModels}
+										bind:files
+										bind:prompt
+										bind:autoScroll
+										bind:selectedToolIds
+										bind:imageGenerationEnabled
+										bind:codeInterpreterEnabled
+										bind:webSearchEnabled
+										bind:atSelectedModel
+										transparentBackground={true}
+										{stopResponse}
+										on:submit={async (e) => {
+											if (e.detail || files.length > 0) {
+												await tick();
+												submitPrompt(
+													($settings?.richTextInput ?? true)
+														? e.detail.replaceAll('\n\n', '\n')
+														: e.detail
+												);
+											}
+										}}
+									/>
+								</div>
+>>>>>>> dev
 							</div>
 							<!-- Pedagogical Shortcut Buttons -->
 						<div class="absolute bottom-0 left-0 right-0 z-20 px-6 pb-6">

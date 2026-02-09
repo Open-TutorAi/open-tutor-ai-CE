@@ -8,6 +8,7 @@
 	import type { Writable } from 'svelte/store';
 	import { browser } from '$app/environment';
 	import ConfirmDialog from '$lib/components/student/elements/ConfirmDialog.svelte';
+	import { isDemo, demoData } from '$lib/stores';
 
 	// Get i18n from context with proper typing
 	interface I18n {
@@ -74,13 +75,6 @@
 		if (!browser) return;
 
 		try {
-			const token = localStorage.getItem('token');
-			if (!token) {
-				error = $i18n.t('Authentication required');
-				loading = false;
-				return;
-			}
-
 			if (!supportId) {
 				error = $i18n.t('Support ID is required');
 				loading = false;
@@ -88,6 +82,33 @@
 			}
 
 			console.log(`Loading support with ID: ${supportId}`);
+			
+			// Check if in demo mode
+			if ($isDemo && supportId.startsWith('demo-')) {
+				// Load from mock data
+				const mockSupport = $demoData.supports.find(s => s.id === supportId);
+				if (mockSupport) {
+					support = {
+						...mockSupport,
+						short_description: mockSupport.description,
+						status: mockSupport.progress < 30 ? 'not-started' : mockSupport.progress < 100 ? 'in-progress' : 'completed',
+						created_at: new Date().toISOString(),
+						updated_at: new Date().toISOString()
+				};
+			} else {
+					error = $i18n.t('Demo support not found');
+				}
+				loading = false;
+				return;
+			}
+			
+			const token = localStorage.getItem('token');
+			if (!token) {
+				error = $i18n.t('Authentication required');
+				loading = false;
+				return;
+			}
+
 			support = await getSupportById(token, supportId);
 			console.log('Support data loaded:', support);
 		} catch (err: any) {
@@ -120,6 +141,11 @@
 	async function handleDelete() {
 		if (!browser || !supportId) return;
 
+		if ($isDemo) {
+			toast.info($i18n.t('Deleting is disabled in demo mode'));
+			return;
+		}
+
 		try {
 			const token = localStorage.getItem('token');
 			if (!token) {
@@ -143,6 +169,17 @@
 	// Handle starting a chat for this support
 	function handleStartChat(event: MouseEvent) {
 		if (!support || !support.id) return;
+		
+		if ($isDemo) {
+			const demoSupport = $demoData.supports.find(s => s.id === support.id);
+			if (demoSupport?.chatId) {
+				event.preventDefault();
+				goto(`/student/c/${demoSupport.chatId}`);
+			} else {
+				goto('/student/chat');
+			}
+			return;
+		}
 		
 		// Save support data to localStorage for chat linking
 		const supportData = {
@@ -612,8 +649,15 @@
 						</button>
 
 						<button
+							on:click={() => {
+								if ($isDemo) {
+									toast.info($i18n.t('Editing supports is disabled in demo mode'));
+								} else {
+									goto(`/student/support/${support.id}/edit`);
+								}
+							}}
+							class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors {$isDemo ? 'opacity-75 cursor-not-allowed' : ''}"
 							on:click={() => goto(`/student/support/${support.id}/edit`)}
-							class="px-4 py-2 text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white dark:bg-gradient-to-r dark:from-blue-600 dark:to-indigo-600 dark:hover:from-blue-700 dark:hover:to-indigo-700 rounded-full transition-colors"
 						>
 							{$i18n.t('Edit Support')}
 						</button>
