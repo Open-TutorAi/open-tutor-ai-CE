@@ -1,9 +1,3 @@
-/**
- * useMessageActions.ts - Message action handlers composable
- * 
- * Handles regeneration, continuation, message creation, and other message operations
- */
-
 import { v4 as uuidv4 } from 'uuid';
 import { get, type Writable } from 'svelte/store';
 import { tick } from 'svelte';

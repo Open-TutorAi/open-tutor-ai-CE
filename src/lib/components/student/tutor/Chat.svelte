@@ -1,17 +1,3 @@
-<!--
-  Chat.svelte - Tutor Chat Component (Refactored)
-  
-  This component has been deeply modularized for maintainability.
-  All logic has been extracted into composables under ./services/
-  
-  Structure:
-  - useEventHandlers: Window messages, socket events, dialogs
-  - useChatLifecycle: Loading, initialization, URL params, settings
-  - usePromptSubmission: Prompt validation and API calls
-  - useMessageActions: Regeneration, continuation, message operations
-  - This component: UI rendering and event binding only
--->
-
 <script lang="ts">
 	import { v4 as uuidv4 } from 'uuid';
 	import { toast } from 'svelte-sonner';
@@ -96,14 +82,8 @@
 		handleChatCompleted
 	} from './services';
 
-	// ============================================
-	// Props
-	// ============================================
 	export let chatIdProp = '';
 
-	// ============================================
-	// Context
-	// ============================================
 	const i18n: Writable<i18nType> = getContext('i18n');
 
 	// ============================================

@@ -1,9 +1,3 @@
-/**
- * useChatLifecycle.ts - Chat lifecycle management composable
- * 
- * Handles chat loading, initialization, URL parameters, and settings
- */
-
 import { get, type Writable } from 'svelte/store';
 import { tick } from 'svelte';
 import { goto } from '$app/navigation';

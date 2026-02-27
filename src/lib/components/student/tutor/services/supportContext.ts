@@ -1,22 +1,9 @@
-/**
- * Support Context Helper Module
- * 
- * Handles generation and management of support-related context
- * for tutoring sessions, including system prompts based on
- * support details like subject, level, and learning objectives.
- * 
- * Extracted from Chat.svelte for better separation of concerns.
- */
-
 import { v4 as uuidv4 } from 'uuid';
 import { getSupportById } from '$lib/apis/supports';
 import { TUTOR_API_BASE_URL } from '$lib/constants';
 
 import type { SupportDetails, SupportFile, ChatHistory } from './types';
 
-/**
- * Generates a system prompt based on support details
- */
 export async function generateSupportSystemPrompt(
 	supportId: string,
 	additionalPrompt?: string

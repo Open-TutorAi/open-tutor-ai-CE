@@ -1,14 +1,3 @@
-/**
- * Chat Actions Composable
- * 
- * Provides action handlers for chat operations including:
- * - Regenerating responses
- * - Continuing responses
- * - Merging responses
- * - Submitting messages
- * - Handling chat completion
- */
-
 import { get } from 'svelte/store';
 import { tick } from 'svelte';
 import { v4 as uuidv4 } from 'uuid';

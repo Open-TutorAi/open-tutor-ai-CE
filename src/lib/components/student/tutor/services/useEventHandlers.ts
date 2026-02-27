@@ -1,9 +1,3 @@
-/**
- * useEventHandlers.ts - Event handling composable
- * 
- * Handles window messages, socket events, and chat event processing
- */
-
 import { get, type Writable } from 'svelte/store';
 import { tick } from 'svelte';
 import { toast } from 'svelte-sonner';

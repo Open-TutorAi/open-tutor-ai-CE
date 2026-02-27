@@ -1,9 +1,3 @@
-/**
- * Type Definitions for Chat Services
- * 
- * Shared types used across all chat-related service modules.
- */
-
 export interface ChatMessage {
 	id: string;
 	parentId: string | null;

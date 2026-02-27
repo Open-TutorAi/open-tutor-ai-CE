@@ -1,18 +1,6 @@
-/**
- * Chat History Helper Module
- * 
- * Manages chat history state, message relationships,
- * and history manipulation operations.
- * 
- * Extracted from Chat.svelte for better separation of concerns.
- */
-
 import { v4 as uuidv4 } from 'uuid';
 import type { ChatHistory, ChatMessage } from './types';
 
-/**
- * Creates an empty chat history object
- */
 export function createEmptyHistory(): ChatHistory {
 	return {
 		messages: {},

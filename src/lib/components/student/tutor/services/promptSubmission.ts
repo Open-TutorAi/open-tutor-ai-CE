@@ -1,12 +1,3 @@
-/**
- * Prompt Submission Service
- * 
- * Handles all logic related to submitting prompts, creating messages,
- * and managing chat flow in the tutor chat component.
- * 
- * Extracted from Chat.svelte to improve maintainability and testability.
- */
-
 import { v4 as uuidv4 } from 'uuid';
 import { get } from 'svelte/store';
 import { tick } from 'svelte';

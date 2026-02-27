@@ -1,23 +1,3 @@
-/**
- * Chat Services Index
- * 
- * Central export point for all chat-related service modules.
- * These modules were extracted from Chat.svelte to improve
- * maintainability, testability, and code organization.
- * 
- * Usage:
- * ```typescript
- * import { 
- *   validatePromptSubmission,
- *   createUserMessage,
- *   addMessageToHistory,
- *   useChatState,
- *   useModelSelection
- * } from './services';
- * ```
- */
-
-// Type exports
 export * from './types';
 
 // Composables / State Management

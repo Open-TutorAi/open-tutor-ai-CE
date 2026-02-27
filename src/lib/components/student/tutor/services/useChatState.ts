@@ -1,11 +1,3 @@
-/**
- * Chat State Composable
- * 
- * Manages all chat-related state including history, messages,
- * files, and UI state. This provides a centralized state management
- * layer for the Chat component.
- */
-
 import { writable, derived, get, type Writable, type Readable } from 'svelte/store';
 import { tick } from 'svelte';
 import { v4 as uuidv4 } from 'uuid';
@@ -339,9 +331,6 @@ export function useChatState(): ChatState & ChatStateActions {
 	return chatStateInstance;
 }
 
-/**
- * Reset the singleton (useful for testing or complete resets)
- */
 export function resetChatState(): void {
 	chatStateInstance = null;
 }

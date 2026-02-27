@@ -1,12 +1,3 @@
-/**
- * Socket Event Handler Module
- * 
- * Handles WebSocket events for real-time chat updates,
- * including message streaming, status updates, and notifications.
- * 
- * Extracted from Chat.svelte for better separation of concerns.
- */
-
 import { tick } from 'svelte';
 import { toast } from 'svelte-sonner';
 import { get } from 'svelte/store';

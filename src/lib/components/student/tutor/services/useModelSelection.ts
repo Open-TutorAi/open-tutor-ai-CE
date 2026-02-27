@@ -1,12 +1,3 @@
-/**
- * Model Selection Composable
- * 
- * Manages model selection state and logic including:
- * - Selected models tracking
- * - Tool IDs management
- * - Model validation and filtering
- */
-
 import { writable, derived, get, type Writable, type Readable } from 'svelte/store';
 import { page } from '$app/stores';
 

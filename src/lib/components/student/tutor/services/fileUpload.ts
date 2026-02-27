@@ -1,12 +1,3 @@
-/**
- * File Upload Helper Module
- * 
- * Handles file uploads from various sources including
- * local files, Google Drive, web URLs, and YouTube videos.
- * 
- * Extracted from Chat.svelte for better separation of concerns.
- */
-
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'svelte-sonner';
 

@@ -1,9 +1,3 @@
-/**
- * usePromptSubmission.ts - Prompt submission composable
- * 
- * Handles prompt validation, user message creation, and API calls
- */
-
 import { v4 as uuidv4 } from 'uuid';
 import { get, type Writable } from 'svelte/store';
 import { tick } from 'svelte';
