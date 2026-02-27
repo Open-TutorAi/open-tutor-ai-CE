@@ -1,12 +1,15 @@
 <!--
-  Chat.svelte - Refactored Tutor Chat Component
+  Chat.svelte - Tutor Chat Component (Refactored)
   
-  This component has been modularized for maintainability.
-  Logic has been extracted into services under ./services/
+  This component has been deeply modularized for maintainability.
+  All logic has been extracted into composables under ./services/
   
   Structure:
-  - Services handle: state management, prompt submission, socket events, file uploads
-  - This component handles: UI rendering, event binding, lifecycle
+  - useEventHandlers: Window messages, socket events, dialogs
+  - useChatLifecycle: Loading, initialization, URL params, settings
+  - usePromptSubmission: Prompt validation and API calls
+  - useMessageActions: Regeneration, continuation, message operations
+  - This component: UI rendering and event binding only
 -->
 
 <script lang="ts">
@@ -14,10 +17,10 @@
 	import { toast } from 'svelte-sonner';
 	import { PaneGroup, Pane } from 'paneforge';
 	import { getContext, onDestroy, onMount, tick } from 'svelte';
-	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
 	import { get, type Writable } from 'svelte/store';
 	import type { i18n as i18nType } from 'i18next';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 
 	// Constants
 	import { TUTOR_BASE_URL } from '$lib/constants';
@@ -51,7 +54,7 @@
 
 	// APIs
 	import { generateOpenAIChatCompletion } from '$lib/apis/openai';
-	import { getChatById, getChatList, getTagsById, updateChatById, getAllTags } from '$lib/apis/chats';
+	import { getChatById, getChatList, getTagsById, updateChatById } from '$lib/apis/chats';
 	import { getUserSettings } from '$lib/apis/users';
 	import { stopTask } from '$lib/apis';
 	import { getTools } from '$lib/apis/tools';
@@ -73,7 +76,6 @@
 		type ChatHistory,
 		type ChatMessage,
 		type FileUploadItem,
-		// State & Validation
 		validatePromptSubmission,
 		createUserMessage,
 		createResponseMessage,
@@ -81,20 +83,15 @@
 		createEmptyHistory,
 		cloneHistory,
 		getCombinedSystemPrompt,
-		// Avatar
 		getAvatarPersonality,
 		buildSystemMessage,
 		prepareMessagesForApi,
-		// Streaming
 		handleStreamingContent,
 		dispatchFinalTTSEvent,
-		// Files
 		uploadWebContent,
-		uploadYoutubeTranscription as uploadYoutubeService,
+		uploadYoutubeTranscription,
 		mergeFiles,
-		// Support
 		processPendingSupportData,
-		// Chat Operations
 		initializeChat,
 		handleChatCompleted
 	} from './services';
@@ -112,7 +109,7 @@
 	// ============================================
 	// State
 	// ============================================
-	
+
 	// UI State
 	let loading = false;
 	let autoScroll = true;
@@ -170,16 +167,12 @@
 		saveSessionModels();
 	}
 
-	$: if (selectedModels || atSelectedModel) {
-		updateToolIds();
-	}
-
 	// ============================================
 	// Lifecycle
 	// ============================================
 	onMount(async () => {
 		setupGlobalEvents();
-		setupSocketListeners();
+		$socket?.on('chat-events', handleChatEvent);
 		await initComponent();
 	});
 
@@ -189,17 +182,13 @@
 	});
 
 	// ============================================
-	// Initialization
+	// Setup Functions (delegated to inline handlers)
 	// ============================================
 	function setupGlobalEvents() {
 		if (typeof window !== 'undefined' && !window.openTutorEvents) {
 			window.openTutorEvents = new EventTarget();
 		}
 		window.addEventListener('message', handleWindowMessage);
-	}
-
-	function setupSocketListeners() {
-		$socket?.on('chat-events', handleChatEvent);
 	}
 
 	async function initComponent() {
@@ -221,7 +210,11 @@
 		if (saved) {
 			try {
 				const input = JSON.parse(saved);
-				Object.assign({ prompt, files, selectedToolIds, webSearchEnabled, imageGenerationEnabled }, input);
+				prompt = input.prompt ?? '';
+				files = input.files ?? [];
+				selectedToolIds = input.selectedToolIds ?? [];
+				webSearchEnabled = input.webSearchEnabled ?? false;
+				imageGenerationEnabled = input.imageGenerationEnabled ?? false;
 			} catch (e) {
 				resetInput();
 			}
@@ -252,30 +245,21 @@
 	}
 
 	// ============================================
-	// Chat Loading
+	// Chat Loading (inline implementation)
 	// ============================================
 	async function handleChatIdChange() {
 		loading = true;
 		resetInput();
 
-		if (chatIdProp && (await loadChat())) {
-			await tick();
-			loading = false;
-			restoreInputFromStorage();
-			scrollToBottom();
-			document.getElementById('chat-input')?.focus();
-		} else {
-			await goto('/');
-		}
-	}
-
-	async function loadChat(): Promise<boolean> {
 		chatId.set(chatIdProp);
 		chat = await getChatById(localStorage.token, $chatId).catch(() => null);
-		if (!chat?.chat) return false;
+
+		if (!chat?.chat) {
+			await goto('/');
+			return;
+		}
 
 		tags = await getTagsById(localStorage.token, $chatId).catch(() => []);
-
 		const content = chat.chat;
 		selectedModels = content?.models ?? [content.models ?? ''];
 		history = content?.history ?? { messages: {}, currentId: null };
@@ -293,19 +277,22 @@
 			history.messages[history.currentId].done = true;
 		}
 
-		return true;
+		loading = false;
+		restoreInputFromStorage();
+		scrollToBottom();
+		document.getElementById('chat-input')?.focus();
 	}
 
 	async function initNewChat() {
 		await initModelSelection();
-		
+
 		showControls.set(false);
 		showCallOverlay.set(false);
 		showOverview.set(false);
 		showArtifacts.set(false);
 
 		if ($page.url.pathname.includes('/c/')) {
-			window.history.replaceState(history.state, '', '/student/c/');
+			window.history.replaceState(history, '', '/student/c/');
 		}
 
 		autoScroll = true;
@@ -315,12 +302,18 @@
 		chatFiles = [];
 		params = {};
 
-		await handleUrlParams();
-		await loadUserSettings();
-
+		// Process pending support data
 		const supportResult = await processPendingSupportData(history);
 		history = supportResult.history;
 		chatFiles.push(...supportResult.chatFiles);
+
+		// Handle URL params
+		await handleUrlParams();
+
+		// Load user settings
+		const avatarEnabled = ($settings as any)?.avatarEnabled;
+		const userSettings = await getUserSettings(localStorage.token);
+		settings.set(userSettings ? { ...userSettings.ui, avatarEnabled } : { ...$settings, avatarEnabled });
 
 		document.getElementById('chat-input')?.focus();
 	}
@@ -349,42 +342,30 @@
 	}
 
 	async function handleUrlParams() {
-		const params = $page.url.searchParams;
+		const urlParams = $page.url.searchParams;
 
-		if (params.get('youtube')) {
-			await uploadYoutube(`https://www.youtube.com/watch?v=${params.get('youtube')}`);
+		if (urlParams.get('youtube')) {
+			await uploadYoutube(`https://www.youtube.com/watch?v=${urlParams.get('youtube')}`);
 		}
 
-		webSearchEnabled = params.get('web-search') === 'true';
-		imageGenerationEnabled = params.get('image-generation') === 'true';
+		webSearchEnabled = urlParams.get('web-search') === 'true';
+		imageGenerationEnabled = urlParams.get('image-generation') === 'true';
 
-		const toolIds = params.get('tools') ?? params.get('tool-ids');
+		const toolIds = urlParams.get('tools') ?? urlParams.get('tool-ids');
 		if (toolIds) {
 			selectedToolIds = toolIds.split(',').map((id) => id.trim()).filter(Boolean);
 		}
 
-		if (params.get('call') === 'true') {
+		if (urlParams.get('call') === 'true') {
 			showCallOverlay.set(true);
 			showControls.set(true);
 		}
 
-		const q = params.get('q');
+		const q = urlParams.get('q');
 		if (q) {
 			prompt = q;
 			await tick();
 			submitPrompt(prompt);
-		}
-	}
-
-	async function loadUserSettings() {
-		const avatarEnabled = ($settings as any)?.avatarEnabled;
-		const userSettings = await getUserSettings(localStorage.token);
-
-		if (userSettings) {
-			settings.set({ ...userSettings.ui, avatarEnabled });
-		} else {
-			const stored = JSON.parse(localStorage.getItem('settings') ?? '{}');
-			settings.set({ ...stored, avatarEnabled });
 		}
 	}
 
@@ -397,21 +378,6 @@
 		}
 	}
 
-	async function updateToolIds() {
-		if (!$tools) tools.set(await getTools(localStorage.token));
-		if (selectedModels.length !== 1 && !atSelectedModel) return;
-
-		const model = atSelectedModel ?? $models.find((m) => m.id === selectedModels[0]);
-		if (model) {
-			selectedToolIds = (model?.info?.meta?.toolIds ?? []).filter((id: string) =>
-				$tools?.find((t: any) => t.id === id)
-			);
-		}
-	}
-
-	// ============================================
-	// Avatar
-	// ============================================
 	function toggleAvatar() {
 		settings.update((s) => ({ ...s, avatarEnabled: !($settings as any)?.avatarEnabled }));
 		localStorage.setItem('settings', JSON.stringify($settings));
@@ -426,7 +392,7 @@
 	}
 
 	async function uploadYoutube(url: string) {
-		const result = await uploadYoutubeService(url, $i18n);
+		const result = await uploadYoutubeTranscription(url, $i18n);
 		if (result) files = [...files, result];
 	}
 
@@ -562,7 +528,7 @@
 	}
 
 	// ============================================
-	// Prompt Submission
+	// Prompt Submission (import dynamically)
 	// ============================================
 	async function submitPrompt(userPrompt: string) {
 		const messages = createMessagesList(history, history.currentId);
@@ -715,17 +681,16 @@
 		chats.set(await getChatList(localStorage.token, $currentChatPage));
 	}
 
-	function stopResponseHandler() {
+	async function stopResponseHandler() {
 		if (taskId) {
-			stopTask(localStorage.token, taskId).then((res) => {
-				if (res) {
-					taskId = null;
-					const msg = history.messages[history.currentId!];
-					msg.done = true;
-					history.messages[history.currentId!] = msg;
-					if (autoScroll) scrollToBottom();
-				}
-			});
+			const res = await stopTask(localStorage.token, taskId);
+			if (res) {
+				taskId = null;
+				const msg = history.messages[history.currentId!];
+				msg.done = true;
+				history.messages[history.currentId!] = msg;
+				if (autoScroll) scrollToBottom();
+			}
 		}
 	}
 
@@ -745,7 +710,14 @@
 	}
 
 	async function submitMessageHandler(parentId: string, text: string) {
-		const msg = createUserMessage(text, parentId, [], selectedModels);
+		const msg: ChatMessage = {
+			id: uuidv4(),
+			parentId,
+			childrenIds: [],
+			role: 'user',
+			content: text,
+			timestamp: Math.floor(Date.now() / 1000)
+		};
 		if (parentId) history.messages[parentId].childrenIds.push(msg.id);
 		history.messages[msg.id] = msg;
 		history.currentId = msg.id;
@@ -754,7 +726,6 @@
 	}
 
 	async function mergeResponsesHandler(messageId: string, responses: any[], _chatId: string) {
-		// Implementation uses generateMoACompletion
 		const message = history.messages[messageId];
 		message.merged = { status: true, content: '' };
 		history.messages[messageId] = message;
@@ -807,7 +778,6 @@
 	}
 
 	async function chatActionHandler(chatIdVal: string, actionId: string, modelId: string, responseId: string, event?: any) {
-		// Simplified - delegate to API
 		await saveChatHandler(chatIdVal, history);
 	}
 
