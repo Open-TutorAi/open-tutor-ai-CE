@@ -3,6 +3,7 @@ import { tick } from 'svelte';
 import { goto } from '$app/navigation';
 import { page } from '$app/stores';
 import type { i18n as i18nType } from 'i18next';
+import type { Config, Settings, Model } from '$lib/stores';
 
 import { getChatById, getTagsById } from '$lib/apis/chats';
 import { getUserSettings } from '$lib/apis/users';
@@ -15,10 +16,10 @@ import { processPendingSupportData } from './supportContext';
 export interface LifecycleOptions {
 	chatId: Writable<string>;
 	chatTitle: Writable<string>;
-	settings: Writable<any>;
-	config: Writable<any>;
-	models: Writable<any[]>;
-	tools: Writable<any[]>;
+	settings: Writable<Settings>;
+	config: Writable<Config | undefined>;
+	models: Writable<Model[]>;
+	tools: Writable<any[]>; // Tool objects - structure varies
 	temporaryChatEnabled: Writable<boolean>;
 	showControls: Writable<boolean>;
 	showCallOverlay: Writable<boolean>;
@@ -31,10 +32,10 @@ export interface LifecycleOptions {
 export interface LifecycleState {
 	history: ChatHistory;
 	selectedModels: string[];
-	params: any;
-	chatFiles: any[];
-	tags: any[];
-	chat: any;
+	params: Record<string, any>; // URL parameters
+	chatFiles: any[]; // File metadata from chat history
+	tags: any[]; // Tag objects from API
+	chat: any; // Chat object from API
 	autoScroll: boolean;
 	loading: boolean;
 }
@@ -200,12 +201,10 @@ export function createChatLifecycle(
 
 		const model = $models.find((m: any) => m.id === state.selectedModels[0]);
 		if (model) {
-			const selectedToolIds = (model?.info?.meta?.toolIds ?? []).filter((id: string) =>
+			(model?.info?.meta?.toolIds ?? []).filter((id: string) =>
 				get(tools)?.find((t: any) => t.id === id)
 			);
-			return selectedToolIds;
 		}
-		return [];
 	}
 
 	function saveSessionModels(): void {
@@ -288,7 +287,10 @@ export function createChatLifecycle(
 	}
 
 	function resetInput(): void {
-		// Return default values - caller should use these
+		setState({
+			params: {},
+			chatFiles: []
+		});
 	}
 
 	// ============================================

@@ -120,7 +120,7 @@ export interface OllamaModel extends BaseModel {
 	};
 }
 
-type OllamaModelDetails = {
+export type OllamaModelDetails = {
 	parent_model: string;
 	format: string;
 	family: string;
@@ -129,7 +129,7 @@ type OllamaModelDetails = {
 	quantization_level: string;
 };
 
-type Settings = {
+export type Settings = {
 	models?: string[];
 	conversationMode?: boolean;
 	speechAutoSend?: boolean;
@@ -161,7 +161,7 @@ type ModelOptions = {
 	stop?: boolean;
 };
 
-type AudioSettings = {
+export type AudioSettings = {
 	STTEngine?: string;
 	TTSEngine?: string;
 	speaker?: string;
@@ -169,14 +169,14 @@ type AudioSettings = {
 	nonLocalVoices?: boolean;
 };
 
-type TitleSettings = {
+export type TitleSettings = {
 	auto?: boolean;
 	model?: string;
 	modelExternal?: string;
 	prompt?: string;
 };
 
-type Prompt = {
+export type Prompt = {
 	command: string;
 	user_id: string;
 	title: string;
@@ -184,14 +184,14 @@ type Prompt = {
 	timestamp: number;
 };
 
-type Document = {
+export type Document = {
 	collection_name: string;
 	filename: string;
 	name: string;
 	title: string;
 };
 
-type Config = {
+export type Config = {
 	status: boolean;
 	name: string;
 	version: string;
@@ -219,12 +219,12 @@ type Config = {
 	};
 };
 
-type PromptSuggestion = {
+export type PromptSuggestion = {
 	content: string;
 	title: [string, string];
 };
 
-type SessionUser = {
+export type SessionUser = {
 	id: string;
 	email: string;
 	name: string;

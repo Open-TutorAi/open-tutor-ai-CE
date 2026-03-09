@@ -3,9 +3,11 @@ import { tick } from 'svelte';
 import { toast } from 'svelte-sonner';
 import { goto } from '$app/navigation';
 import type { i18n as i18nType } from 'i18next';
+import type { Socket } from 'socket.io-client';
 
 import { getChatById, getChatList, updateChatById } from '$lib/apis/chats';
 import { copyToClipboard, createMessagesList } from '$lib/utils';
+import type { Config, Settings, Model } from '$lib/stores';
 
 import type { ChatHistory, ChatMessage } from './types';
 import { handleStreamingContent, dispatchFinalTTSEvent } from './socketHandler';
@@ -13,11 +15,11 @@ import { handleChatCompleted } from './promptSubmission';
 
 export interface EventHandlersOptions {
 	chatId: Writable<string>;
-	chats: Writable<any[]>;
-	config: Writable<any>;
-	settings: Writable<any>;
-	socket: Writable<any>;
-	models: Writable<any[]>;
+	chats: Writable<any[]>; // API response array - structure varies
+	config: Writable<Config | undefined>;
+	settings: Writable<Settings>;
+	socket: Writable<Socket | null>;
+	models: Writable<Model[]>;
 	currentChatPage: Writable<number>;
 	temporaryChatEnabled: Writable<boolean>;
 	showCallOverlay: Writable<boolean>;
@@ -28,8 +30,8 @@ export interface EventHandlersOptions {
 export interface EventHandlersState {
 	history: ChatHistory;
 	selectedModels: string[];
-	params: any;
-	chatFiles: any[];
+	params: Record<string, any>; // URL parameters
+	chatFiles: any[]; // File metadata from chat history
 	autoScroll: boolean;
 	avatarActive: boolean;
 }

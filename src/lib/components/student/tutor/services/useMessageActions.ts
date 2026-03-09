@@ -3,6 +3,7 @@ import { get, type Writable } from 'svelte/store';
 import { tick } from 'svelte';
 import { toast } from 'svelte-sonner';
 import type { i18n as i18nType } from 'i18next';
+import type { Model } from '$lib/stores';
 
 import { stopTask } from '$lib/apis';
 
@@ -10,7 +11,7 @@ import type { ChatHistory, ChatMessage } from './types';
 
 export interface MessageActionsOptions {
 	chatId: Writable<string>;
-	models: Writable<any[]>;
+	models: Writable<Model[]>;
 	i18n: Writable<i18nType>;
 }
 

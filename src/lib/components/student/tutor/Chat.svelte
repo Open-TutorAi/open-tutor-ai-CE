@@ -557,7 +557,11 @@
 			}
 		}
 
-		if (opts.newChat && _history.messages[_history.currentId!]?.parentId === null) {
+		if (
+			opts.newChat &&
+			_history.currentId &&
+			_history.messages[_history.currentId]?.parentId === null
+		) {
 			_chatId = await initChatHandler(_history);
 		}
 
@@ -581,6 +585,11 @@
 	}
 
 	async function sendPromptToModel(_history: ChatHistory, model: Model, responseId: string, _chatId: string) {
+		if (!model) {
+			console.error('sendPromptToModel called with null or undefined model');
+			return;
+		}
+
 		const responseMessage = _history.messages[responseId];
 		const userMessage = _history.messages[responseMessage.parentId!];
 
@@ -868,12 +877,48 @@
 			<Pane defaultSize={50} class="h-full flex w-full relative shadow-md">
 				{#if !history.currentId && !$chatId && selectedModels.length <= 1 && ($banners.length > 0 || $config?.license_metadata?.type === 'trial')}
 					<div class="absolute top-12 left-0 right-0 w-full z-30">
-						<div class="flex flex-col gap-1 w-full">
-							{#if $config?.license_metadata?.type === 'trial'}
-								<Banner banner={{ type: 'info', title: 'Trial License', content: $i18n.t('You are currently using a trial license.') }} />
+						<div class=" flex flex-col gap-1 w-full">
+							{#if ($config?.license_metadata?.type ?? null) === 'trial'}
+								<Banner
+									banner={{
+										type: 'info',
+										title: 'Trial License',
+										content: $i18n.t(
+											'You are currently using a trial license. Please contact support to upgrade your license.'
+										)
+									}}
+								/>
 							{/if}
-							{#each $banners.filter((b) => !b.dismissible || !JSON.parse(localStorage.getItem('dismissedBannerIds') ?? '[]').includes(b.id)) as banner}
-								<Banner {banner} on:dismiss={(e) => localStorage.setItem('dismissedBannerIds', JSON.stringify([e.detail, ...JSON.parse(localStorage.getItem('dismissedBannerIds') ?? '[]')]))} />
+
+							{#if ($config?.license_metadata?.seats ?? null) !== null && $config?.user_count > $config?.license_metadata?.seats}
+								<Banner
+									banner={{
+										type: 'error',
+										title: 'License Error',
+										content: $i18n.t(
+											'Exceeded the number of seats in your license. Please contact support to increase the number of seats.'
+										)
+									}}
+								/>
+							{/if}
+
+							{#each $banners.filter( (b) => (b.dismissible ? !JSON.parse(localStorage.getItem('dismissedBannerIds') ?? '[]').includes(b.id) : true) ) as banner}
+								<Banner
+									{banner}
+									on:dismiss={(e) => {
+										const bannerId = e.detail;
+
+										localStorage.setItem(
+											'dismissedBannerIds',
+											JSON.stringify(
+												[
+													bannerId,
+													...JSON.parse(localStorage.getItem('dismissedBannerIds') ?? '[]')
+												].filter((id) => $banners.find((b) => b.id === id))
+											)
+										);
+									}}
+								/>
 							{/each}
 						</div>
 					</div>

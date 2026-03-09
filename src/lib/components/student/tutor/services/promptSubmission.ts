@@ -412,6 +412,9 @@ export async function initializeChat(
 				if (supportId) {
 					try {
 						const token = localStorage.getItem('token');
+						if (!token) {
+							throw new Error('Authentication token not found');
+						}
 						const supportDetails = await getSupportById(token, supportId);
 						if (supportDetails?.title) {
 							supportTitle = supportDetails.title;
@@ -419,11 +422,15 @@ export async function initializeChat(
 						}
 					} catch (titleError) {
 						console.error('Error getting support title:', titleError);
+						// Clear invalid pending support data to prevent retry loops
+						localStorage.removeItem('pendingSupportData');
 					}
 				}
 			}
 		} catch (error) {
 			console.error('Error parsing pendingSupportData:', error);
+			// Clear invalid data to prevent re-parsing errors
+			localStorage.removeItem('pendingSupportData');
 		}
 
 		const chat = await createNewChat(localStorage.token, {

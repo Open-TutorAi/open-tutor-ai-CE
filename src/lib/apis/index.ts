@@ -1230,6 +1230,7 @@ export interface ModelMeta {
 	description?: string;
 	capabilities?: object;
 	profile_image_url?: string;
+	toolIds?: string[];
 }
 
 export interface ModelParams {}

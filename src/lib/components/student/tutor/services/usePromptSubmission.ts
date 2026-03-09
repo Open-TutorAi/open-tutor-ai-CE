@@ -3,11 +3,13 @@ import { get, type Writable } from 'svelte/store';
 import { tick } from 'svelte';
 import { toast } from 'svelte-sonner';
 import type { i18n as i18nType } from 'i18next';
+import type { Socket } from 'socket.io-client';
 
 import { TUTOR_BASE_URL } from '$lib/constants';
 import { generateOpenAIChatCompletion } from '$lib/apis/openai';
 import { getChatList, updateChatById } from '$lib/apis/chats';
 import { getSupportById } from '$lib/apis/supports';
+import type { Config, SessionUser, Settings, Model } from '$lib/stores';
 
 import type { ChatHistory, ChatMessage, FileUploadItem } from './types';
 import {
@@ -25,12 +27,12 @@ import { mergeFiles } from './fileUpload';
 
 export interface PromptSubmissionOptions {
 	chatId: Writable<string>;
-	chats: Writable<any[]>;
-	config: Writable<any>;
-	settings: Writable<any>;
-	user: Writable<any>;
-	socket: Writable<any>;
-	models: Writable<any[]>;
+	chats: Writable<any[]>; // API response array - structure varies
+	config: Writable<Config | undefined>;
+	settings: Writable<Settings>;
+	user: Writable<SessionUser | undefined>;
+	socket: Writable<Socket | null>;
+	models: Writable<Model[]>;
 	currentChatPage: Writable<number>;
 	temporaryChatEnabled: Writable<boolean>;
 	i18n: Writable<i18nType>;
@@ -39,9 +41,9 @@ export interface PromptSubmissionOptions {
 export interface PromptSubmissionState {
 	history: ChatHistory;
 	selectedModels: string[];
-	atSelectedModel: any | undefined;
-	params: any;
-	chatFiles: any[];
+	atSelectedModel: Model | undefined;
+	params: Record<string, any>; // URL parameters
+	chatFiles: any[]; // File metadata from chat history
 	files: FileUploadItem[];
 	prompt: string;
 	selectedToolIds: string[];
@@ -113,8 +115,9 @@ export function createPromptSubmission(
 		const chatFiles = mergeFiles(state.chatFiles, _files);
 		setState({ chatFiles, files: [] });
 
-		// Create user message
-		const userMessage = createUserMessage(userPrompt, messages.at(-1)?.id ?? null, _files, state.selectedModels);
+		// Create user message with explicit parent ID from last message
+		const parentId = messages.length > 0 ? messages.at(-1)?.id ?? null : null;
+		const userMessage = createUserMessage(userPrompt, parentId, _files, state.selectedModels);
 		let history = addMessageToHistory(state.history, userMessage, userMessage.parentId);
 		setState({ history });
 

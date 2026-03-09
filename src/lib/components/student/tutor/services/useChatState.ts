@@ -13,14 +13,14 @@ import { createEmptyHistory, cloneHistory, processPendingSupportData } from './i
 export interface ChatState {
 	// Core state
 	history: Writable<ChatHistory>;
-	chat: Writable<any>;
-	tags: Writable<any[]>;
+	chat: Writable<any>; // Chat object from API
+	tags: Writable<any[]>; // Tag objects from API
 	
 	// Input state
 	prompt: Writable<string>;
 	files: Writable<FileUploadItem[]>;
 	chatFiles: Writable<ChatFile[]>;
-	params: Writable<any>;
+	params: Writable<Record<string, any>>; // URL parameters
 	
 	// UI state
 	loading: Writable<boolean>;
