@@ -1,0 +1,80 @@
+cd ~/open-tutor-ai-CE(base) ouissal@ouissal-HP-EliteBook-840-G5:~$ cd ~/open-tutor-ai-CE
+(base) ouissal@ouissal-HP-EliteBook-840-G5:~/open-tutor-ai-CE$ npm run dev
+
+> open-tutorai@0.5.16 dev
+> npm run pyodide:fetch && vite dev --host
+
+
+> open-tutorai@0.5.16 pyodide:fetch
+> node scripts/prepare-pyodide.js
+
+Setting up pyodide + micropip
+Loading micropip package
+Loading micropip, packaging
+Loaded micropip, packaging
+Downloading Pyodide packages: [
+  'micropip',   'packaging',
+  'requests',   'beautifulsoup4',
+  'numpy',      'pandas',
+  'matplotlib', 'scikit-learn',
+  'scipy',      'regex',
+  'sympy',      'tiktoken',
+  'seaborn',    'pytz'
+]
+Installing package: micropip
+Installing package: packaging
+Installing package: requests
+Loading certifi, charset-normalizer, idna, requests, urllib3
+Loaded certifi, charset-normalizer, idna, requests, urllib3
+Installing package: beautifulsoup4
+Loading beautifulsoup4, soupsieve
+Loaded beautifulsoup4, soupsieve
+Installing package: numpy
+Loading numpy
+Loaded numpy
+Installing package: pandas
+numpy already loaded from default channel
+Loading pandas, python-dateutil, pytz, six
+Loaded pandas, python-dateutil, pytz, six
+Installing package: matplotlib
+numpy already loaded from default channel
+six already loaded from default channel
+packaging already loaded from default channel
+python-dateutil already loaded from default channel
+pytz already loaded from default channel
+Loading Pillow, contourpy, cycler, fonttools, kiwisolver, matplotlib, matplotlib-pyodide, pyparsing
+Loaded Pillow, contourpy, cycler, fonttools, kiwisolver, matplotlib, matplotlib-pyodide, pyparsing
+Installing package: scikit-learn
+numpy already loaded from default channel
+Loading joblib, openblas, scikit-learn, scipy, threadpoolctl
+Loaded joblib, openblas, scikit-learn, scipy, threadpoolctl
+Installing package: scipy
+Installing package: regex
+Loading regex
+Loaded regex
+Installing package: sympy
+Loading mpmath, sympy
+Loaded mpmath, sympy
+Installing package: tiktoken
+regex already loaded from default channel
+requests already loaded from default channel
+Loading tiktoken
+Loaded tiktoken
+Installing package: seaborn
+Installing package: pytz
+Pyodide packages downloaded, freezing into lock file
+Copying Pyodide files into static directory
+12:35:51 AM [vite-plugin-svelte] WARNING: The following packages have a svelte field in their package.json but no exports condition for svelte.
+
+@sveltejs/svelte-virtual-list@3.0.1
+
+Please see https://github.com/sveltejs/vite-plugin-svelte/blob/main/docs/faq.md#missing-exports-condition for details.
+
+  VITE v5.4.14  ready in 4401 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: http://192.168.11.121:5173/
+  ➜  press h + enter to show help
+[vite-plugin-static-copy] Collected 2 items.
+
+
