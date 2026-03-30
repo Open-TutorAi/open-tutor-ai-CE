@@ -2,14 +2,21 @@ import json
 import logging
 import os
 import requests
+from datetime import datetime
 from typing import List, Union, Generator, Iterator, Dict, Any
+
+from engagement_adapter import (
+    compute_engagement_score,
+    build_adaptive_instruction,
+    build_engagement_record,
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("avatar_backend")
 
 # API Keys
-GEMINI_API_KEY = "AIzaSyAsTdSsCLN15SswJuzrlJWUHSnd10zw0fU"
+GEMINI_API_KEY = ""
 
 # Avatar personalities
 AVATAR_PERSONALITIES = {
@@ -40,6 +47,11 @@ AVATAR_GENDER = {
 # Animation prefixes by gender
 ANIMATION_PREFIX = {"male": "M_", "female": "F_"}
 
+# Dataset path — always writes next to this file's parent directory
+DATASET_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "..", "engagement_dataset.jsonl"
+)
+
 
 class Pipeline:
     def __init__(self):
@@ -49,12 +61,10 @@ class Pipeline:
         logger.info("Avatar Backend Pipeline initialized")
 
     async def on_startup(self):
-        # This function is called when the server is started
         print(f"on_startup:{__name__}")
         logger.info(f"Avatar Backend Pipeline started: {__name__}")
 
     async def on_shutdown(self):
-        # This function is called when the server is stopped
         print(f"on_shutdown:{__name__}")
         logger.info(f"Avatar Backend Pipeline shutdown: {__name__}")
 
@@ -64,17 +74,13 @@ class Pipeline:
             return messages
         elif isinstance(messages, dict):
             if "messages" in messages:
-                # Format from Open TutorAI: {"messages": [{"role": "user", "content": "..."}]}
                 if messages["messages"] and len(messages["messages"]) > 0:
-                    # Get the last user message
                     for msg in reversed(messages["messages"]):
                         if msg.get("role") == "user" and "content" in msg:
                             return msg["content"]
             elif "content" in messages:
-                # Simple format: {"content": "..."}
                 return messages["content"]
         elif isinstance(messages, list) and len(messages) > 0:
-            # List of messages, find the last user message
             for msg in reversed(messages):
                 if (
                     isinstance(msg, dict)
@@ -83,28 +89,23 @@ class Pipeline:
                 ):
                     return msg["content"]
 
-        # If we can't extract a specific input, return the original input as string
         return str(messages)
 
     def _extract_avatar_type(self, messages, body=None):
-        """Extract avatar type from messages or body"""
+        """Extract avatar type from messages or body."""
         avatar_type = "default"
 
-        # Try to extract from body first if provided
         if body and isinstance(body, dict):
             avatar_type = body.get("avatar_type", "default").lower()
 
-        # If not found in body, try to extract from messages
         if avatar_type == "default" and isinstance(messages, dict):
             avatar_type = messages.get("avatar_type", "default").lower()
 
-            # If not directly in messages, check within messages array
             if (
                 avatar_type == "default"
                 and "messages" in messages
                 and messages["messages"]
             ):
-                # Check metadata in last message
                 for msg in reversed(messages["messages"]):
                     if isinstance(msg, dict) and "metadata" in msg:
                         avatar_type = (
@@ -114,18 +115,17 @@ class Pipeline:
                         )
                         break
 
-        # Ensure it's a valid avatar type
         if avatar_type not in AVATAR_PERSONALITIES:
             avatar_type = "default"
 
         return avatar_type
 
     def _get_avatar_gender(self, avatar_type):
-        """Get the gender for the avatar type"""
+        """Get the gender for the avatar type."""
         return AVATAR_GENDER.get(avatar_type, "male")
 
     def _get_animation_instructions(self, avatar_type):
-        """Get the appropriate animation instructions based on avatar type and gender"""
+        """Get the appropriate animation instructions based on avatar type and gender."""
         gender = self._get_avatar_gender(avatar_type)
         prefix = ANIMATION_PREFIX.get(gender, "M_")
         gender_name = "Male" if gender == "male" else "Female"
@@ -308,21 +308,15 @@ The user's question is: """
 
             headers = {"Content-Type": "application/json"}
 
-            # Get the personality instruction for the specified avatar type
             personality_instruction = AVATAR_PERSONALITIES.get(
                 avatar_type, AVATAR_PERSONALITIES["default"]
             )
 
-            # Get avatar gender
             gender = self._get_avatar_gender(avatar_type)
             logger.info(f"Using gender: {gender} for avatar type: {avatar_type}")
 
-            # Get animation instructions based on gender
             animation_instructions = self._get_animation_instructions(avatar_type)
-
-            # Prepend avatar animation instructions to the prompt
             avatar_instructions = personality_instruction + animation_instructions
-
             full_prompt = avatar_instructions + prompt
 
             data = {"contents": [{"parts": [{"text": full_prompt}]}]}
@@ -336,7 +330,6 @@ The user's question is: """
             result = response.json()
             logger.info("Gemini API call successful")
 
-            # Extract the response text from the Gemini API response
             if "candidates" in result and len(result["candidates"]) > 0:
                 candidate = result["candidates"][0]
                 if "content" in candidate and "parts" in candidate["content"]:
@@ -344,29 +337,19 @@ The user's question is: """
                     text = "".join(part.get("text", "") for part in parts)
                     return text
 
-            # If we couldn't extract the text, return an error message
             logger.error(f"Unexpected response format from Gemini API: {result}")
             return "Error: Unexpected response format from Gemini API"
 
         except requests.exceptions.RequestException as e:
-            error_msg = f"Error calling Gemini API: {str(e)}"
-            logger.error(error_msg)
+            logger.error(f"Error calling Gemini API: {str(e)}")
             return f"Error: {str(e)}"
 
     def pipe(
         self, user_message: str, model_id: str, messages: List[dict], body: dict
     ) -> Union[str, Generator, Iterator]:
         """
-        Process input, send to Gemini API, and return only the raw text response.
-
-        Args:
-            user_message: The user's message
-            model_id: The model identifier
-            messages: List of conversation messages
-            body: The full request body
-
-        Returns:
-            The raw text response from Gemini API
+        Process input, compute engagement, send to Gemini API,
+        log dataset, and return the raw text response.
         """
         print(f"pipe:{__name__}")
         logger.info(f"Received input: {user_message}")
@@ -375,14 +358,30 @@ The user's question is: """
             print("Title Generation")
             return "Avatar Backend Pipeline"
 
-        # Determine which avatar type is being used
         avatar_type = self._extract_avatar_type({"messages": messages}, body)
         logger.info(f"Using avatar type: {avatar_type}")
 
-        # Call Gemini API to get text response with the appropriate avatar personality
-        text_response = self._call_gemini_api(user_message, avatar_type)
+        # ── ENGAGEMENT ────────────────────────────────────────────────────────
+        score, level = compute_engagement_score(user_message)
+        # Phase 2+ : compute_engagement_score(user_message, video_score=..., audio_score=...)
 
-        # Return just the raw text response
+        record = build_engagement_record(user_message, score, level)
+        try:
+            with open(DATASET_PATH, "a", encoding="utf-8") as f:
+                f.write(json.dumps(record) + "\n")
+            print(f"[Engagement] ✅ {level} ({score})")
+        except OSError as e:
+            print(f"[Engagement] ❌ Could not write dataset — {e}")
+        # ── END ENGAGEMENT ────────────────────────────────────────────────────
+
+        adaptation = build_adaptive_instruction(level)
+        modified_prompt = f"""Engagement level: {level}
+Engagement score: {score}
+Instruction: {adaptation}
+
+User message: {user_message}"""
+
+        text_response = self._call_gemini_api(modified_prompt, avatar_type)
         return text_response
 
     def run(
@@ -391,27 +390,16 @@ The user's question is: """
         stream: bool = False,
     ) -> Union[str, Iterator[str]]:
         """
-        Process user messages by sending to Gemini API and returning only the raw text response.
-
-        Args:
-            messages: The message(s) to process
-            stream: Whether to stream the response (ignored, always returns complete response)
-
-        Returns:
-            The raw text response from Gemini API
+        Process user messages by sending to Gemini API
+        and returning only the raw text response.
         """
         logger.info(f"Received input: {messages}")
 
-        # Extract the text from the input
         input_text = self._extract_input_text(messages)
         logger.info(f"Extracted input text: {input_text}")
 
-        # Determine which avatar type is being used
         avatar_type = self._extract_avatar_type(messages)
         logger.info(f"Using avatar type: {avatar_type}")
 
-        # Get response from Gemini API with the appropriate avatar personality
         output_text = self._call_gemini_api(input_text, avatar_type)
-
-        # Return just the raw text
         return output_text

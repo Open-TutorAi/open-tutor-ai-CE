@@ -9,6 +9,9 @@ from open_webui.models.users import Users
 from open_tutorai.config import AppConfig
 from open_tutorai.models.database import init_database
 
+from open_tutorai.routers.engagement import EngagementMiddleware
+from open_tutorai.routers.webcam_engine import start as start_webcam
+from open_tutorai.routers import video_router
 from open_tutorai.routers import (
     response_feedbacks,
     auths,
@@ -51,6 +54,7 @@ allow_origin_regex = None
 if "*" in origins:
     origins = []
     allow_origin_regex = ".*"
+# # app.add_middleware(EngagementMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -69,6 +73,7 @@ async def startup_db_client():
     try:
         init_database()
         print("Support database tables initialized successfully")
+        start_webcam()
     except Exception as e:
         print(f"Error initializing database tables: {str(e)}")
 
@@ -82,6 +87,7 @@ async def health_check():
 # Include routers of open_tutorai
 app.include_router(response_feedbacks.router, prefix="/api/v1", tags=["response-feedbacks"])
 app.include_router(auths.router, prefix="/auths", tags=["auths"])
+app.include_router(video_router.router, tags=["engagement-video"])
 app.include_router(supports.router, prefix="/api/v1", tags=["supports"])
 
 @app.get("/api/changelog")
@@ -90,3 +96,4 @@ async def get_app_changelog():
 
 # Mount the entire OpenWebUI app
 app.mount("/", webui_app)
+start_webcam()

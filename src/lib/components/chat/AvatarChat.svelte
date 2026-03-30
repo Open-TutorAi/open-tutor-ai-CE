@@ -6,7 +6,7 @@
 	import Spinner from '$lib/components/common/Spinner.svelte';
 	import { settings } from '$lib/stores';
 	import ClassroomBackground from '$lib/components/classroom/ClassroomBackground.svelte';
-
+	import WebcamPreview from '$lib/components/chat/WebcamPreview.svelte';
 	// Props
 	export let history = {}; // Chat history
 	export let currentMessage = ''; // Current message to speak
@@ -209,6 +209,7 @@
 		if (visemeTimer) {
 			clearTimeout(visemeTimer);
 		}
+
 	});
 
 	async function initThreeJs() {
@@ -2735,6 +2736,8 @@
 			boardMessage={currentMessage}
 		/>
 	{/if}
+
+	<WebcamPreview />
 </div>
 
 <style>
