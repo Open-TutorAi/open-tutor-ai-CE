@@ -139,7 +139,7 @@
 	// Make avatarActive reactive to settings changes
 	// This ensures avatarActive updates whenever settings.avatarEnabled changes
 	$: avatarActive =
-		($settings as any)?.avatarEnabled !== undefined ? ($settings as any).avatarEnabled : true;
+		($settings as any)?.avatarEnabled !== undefined ? ($settings as any).avatarEnabled : false;
 	let avatarSpeaking = false;
 	let currentAvatarMessage = '';
 
