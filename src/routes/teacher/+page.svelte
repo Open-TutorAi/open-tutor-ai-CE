@@ -1,9 +1,10 @@
 <!-- Teacher Home Page -->
 <script lang="ts">
 	import { onMount, getContext } from 'svelte';
+	import i18nStore from '$lib/i18n';
 	import { goto } from '$app/navigation';
 
-	const i18n = getContext('i18n');
+	const i18n = /** @type {import('svelte/store').Readable<any>} */ (getContext('i18n') ?? i18nStore);
 
 	onMount(() => {
 		goto('/teacher/dashboard');

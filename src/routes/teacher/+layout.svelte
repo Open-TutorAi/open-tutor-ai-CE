@@ -1,17 +1,18 @@
 <!-- Teacher Layout -->
 <script lang="ts">
 	import { onMount, getContext, setContext } from 'svelte';
+	import i18nStore from '$lib/i18n';
 	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
+    
 	import { get, writable, derived } from 'svelte/store';
 
 	import Sidebar from '$lib/components/teacher/elements/Sidebar.svelte';
 	import Navbar from '$lib/components/teacher/elements/Navbar.svelte';
 
-	import { getModels, getVersionUpdates } from '$lib/apis';
+	import { getModels } from '$lib/apis';
 	import { config, user, settings, models, theme } from '$lib/stores';
 
-	const i18n = getContext('i18n');
+	const i18n = /** @type {import('svelte/store').Readable<any>} */ (getContext('i18n') ?? i18nStore);
 	setContext('i18n', i18n);
 
 	const activePage = writable('dashboard');

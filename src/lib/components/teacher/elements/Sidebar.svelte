@@ -4,14 +4,15 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount, getContext } from 'svelte';
+	import i18nStore from '$lib/i18n';
 	import Settings from '$lib/components/icons/Settings.svelte';
 	import Dashboard from '$lib/components/icons/Dashboard.svelte';
 	import Classroom from '$lib/components/icons/Classroom.svelte';
 	import Assignment from '$lib/components/icons/Assignment.svelte';
 	import Message from '$lib/components/icons/Messages.svelte';
 	import type { ComponentType } from 'svelte';
-	import { writable, type Writable } from 'svelte/store';
-	const i18n = getContext('i18n');
+	import type { Writable } from 'svelte/store';
+	const i18n = /** @type {import('svelte/store').Readable<any>} */ (getContext('i18n') ?? i18nStore);
 
 	// Use a simple boolean for sidebar state instead of a store
 	export let isSidebarOpen = true;
@@ -266,9 +267,19 @@
 
 	<!-- Overlay to close sidebar when clicked (mobile only) -->
 	{#if isSidebarOpen && isMobile}
-		<div
-		class="fixed inset-0 bg-white/30 backdrop-blur-sm z-20 md:hidden"
-		on:click={toggleSidebar}
-		></div>
+		<button
+			type="button"
+			class="fixed inset-0 bg-white/30 backdrop-blur-sm z-20 md:hidden"
+			on:click={toggleSidebar}
+			on:keydown={(e) => {
+				if (e.key === 'Enter' || e.key === ' ') {
+					toggleSidebar();
+				}
+				if (e.key === 'Escape') {
+					isSidebarOpen = false;
+				}
+			}}
+			aria-label="Close sidebar"
+		></button>
 	{/if}
 </div>

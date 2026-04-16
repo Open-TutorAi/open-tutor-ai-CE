@@ -1,6 +1,7 @@
 <!-- Navbar.svelte -->
 <script lang="ts">
 	import { createEventDispatcher, onMount, getContext } from 'svelte';
+	/** @type {any} */
 	const i18n = getContext('i18n');
 	import { goto } from '$app/navigation';
 	import { user } from '$lib/stores';
