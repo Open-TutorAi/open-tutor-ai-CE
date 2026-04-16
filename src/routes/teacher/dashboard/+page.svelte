@@ -1,5 +1,9 @@
 <!-- Teacher Dashboard Page -->
 <script lang="ts">
+	import { getContext } from 'svelte';
+
+	const i18n = getContext('i18n');
+
 	// TODO: Implement dashboard content
 	// Include Assistant IA / Insight IA element
 </script>

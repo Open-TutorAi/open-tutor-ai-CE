@@ -1,6 +1,6 @@
 <!-- Teacher Layout -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, getContext, setContext } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { get, writable, derived } from 'svelte/store';
@@ -10,6 +10,9 @@
 
 	import { getModels, getVersionUpdates } from '$lib/apis';
 	import { config, user, settings, models, theme } from '$lib/stores';
+
+	const i18n = getContext('i18n');
+	setContext('i18n', i18n);
 
 	const activePage = writable('dashboard');
 	let isSidebarOpen = true;

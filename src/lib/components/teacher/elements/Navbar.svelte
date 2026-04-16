@@ -122,28 +122,6 @@
 
 	<!-- Desktop Navigation Menu -->
 	<div class="hidden md:flex items-center gap-4">
-		<!-- Create New Course Button -->
-		<button
-			on:click={createNewCourse}
-			class={`flex items-center gap-2 px-4 py-2 ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} text-white rounded-lg font-medium transition-colors duration-200`}
-		>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				class="h-4 w-4"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke="currentColor"
-			>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M12 4v16m8-8H4"
-				/>
-			</svg>
-			<span>{$i18n.t('Créer un nouveau cours')}</span>
-		</button>
-
 		<!-- Search -->
 		<div class={`relative ${isSearchFocused ? 'md:w-64 transition-all duration-300' : 'md:w-40'}`}>
 			<div

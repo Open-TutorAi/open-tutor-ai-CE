@@ -1,7 +1,9 @@
 <!-- Teacher Home Page -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, getContext } from 'svelte';
 	import { goto } from '$app/navigation';
+
+	const i18n = getContext('i18n');
 
 	onMount(() => {
 		goto('/teacher/dashboard');
