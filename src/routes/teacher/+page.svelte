@@ -1,20 +1,35 @@
-<!-- Teacher Home Page -->
-<script lang="ts">
-	import { onMount, getContext } from 'svelte';
-	import i18nStore from '$lib/i18n';
+<script>
 	import { goto } from '$app/navigation';
+	import { user } from '$lib/stores';
+    import { onMount, getContext } from 'svelte';
 
-	const i18n = /** @type {import('svelte/store').Readable<any>} */ (getContext('i18n') ?? i18nStore);
 
-	onMount(() => {
-		goto('/teacher/dashboard');
-	});
+	let loading = true;
+	let error = null;
+    const i18n = getContext('i18n');
+
+    onMount(async () => {
+    try {
+        loading = true;
+        if (!$user) {
+        console.log("No user found, redirecting to auth page");
+        await goto('/auth');
+        return;
+        }      
+      // Allow access to teachers
+        if ($user.role !== 'teacher') {
+        console.log("User is not a teacher, redirecting to home");
+        await goto(`/${$user.role}`);
+        return;
+        }else{
+        await goto(`/teacher/dashboard`);
+        }
+      // User has the correct role, continue loading the page
+        loading = false;
+    } catch (err) {
+        console.error("Error in teacher page:", err);
+        error = err.message || "An error occurred";
+        loading = false;
+    }
+    });
 </script>
-
-<div class="flex items-center justify-center h-full">
-	<div class="text-center">
-		<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-		<p class="text-gray-600 dark:text-gray-400">Redirection vers le dashboard...</p>
-	</div>
-</div>
-
