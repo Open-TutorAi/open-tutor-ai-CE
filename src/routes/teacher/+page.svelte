@@ -1,35 +1,38 @@
 <script>
 	import { goto } from '$app/navigation';
 	import { user } from '$lib/stores';
-    import { onMount, getContext } from 'svelte';
+  import { onMount, getContext } from 'svelte';
 
 
 	let loading = true;
 	let error = null;
-    const i18n = getContext('i18n');
+  const i18n = getContext('i18n');
 
-    onMount(async () => {
+  onMount(async () => {
     try {
-        loading = true;
-        if (!$user) {
+      loading = true;
+      
+      if (!$user) {
         console.log("No user found, redirecting to auth page");
         await goto('/auth');
         return;
-        }      
-      // Allow access to teachers
-        if ($user.role !== 'teacher') {
+      }
+
+      console.log("Current user role:", $user.role);
+      
+      if ($user.role !== 'teacher') {
         console.log("User is not a teacher, redirecting to home");
         await goto(`/${$user.role}`);
         return;
-        }else{
+      }else{
         await goto(`/teacher/dashboard`);
-        }
-      // User has the correct role, continue loading the page
-        loading = false;
+      }
+      
+      loading = false;
     } catch (err) {
-        console.error("Error in teacher page:", err);
-        error = err.message || "An error occurred";
-        loading = false;
+      console.error("Error in student page:", err);
+      error = err.message || "An error occurred";
+      loading = false;
     }
-    });
+  });
 </script>

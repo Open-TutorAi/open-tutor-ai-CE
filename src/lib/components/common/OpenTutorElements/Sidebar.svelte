@@ -4,15 +4,14 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount, getContext } from 'svelte';
-	import i18nStore from '$lib/i18n';
 	import Settings from '$lib/components/icons/Settings.svelte';
 	import Dashboard from '$lib/components/icons/Dashboard.svelte';
 	import Classroom from '$lib/components/icons/Classroom.svelte';
 	import Assignment from '$lib/components/icons/Assignment.svelte';
 	import Message from '$lib/components/icons/Messages.svelte';
 	import type { ComponentType } from 'svelte';
-	import type { Writable } from 'svelte/store';
-	const i18n = /** @type {import('svelte/store').Readable<any>} */ (getContext('i18n') ?? i18nStore);
+	import { writable, type Writable } from 'svelte/store';
+	const i18n = getContext('i18n');
 
 	// Use a simple boolean for sidebar state instead of a store
 	export let isSidebarOpen = true;
@@ -52,7 +51,18 @@
 		// Set active page based on URL path when component mounts
 		const pathSegments = $page.url.pathname.split('/');
 		if (pathSegments.length >= 3) {
-			let pageFromUrl = pathSegments[2]; // teacher/dashboard -> "dashboard"
+			let pageFromUrl = pathSegments[2]; // student/dashboard -> "dashboard"
+
+			// Map chat routes to support
+			if (pageFromUrl === 'chat' || pageFromUrl === 'c') {
+				pageFromUrl = 'support';
+			}
+			
+			// Mark support nav item as active for support pages
+			// Format: /student/support/ID, /student/support/ID/edit, /student/support/create
+			if (pageFromUrl === 'support') {
+				pageFromUrl = 'supports';
+			}
 
 			// Update the activePage store if it's a store
 			if (typeof activePage === 'object' && 'subscribe' in activePage) {
@@ -72,6 +82,17 @@
 		const pathSegments = $page.url.pathname.split('/');
 		if (pathSegments.length >= 3) {
 			let pageFromUrl = pathSegments[2];
+			
+			// Map chat routes to support
+			if (pageFromUrl === 'chat' || pageFromUrl === 'c') {
+				pageFromUrl = 'support';
+			}
+			
+			// Mark support nav item as active for support pages
+			// Format: /student/support/ID, /student/support/ID/edit, /student/support/create
+			if (pageFromUrl === 'support') {
+				pageFromUrl = 'supports';
+			}
 
 			// Only update if it has changed to avoid loops
 			if (currentActivePage !== pageFromUrl) {
@@ -93,7 +114,7 @@
 	}
 
 	// Determine current role from the URL path
-	$: currentRole = $page.url.pathname.split('/')[1] || 'teacher';
+	$: currentRole = $page.url.pathname.split('/')[1] || 'student';
 
 	function toggleSidebar() {
 		isSidebarOpen = !isSidebarOpen;
@@ -129,15 +150,22 @@
 
 	// Navigation items organized by role
 	const navItems: NavItems = {
-		teacher: [
-			{ id: 'dashboard', label: 'Dashboard', icon: Dashboard },
-			{ id: 'courses', label: 'Mes Cours', icon: Classroom },
-			{ id: 'assignments', label: 'Devoirs & Quiz', icon: Assignment },
-			{ id: 'reports', label: 'Suivi & Rapports', icon: Dashboard },
-			{ id: 'discussions', label: 'Discussions', icon: Message },
-			{ id: 'settings', label: 'Paramètres', icon: Settings }
+		student: [
+			{ id: 'dashboard', 		label: 'Dashboard', 			icon: Dashboard },
+			{ id: 'classrooms', 	label: 'My Classrooms', 		icon: Classroom },
+			{ id: 'supports', 		label: 'Support', 				icon: Classroom },
+			{ id: 'assignments', 	label: 'Assignments', 			icon: Assignment },
+			{ id: 'messages', 		label: 'Messages', 				icon: Message },
+			{ id: 'settings', 		label: 'Profile & Settings', 	icon: Settings }
 		],
-		student: [],
+		teacher: [
+			{ id:'dashboard',   label:'Dashboard',			icon: Dashboard },
+			{ id:'courses',     label:'Courses',      		icon: Classroom },
+			{ id:'assignments', label:'Assignments',        icon: Assignment },
+			{ id:'reports',     label:'Reports', 			icon: Classroom},
+			{ id:'messages',    label:'Messages',           icon: Message },
+			{ id:'settings',    label:'Profile & Settings', icon: Settings }
+		],
 		parent: []
 	};
 </script>
@@ -169,7 +197,7 @@
 				{/if}
 			</svg>
 		</button>
-
+		
 		<slot />
 	</div>
 
@@ -197,7 +225,7 @@
 				<div
 					class={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} uppercase font-semibold mb-1`}
 				>
-					{$i18n.t('Teacher Portal')}
+					{$i18n.t(currentRole.charAt(0).toUpperCase() + currentRole.slice(1)) + ' Portal'}
 				</div>
 			{/if}
 		</div>
@@ -267,19 +295,9 @@
 
 	<!-- Overlay to close sidebar when clicked (mobile only) -->
 	{#if isSidebarOpen && isMobile}
-		<button
-			type="button"
-			class="fixed inset-0 bg-white/30 backdrop-blur-sm z-20 md:hidden"
-			on:click={toggleSidebar}
-			on:keydown={(e) => {
-				if (e.key === 'Enter' || e.key === ' ') {
-					toggleSidebar();
-				}
-				if (e.key === 'Escape') {
-					isSidebarOpen = false;
-				}
-			}}
-			aria-label="Close sidebar"
-		></button>
+		<div
+		class="fixed inset-0 bg-white/30 backdrop-blur-sm z-20 md:hidden"
+		on:click={toggleSidebar}
+		></div>
 	{/if}
 </div>

@@ -3,16 +3,27 @@
 	import { createEventDispatcher, onMount, getContext } from 'svelte';
 	const i18n = getContext('i18n');
 	import { goto } from '$app/navigation';
-	import { user, isDemo, demoData, originalUserData } from '$lib/stores';
-	import { generateDemoData } from '$lib/utils/mockData';
-	import { toast } from 'svelte-sonner';
-	import { generateInitialsImage } from '$lib/utils';
-	import { get } from 'svelte/store';
+	import { user } from '$lib/stores';
 
 	// Props
-	export let username: string = '';
+	export let username: string = 'Karim';
 	export let toggleSidebar: () => void;
 	export let isDarkMode: boolean = false;
+	export let role: 'student' | 'teacher' = 'student';
+
+	// Computed greeting and tagline based on role
+	let greeting: string;
+	let tagline: string;
+
+	$: {
+		if (role === 'teacher') {
+			greeting = $i18n.t('Welcome back, ') + ' ' + username;
+			tagline  = $i18n.t('Ready to guide your classes today');
+		} else {
+			greeting = $i18n.t('Hello') + ' ' + username;
+			tagline  = $i18n.t("Let's learn something new today!");
+		}
+	}
 
 	// State
 	let searchQuery: string = '';
@@ -22,11 +33,6 @@
 	let showMobileMenu: boolean = false;
 
 	let showUserDropdown: boolean = false;
-
-	let profileImageUrl = '';
-
-	// reactive assignment to update when store changes
-	$: profileImageUrl = $user?.profile_image_url || generateInitialsImage($user?.name || 'Teacher');
 
 	// Add this function around line 43 with other toggle functions
 	function toggleUserDropdown() {
@@ -54,35 +60,6 @@
 
 	function toggleMobileMenu() {
 		showMobileMenu = !showMobileMenu;
-	}
-
-	function toggleDemoMode() {
-		if ($isDemo) {
-			// Exit demo mode
-			if ($originalUserData) {
-				user.set($originalUserData);
-				originalUserData.set(null);
-			}
-			demoData.set({
-				dashboard: null,
-				chats: [],
-				supports: [],
-				assignments: [],
-				courses: []
-			});
-			isDemo.set(false);
-			localStorage.removeItem('demoMode');
-			toast.success($i18n.t('Demo mode deactivated. Back to your Teacher data.'));
-		} else {
-			// Enter demo mode
-			originalUserData.set($user);
-			const mockData = generateDemoData();
-			demoData.set(mockData);
-			isDemo.set(true);
-			localStorage.setItem('demoMode', 'true');
-			toast.success($i18n.t('Demo mode activated. You\'re now exploring with sample data.'));
-		}
-		showUserDropdown = false;
 	}
 
 	// Click outside for notifications panel
@@ -114,8 +91,7 @@
 </script>
 
 <header
-	class={`${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'} shadow-sm p-4 flex items-center justify-between transition-colors duration-200 ease-in-out  z-[999]`}
->
+	class={`${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'} shadow-sm p-4 flex items-center justify-between transition-colors duration-200 ease-in-out z-[999]`}>
 	<div class="flex items-center">
 		<!-- Mobile menu button - visible on mobile only -->
 		<button
@@ -143,12 +119,10 @@
 			<h1
 				class={`text-xl font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'} flex items-center gap-2`}
 			>
-				<span class="hidden sm:inline">
-					{username ? $i18n.t('Hello Prof') + ' ' + username + ' 👋': $i18n.t('Hello')}
-				</span>
+				<span class="hidden sm:inline">{greeting}</span>
 			</h1>
 			<p class={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} hidden sm:block`}>
-				{$i18n.t("Let's learn something new today!")}
+				{tagline}
 			</p>
 		</div>
 	</div>
@@ -256,7 +230,7 @@
 							{$i18n.t('Mark all as read')}
 						</button>
 					</div>
-					<!-- <div class="p-2 max-h-64 overflow-y-auto">
+					<div class="p-2 max-h-64 overflow-y-auto">
 						<div class={`p-2 ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'} rounded-lg`}>
 							<p class={`text-sm font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
 								{$i18n.t('New course available')}
@@ -279,7 +253,7 @@
 								{$i18n.t('Yesterday')}
 							</p>
 						</div>
-					</div> -->
+					</div>
 					<div class={`p-2 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
 						<button
 							class={`w-full text-center text-sm ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-500 hover:text-blue-700'}`}
@@ -355,15 +329,16 @@
 		<div class="relative" id="user-dropdown-container">
 			<button
 				class={`h-8 w-8 overflow-hidden rounded-full ${isDarkMode ? 'bg-gray-700' : 'bg-green-100'} flex items-center justify-center ring-2 ring-transparent hover:ring-blue-300 focus:outline-none focus:ring-blue-300 transition-all duration-200`}
-				aria-label="Teacher profile"
+				aria-label="User profile"
 				aria-expanded={showUserDropdown}
 				on:click={toggleUserDropdown}
 			>
-				<img src={profileImageUrl} alt="Teacher" crossorigin="anonymous" class="h-full w-full object-cover" />
+				<img src="/static/student-avatar.png" alt="User" class="h-full w-full object-cover" />
 			</button>
 			{#if showUserDropdown}
 				<div
-					class={`absolute right-0 mt-2 w-48 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-lg shadow-lg transition-all duration-200 z-50 border`}
+				class={`absolute right-0 mt-2 w-48 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-lg shadow-lg transition-all duration-200 z-[100] border`}
+      			style="position: absolute; isolation: isolate;"
 				>
 					<div class={`p-3 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
 						<p class={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
@@ -375,7 +350,7 @@
 					</div>
 					<div class="py-1">
 						<a
-							href="/teacher/settings"
+							href="/student/settings"
 							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
@@ -395,7 +370,7 @@
 							{$i18n.t('My Profile')}
 						</a>
 						<a
-							href="/teacher/settings"
+							href="/student/settings"
 							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
@@ -435,38 +410,11 @@
 									stroke-linecap="round"
 									stroke-linejoin="round"
 									stroke-width="2"
-									d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+									d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
 								/>
 							</svg>
 							{$i18n.t('Learning Progress')}
 						</a>
-					</div>
-					<div class={`py-1 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-						<button
-							on:click={toggleDemoMode}
-							class={`flex w-full items-center justify-between px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
-						>
-							<div class="flex items-center">
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									class="h-4 w-4 mr-2"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke="currentColor"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-									/>
-								</svg>
-								<span>{$i18n.t('Demo Mode')}</span>
-							</div>
-							<div class={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${$isDemo ? 'bg-blue-600' : isDarkMode ? 'bg-gray-600' : 'bg-gray-300'}`}>
-								<span class={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${$isDemo ? 'translate-x-5' : 'translate-x-1'}`}></span>
-							</div>
-						</button>
 					</div>
 					<div class={`py-1 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
 						<button
@@ -576,13 +524,13 @@
 				on:click={toggleMobileMenu}
 				aria-label="User menu"
 			>
-				<img src={profileImageUrl} alt="Teacher" crossorigin="anonymous" class="h-full w-full object-cover" />
+				<img src="/static/student-avatar.png" alt="User" class="h-full w-full object-cover" />
 			</button>
 
 			<!-- Mobile menu (dropdown style instead of slide-in) -->
 			{#if showMobileMenu}
 				<div
-					class={`absolute right-0 mt-2 w-48 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-lg shadow-lg z-[200] border`}
+					class={`absolute right-0 mt-2 w-48 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-lg shadow-lg z-50 border`}
 				>
 					<div class={`p-3 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
 						<p class={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
@@ -594,7 +542,7 @@
 					</div>
 					<div class="py-1">
 						<a
-							href="/teacher/settings"
+							href="/student/settings"
 							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
@@ -659,33 +607,6 @@
 							</svg>
 							{$i18n.t('Help Center')}
 						</a>
-					</div>
-					<div class={`py-1 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
-						<button
-							on:click={toggleDemoMode}
-							class={`flex w-full items-center justify-between px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
-						>
-							<div class="flex items-center">
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									class="h-4 w-4 mr-2"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke="currentColor"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-									/>
-								</svg>
-								<span>{$i18n.t('Demo Mode')}</span>
-							</div>
-							<div class={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${$isDemo ? 'bg-blue-600' : isDarkMode ? 'bg-gray-600' : 'bg-gray-300'}`}>
-								<span class={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${$isDemo ? 'translate-x-5' : 'translate-x-1'}`}></span>
-							</div>
-						</button>
 					</div>
 					<div class={`py-1 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
 						<button
