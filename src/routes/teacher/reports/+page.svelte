@@ -1,6 +1,6 @@
-<!-- Suivi & Rapports Page -->
+<!-- reports/+page.svelte -->
 <script lang="ts">
-	import Chat from '$lib/components/teacher/pages/reports.svelte';
+	import Reports from '$lib/components/teacher/pages/Reports.svelte';
 </script>
 
-<Chat />
+<Reports/>
