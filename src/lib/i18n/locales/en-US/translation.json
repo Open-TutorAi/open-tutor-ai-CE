@@ -1508,7 +1508,6 @@
 	"Start Learning": "",
 	"I want to build a new skill": "",
 	"Support created successfully": "",
-<<<<<<< HEAD
 	"Demo Mode": "Demo Mode",
 	"Demo Mode Active - Exploring with sample data": "Demo Mode Active - Exploring with sample data",
 	"Exit Demo": "Exit Demo",
@@ -1530,8 +1529,7 @@
 	"Completed": "Completed",
 	"In progress": "In progress",
 	"Pending": "Pending",
-	"Overdue": "Overdue"
-=======
+	"Overdue": "Overdue",
 	"Informations Générales": "General Information",
 	"Titre de cours": "Course Title",
 	"Langue de cours": "Course Language",
@@ -1639,5 +1637,4 @@
 	"Mot de passe modifié": "Password Changed",
 	"Préférences enregistrées": "Preferences Saved",
 	"Personnalisez votre expérience": "Customize Your Experience"
->>>>>>> a9ae64c (feat: Teacher space - course creation, plan editor, settings, i18n, dark mode)
 }
