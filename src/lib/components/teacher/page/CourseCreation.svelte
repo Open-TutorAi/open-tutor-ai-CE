@@ -41,9 +41,10 @@
 
     // Level keys (will be translated when displayed)
     const levelKeys = [
-        { id: 'easy', key: 'Facile' },
-        { id: 'medium', key: 'Moyen' },
-        { id: 'difficult', key: 'Difficile' }
+        { id: 'primary-school', key: 'Primary school' },
+        { id: 'middle-school', key: 'Middle school' },
+        { id: 'high-school', key: 'High school' },
+        { id: 'university', key: 'University' }
     ];
 
     // Language keys (will be translated when displayed)
@@ -270,13 +271,7 @@
                         class="level-btn {courseLevel === level.id ? 'active' : ''}"
                         on:click={() => courseLevel = level.id}
                     >
-                        {#if level.id === 'easy'}
-                            <span class="level-dot easy"></span>
-                        {:else if level.id === 'medium'}
-                            <span class="level-dot medium"></span>
-                        {:else}
-                            <span class="level-dot difficult"></span>
-                        {/if}
+                        <span class="level-dot {level.id}"></span>
                         {level.label}
                     </button>
                 {/each}
@@ -967,9 +962,10 @@
         flex-shrink: 0;
     }
 
-    .level-dot.easy { background: #22c55e; }
-    .level-dot.medium { background: #f59e0b; }
-    .level-dot.difficult { background: #ef4444; }
+    .level-dot.primary-school { background: #22c55e; }
+    .level-dot.middle-school { background: #0ea5e9; }
+    .level-dot.high-school { background: #f59e0b; }
+    .level-dot.university { background: #ef4444; }
 
     .dropzone {
         border: 2px dashed #cbd5e1;
