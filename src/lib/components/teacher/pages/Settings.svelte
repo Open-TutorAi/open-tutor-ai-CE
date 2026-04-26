@@ -13,6 +13,9 @@
 
 
 	const i18n = getContext('i18n');
+	import type { Writable } from 'svelte/store';
+	import type { i18n as i18nType } from 'i18next';
+	const i18n = getContext<Writable<i18nType>>('i18n');
 
 	export let saveHandler: Function = () => {};
 
@@ -51,6 +54,8 @@
 
 
 	const submitHandler = async () => {
+		if (!$user) return;
+		
 		if (name !== $user.name) {
 			if (profileImageUrl === generateInitialsImage($user.name) || profileImageUrl === '') {
 				profileImageUrl = generateInitialsImage(name);
@@ -79,6 +84,10 @@
 	onMount(async () => {
 		name = $user.name;
 		profileImageUrl = $user.profile_image_url;
+		if ($user) {
+			name = $user.name;
+			profileImageUrl = $user.profile_image_url;
+		}
 
 		selectedTheme = localStorage.theme ?? 'system';
 		applyTheme(selectedTheme);
@@ -101,6 +110,7 @@
 				let reader = new FileReader();
 				reader.onload = (event) => {
 					let originalImageUrl = `${event.target.result}`;
+					let originalImageUrl = `${event.target?.result}`;
 
 					const img = new Image();
 					img.src = originalImageUrl;
@@ -132,6 +142,7 @@
 
 						// Draw the image on the canvas
 						ctx.drawImage(img, offsetX, offsetY, newWidth, newHeight);
+						ctx?.drawImage(img, offsetX, offsetY, newWidth, newHeight);
 
 						// Get the base64 representation of the compressed image
 						const compressedSrc = canvas.toDataURL('image/jpeg');
@@ -217,6 +228,7 @@
 						<button
 							class="text-xs text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-4 py-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition"
 							on:click={async () => {
+								if (!$user) return;
 								const url = await getGravatarUrl(localStorage.token, $user.email);
 								console.log('Gravatar URL:', url);
 								if (url) {

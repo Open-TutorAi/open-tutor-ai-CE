@@ -126,15 +126,15 @@
       // Set up DRACO loader for compressed models
       const dracoLoader = new DRACOLoader();
       
-      // Try to use the static draco folders if available, with fallback
-      dracoLoader.setDecoderPath('/static/draco/');
+      // Use assets from the root path as served by SvelteKit
+      dracoLoader.setDecoderPath('/draco/');
       console.log("DracoLoader path set");
       
       // Initialize GLTF loader with DRACO
       const loader = new GLTFLoader();
       loader.setDRACOLoader(dracoLoader);
       
-      const modelPath = `/static/classroom/classroom_${classroomModel}.glb`;
+      const modelPath = `/classroom/classroom_${classroomModel}.glb`;
       console.log("Attempting to load model from:", modelPath);
       // Remove existing classroom if present
       if (classroom && scene) {
@@ -164,7 +164,26 @@
           },
           (error) => {
             console.error('Error loading classroom model:', error);
-            reject(error);
+            if (classroomModel === 'alternative') {
+              const fallbackPath = '/classroom/classroom_default.glb';
+              console.warn('Falling back to default classroom model:', fallbackPath);
+              loader.load(
+                fallbackPath,
+                (gltf) => {
+                  scene.remove(tempBoard);
+                  resolve(gltf);
+                },
+                (xhr) => {
+                  console.log(`Fallback classroom loading: ${(xhr.loaded / (xhr.total || 1)) * 100}% loaded`);
+                },
+                (fallbackError) => {
+                  console.error('Fallback classroom model load failed:', fallbackError);
+                  reject(fallbackError);
+                }
+              );
+            } else {
+              reject(error);
+            }
           }
         );
       });
@@ -243,6 +262,10 @@
   
   // Export function to get board position for avatar placement
   export function getBoardPosition() {
+    if (customBoardPosition) {
+      return customBoardPosition;
+    }
+
     if (classroomModel === 'default') {
       // Front-facing classroom with large green board
       return { 
@@ -297,7 +320,7 @@
   // Preload classroom models
   function preloadModel(path: string) {
     const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath('/static/draco/');
+    dracoLoader.setDecoderPath('/draco/');
     
     const loader = new GLTFLoader();
     loader.setDRACOLoader(dracoLoader);
@@ -315,7 +338,7 @@
     );
   }
   
-  // Preload both classroom models
-  preloadModel('/static/classroom/classroom_default.glb');
-  preloadModel('/static/classroom/classroom_alternative.glb');
+  // Preload classroom model
+  preloadModel('/classroom/classroom_default.glb');
+  preloadModel('/classroom/classroom_alternative.glb');
 </script> 
