@@ -1,7 +1,7 @@
 <!--
-    Composant : CoursePlanEditor.svelte
-    Description : Permet à l'enseignant de visualiser et d'éditer le plan d'un cours généré
-    (chapitres, sections, objectifs pédagogiques) avant validation finale.
+    Component: CoursePlanEditor.svelte
+    Description: Lets the teacher review and edit a generated course plan
+    (chapters, sections, learning objectives) before final validation.
 -->
 <script lang="ts">
     // ========== IMPORTS ==========
@@ -10,11 +10,11 @@
     import { fly } from 'svelte/transition';
     import { cubicOut } from 'svelte/easing';
 
-    // Récupération du contexte d'internationalisation (i18n)
+    // Get internationalization context (i18n)
     const i18n = getContext('i18n');
 
     // ========== PROPS ==========
-    // Données du cours transmises depuis la page précédente (via state)
+    // Course data passed from the previous page (via state)
     export let courseData: {
         title: string;
         language: string;
@@ -25,21 +25,21 @@
     };
 
     // ========== TYPES ==========
-    // Structure d'une section (sous-chapitre)
+    // Section structure (subchapter)
     interface Section {
         id: string;
         title: string;
     }
 
-    // Structure d'un chapitre
+    // Chapter structure
     interface Chapter {
         id: string;
         title: string;
         sections: Section[];
     }
 
-    // ========== ÉTAT LOCAL ==========
-    // Liste des chapitres (données fictives pour la démo, à remplacer par l'analyse PDF)
+    // ========== LOCAL STATE ==========
+    // Chapter list (mock data for demo, to be replaced by PDF analysis)
     let chapters: Chapter[] = [
         {
             id: 'ch1',
@@ -59,60 +59,60 @@
         }
     ];
 
-    // Objectifs pédagogiques modifiables (initialisés avec la valeur reçue)
+    // Editable learning objectives (initialized with incoming value)
     let editableObjectives = courseData.objectives;
 
-    // ----- États pour l'édition des chapitres -----
-    let newChapterTitle = '';                         // Titre du nouveau chapitre à ajouter
-    let editingChapterId: string | null = null;       // ID du chapitre en cours d'édition
-    let editingChapterTitle = '';                     // Titre temporaire pendant l'édition
+    // ----- Chapter edit states -----
+    let newChapterTitle = '';                         // Title of the new chapter to add
+    let editingChapterId: string | null = null;       // ID of the chapter currently being edited
+    let editingChapterTitle = '';                     // Temporary title while editing
 
-    // ----- États pour l'édition des sections -----
-    let newSectionTitle = '';                                           // Titre de la nouvelle section
-    let addingSectionForChapterId: string | null = null;                // ID du chapitre pour lequel on ajoute une section
-    let editingSection: { chapterId: string; sectionId: string } | null = null;  // Référence à la section en édition
-    let editingSectionTitle = '';                                       // Titre temporaire de la section en édition
+    // ----- Section edit states -----
+    let newSectionTitle = '';                                           // Title of the new section
+    let addingSectionForChapterId: string | null = null;                // ID of the chapter receiving a new section
+    let editingSection: { chapterId: string; sectionId: string } | null = null;  // Reference to the section being edited
+    let editingSectionTitle = '';                                       // Temporary title for the edited section
 
-    // ----- Gestion de l'expansion / repli des chapitres -----
-    // Ensemble des IDs des chapitres actuellement ouverts
+    // ----- Chapter expand/collapse state -----
+    // Set of IDs for currently expanded chapters
     let expandedChapters = new Set(chapters.map(c => c.id));
 
-    // ========== FONCTIONS UTILITAIRES ==========
-    // Génère un identifiant unique (utilise l'API native crypto)
+    // ========== UTILITY FUNCTIONS ==========
+    // Generate a unique identifier (uses native crypto API)
     function generateId(): string {
         return crypto.randomUUID();
     }
 
-    // Bascule l'état ouvert/fermé d'un chapitre
+    // Toggle chapter open/closed state
     function toggleChapter(id: string) {
         if (expandedChapters.has(id)) {
             expandedChapters.delete(id);
         } else {
             expandedChapters.add(id);
         }
-        // On recrée le Set pour déclencher la réactivité
+        // Recreate the Set to trigger reactivity
         expandedChapters = new Set(expandedChapters);
     }
 
-    // ========== OPÉRATIONS SUR LES CHAPITRES ==========
-    // Ajouter un nouveau chapitre
+    // ========== CHAPTER OPERATIONS ==========
+    // Add a new chapter
     function addChapter() {
         if (!newChapterTitle.trim()) return;
         const id = generateId();
         chapters = [...chapters, { id, title: newChapterTitle.trim(), sections: [] }];
-        // Ouvrir automatiquement le nouveau chapitre
+        // Automatically open the new chapter
         expandedChapters.add(id);
         expandedChapters = new Set(expandedChapters);
         newChapterTitle = '';
     }
 
-    // Démarrer l'édition d'un chapitre existant
+    // Start editing an existing chapter
     function startEditChapter(chapter: Chapter) {
         editingChapterId = chapter.id;
         editingChapterTitle = chapter.title;
     }
 
-    // Sauvegarder les modifications du chapitre en cours d'édition
+    // Save edits for the chapter currently being edited
     function saveEditChapter() {
         if (editingChapterId && editingChapterTitle.trim()) {
             chapters = chapters.map(ch =>
@@ -123,33 +123,33 @@
         editingChapterTitle = '';
     }
 
-    // Annuler l'édition d'un chapitre
+    // Cancel chapter editing
     function cancelEditChapter() {
         editingChapterId = null;
         editingChapterTitle = '';
     }
 
-    // Supprimer un chapitre (et ses sections)
+    // Delete a chapter (and its sections)
     function deleteChapter(id: string) {
         chapters = chapters.filter(ch => ch.id !== id);
-        // Retirer également de la liste des chapitres ouverts
+        // Also remove it from the expanded chapter list
         expandedChapters.delete(id);
         expandedChapters = new Set(expandedChapters);
     }
 
-    // ========== OPÉRATIONS SUR LES SECTIONS ==========
-    // Commencer l'ajout d'une section dans un chapitre donné
+    // ========== SECTION OPERATIONS ==========
+    // Start adding a section to a given chapter
     function startAddSection(chapterId: string) {
         addingSectionForChapterId = chapterId;
         newSectionTitle = '';
-        // S'assurer que le chapitre est ouvert
+        // Ensure the chapter is open
         if (!expandedChapters.has(chapterId)) {
             expandedChapters.add(chapterId);
             expandedChapters = new Set(expandedChapters);
         }
     }
 
-    // Ajouter effectivement la section
+    // Actually add the section
     function addSection(chapterId: string) {
         if (!newSectionTitle.trim()) return;
         chapters = chapters.map(ch => {
@@ -165,19 +165,19 @@
         newSectionTitle = '';
     }
 
-    // Annuler l'ajout d'une section
+    // Cancel section addition
     function cancelAddSection() {
         addingSectionForChapterId = null;
         newSectionTitle = '';
     }
 
-    // Démarrer l'édition d'une section existante
+    // Start editing an existing section
     function startEditSection(chapterId: string, section: Section) {
         editingSection = { chapterId, sectionId: section.id };
         editingSectionTitle = section.title;
     }
 
-    // Sauvegarder les modifications d'une section
+    // Save section edits
     function saveEditSection() {
         if (editingSection && editingSectionTitle.trim()) {
             const { chapterId, sectionId } = editingSection;
@@ -197,13 +197,13 @@
         editingSectionTitle = '';
     }
 
-    // Annuler l'édition d'une section
+    // Cancel section editing
     function cancelEditSection() {
         editingSection = null;
         editingSectionTitle = '';
     }
 
-    // Supprimer une section
+    // Delete a section
     function deleteSection(chapterId: string, sectionId: string) {
         chapters = chapters.map(ch => {
             if (ch.id === chapterId) {
@@ -216,9 +216,9 @@
         });
     }
 
-    // ========== VALIDATION FINALE ==========
+    // ========== FINAL VALIDATION ==========
     function validateCourse() {
-        // Construction de l'objet final à envoyer au backend
+        // Build final payload to send to backend
         const finalPlan = {
             title: courseData.title,
             language: courseData.language,
@@ -231,18 +231,18 @@
         
         console.log('Plan validé:', finalPlan);
         alert($i18n.t('Cours validé avec succès !'));
-        // Retour à la liste des cours
+        // Return to course list
         goto('/teacher/courses');
     }
 
-    // ========== VALEURS RÉACTIVES ==========
-    // Nombre total de sections (tous chapitres confondus)
+    // ========== REACTIVE VALUES ==========
+    // Total section count (across all chapters)
     $: totalSections = chapters.reduce((acc, ch) => acc + ch.sections.length, 0);
 </script>
 
-<!-- ==================== TEMPLATE (INTERFACE UTILISATEUR) ==================== -->
+<!-- ==================== TEMPLATE (USER INTERFACE) ==================== -->
 <div class="plan-editor">
-    <!-- En-tête héroïque avec titre et statistiques -->
+    <!-- Hero header with title and stats -->
     <div class="hero">
         <div class="hero-content">
             <div class="hero-eyebrow">{$i18n.t('Plan du cours')}</div>
@@ -271,9 +271,9 @@
         </div>
     </div>
 
-    <!-- Grille principale en deux colonnes -->
+    <!-- Main two-column grid -->
     <div class="editor-main">
-        <!-- COLONNE GAUCHE : Structure du cours (chapitres et sections) -->
+        <!-- LEFT COLUMN: Course structure (chapters and sections) -->
         <div class="card">
             <div class="card-head">
                 <div class="card-icon blue-icon">
@@ -287,11 +287,11 @@
                 </div>
             </div>
 
-            <!-- Liste des chapitres -->
+            <!-- Chapter list -->
             <div class="ch-list">
                 {#each chapters as ch, idx (ch.id)}
                     <div class="ch-block" in:fly={{ y: 12, duration: 250, easing: cubicOut }}>
-                        <!-- En-tête du chapitre -->
+                        <!-- Chapter header -->
                         <div class="ch-row" class:open={expandedChapters.has(ch.id)}>
                             <button class="ch-toggle" on:click={() => toggleChapter(ch.id)}>
                                 <span class="ch-num">{String(idx+1).padStart(2,'0')}</span>
@@ -301,9 +301,9 @@
                                 </svg>
                             </button>
 
-                            <!-- Mode édition ou affichage normal -->
+                            <!-- Edit mode or normal display -->
                             {#if editingChapterId === ch.id}
-                                <!-- Formulaire d'édition du titre du chapitre -->
+                                <!-- Chapter title edit form -->
                                 <div class="iedit">
                                     <input type="text" bind:value={editingChapterTitle} class="ifield"
                                         on:keydown={(e)=>{ if(e.key==='Enter') saveEditChapter(); if(e.key==='Escape') cancelEditChapter(); }}/>
@@ -315,9 +315,9 @@
                                     </button>
                                 </div>
                             {:else}
-                                <!-- Affichage normal du titre du chapitre -->
+                                <!-- Normal chapter title display -->
                                 <span class="ch-name">{ch.title}</span>
-                                <!-- Boutons d'action (toujours visibles) -->
+                                <!-- Action buttons (always visible) -->
                                 <div class="acts">
                                     <button class="iact ed" on:click={() => startEditChapter(ch)} title={$i18n.t('Modifier')}>
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="13" height="13"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
@@ -329,13 +329,13 @@
                             {/if}
                         </div>
 
-                        <!-- Liste des sections (affichée si le chapitre est ouvert) -->
+                        <!-- Section list (shown when chapter is expanded) -->
                         {#if expandedChapters.has(ch.id)}
                             <div class="sec-list" transition:fly={{ y: -6, duration: 200, easing: cubicOut }}>
                                 {#each ch.sections as sec (sec.id)}
                                     <div class="sec-row" in:fly={{ x: -6, duration: 200 }}>
                                         <span class="sec-dot"></span>
-                                        <!-- Mode édition ou affichage pour la section -->
+                                        <!-- Edit mode or normal display for section -->
                                         {#if editingSection?.chapterId === ch.id && editingSection?.sectionId === sec.id}
                                             <div class="iedit">
                                                 <input type="text" bind:value={editingSectionTitle} class="ifield sm"
@@ -345,7 +345,7 @@
                                             </div>
                                         {:else}
                                             <span class="sec-name">{sec.title}</span>
-                                            <!-- Boutons d'action pour la section (toujours visibles) -->
+                                            <!-- Section action buttons (always visible) -->
                                             <div class="acts sec-acts">
                                                 <button class="iact ed" on:click={() => startEditSection(ch.id, sec)} title={$i18n.t('Modifier')}>
                                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
@@ -358,7 +358,7 @@
                                     </div>
                                 {/each}
 
-                                <!-- Interface pour ajouter une nouvelle section -->
+                                <!-- UI for adding a new section -->
                                 {#if addingSectionForChapterId === ch.id}
                                     <div class="sec-row new-sec-row" transition:fly={{ x: -6, duration: 200 }}>
                                         <span class="sec-dot accent-dot"></span>
@@ -371,7 +371,7 @@
                                         </div>
                                     </div>
                                 {:else}
-                                    <!-- Bouton pour afficher le formulaire d'ajout de section -->
+                                    <!-- Button to show add-section form -->
                                     <button class="add-sec-btn" on:click={() => startAddSection(ch.id)}>
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="12" height="12"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                                         {$i18n.t('Ajouter une section')}
@@ -382,7 +382,7 @@
                     </div>
                 {/each}
 
-                <!-- Formulaire pour ajouter un nouveau chapitre -->
+                <!-- Form for adding a new chapter -->
                 <div class="add-ch-row">
                     <input type="text" bind:value={newChapterTitle} class="add-ch-input"
                         placeholder={$i18n.t('Titre du nouveau chapitre...')}
@@ -395,9 +395,9 @@
             </div>
         </div>
 
-        <!-- COLONNE DROITE : Objectifs pédagogiques et fichiers sources -->
+        <!-- RIGHT COLUMN: Learning objectives and source files -->
         <div class="right-col">
-            <!-- Carte des objectifs -->
+            <!-- Objectives card -->
             <div class="card">
                 <div class="card-head">
                     <div class="card-icon green-icon">
@@ -414,7 +414,7 @@
                     placeholder={$i18n.t("À la fin de ce cours, l'étudiant sera capable de...")}></textarea>
             </div>
 
-            <!-- Carte des fichiers sources -->
+            <!-- Source files card -->
             <div class="card">
                 <div class="card-head small-head">
                     <div class="card-icon gray-icon">
@@ -441,7 +441,7 @@
         </div>
     </div>
 
-    <!-- Barre d'actions inférieure (Valider / Retour) -->
+    <!-- Bottom action bar (Validate / Back) -->
     <div class="editor-actions">
         <button class="btn-outline" on:click={() => history.back()}>
             {$i18n.t('Retour')}
@@ -457,10 +457,10 @@
 
 <!-- ==================== STYLES ==================== -->
 <style>
-    /* Importation de la police moderne Plus Jakarta Sans */
+    /* Import modern Plus Jakarta Sans font */
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
-    /* Conteneur principal */
+    /* Main container */
     .plan-editor {
         font-family: 'Plus Jakarta Sans', sans-serif;
         max-width: 1400px;
@@ -571,7 +571,7 @@
         box-shadow: 0 30px 50px -15px rgba(96, 165, 250, 0.2);
     }
 
-    /* En-tête de carte */
+    /* Card header */
     .card-head {
         display: flex;
         align-items: center;
@@ -587,7 +587,7 @@
         border-bottom-color: rgba(51, 65, 85, 0.6);
     }
 
-    /* Icônes modernes avec dégradés */
+    /* Modern gradient icons */
     .card-icon {
         width: 42px;
         height: 42px;
@@ -645,7 +645,7 @@
         color: #94a3b8;
     }
 
-    /* ========== CHAPTER LIST (Nouveau style épuré) ========== */
+    /* ========== CHAPTER LIST (new clean style) ========== */
     .ch-list {
         padding: 0.5rem 0 0;
     }
@@ -722,7 +722,7 @@
         color: #e2e8f0;
     }
 
-    /* Sections améliorées */
+    /* Enhanced sections */
     .sec-list {
         margin-left: 3.75rem;
         border-left: 2px solid rgba(59, 91, 219, 0.2);
@@ -772,7 +772,7 @@
         color: #cbd5e1;
     }
 
-    /* Bouton Ajouter une section */
+    /* Add section button */
     .add-sec-btn {
         display: flex;
         align-items: center;
@@ -805,7 +805,7 @@
         color: #bfdbfe;
     }
 
-    /* Formulaire Ajouter Chapitre */
+    /* Add chapter form */
     .add-ch-row {
         display: flex;
         gap: 0.875rem;
@@ -869,7 +869,7 @@
         box-shadow: 0 14px 22px -10px rgba(37, 99, 235, 0.5);
     }
 
-    /* ========== INLINE EDIT (amélioré) ========== */
+    /* ========== INLINE EDIT (enhanced) ========== */
     .iedit {
         display: flex;
         align-items: center;
@@ -902,7 +902,7 @@
         color: white;
     }
 
-    /* Boutons d'action (cachés par défaut, apparaissent au survol) */
+    /* Action buttons (hidden by default, shown on hover) */
     .acts {
         display: flex;
         gap: 0.3rem;
@@ -974,7 +974,7 @@
         color: white;
     }
 
-    /* ========== OBJECTIFS & FICHIERS (Modernisé) ========== */
+    /* ========== OBJECTIVES & FILES (modernized) ========== */
     .obj-ta {
         width: 100%;
         background: rgba(255, 255, 255, 0.5);
@@ -1052,7 +1052,7 @@
         border-color: #60a5fa;
     }
 
-    /* ========== ACTIONS (Barre inférieure) ========== */
+    /* ========== ACTIONS (bottom bar) ========== */
     .editor-actions {
         display: flex;
         justify-content: flex-end;

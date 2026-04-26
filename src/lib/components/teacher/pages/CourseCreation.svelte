@@ -15,16 +15,16 @@
     let uploadedFiles: File[] = [];
     let isDragOver = false;
 
-    // UI States l'Custom Select
+    // Custom select UI states
     let isLangOpen = false;
     let isCategoryOpen = false;
 
-    // === Modal States ===
-    let isGenerating = false;          // Modal visible ?
-    let generationSuccess = false;     // Fin de génération ?
+    // === Modal states ===
+    let isGenerating = false;          // Is modal visible?
+    let generationSuccess = false;     // Has generation finished?
     let progress = 0;                 // Progress bar
 
-    // === Fonction pour locker/délocker le scroll du body ===
+    // === Lock/unlock body scroll ===
     function lockBodyScroll(lock: boolean) {
         if (typeof document !== 'undefined') {
             document.body.style.overflow = lock ? 'hidden' : '';
@@ -99,15 +99,15 @@
         uploadedFiles = uploadedFiles.filter((_, i) => i !== index);
     }
 
-    // === Fermer le modal (appelé aussi après succès) ===
+    // === Close modal (also used after success) ===
     function closeModal() {
         isGenerating = false;
         generationSuccess = false;
         progress = 0;
-        lockBodyScroll(false); // Réactive le scroll
+        lockBodyScroll(false); // Re-enable page scroll
     }
 
-    // === Génération simulée ===
+    // === Simulated generation ===
     function generateCourse() {
         const finalCategory = showCustomCategory ? customCategory : courseCategory;
 
@@ -121,25 +121,25 @@
             return;
         }
 
-        // Validation passée -> On affiche le modal et on bloque le scroll
+        // Validation passed -> show modal and lock scroll
         isGenerating = true;
         generationSuccess = false;
         progress = 0;
         lockBodyScroll(true);
 
-        // Simulation de progression
+        // Simulate progress
         const interval = setInterval(() => {
             if (progress < 90) {
                 progress += 10;
             }
         }, 200);
 
-        // Simule un appel API (2 secondes)
+        // Simulate API call (2 seconds)
         setTimeout(() => {
             clearInterval(interval);
             progress = 100;
             
-            // Logique métier ici
+            // Business logic goes here
             console.log({
                 title: courseTitle,
                 language: courseLanguage,
@@ -150,7 +150,7 @@
             });
 
             generationSuccess = true;
-            // Le scroll reste bloqué jusqu'à ce que l'utilisateur ferme le modal
+            // Keep scroll locked until the user closes the modal
             
         }, 2000);
     }
@@ -371,15 +371,15 @@
     </div>
 </div>
 
-<!-- ================= MODAL DE GÉNÉRATION ================= -->
+<!-- ================= GENERATION MODAL ================= -->
 {#if isGenerating}
     <div class="modal-overlay" role="dialog" aria-modal="true">
         <div class="modal-card">
 
             {#if !generationSuccess}
-                <!-- ÉTAT : CHARGEMENT -->
+                <!-- STATE: LOADING -->
                 <div class="modal-loading">
-                    <!-- Logo + Spinner combinés -->
+                    <!-- Combined logo + spinner -->
                     <div class="logo-spinner-wrap">
                         <svg class="spinner-ring" viewBox="0 0 80 80">
                             <circle cx="40" cy="40" r="34" fill="none" stroke="#e2e8f0" stroke-width="5"/>
@@ -401,7 +401,7 @@
                 </div>
 
             {:else}
-                <!-- ÉTAT : SUCCÈS -->
+                <!-- STATE: SUCCESS -->
                 <div class="modal-success">
                     <div class="success-logo-wrap">
                         <img src="{TUTOR_FRONT_URL}/static/favicon.png" alt="OT AI" class="success-logo" />
@@ -446,7 +446,7 @@
 {/if}
 <style>
     /* ============================================
-       MODAL STYLES (CORRIGÉS)
+    MODAL STYLES (FIXED)
        ============================================ */
  /* ============================================
    MODAL STYLES
@@ -694,7 +694,7 @@
         100% { stroke-dasharray: 120 94; stroke-dashoffset: -165; }
     }
     /* ============================================
-       STYLES EXISTANTS (INCHANGÉS)
+    EXISTING STYLES (UNCHANGED)
        ============================================ */
 	.header-banner {
 		display: flex;

@@ -14,7 +14,7 @@
         files: File[];
     };
 
-    // ---------- نموذج بيانات الفصول ----------
+    // ---------- Section data model ----------
     interface Section {
         id: string;
         title: string;
@@ -26,7 +26,7 @@
         sections: Section[];
     }
 
-    // بيانات وهمية (ستستبدل لاحقاً)
+    // Mock data (will be replaced later)
     let chapters: Chapter[] = [
         {
             id: 'ch1',
@@ -48,7 +48,7 @@
 
     let editableObjectives = courseData.objectives;
 
-    // حالات الإضافة والتعديل
+    // Add/edit states
     let newChapterTitle = '';
     let editingChapterId: string | null = null;
     let editingChapterTitle = '';
@@ -62,7 +62,7 @@
         return crypto.randomUUID();
     }
 
-    // ---------- عمليات الفصول ----------
+    // ---------- Chapter operations ----------
     function addChapter() {
         if (!newChapterTitle.trim()) return;
         chapters = [...chapters, {
@@ -97,7 +97,7 @@
         chapters = chapters.filter(ch => ch.id !== id);
     }
 
-    // ---------- عمليات الأقسام ----------
+    // ---------- Section operations ----------
     function startAddSection(chapterId: string) {
         addingSectionForChapterId = chapterId;
         newSectionTitle = '';
@@ -167,7 +167,7 @@
         });
     }
 
-    // ---------- التحقق النهائي ----------
+    // ---------- Final validation ----------
     function validateCourse() {
         const finalPlan = {
             title: courseData.title,
@@ -188,7 +188,7 @@
 </script>
 
 <div class="plan-editor">
-    <!-- Hero Section (بدل editor-header القديم) -->
+    <!-- Hero section (replaces old editor-header) -->
     <div class="hero">
         <div class="hero-content">
             <div class="hero-eyebrow">{$i18n.t('Plan du cours')}</div>
@@ -217,9 +217,9 @@
         </div>
     </div>
 
-    <!-- المحتوى الرئيسي (عمودين) -->
+    <!-- Main content (two columns) -->
     <div class="editor-main">
-        <!-- العمود الأيسر: الفصول والأقسام -->
+        <!-- Left column: chapters and sections -->
         <div class="plan-section">
             <div class="section-header">
                 <h2 class="section-title">
@@ -267,7 +267,7 @@
                             {/if}
                         </div>
 
-                        <!-- الأقسام -->
+                        <!-- Sections -->
                         <div class="sections-list">
                             {#each chapter.sections as section (section.id)}
                                 <div class="section-item" in:fly={{ y: 10, duration: 200 }}>
@@ -302,7 +302,7 @@
                                 </div>
                             {/each}
 
-                            <!-- إضافة قسم جديد -->
+                            <!-- Add a new section -->
                             {#if addingSectionForChapterId === chapter.id}
                                 <div class="add-section-form">
                                     <input
@@ -329,7 +329,7 @@
                     </div>
                 {/each}
 
-                <!-- إضافة فصل جديد -->
+                <!-- Add a new chapter -->
                 <div class="add-chapter-form">
                     <input
                         type="text"
@@ -348,7 +348,7 @@
             </div>
         </div>
 
-        <!-- العمود الأيمن: الأهداف -->
+        <!-- Right column: objectives -->
         <div class="objectives-section">
             <div class="section-header">
                 <h2 class="section-title">
@@ -367,7 +367,7 @@
                 placeholder={$i18n.t('Exemple : À la fin de ce cours, l\'étudiant sera capable de...')}
             ></textarea>
 
-            <!-- الملفات المرفقة -->
+            <!-- Attached files -->
             <div class="files-summary">
                 <h3 class="files-title">{$i18n.t('Fichiers sources')}</h3>
                 <div class="files-list">
@@ -384,7 +384,7 @@
         </div>
     </div>
 
-    <!-- شريط الأزرار السفلي -->
+    <!-- Bottom action bar -->
     <div class="editor-actions">
         <button class="btn-outline" on:click={() => history.back()}>
             {$i18n.t('Retour')}
@@ -627,7 +627,7 @@
         color: #94a3b8;
     }
 
-    /* ========== CHAPITRES ========== */
+    /* ========== CHAPTERS ========== */
     .chapters-list {
         display: flex;
         flex-direction: column;
@@ -701,7 +701,7 @@
         opacity: 1;
     }
 
-    /* ========== FORMULAIRES ========== */
+    /* ========== FORMS ========== */
     .edit-form {
         display: flex;
         align-items: center;
@@ -824,7 +824,7 @@
         background: #1d4ed8;
     }
 
-    /* ========== OBJECTIFS ========== */
+    /* ========== OBJECTIVES ========== */
     .objectives-textarea {
         width: 100%;
         border: 1px solid #e2e8f0;

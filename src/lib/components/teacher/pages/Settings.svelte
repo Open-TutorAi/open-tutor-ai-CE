@@ -1,7 +1,7 @@
 <!--
-    Composant : TeacherSettings.svelte
-    Description : Page de paramètres du compte enseignant.
-    Sections : Profil, Sécurité, Préférences.
+    Component: TeacherSettings.svelte
+    Description: Teacher account settings page.
+    Sections: Profile, Security, Preferences.
     FIX: Language now syncs properly between navbar and settings
     FIX: Theme now changes instantly when clicked without needing to save
 -->
@@ -14,10 +14,10 @@
 
     const i18n = getContext('i18n');
     
-    // --- État réactif pour la langue (synced avec i18next) ---
+    // --- Reactive language state (synced with i18next) ---
     let language: string = i18next.language;
 
-    // --- État du profil (avec prénom et nom séparés) ---
+    // --- Profile state (first and last name separated) ---
     let profile = {
         firstName: 'Abdelaziz',
         lastName: 'Boukdous',
@@ -27,15 +27,15 @@
 
     let isUploading = false;
 
-    // --- Préférences ---
+    // --- Preferences ---
     let currentTheme: 'light' | 'dark' | 'system' = $theme || 'system';
 
-    // --- Sécurité ---
+    // --- Security ---
     let oldPassword = '';
     let newPassword = '';
     let confirmPassword = '';
 
-    // --- Navigation par onglets ---
+    // --- Tab navigation ---
     let activeTab: 'profile' | 'security' | 'preferences' = 'profile';
 
     onMount(() => {
@@ -65,8 +65,8 @@
 
     function saveProfile() {
         const fullName = `${profile.firstName} ${profile.lastName}`.trim();
-        // TODO : appel API avec fullName, email, avatar
-        console.log('Profil sauvegardé :', { fullName, email: profile.email });
+        // TODO: API call with fullName, email, avatar
+        console.log('Saved profile:', { fullName, email: profile.email });
         alert($i18n.t('Profil mis à jour'));
     }
 
@@ -75,7 +75,7 @@
             alert($i18n.t('Les mots de passe ne correspondent pas'));
             return;
         }
-        // TODO : appel API
+        // TODO: API call
         alert($i18n.t('Mot de passe modifié'));
         oldPassword = newPassword = confirmPassword = '';
     }
@@ -92,7 +92,7 @@
         alert($i18n.t('Préférences enregistrées'));
     }
 
-    // --- Configuration des onglets ---
+    // --- Tab configuration ---
     const tabs = [
         {
             id: 'profile',
@@ -114,11 +114,11 @@
 
 <div class="settings-page">
 
-    <!-- Conteneur principal : sidebar + contenu -->
+    <!-- Main container: sidebar + content -->
     <div class="page-wrapper">
-        <!-- COLONNE GAUCHE : Sidebar -->
+        <!-- LEFT COLUMN: Sidebar -->
         <aside class="sidebar" in:fly={{ x: -20, duration: 400, easing: cubicOut }}>
-            <!-- Carte de profil -->
+            <!-- Profile card -->
             <div class="profile-hero">
                 <div class="avatar-wrapper">
                     <img src={profile.avatar} alt="Avatar" class="avatar" />
@@ -147,7 +147,7 @@
                 </span>
             </div>
 
-            <!-- Navigation par onglets -->
+            <!-- Tab navigation -->
             <nav class="tab-nav">
                 {#each tabs as tab}
                     <button
@@ -166,10 +166,10 @@
             </nav>
         </aside>
 
-        <!-- COLONNE DROITE : Contenu dynamique -->
+        <!-- RIGHT COLUMN: Dynamic content -->
         <main class="content" in:fly={{ x: 20, duration: 400, easing: cubicOut }}>
 
-            <!-- ========== ONGLET PROFIL ========== -->
+            <!-- ========== PROFILE TAB ========== -->
             {#if activeTab === 'profile'}
                 <div class="panel" in:fade={{ duration: 200 }}>
                     <div class="panel-header">
@@ -186,7 +186,7 @@
                     </div>
                     <div class="divider"></div>
                     <div class="form-stack">
-                        <!-- Prénom -->
+                        <!-- First name -->
                         <div class="input-group">
                             <label class="input-label">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14">
@@ -196,7 +196,7 @@
                             </label>
                             <input type="text" bind:value={profile.firstName} class="field" placeholder={$i18n.t('Votre prénom...')} />
                         </div>
-                        <!-- Nom -->
+                        <!-- Last name -->
                         <div class="input-group">
                             <label class="input-label">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14">
@@ -227,7 +227,7 @@
                     </div>
                 </div>
 
-            <!-- ========== ONGLET SÉCURITÉ ========== -->
+            <!-- ========== SECURITY TAB ========== -->
             {:else if activeTab === 'security'}
                 <div class="panel" in:fade={{ duration: 200 }}>
                     <div class="panel-header">
@@ -287,7 +287,7 @@
                     </div>
                 </div>
 
-            <!-- ========== ONGLET PRÉFÉRENCES ========== -->
+            <!-- ========== PREFERENCES TAB ========== -->
             {:else if activeTab === 'preferences'}
                 <div class="panel" in:fade={{ duration: 200 }}>
                     <div class="panel-header">
@@ -304,7 +304,7 @@
                     </div>
                     <div class="divider"></div>
                     <div class="pref-list-new">
-                        <!-- Option Langue -->
+                        <!-- Language option -->
                         <div class="pref-card">
                             <div class="pref-card-icon">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -341,10 +341,10 @@
                             </div>
                         </div>
 
-                        <!-- Séparateur élégant -->
+                        <!-- Elegant separator -->
                         <div class="pref-separator"></div>
 
-                        <!-- Option Thème -->
+                        <!-- Theme option -->
                         <div class="pref-card">
                             <div class="pref-card-icon theme-icon">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -410,7 +410,7 @@
         color: #f1f5f9;
     }
 
-    /* --- Layout principal --- */
+    /* --- Main layout --- */
     .page-wrapper {
         display: flex;
         gap: 2rem;
@@ -551,7 +551,7 @@
         margin-left: auto;
     }
 
-    /* --- Contenu principal (panels) --- */
+    /* --- Main content (panels) --- */
     .content {
         flex: 1;
         min-width: 0;
@@ -688,7 +688,7 @@
         border-top-color: #334155;
     }
 
-    /* Boutons */
+    /* Buttons */
     .btn-save {
         display: inline-flex;
         align-items: center;
@@ -717,7 +717,7 @@
         box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
     }
 
-    /* Préférences */
+    /* Preferences */
     .pref-list-new {
         padding: 0.5rem 2rem 1.5rem;
         display: flex;
@@ -789,7 +789,7 @@
         background: linear-gradient(90deg, transparent, #334155, transparent);
     }
 
-    /* Sélecteur de langue (boutons) */
+    /* Language selector (buttons) */
     .lang-selector {
         display: flex;
         flex-wrap: wrap;
@@ -850,7 +850,7 @@
         margin-left: 0.2rem;
     }
 
-    /* Sélecteur de thème */
+    /* Theme selector */
     .theme-selector {
         display: flex;
         flex-direction: column;

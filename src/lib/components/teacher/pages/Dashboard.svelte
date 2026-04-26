@@ -3,7 +3,7 @@
 	import { user } from '$lib/stores';
 	const i18n = getContext('i18n');
 
-	// Data mockup bach t-tester bih l-UI
+	// Mock data for UI testing
 	let courses = [
 		{ id: 1, title: 'PROJET D\'ETUDE', modified: '2 heures', code: 'PER-402', students: 34 },
 		{ id: 2, title: 'Technologies DevOps', modified: 'hier', code: 'D-Ops-101', students: 42 },
@@ -13,7 +13,7 @@
 
 	function copyToClipboard(text: string) {
 		navigator.clipboard.writeText(text);
-		// T9der tzid toast hna
+		// You can add a toast here
 	}
 </script>
 
