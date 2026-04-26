@@ -3,8 +3,8 @@
      * Importation des stores SvelteKit et des composants de page
      */
     import { page } from '$app/stores'; 
-    import CourseCreation from '$lib/components/teacher/page/CourseCreation.svelte';
-    import CoursePlanEditor from '$lib/components/teacher/page/CoursePlanEditor.svelte';
+    import CourseCreation from '$lib/components/teacher/pages/CourseCreation.svelte';
+    import CoursePlanEditor from '$lib/components/teacher/pages/CoursePlanEditor.svelte';
 
     /** * Gestion réactive de la vue actuelle :
      * On récupère le paramètre 'view' depuis l'URL (ex: ?view=plan).

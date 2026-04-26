@@ -133,7 +133,7 @@
 			{ id: 'courses', labelKey: 'Mes Cours', icon: Classroom },
 			{ id: 'assignments', labelKey: 'Devoirs & Quiz', icon: Assignment },
 			{ id: 'reports', labelKey: 'Suivi & Rapports', icon: Dashboard },
-			{ id: 'discussions', labelKey: 'Discussions', icon: Message },
+			{ id: 'messages', labelKey: 'Messages', icon: Message },
 			{ id: 'settings', labelKey: 'Profil & paramètres', icon: Settings }
 		],
 		student: [],
