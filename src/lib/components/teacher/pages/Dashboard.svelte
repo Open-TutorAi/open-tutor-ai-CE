@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { getContext, onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { user } from '$lib/stores';
 	const i18n = getContext('i18n');
 
@@ -18,14 +19,8 @@
 </script>
 
 <div class="p-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
-	<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
-		<div>
-			<h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-				{$i18n.t('Bonjour')}, Prof. {$user?.name?.toUpperCase() || 'SAADY'}
-			</h1>
-			<p class="text-gray-500 mt-1">{$i18n.t('Voici ce qui se passe dans vos classes aujourd\'hui.')}</p>
-		</div>
-		<button class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-all shadow-sm">
+	<div class="flex justify-end mb-10">		
+		<button class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-all shadow-sm" on:click={() => goto('/teacher/courses')}>
 			<span class="text-xl">+</span> {$i18n.t('Créer un nouveau cours')}
 		</button>
 	</div>
