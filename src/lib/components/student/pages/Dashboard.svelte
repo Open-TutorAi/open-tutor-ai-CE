@@ -5,7 +5,7 @@
 	import type { i18n as i18nType } from 'i18next';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
-	import { chatId as storeChatId } from '$lib/stores';
+	import { chatId as storeChatId, isDemo, demoData } from '$lib/stores';
 	import CourseCard from '../elements/CourseCard.svelte';
 	import { getSupportRequests, type SupportResponse, updateSupportChatId } from '$lib/apis/supports';
 	import { page } from '$app/stores';
@@ -17,6 +17,16 @@
 	// State for user's support requests
 	let userSupports: SupportResponse[] = [];
 	let isLoading = true;
+	
+	$: displaySupports = $isDemo ? $demoData.supports.map(s => ({
+		id: s.id,
+		title: s.title,
+		description: s.description,
+		status: s.progress < 30 ? 'not-started' : s.progress < 100 ? 'in-progress' : 'completed',
+		category: s.category,
+		difficulty: s.difficulty,
+		progress: s.progress
+	})) : userSupports;
 	
 	// Track pending support and chat linkage
 	let pendingSupportId = '';
@@ -58,23 +68,29 @@
 			});
 			
 			// Fetch user's support requests
-			const token = localStorage.getItem('token');
-			if (token) {
-				try {
-					const supports = await getSupportRequests(token);
-					if (supports && Array.isArray(supports)) {
-						userSupports = supports;
-						console.log('Fetched user supports:', userSupports);
+			if ($isDemo) {
+				// In demo mode, skip API calls
+				isLoading = false;
+				console.log('Demo mode: using mock supports');
+			} else {
+				const token = localStorage.getItem('token');
+				if (token) {
+					try {
+						const supports = await getSupportRequests(token);
+						if (supports && Array.isArray(supports)) {
+							userSupports = supports;
+							console.log('Fetched user supports:', userSupports);
+						}
+					} catch (error) {
+						console.error('Error fetching supports:', error);
+						userSupports = [];
+					} finally {
+						isLoading = false;
 					}
-				} catch (error) {
-					console.error('Error fetching supports:', error);
-					userSupports = [];
-				} finally {
+				} else {
+					console.log('No auth token found');
 					isLoading = false;
 				}
-			} else {
-				console.log('No auth token found');
-				isLoading = false;
 			}
 
 			// Create a global event handler for chat creation that can be triggered from any component
@@ -291,10 +307,10 @@
 	const cardsPerPage = 4;
 
 	// Calculate total pages
-	$: totalPages = Math.ceil(userSupports.length / cardsPerPage);
+	$: totalPages = Math.ceil(displaySupports.length / cardsPerPage);
 
 	// Get current page courses/supports
-	$: currentSupports = userSupports.slice(
+	$: currentSupports = displaySupports.slice(
 		currentPage * cardsPerPage,
 		(currentPage + 1) * cardsPerPage
 	);
@@ -425,7 +441,7 @@
 				<div class="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
 				<span class="ml-3 text-gray-600 dark:text-gray-300">{$i18n.t('Loading your supports...')}</span>
 		</div>
-		{:else if userSupports.length === 0}
+		{:else if displaySupports.length === 0}
 			<div class="flex flex-col items-center justify-center py-6 text-center">
 				<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-400 dark:text-indigo-300 mb-3">
 					<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>

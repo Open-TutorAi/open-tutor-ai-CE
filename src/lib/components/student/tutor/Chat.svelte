@@ -40,8 +40,11 @@
 		chatTitle,
 		showArtifacts,
 		tools,
+		isDemo,
+		demoData,
 		isFullscreenAvatar
 	} from '$lib/stores';
+	import { simulateAIResponse, generateMockAvatarResponse } from '$lib/utils/mockLLM';
 	import {
 		convertMessagesToHistory,
 		copyToClipboard,
@@ -159,6 +162,26 @@
 		($settings as any)?.avatarEnabled !== undefined ? ($settings as any).avatarEnabled : true;
 	let avatarSpeaking = false;
 	let currentAvatarMessage = '';
+
+	// Add demo model when in demo mode
+	$: if ($isDemo) {
+		const demoModel = {
+			id: 'demo',
+			name: 'Demo AI Assistant',
+			owned_by: 'openai',
+			external: false
+		};
+		
+		// Add demo model to models if not already there
+		if (!$models.some(m => m.id === 'demo')) {
+			models.set([demoModel, ...$models]);
+		}
+		
+		// Auto-select demo model if no model selected
+		if (selectedModels.length === 0 || selectedModels.includes('')) {
+			selectedModels = ['demo'];
+		}
+	}
 
 	// Toggle avatar mode function
 	const toggleAvatar = () => {
@@ -1132,6 +1155,48 @@
 	};
 
 	const loadChat = async () => {
+		if ($isDemo) {
+			if (chatIdProp && chatIdProp.startsWith('demo-chat-')) {
+				const demoChat = $demoData.chats.find(c => c.id === chatIdProp);
+				if (demoChat) {
+					chatId.set(chatIdProp);
+					selectedModels = demoChat.models || [$models[0]?.id || ''];
+					chatTitle.set(demoChat.title);
+					
+					// Convert demo messages to history format with proper parent-child relationships
+					const historyObj = {
+						messages: {},
+						currentId: null
+					};
+					
+					demoChat.messages.forEach((msg, idx) => {
+						const isLast = idx === demoChat.messages.length - 1;
+						const parentId = idx > 0 ? demoChat.messages[idx - 1].id : null;
+						const childrenIds = !isLast ? [demoChat.messages[idx + 1].id] : [];
+						
+						historyObj.messages[msg.id] = {
+							id: msg.id,
+							role: msg.role,
+							content: msg.content,
+							timestamp: msg.timestamp,
+							done: true,
+							parentId: parentId,
+							childrenIds: childrenIds,
+							models: demoChat.models
+						};
+						
+						if (isLast) {
+							historyObj.currentId = msg.id;
+						}
+					});
+					
+					history = historyObj;
+					return true;
+				}
+			}
+			return true;
+		}
+		
 		chatId.set(chatIdProp);
 		chat = await getChatById(localStorage.token, $chatId).catch(async (error) => {
 			await goto('/');
@@ -1192,6 +1257,10 @@
 		}
 	};
 	const chatCompletedHandler = async (chatId, modelId, responseMessageId, messages) => {
+		if ($isDemo) {
+			return;
+		}
+		
 		const res = await chatCompleted(localStorage.token, {
 			model: modelId,
 			messages: messages.map((m) => ({
@@ -1302,6 +1371,10 @@
 	};
 
 	const getChatEventEmitter = async (modelId: string, chatId: string = '') => {
+		if ($isDemo) {
+			return null;
+		}
+		
 		return setInterval(() => {
 			$socket?.emit('usage', {
 				action: 'chat',
@@ -1315,7 +1388,10 @@
 		prompt = '';
 		if (selectedModels.length === 0) {
 			toast.error($i18n.t('Model not selected'));
-		} else {
+			return;
+		}
+		
+		if (selectedModels.length > 0) {
 			const modelId = selectedModels[0];
 			const model = $models.filter((m) => m.id === modelId).at(0);
 
@@ -1810,7 +1886,7 @@
 					const chatEventEmitter = await getChatEventEmitter(model.id, _chatId);
 
 					scrollToBottom();
-					await sendPromptSocket(_history, model, responseMessageId, _chatId);
+					await sendPromptOrMock(_history, model, responseMessageId, _chatId);
 
 					if (chatEventEmitter) clearInterval(chatEventEmitter);
 				} else {
@@ -1819,8 +1895,54 @@
 			})
 		);
 
-		currentChatPage.set(1);
-		chats.set(await getChatList(localStorage.token, $currentChatPage));
+		if (!$isDemo) {
+			currentChatPage.set(1);
+			chats.set(await getChatList(localStorage.token, $currentChatPage));
+		} else {
+			chats.set($demoData.chats);
+		}
+	};
+
+	const sendPromptOrMock = async (_history, model, responseMessageId, _chatId) => {
+		if ($isDemo) {
+			const responseMessage = _history.messages[responseMessageId];
+			const userMessage = _history.messages[responseMessage.parentId];
+			
+			if (avatarActive) {
+				const mockData = generateMockAvatarResponse(userMessage.content);
+				const fullResponse = JSON.stringify(mockData);
+				
+				await simulateAIResponse(
+					fullResponse,
+					(chunk) => {
+						responseMessage.content += chunk;
+						history.messages[responseMessageId] = responseMessage;
+					},
+					() => {
+						responseMessage.done = true;
+						history.messages[responseMessageId] = responseMessage;
+						currentAvatarMessage = responseMessage.content;
+						avatarSpeaking = true;
+					}
+				);
+			} else {
+				// Regular chat mode
+				await simulateAIResponse(
+					userMessage.content,
+					(chunk) => {
+						responseMessage.content += chunk;
+						history.messages[responseMessageId] = responseMessage;
+						scrollToBottom();
+					},
+					() => {
+						responseMessage.done = true;
+						history.messages[responseMessageId] = responseMessage;
+					}
+				);
+			}
+		} else {
+			await sendPromptSocket(_history, model, responseMessageId, _chatId);
+		}
 	};
 
 	const sendPromptSocket = async (_history, model, responseMessageId, _chatId) => {
@@ -2383,7 +2505,7 @@
 				.at(0);
 
 			if (model) {
-				await sendPromptSocket(history, model, responseMessage.id, _chatId);
+				await sendPromptOrMock(history, model, responseMessage.id, _chatId);
 			}
 		}
 	};
@@ -2436,6 +2558,10 @@
 	};
 
 	const initChatHandler = async (history) => {
+		if ($isDemo) {
+			return 'demo-chat-' + Date.now();
+		}
+		
 		let _chatId = $chatId;
 
 		try {
@@ -2557,6 +2683,10 @@
 	};
 
 	const saveChatHandler = async (_chatId, history) => {
+		if ($isDemo) {
+			return;
+		}
+		
 		if ($chatId == _chatId) {
 			if (!$temporaryChatEnabled) {
 				chat = await updateChatById(localStorage.token, _chatId, {
