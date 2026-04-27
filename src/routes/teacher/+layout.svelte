@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 <!-- Teacher Layout with Form Blur Effect -->
 <script lang="ts">
 	import { onMount } from 'svelte';
@@ -35,7 +34,6 @@
 		currentFormBlur = value;
 	});
 	
-=======
 <!-- teacher Layout -->
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
@@ -51,6 +49,16 @@
 	import { config, user, settings, models, theme, isDemo, demoData, originalUserData, isFullscreenAvatar} from '$lib/stores';
 	import { generateDemoData } from '$lib/utils/mockData';
 	import { toast } from 'svelte-sonner';
+<!-- Teacher Layout -->
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { get, writable, derived } from 'svelte/store';
+
+	import Sidebar from '$lib/components/teacher/elements/Sidebar.svelte';
+	import Navbar from '$lib/components/teacher/elements/Navbar.svelte';
+
+	import { user, theme } from '$lib/stores';
 
 	const activePage = writable('dashboard');
 	let isSidebarOpen = true;
@@ -64,9 +72,8 @@
 
 	let windowWidth: number;
 	let isMobile: boolean = false;
-	let loading = true;
 
->>>>>>> 11814d0 (feat: implement teacher screens using mock data to validate UX, navigation, i18n, and reusable components.)
+	let loading = true;
 	// Derive isDarkMode from theme store
 	const isDarkMode = derived(theme, ($theme) => {
 		return (
@@ -74,47 +81,27 @@
 			($theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
 		);
 	});
-<<<<<<< HEAD
 	
-=======
-
->>>>>>> 11814d0 (feat: implement teacher screens using mock data to validate UX, navigation, i18n, and reusable components.)
-	// Subscribe to isDarkMode to get the actual boolean value
 	let currentIsDarkMode = false;
 	isDarkMode.subscribe((value) => {
 		currentIsDarkMode = value;
 		document.documentElement.classList.toggle('dark', value);
 	});
-<<<<<<< HEAD
 	
 	function toggleSidebar() {
 		isSidebarOpen = !isSidebarOpen;
 	}
 	
-=======
 
 	function toggleSidebar() {
 		isSidebarOpen = !isSidebarOpen;
 	}
 
->>>>>>> 11814d0 (feat: implement teacher screens using mock data to validate UX, navigation, i18n, and reusable components.)
 	function toggleDarkMode(event: CustomEvent) {
 		const newTheme = event.detail.isDarkMode ? 'dark' : 'light';
 		theme.set(newTheme);
 		localStorage.setItem('theme', newTheme);
 	}
-<<<<<<< HEAD
-	
-	onMount(async () => {
-		console.log('Teacher layout mounted');
-		models.set(
-			await getModels(
-				localStorage.token,
-				$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
-			)
-		);
-		
-=======
 
 	function toggleDemoMode() {
 		if ($isDemo) {
@@ -167,54 +154,42 @@
 				$config?.features?.enable_direct_connections ? ($settings?.directConnections ?? null) : null
 			)
 		);
->>>>>>> 11814d0 (feat: implement teacher screens using mock data to validate UX, navigation, i18n, and reusable components.)
 		// Role protection logic
+
+
+	onMount(() => {
 		const currentUser = get(user);
 		if (!currentUser) {
 			goto('/auth');
 			return;
 		}
-<<<<<<< HEAD
-		if (currentUser.role !== 'teacher') {
-=======
 		if (currentUser.role !== 'user') {
->>>>>>> 11814d0 (feat: implement teacher screens using mock data to validate UX, navigation, i18n, and reusable components.)
 			console.log('User is not a teacher, redirecting to home');
 			goto(`/${currentUser.role}`);
 			return;
 		}
 		loading = false;
-<<<<<<< HEAD
-		
-=======
-
->>>>>>> 11814d0 (feat: implement teacher screens using mock data to validate UX, navigation, i18n, and reusable components.)
 		// Initialize dark mode based on global theme
 		const currentTheme = get(theme);
 		const isDark =
 			currentTheme === 'dark' ||
 			(currentTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 		document.documentElement.classList.toggle('dark', isDark);
-<<<<<<< HEAD
-		
-		// Handle resize events for responsive design
+		if (currentUser.role !== 'teacher') {
+			goto(`/${currentUser.role}`);
+			return;
+		}
+
 		const handleResize = () => {
 			windowWidth = window.innerWidth;
 			isMobile = windowWidth < 768;
+
 			if (isMobile && isSidebarOpen) {
 				isSidebarOpen = false;
 			} else if (!isMobile && !isSidebarOpen) {
 				isSidebarOpen = true;
 			}
 		};
-		
-		window.addEventListener('resize', handleResize);
-		handleResize();
-		
-		return () => {
-			window.removeEventListener('resize', handleResize);
-		};
-=======
 
 		window.addEventListener('resize', handleResize);
 		handleResize();
@@ -235,43 +210,12 @@
 		if (typeof window !== 'undefined') {
 			window.removeEventListener('resize', handleResize);
 		}
->>>>>>> 11814d0 (feat: implement teacher screens using mock data to validate UX, navigation, i18n, and reusable components.)
 	});
 </script>
 
 <div
 	class="flex h-screen overflow-hidden bg-[#F4F7FE] dark:bg-gray-900 transition-colors duration-200 ease-in-out"
 >
-<<<<<<< HEAD
-	<!-- Sidebar with adaptive behavior and blur effect -->
-	<div class={`sidebar-container ${isSidebarOpen ? '' : 'collapsed'} ${currentFormBlur ? 'form-blur' : ''}`}>
-		<Sidebar {isSidebarOpen} {activePage} isDarkMode={currentIsDarkMode} />
-	</div>
-
-	<!-- Main content area with navbar and slot -->
-	<div class="flex-1 flex flex-col overflow-hidden relative z-10 bg-[#F4F7FE] dark:bg-gray-900">
-		<!-- Navbar with blur effect when form is open -->
-		<div class={`navbar-container ${currentFormBlur ? 'form-blur' : ''}`}>
-			<Navbar
-				role="teacher"
-				username={$user.name}
-				toggleSidebar={toggleSidebar}
-				isDarkMode={currentIsDarkMode}
-				on:darkModeToggle={toggleDarkMode}
-			/>
-		</div>
-
-		<!-- Main content with proper scrolling -->
-		<div
-			class="flex-1 overflow-y-auto p-4 md:p-6 bg-[#F4F7FE] dark:bg-gray-900 text-gray-800 dark:text-gray-100"
-		>
-			<slot {setFormBlur} {formBlurStore} />
-		</div>
-	</div>
-
-	<!-- Mobile sidebar overlay when open on mobile - lower z-index than content -->
-	{#if isMobile && isSidebarOpen}
-=======
 	<!-- Sidebar with adaptive behavior - hide in fullscreen -->
 	{#if !$isFullscreenAvatar}
 		<div class={`sidebar-container ${isSidebarOpen ? '' : 'collapsed'}`}>
@@ -299,13 +243,39 @@
 		<div
 			class="flex-1 overflow-y-auto {$isFullscreenAvatar ? '' : 'p-4 md:p-6'} bg-[#F4F7FE] dark:bg-gray-900 text-gray-800 dark:text-gray-100"
 		>
+
+		window.addEventListener('resize', handleResize);
+		handleResize();
+
+		return () => {
+			window.removeEventListener('resize', handleResize);
+		};
+	});
+</script>
+
+
+<div class="flex h-screen overflow-hidden bg-[#F4F7FE] dark:bg-gray-900 transition-colors duration-200 ease-in-out">
+	<div class={`sidebar-container ${isSidebarOpen ? '' : 'collapsed'}`}>
+		<Sidebar {isSidebarOpen} {activePage} isDarkMode={currentIsDarkMode} />
+	</div>
+
+	<div class="flex-1 flex flex-col overflow-hidden relative z-10 bg-[#F4F7FE] dark:bg-gray-900">
+		<Navbar
+			{username}
+			{toggleSidebar}
+			isDarkMode={currentIsDarkMode}
+			on:darkModeToggle={toggleDarkMode}
+		/>
+
+		<div class="flex-1 overflow-y-auto p-4 md:p-6 bg-[#F4F7FE] dark:bg-gray-900 text-gray-800 dark:text-gray-100">
 			<slot />
 		</div>
 	</div>
 
 	<!-- Mobile sidebar overlay when open on mobile - lower z-index than content - hide in fullscreen -->
 	{#if isMobile && isSidebarOpen && !$isFullscreenAvatar}
->>>>>>> 11814d0 (feat: implement teacher screens using mock data to validate UX, navigation, i18n, and reusable components.)
+
+	{#if isMobile && isSidebarOpen}
 		<div
 			class="fixed inset-0 bg-black bg-opacity-70 z-5"
 			on:click={() => {
@@ -314,7 +284,6 @@
 			aria-hidden="true"
 		></div>
 	{/if}
-<<<<<<< HEAD
 	
 	<!-- Form overlay backdrop when form is open -->
 	{#if currentFormBlur}
@@ -330,7 +299,6 @@
 		min-height: 0; 
 	}
 	
-=======
 </div>
 
 <style>
@@ -340,18 +308,13 @@
 	}
 
 	/* Make sure content containers have proper layout */
->>>>>>> 11814d0 (feat: implement teacher screens using mock data to validate UX, navigation, i18n, and reusable components.)
 	:global(#chat-container) {
 		display: flex;
 		flex-direction: column;
 		height: 100%;
 		overflow: hidden;
 	}
-<<<<<<< HEAD
-	
-=======
 	/* Base styles */
->>>>>>> 11814d0 (feat: implement teacher screens using mock data to validate UX, navigation, i18n, and reusable components.)
 	:global(body, html) {
 		height: 100%;
 		margin: 0;
@@ -360,19 +323,14 @@
 		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell,
 			'Open Sans', 'Helvetica Neue', sans-serif;
 	}
-<<<<<<< HEAD
-	
-=======
 
 	/* Add dark mode transition for smoother theme switching */
->>>>>>> 11814d0 (feat: implement teacher screens using mock data to validate UX, navigation, i18n, and reusable components.)
 	:global(body),
 	:global(body *) {
 		transition:
 			background-color 0.3s ease,
 			color 0.3s ease;
 	}
-<<<<<<< HEAD
 	
 	:global(.dark) {
 		color-scheme: dark;
@@ -411,18 +369,6 @@
 		user-select: none;
 	}
 	
-=======
-
-	/* Ensure proper contrast in dark mode */
-	:global(.dark) {
-		color-scheme: dark;
-	}
-
-	:global(.dark *:focus) {
-		outline-color: #60a5fa;
-	}
-
-	/* Sidebar container responsive styles */
 	.sidebar-container {
 		transition: all 0.3s ease;
 		z-index: 20;
@@ -433,14 +379,15 @@
 	}
 
 	/* Mobile styles */
->>>>>>> 11814d0 (feat: implement teacher screens using mock data to validate UX, navigation, i18n, and reusable components.)
+		margin-left: -256px;
+	}
+
 	@media (max-width: 767px) {
 		.sidebar-container {
 			position: fixed;
 			height: 100%;
 			z-index: 30;
 		}
-<<<<<<< HEAD
 		.sidebar-container.collapsed {
 			margin-left: -100%; 
 		}
@@ -450,21 +397,11 @@
 		}
 	}
 	
-=======
-
-		.sidebar-container.collapsed {
-			margin-left: -100%; /* Fully hide on mobile */
-		}
-	}
-
-	/* Tablet adjustments */
->>>>>>> 11814d0 (feat: implement teacher screens using mock data to validate UX, navigation, i18n, and reusable components.)
 	@media (min-width: 768px) and (max-width: 1023px) {
 		.sidebar-container:not(.collapsed) {
 			width: auto;
 		}
 	}
-<<<<<<< HEAD
 	
 	.sidebar-container,
 	.navbar-container {
@@ -478,6 +415,3 @@
 		pointer-events: none !important;
 	}
 </style>
-=======
-</style>
->>>>>>> 11814d0 (feat: implement teacher screens using mock data to validate UX, navigation, i18n, and reusable components.)

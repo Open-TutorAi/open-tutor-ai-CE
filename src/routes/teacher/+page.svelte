@@ -7,11 +7,10 @@
     let error: string | null = null;
     const i18n: any = getContext('i18n');
 
-    onMount(async () => {
-        try {
-            loading = true;
+	let loading = true;
+	let error = null;
+    const i18n = getContext('i18n');
 
-<<<<<<< HEAD
   onMount(async () => {
     try {
       loading = true;
@@ -40,7 +39,6 @@
     }
   });
 </script>
-=======
             if (!$user) {
                 console.log('No user found, redirecting to auth page');
                 goto('/auth');
@@ -55,6 +53,14 @@
                 await goto(`/${$user.role}`);
                 return;
             }
+			// Allow access to teachers
+			if ($user.role !== 'teacher') {
+				console.log('User is not a teacher, redirecting to home');
+				await goto(`/${$user.role}`);
+				return;
+			}else{
+       			await goto(`/teacher/dashboard`);
+     		}
 
             // User has the correct role, continue loading the page
             loading = false;
@@ -127,4 +133,4 @@
 		</div>
 	</div>
 {/if}
->>>>>>> 11814d0 (feat: implement teacher screens using mock data to validate UX, navigation, i18n, and reusable components.)
+
