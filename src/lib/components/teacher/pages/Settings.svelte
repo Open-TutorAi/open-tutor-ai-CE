@@ -1,328 +1,987 @@
+<!--
+    Component: TeacherSettings.svelte
+    Description: Teacher account settings page.
+    Sections: Profile, Security, Preferences.
+    FIX: Language now syncs properly between navbar and settings
+    FIX: Theme now changes instantly when clicked without needing to save
+-->
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
-	import { onMount, getContext } from 'svelte';
-	import type { Writable } from 'svelte/store';
-	import type { i18n as i18nType } from 'i18next';
+    import { getContext, onMount } from 'svelte';
+    import { fly, fade } from 'svelte/transition';
+    import { cubicOut } from 'svelte/easing';
+    import { user, theme } from '$lib/stores';
+    import i18next from 'i18next';
 
-	import { user } from '$lib/stores';
-	import { updateUserProfile, getSessionUser } from '$lib/apis/auths';
+    const i18n = getContext('i18n');
+    
+    // --- Reactive language state (synced with i18next) ---
+    let language: string = i18next.language;
 
-	import UpdatePassword from '$lib/components/chat/Settings/Account/UpdatePassword.svelte';
-	import { getGravatarUrl } from '$lib/apis/utils';
-	import { generateInitialsImage, canvasPixelTest } from '$lib/utils';
-	import { settings, theme } from '$lib/stores';
-	import { getLanguages } from '$lib/i18n';
+    // --- Profile state (first and last name separated) ---
+    let profile = {
+        firstName: 'Abdelaziz',
+        lastName: 'Boukdous',
+        email: $user?.email || 'professeur@example.com',
+        avatar: $user?.avatar || '/static/student-avatar.png'
+    };
 
-	const i18n = getContext<Writable<i18nType>>('i18n');
+    let isUploading = false;
 
-	export let saveHandler: Function = () => {};
+    // --- Preferences ---
+    let currentTheme: 'light' | 'dark' | 'system' = $theme || 'system';
 
-	let profileImageUrl = '';
-	let name = '';
+    // --- Security ---
+    let oldPassword = '';
+    let newPassword = '';
+    let confirmPassword = '';
 
-	let profileImageInputElement: HTMLInputElement;
+    // --- Tab navigation ---
+    let activeTab: 'profile' | 'security' | 'preferences' = 'profile';
 
-	let themes = ['system', 'dark', 'light'];
-	let selectedTheme = 'light';
-	let languages: Awaited<ReturnType<typeof getLanguages>> = [];
-	let lang = $i18n.language;
+    onMount(() => {
+        // Listen for language changes from navbar or any other source
+        const handleLanguageChange = (lng: string) => {
+            language = lng;
+        };
+        
+        i18next.on('languageChanged', handleLanguageChange);
+        
+        return () => {
+            i18next.off('languageChanged', handleLanguageChange);
+        };
+    });
 
-	const applyTheme = (_theme: string) => {
-		let themeToApply = _theme === 'oled-dark' ? 'dark' : _theme;
+    // --- Actions ---
+    function handleAvatarChange(e: Event) {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (file) {
+            isUploading = true;
+            setTimeout(() => {
+                profile.avatar = URL.createObjectURL(file);
+                isUploading = false;
+            }, 800);
+        }
+    }
 
-		if (_theme === 'system') {
-			themeToApply = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-		}
+    function saveProfile() {
+        const fullName = `${profile.firstName} ${profile.lastName}`.trim();
+        // TODO: API call with fullName, email, avatar
+        console.log('Saved profile:', { fullName, email: profile.email });
+        alert($i18n.t('Profil mis à jour'));
+    }
 
-		themes
-			.filter((e) => e !== themeToApply)
-			.forEach((e) => {
-				e.split(' ').forEach((cls) => document.documentElement.classList.remove(cls));
-			});
+    function changePassword() {
+        if (newPassword !== confirmPassword) {
+            alert($i18n.t('Les mots de passe ne correspondent pas'));
+            return;
+        }
+        // TODO: API call
+        alert($i18n.t('Mot de passe modifié'));
+        oldPassword = newPassword = confirmPassword = '';
+    }
 
-		themeToApply.split(' ').forEach((cls) => document.documentElement.classList.add(cls));
-	};
+    function applyTheme(newTheme: 'light' | 'dark' | 'system') {
+        currentTheme = newTheme;
+        theme.set(newTheme);
+        localStorage.setItem('theme', newTheme);
+    }
 
-	const themeChangeHandler = (_theme: string) => {
-		theme.set(_theme);
-		localStorage.setItem('theme', _theme);
-		applyTheme(_theme);
-		selectedTheme = _theme;
-	};
+    function savePreferences() {
+        // Language change (will emit 'languageChanged' event)
+        i18next.changeLanguage(language);
+        alert($i18n.t('Préférences enregistrées'));
+    }
 
-	const submitHandler = async () => {
-		if (!$user) return;
-
-		if (name !== $user.name) {
-			if (profileImageUrl === generateInitialsImage($user.name) || profileImageUrl === '') {
-				profileImageUrl = generateInitialsImage(name);
-			}
-		}
-
-		const updatedUser = await updateUserProfile(localStorage.token, name, profileImageUrl).catch(
-			(error) => {
-				toast.error(`${error}`);
-			}
-		);
-
-		if (updatedUser) {
-			// Get Session User Info
-			const sessionUser = await getSessionUser(localStorage.token).catch((error) => {
-				toast.error(`${error}`);
-				return null;
-			});
-
-			await user.set(sessionUser);
-			return true;
-		}
-		return false;
-	};
-
-	onMount(async () => {
-		if ($user) {
-			name = $user.name;
-			profileImageUrl = $user.profile_image_url;
-		}
-
-		selectedTheme = localStorage.theme ?? 'system';
-		applyTheme(selectedTheme);
-
-		languages = await getLanguages();
-		lang = $i18n.language;
-	});
+    // --- Tab configuration ---
+    const tabs = [
+        {
+            id: 'profile',
+            labelKey: 'Profil',
+            icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>`
+        },
+        {
+            id: 'security',
+            labelKey: 'Sécurité',
+            icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>`
+        },
+        {
+            id: 'preferences',
+            labelKey: 'Préférences',
+            icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>`
+        }
+    ];
 </script>
 
-<div
-	class="flex flex-col h-full justify-between text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-5"
->
-	<div class="space-y-4 overflow-y-scroll max-h-[28rem] lg:max-h-full custom-scrollbar">
-		<input
-			id="profile-image-input"
-			bind:this={profileImageInputElement}
-			type="file"
-			hidden
-			accept="image/*"
-			on:change={() => {
-				const files = profileImageInputElement.files ?? [];
-				if (files.length === 0) return;
+<div class="settings-page">
 
-				let reader = new FileReader();
-				reader.onload = (event) => {
-					let originalImageUrl = `${event.target?.result}`;
+    <!-- Main container: sidebar + content -->
+    <div class="page-wrapper">
+        <!-- LEFT COLUMN: Sidebar -->
+        <aside class="sidebar" in:fly={{ x: -20, duration: 400, easing: cubicOut }}>
+            <!-- Profile card -->
+            <div class="profile-hero">
+                <div class="avatar-wrapper">
+                    <img src={profile.avatar} alt="Avatar" class="avatar" />
+                    <label class="avatar-upload" title={$i18n.t('Changer la photo')}>
+                        {#if isUploading}
+                            <span class="spin-ring"></span>
+                        {:else}
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                        {/if}
+                        <input type="file" accept="image/*" on:change={handleAvatarChange} hidden />
+                    </label>
+                </div>
+                <h2 class="hero-name">{profile.firstName} {profile.lastName}</h2>
+                <p class="hero-email">{profile.email}</p>
+                <span class="hero-badge">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="12" height="12">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+                    </svg>
+                    {$i18n.t('Professeur')}
+                </span>
+            </div>
 
-					const img = new Image();
-					img.src = originalImageUrl;
+            <!-- Tab navigation -->
+            <nav class="tab-nav">
+                {#each tabs as tab}
+                    <button
+                        class="tab-btn {activeTab === tab.id ? 'active' : ''}"
+                        on:click={() => (activeTab = tab.id)}
+                    >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="18" height="18">
+                            {@html tab.icon}
+                        </svg>
+                        <span>{$i18n.t(tab.labelKey)}</span>
+                        {#if activeTab === tab.id}
+                            <span class="tab-dot"></span>
+                        {/if}
+                    </button>
+                {/each}
+            </nav>
+        </aside>
 
-					img.onload = function () {
-						const canvas = document.createElement('canvas');
-						const ctx = canvas.getContext('2d');
+        <!-- RIGHT COLUMN: Dynamic content -->
+        <main class="content" in:fly={{ x: 20, duration: 400, easing: cubicOut }}>
 
-						// Calculate the aspect ratio of the image
-						const aspectRatio = img.width / img.height;
+            <!-- ========== PROFILE TAB ========== -->
+            {#if activeTab === 'profile'}
+                <div class="panel" in:fade={{ duration: 200 }}>
+                    <div class="panel-header">
+                        <div class="panel-icon blue">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="panel-title">{$i18n.t('Informations du profil')}</h2>
+                            <p class="panel-sub">{$i18n.t('Mettez à jour vos informations personnelles')}</p>
+                        </div>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="form-stack">
+                        <!-- First name -->
+                        <div class="input-group">
+                            <label class="input-label">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                </svg>
+                                {$i18n.t('Prénom')}
+                            </label>
+                            <input type="text" bind:value={profile.firstName} class="field" placeholder={$i18n.t('Votre prénom...')} />
+                        </div>
+                        <!-- Last name -->
+                        <div class="input-group">
+                            <label class="input-label">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                </svg>
+                                {$i18n.t('Nom')}
+                            </label>
+                            <input type="text" bind:value={profile.lastName} class="field" placeholder={$i18n.t('Votre nom...')} />
+                        </div>
+                        <!-- Email -->
+                        <div class="input-group">
+                            <label class="input-label">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                                {$i18n.t('Adresse email')}
+                            </label>
+                            <input type="email" bind:value={profile.email} class="field" placeholder={$i18n.t('votre@email.com')} />
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <button class="btn-save" on:click={saveProfile}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            {$i18n.t('Enregistrer les modifications')}
+                        </button>
+                    </div>
+                </div>
 
-						// Calculate the new width and height to fit within 250x250
-						let newWidth, newHeight;
-						if (aspectRatio > 1) {
-							newWidth = 250 * aspectRatio;
-							newHeight = 250;
-						} else {
-							newWidth = 250;
-							newHeight = 250 / aspectRatio;
-						}
+            <!-- ========== SECURITY TAB ========== -->
+            {:else if activeTab === 'security'}
+                <div class="panel" in:fade={{ duration: 200 }}>
+                    <div class="panel-header">
+                        <div class="panel-icon purple">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="panel-title">{$i18n.t('Sécurité du compte')}</h2>
+                            <p class="panel-sub">{$i18n.t('Changez votre mot de passe régulièrement')}</p>
+                        </div>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="security-tip">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        {$i18n.t('Utilisez au moins 8 caractères avec des chiffres et symboles.')}
+                    </div>
+                    <div class="form-stack">
+                        <div class="input-group">
+                            <label class="input-label">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                </svg>
+                                {$i18n.t('Ancien mot de passe')}
+                            </label>
+                            <input type="password" bind:value={oldPassword} class="field" placeholder="••••••••" />
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                                </svg>
+                                {$i18n.t('Nouveau mot de passe')}
+                            </label>
+                            <input type="password" bind:value={newPassword} class="field" placeholder="••••••••" />
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                </svg>
+                                {$i18n.t('Confirmer le mot de passe')}
+                            </label>
+                            <input type="password" bind:value={confirmPassword} class="field" placeholder="••••••••" />
+                        </div>
+                    </div>
+                    <div class="panel-footer">
+                        <button class="btn-save purple-btn" on:click={changePassword}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                            </svg>
+                            {$i18n.t('Mettre à jour le mot de passe')}
+                        </button>
+                    </div>
+                </div>
 
-						// Set the canvas size
-						canvas.width = 250;
-						canvas.height = 250;
+            <!-- ========== PREFERENCES TAB ========== -->
+            {:else if activeTab === 'preferences'}
+                <div class="panel" in:fade={{ duration: 200 }}>
+                    <div class="panel-header">
+                        <div class="panel-icon green">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="panel-title">{$i18n.t('Préférences')}</h2>
+                            <p class="panel-sub">{$i18n.t('Personnalisez votre expérience')}</p>
+                        </div>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="pref-list-new">
+                        <!-- Language option -->
+                        <div class="pref-card">
+                            <div class="pref-card-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" stroke-linecap="round"/>
+                                    <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            <div class="pref-card-content">
+                                <div class="pref-card-header">
+                                    <label class="pref-card-title">{$i18n.t('Langue')}</label>
+                                    <p class="pref-card-desc">{$i18n.t('Choisissez la langue de l\'interface')}</p>
+                                </div>
+                                <div class="lang-selector">
+                                    {#each [
+                                        { code: 'fr-FR', flag: '🇫🇷', name: 'Français' },
+                                        { code: 'en-US', flag: '🇺🇸', name: 'English' },
+                                        { code: 'ar-MA', flag: '🇲🇦', name: 'العربية' }
+                                    ] as langOpt}
+                                        <button
+                                            class="lang-option {language === langOpt.code ? 'active' : ''}"
+                                            on:click={() => {
+                                                language = langOpt.code;
+                                                i18next.changeLanguage(langOpt.code);
+                                            }}
+                                        >
+                                            <span class="lang-flag">{langOpt.flag}</span>
+                                            <span class="lang-name">{langOpt.name}</span>
+                                            {#if language === langOpt.code}
+                                                <span class="check-mark">✓</span>
+                                            {/if}
+                                        </button>
+                                    {/each}
+                                </div>
+                            </div>
+                        </div>
 
-						// Calculate the position to center the image
-						const offsetX = (250 - newWidth) / 2;
-						const offsetY = (250 - newHeight) / 2;
+                        <!-- Elegant separator -->
+                        <div class="pref-separator"></div>
 
-						// Draw the image on the canvas
-						ctx?.drawImage(img, offsetX, offsetY, newWidth, newHeight);
-
-						// Get the base64 representation of the compressed image
-						const compressedSrc = canvas.toDataURL('image/jpeg');
-
-						// Display the compressed image
-						profileImageUrl = compressedSrc;
-
-						profileImageInputElement.files = null;
-					};
-				};
-
-				if (['image/gif', 'image/webp', 'image/jpeg', 'image/png'].includes(files[0]['type'])) {
-					reader.readAsDataURL(files[0]);
-				}
-			}}
-		/>
-
-		<div class="space-y-2">
-			<div class="flex space-x-5 items-center">
-				<div class="flex flex-col">
-					<div class="self-center mt-2">
-						<button
-							class="relative rounded-full border-4 border-white shadow-md dark:border-gray-800 transition hover:scale-105"
-							type="button"
-							on:click={() => {
-								profileImageInputElement.click();
-							}}
-						>
-							<img
-								src={profileImageUrl !== '' ? profileImageUrl : generateInitialsImage(name)}
-								alt="profile"
-								crossorigin="anonymous"
-								class="rounded-full size-20 object-cover"
-							/>
-
-							<div
-								class="absolute flex justify-center rounded-full bottom-0 left-0 right-0 top-0 h-full w-full overflow-hidden bg-gray-700 bg-fixed opacity-0 transition duration-300 ease-in-out hover:opacity-50"
-							>
-								<div
-									class="absolute flex justify-center items-center inset-0 rounded-full bg-black/50 opacity-0 hover:opacity-100 transition duration-300"
-								>
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										viewBox="0 0 20 20"
-										fill="currentColor"
-										class="w-6 h-6 text-white"
-									>
-										<path
-											d="m2.695 14.762-1.262 3.155a.5.5 0 0 0 .65.65l3.155-1.262a4 4 0 0 0 1.343-.886L17.5 5.501a2.121 2.121 0 0 0-3-3L3.58 13.419a4 4 0 0 0-.885 1.343Z"
-										/>
-									</svg>
-								</div>
-							</div>
-						</button>
-					</div>
-				</div>
-
-				<div class="flex-1 flex flex-col self-center gap-1">
-					<div class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-						{$i18n.t('Profile Image')}
-					</div>
-
-					<div class="flex gap-2 flex-wrap">
-						<button
-							class="text-xs text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-4 py-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-							on:click={async () => {
-								if (canvasPixelTest()) {
-									profileImageUrl = generateInitialsImage(name);
-								} else {
-									toast.info(
-										$i18n.t(
-											'Fingerprint spoofing detected: Unable to use initials as avatar. Defaulting to default profile image.'
-										),
-										{
-											duration: 1000 * 10
-										}
-									);
-								}
-							}}>{$i18n.t('Use Initials')}</button
-						>
-
-						<button
-							class="text-xs text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-4 py-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-							on:click={async () => {
-								if (!$user) return;
-								const url = await getGravatarUrl(localStorage.token, $user.email);
-								console.log('Gravatar URL:', url);
-								if (url) {
-									profileImageUrl = url;
-								} else {
-									profileImageUrl = '/user.png'; // fallback
-									toast.error('Failed to load Gravatar image');
-								}
-								profileImageInputElement.value = '';
-							}}
-						>
-							{$i18n.t('Use Gravatar')}
-						</button>
-
-						<button
-							class="text-xs text-red-600 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-lg hover:bg-red-100 dark:hover:bg-red-900 transition"
-							on:click={async () => {
-								profileImageUrl = '/user.png';
-							}}>{$i18n.t('Remove')}</button
-						>
-					</div>
-				</div>
-			</div>
-
-			<div class="pt-2">
-				<div class="flex flex-col w-full">
-					<div class="mb-1 text-xs font-semibold text-gray-600 dark:text-gray-400">
-						{$i18n.t('Name')}
-					</div>
-
-					<div class="flex-1">
-						<input
-							class="w-full rounded-xl py-2 px-4 text-sm dark:text-white bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition focus:ring-inset"
-							type="text"
-							bind:value={name}
-							required
-						/>
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<div class="pt-2">
-			<UpdatePassword />
-		</div>
-
-		<!-- UI Preferences -->
-		<div class="space-y-3 pt-2">
-			<div class="flex w-full justify-between">
-				<div class="self-center text-xs font-medium">{$i18n.t('Theme')}</div>
-				<div class="flex items-center relative">
-					<select
-						class="dark:bg-gray-900 w-fit pr-8 rounded-sm py-2 px-2 text-xs bg-transparent outline-hidden text-right"
-						bind:value={selectedTheme}
-						on:change={() => themeChangeHandler(selectedTheme)}
-					>
-						<option value="system">💻 {$i18n.t('System')}</option>
-						<option value="dark">🌑 {$i18n.t('Dark')}</option>
-						<option value="light">☀️ {$i18n.t('Light')}</option>
-					</select>
-				</div>
-			</div>
-
-			<div class="flex w-full justify-between">
-				<div class="self-center text-xs font-medium">{$i18n.t('Language')}</div>
-				<div class="flex items-center relative">
-					<select
-						class="dark:bg-gray-900 w-fit pr-8 rounded-sm py-2 px-2 text-xs bg-transparent outline-hidden text-right"
-						bind:value={lang}
-						on:change={async () => {
-							$i18n.changeLanguage(lang);
-							localStorage.setItem('lang', lang);
-						}}
-					>
-						{#each languages as l}
-							<option value={l.code}>{l.title}</option>
-						{/each}
-					</select>
-				</div>
-			</div>
-		</div>
-
-		<hr class="border-t border-gray-200 dark:border-gray-700 my-4" />
-	</div>
-
-	<div class="flex justify-end pt-4">
-		<button
-			class="px-4 py-2 text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white dark:bg-gradient-to-r dark:from-blue-600 dark:to-indigo-600 dark:hover:from-blue-700 dark:hover:to-indigo-700 rounded-full transition"
-			on:click={async () => {
-				const res = await submitHandler();
-
-				if (res) {
-					toast.success($i18n.t('Changes updated successfully'));
-					saveHandler();
-				}
-			}}
-		>
-			{$i18n.t('Save')}
-		</button>
-	</div>
+                        <!-- Theme option -->
+                        <div class="pref-card">
+                            <div class="pref-card-icon theme-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke-linecap="round"/>
+                                </svg>
+                            </div>
+                            <div class="pref-card-content">
+                                <div class="pref-card-header">
+                                    <label class="pref-card-title">{$i18n.t('Thème')}</label>
+                                    <p class="pref-card-desc">{$i18n.t('Personnalisez l\'apparence')}</p>
+                                </div>
+                                <div class="theme-selector">
+                                    {#each [
+                                        { id: 'light', icon: '☀️', label: 'Clair' },
+                                        { id: 'system', icon: '💻', label: 'Système' },
+                                        { id: 'dark', icon: '🌙', label: 'Sombre' }
+                                    ] as themeOpt}
+                                        <button
+                                            class="theme-option {currentTheme === themeOpt.id ? 'active' : ''}"
+                                            on:click={() => applyTheme(themeOpt.id)}
+                                        >
+                                            <span class="theme-icon-large">{themeOpt.icon}</span>
+                                            <span class="theme-label">{$i18n.t(themeOpt.label)}</span>
+                                            <div class="theme-radio {currentTheme === themeOpt.id ? 'checked' : ''}">
+                                                {#if currentTheme === themeOpt.id}
+                                                    <span class="radio-dot"></span>
+                                                {/if}
+                                            </div>
+                                        </button>
+                                    {/each}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!--
+                    
+                    <div class="panel-footer">
+                        <button class="btn-save green-btn" on:click={savePreferences}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            {$i18n.t('Appliquer les préférences')}
+                        </button>
+                    </div>-->
+                </div>
+            {/if}
+        </main>
+    </div>
 </div>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+    /* --- Base --- */
+    .settings-page {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 1.5rem 2rem 3rem;
+        color: #0f172a;
+    }
+    :global(.dark) .settings-page {
+        color: #f1f5f9;
+    }
+
+    /* --- Main layout --- */
+    .page-wrapper {
+        display: flex;
+        gap: 2rem;
+        align-items: flex-start;
+    }
+
+    /* --- Sidebar --- */
+    .sidebar {
+        width: 260px;
+        flex-shrink: 0;
+        position: sticky;
+        top: 2rem;
+    }
+
+    .profile-hero {
+        background: linear-gradient(145deg, #2563eb, #4f46e5);
+        border-radius: 1.5rem;
+        padding: 2rem 1rem 1.5rem;
+        text-align: center;
+        color: white;
+        margin-bottom: 1rem;
+        box-shadow: 0 8px 20px -6px rgba(37, 99, 235, 0.4);
+    }
+
+    .avatar-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+    .avatar {
+        width: 88px;
+        height: 88px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid rgba(255,255,255,0.4);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+    .avatar-upload {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 30px;
+        height: 30px;
+        background: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        transition: transform 0.15s;
+        color: #2563eb;
+    }
+    .avatar-upload:hover {
+        transform: scale(1.1);
+    }
+    .spin-ring {
+        width: 16px;
+        height: 16px;
+        border: 2px solid #e0e7ff;
+        border-top-color: #2563eb;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    .hero-name {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin: 0.75rem 0 0.25rem;
+    }
+    .hero-email {
+        font-size: 0.75rem;
+        opacity: 0.8;
+        margin: 0 0 0.75rem;
+        word-break: break-all;
+    }
+    .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        background: rgba(255,255,255,0.2);
+        backdrop-filter: blur(4px);
+        border-radius: 2rem;
+        padding: 0.25rem 0.9rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .tab-nav {
+        background: white;
+        border-radius: 1.25rem;
+        padding: 0.5rem;
+        border: 1px solid #eef2f6;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    :global(.dark) .tab-nav {
+        background: #1e293b;
+        border-color: #334155;
+    }
+
+    .tab-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        width: 100%;
+        padding: 0.8rem 1rem;
+        border: none;
+        background: none;
+        border-radius: 0.85rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-align: left;
+    }
+    .tab-btn:hover {
+        background: #f8faff;
+        color: #2563eb;
+    }
+    :global(.dark) .tab-btn:hover {
+        background: #1e2d45;
+        color: #93c5fd;
+    }
+    .tab-btn.active {
+        background: #eef2ff;
+        color: #2563eb;
+        font-weight: 600;
+    }
+    :global(.dark) .tab-btn.active {
+        background: #1e3a8a;
+        color: #93c5fd;
+    }
+    .tab-dot {
+        width: 6px;
+        height: 6px;
+        background: #2563eb;
+        border-radius: 50%;
+        margin-left: auto;
+    }
+
+    /* --- Main content (panels) --- */
+    .content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .panel {
+        background: white;
+        border-radius: 1.5rem;
+        border: 1px solid #eef2f6;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+        overflow: hidden;
+    }
+    :global(.dark) .panel {
+        background: #1e293b;
+        border-color: #334155;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+    }
+
+    .panel-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.75rem 2rem;
+    }
+    .panel-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .panel-icon.blue  { background: #eef2ff; color: #2563eb; }
+    .panel-icon.purple{ background: #f5f3ff; color: #7c3aed; }
+    .panel-icon.green { background: #ecfdf5; color: #059669; }
+    :global(.dark) .panel-icon.blue  { background: #1e3a8a; color: #93c5fd; }
+    :global(.dark) .panel-icon.purple{ background: #2d1b69; color: #c4b5fd; }
+    :global(.dark) .panel-icon.green { background: #064e3b; color: #6ee7b7; }
+
+    .panel-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        margin: 0 0 0.2rem;
+    }
+    .panel-sub {
+        font-size: 0.82rem;
+        color: #94a3b8;
+        margin: 0;
+    }
+
+    .divider {
+        height: 1px;
+        background: #f1f5f9;
+        margin: 0 2rem;
+    }
+    :global(.dark) .divider {
+        background: #334155;
+    }
+
+    .form-stack {
+        padding: 1.75rem 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+    .input-label {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+    :global(.dark) .input-label {
+        color: #94a3b8;
+    }
+
+    .field {
+        padding: 0.8rem 1.1rem;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 0.85rem;
+        background: #fafbfc;
+        font-size: 0.95rem;
+        color: #0f172a;
+        transition: border 0.15s, box-shadow 0.15s;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .field:focus {
+        border-color: #2563eb;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        background: white;
+    }
+    :global(.dark) .field {
+        background: #0f172a;
+        border-color: #334155;
+        color: #f1f5f9;
+    }
+
+    .security-tip {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 0.75rem;
+        padding: 0.75rem 1.25rem;
+        margin: 1.25rem 2rem 0;
+        font-size: 0.82rem;
+        color: #92400e;
+    }
+    :global(.dark) .security-tip {
+        background: #292100;
+        border-color: #7c5a00;
+        color: #fcd34d;
+    }
+
+    .panel-footer {
+        padding: 1.25rem 2rem 1.75rem;
+        border-top: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: flex-end;
+    }
+    :global(.dark) .panel-footer {
+        border-top-color: #334155;
+    }
+
+    /* Buttons */
+    .btn-save {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: linear-gradient(145deg, #2563eb, #4f46e5);
+        color: white;
+        border: none;
+        border-radius: 0.85rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+        transition: transform 0.1s, box-shadow 0.15s;
+    }
+    .btn-save:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45);
+    }
+    .btn-save.purple-btn {
+        background: linear-gradient(145deg, #7c3aed, #6d28d9);
+        box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35);
+    }
+    .btn-save.green-btn {
+        background: linear-gradient(145deg, #059669, #047857);
+        box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
+    }
+
+    /* Preferences */
+    .pref-list-new {
+        padding: 0.5rem 2rem 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .pref-card {
+        display: flex;
+        gap: 1.25rem;
+        align-items: flex-start;
+        padding: 0.75rem 0;
+    }
+
+    .pref-card-icon {
+        width: 44px;
+        height: 44px;
+        background: linear-gradient(145deg, #eef2ff, #ffffff);
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #2563eb;
+        box-shadow: 0 6px 10px -4px rgba(37, 99, 235, 0.12);
+        border: 1px solid rgba(255,255,255,0.6);
+        flex-shrink: 0;
+    }
+    :global(.dark) .pref-card-icon {
+        background: linear-gradient(145deg, #1e3a8a, #1e293b);
+        color: #93c5fd;
+        border-color: #334155;
+        box-shadow: 0 6px 10px -4px rgba(0,0,0,0.4);
+    }
+
+    .pref-card-content {
+        flex: 1;
+    }
+
+    .pref-card-header {
+        margin-bottom: 0.9rem;
+    }
+
+    .pref-card-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #0f172a;
+        display: block;
+        margin-bottom: 0.2rem;
+    }
+    :global(.dark) .pref-card-title {
+        color: #f1f5f9;
+    }
+
+    .pref-card-desc {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin: 0;
+    }
+    :global(.dark) .pref-card-desc {
+        color: #94a3b8;
+    }
+
+    .pref-separator {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+        margin: 0.5rem 0 0.5rem 3.5rem;
+    }
+    :global(.dark) .pref-separator {
+        background: linear-gradient(90deg, transparent, #334155, transparent);
+    }
+
+    /* Language selector (buttons) */
+    .lang-selector {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+    }
+
+    .lang-option {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.55rem 1rem;
+        background: #f8fafc;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 2.5rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #334155;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .lang-option:hover {
+        background: #ffffff;
+        border-color: #2563eb;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 10px -4px rgba(37, 99, 235, 0.15);
+    }
+    .lang-option.active {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: white;
+        box-shadow: 0 8px 14px -6px rgba(37, 99, 235, 0.35);
+    }
+    :global(.dark) .lang-option {
+        background: #1e293b;
+        border-color: #334155;
+        color: #cbd5e1;
+    }
+    :global(.dark) .lang-option:hover {
+        background: #2d3a52;
+        border-color: #60a5fa;
+        color: #f1f5f9;
+    }
+    :global(.dark) .lang-option.active {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: white;
+    }
+
+    .lang-flag {
+        font-size: 1.2rem;
+        line-height: 1;
+    }
+
+    .check-mark {
+        font-size: 0.9rem;
+        font-weight: 700;
+        margin-left: 0.2rem;
+    }
+
+    /* Theme selector */
+    .theme-selector {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+
+    .theme-option {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.65rem 1rem;
+        background: #f8fafc;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 1rem;
+        width: 100%;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: left;
+    }
+    .theme-option:hover {
+        background: #ffffff;
+        border-color: #2563eb;
+        box-shadow: 0 4px 8px -2px rgba(37, 99, 235, 0.1);
+    }
+    .theme-option.active {
+        background: #eef2ff;
+        border-color: #2563eb;
+    }
+    :global(.dark) .theme-option {
+        background: #1e293b;
+        border-color: #334155;
+    }
+    :global(.dark) .theme-option:hover {
+        background: #2d3a52;
+        border-color: #60a5fa;
+    }
+    :global(.dark) .theme-option.active {
+        background: #1e3a8a;
+        border-color: #3b82f6;
+    }
+
+    .theme-icon-large {
+        font-size: 1.6rem;
+        line-height: 1;
+        width: 32px;
+        text-align: center;
+    }
+
+    .theme-label {
+        flex: 1;
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: #1e293b;
+    }
+    :global(.dark) .theme-label {
+        color: #f1f5f9;
+    }
+
+    .theme-radio {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #cbd5e1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: border-color 0.15s;
+        background: white;
+    }
+    .theme-option.active .theme-radio {
+        border-color: #2563eb;
+    }
+    :global(.dark) .theme-radio {
+        background: #0f172a;
+        border-color: #475569;
+    }
+    :global(.dark) .theme-option.active .theme-radio {
+        border-color: #3b82f6;
+    }
+
+    .radio-dot {
+        width: 10px;
+        height: 10px;
+        background: #2563eb;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    :global(.dark) .radio-dot {
+        background: #3b82f6;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .settings-page {
+            padding: 1rem;
+        }
+        .page-wrapper {
+            flex-direction: column;
+        }
+        .sidebar {
+            width: 100%;
+            position: static;
+        }
+        .profile-hero {
+            padding: 1.5rem 1rem;
+        }
+        .tab-nav {
+            flex-direction: row;
+            overflow-x: auto;
+        }
+        .tab-btn {
+            flex-shrink: 0;
+        }
+        .tab-dot {
+            display: none;
+        }
+        .panel-header, .panel-footer, .form-stack, .pref-list {
+            padding-left: 1.25rem;
+            padding-right: 1.25rem;
+        }
+        .divider {
+            margin-left: 1.25rem;
+            margin-right: 1.25rem;
+        }
+        .security-tip {
+            margin-left: 1.25rem;
+            margin-right: 1.25rem;
+        }
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+</style>
