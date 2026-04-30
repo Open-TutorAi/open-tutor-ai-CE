@@ -1,4 +1,5 @@
 <script lang="ts">
+<<<<<<< HEAD
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { onMount, getContext } from 'svelte';
@@ -86,6 +87,24 @@
 			toast.success($i18n.t('Course renamed!'));
 		}
 		openMenuId = null;
+=======
+	import { getContext, onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { user } from '$lib/stores';
+	const i18n = getContext('i18n');
+
+	// Mock data for UI testing
+	let courses = [
+		{ id: 1, title: 'PROJET D\'ETUDE', modified: '2 heures', code: 'PER-402', students: 34 },
+		{ id: 2, title: 'Technologies DevOps', modified: 'hier', code: 'D-Ops-101', students: 42 },
+		{ id: 3, title: 'Full stack avancé', modified: '3 jours', code: 'Ful-220', students: 28 },
+		{ id: 4, title: 'bases de données NoSQL', modified: '1 semaine', code: 'BaSE-305', students: 16 }
+	];
+
+	function copyToClipboard(text: string) {
+		navigator.clipboard.writeText(text);
+		// You can add a toast here
+>>>>>>> 4f8e763b8ec48fe19c4ef0f70a0b4f2c1b7b4f11
 	}
 </script>
 
