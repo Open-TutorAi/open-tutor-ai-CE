@@ -1,69 +1,39 @@
 <script lang="ts">
-    import { goto } from '$app/navigation';
-    import { user } from '$lib/stores';
-    import { onMount, getContext } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { user } from '$lib/stores';
+	import { onMount, getContext } from 'svelte';
 
-    let loading = true;
-    let error: string | null = null;
-    const i18n: any = getContext('i18n');
+	let loading = true;
+	let error: string | null = null;
+	const i18n: any = getContext('i18n');
 
-    onMount(async () => {
-        try {
-            loading = true;
+	onMount(async () => {
+		try {
+			loading = true;
 
-<<<<<<< HEAD
-  onMount(async () => {
-    try {
-      loading = true;
-      
-      if (!$user) {
-        console.log("No user found, redirecting to auth page");
-        await goto('/auth');
-        return;
-      }
+			if (!$user) {
+				console.log('No user found, redirecting to auth page');
+				await goto('/auth');
+				return;
+			}
 
-      console.log("Current user role:", $user.role);
-      
-      if ($user.role !== 'teacher') {
-        console.log("User is not a teacher, redirecting to home");
-        await goto(`/${$user.role}`);
-        return;
-      }else{
-        await goto(`/teacher/dashboard`);
-      }
-      
-      loading = false;
-    } catch (err) {
-      console.error("Error in student page:", err);
-      error = err.message || "An error occurred";
-      loading = false;
-    }
-  });
-</script>
-=======
-            if (!$user) {
-                console.log('No user found, redirecting to auth page');
-                goto('/auth');
-                return;
-            }
+			console.log('Current user role:', $user.role);
 
-            console.log('Current user role:', $user.role);
+			if ($user.role !== 'teacher') {
+				console.log('User is not a teacher, redirecting to home');
+				await goto(`/${$user.role}`);
+				return;
+			} else {
+				await goto(`/teacher/dashboard`);
+			}
 
-            // Allow access to teachers AND admins
-            if ($user.role !== 'teacher' && $user.role !== 'admin') {
-                console.log('User is not a teacher or admin, redirecting to home');
-                await goto(`/${$user.role}`);
-                return;
-            }
-
-            // User has the correct role, continue loading the page
-            loading = false;
-        } catch (err: any) {
-            console.error('Error in teacher page:', err);
-            error = err.message || 'An error occurred';
-            loading = false;
-        }
-    });
+			loading = false;
+		} catch (err) {
+			console.error('Error in student page:', err);
+			error = err.message || 'An error occurred';
+			loading = false;
+		}
+	});
 </script>
 
 {#if loading}
@@ -75,7 +45,9 @@
 		class="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 p-6"
 	>
 		<div class="w-full max-w-4xl bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-			<h1 class="text-3xl font-bold text-center mb-4 text-red-600">{$i18n.t('Error Loading Teacher Page')}</h1>
+			<h1 class="text-3xl font-bold text-center mb-4 text-red-600">
+				{$i18n.t('Error Loading Teacher Page')}
+			</h1>
 			<p class="text-gray-700 dark:text-gray-300 text-center mb-6">{error}</p>
 			<div class="flex justify-center">
 				<button
@@ -102,11 +74,15 @@
 						{$i18n.t('Welcome to Your Teaching Dashboard')}
 					</h2>
 					<p class="text-gray-700 dark:text-gray-300">
-						{$i18n.t('This is your personalized teaching space. Here you can manage your courses, create assignments, and monitor student progress.')}
+						{$i18n.t(
+							'This is your personalized teaching space. Here you can manage your courses, create assignments, and monitor student progress.'
+						)}
 					</p>
 					{#if $user}
 						<div class="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-							<h3 class="font-medium text-green-700 dark:text-green-300">{$i18n.t('Your Account Info:')}</h3>
+							<h3 class="font-medium text-green-700 dark:text-green-300">
+								{$i18n.t('Your Account Info:')}
+							</h3>
 							<p class="text-gray-700 dark:text-gray-300">{$i18n.t('Full Name')}: {$user.name}</p>
 							<p class="text-gray-700 dark:text-gray-300">{$i18n.t('Email')}: {$user.email}</p>
 							<p class="text-gray-700 dark:text-gray-300">{$i18n.t('Role')}: {$user.role}</p>
@@ -127,4 +103,3 @@
 		</div>
 	</div>
 {/if}
->>>>>>> 11814d0 (feat: implement teacher screens using mock data to validate UX, navigation, i18n, and reusable components.)

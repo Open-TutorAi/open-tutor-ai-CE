@@ -4,6 +4,7 @@
     import { onMount, getContext } from 'svelte';
     import type { Writable } from 'svelte/store';
     import type { i18n as i18nType } from 'i18next';
+    import { user } from '$lib/stores'; // Bach n-akhdou l-ID dial l-user
 
     const i18n = getContext<Writable<i18nType>>('i18n');
     import { browser } from '$app/environment';
@@ -16,6 +17,8 @@
                         (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
             applyTheme();
         }
+        // Jib l-messages mnin t-7el l-page
+        fetchDiscussions();
     });
 
     function applyTheme() {
@@ -28,7 +31,7 @@
         }
     }
 
-    // --- 2. Channels Data ---
+    // --- 2. Channels Data (Fake for now, but used for navigation) ---
     let channels = [
         { id: 'JAVA-101', name: 'General - Java Course', lastMsg: "Don't forget tomorrow's practical.", unread: 3 },
         { id: 'WEB-202', name: 'Final Project - Web', lastMsg: 'The specifications are online.', unread: 0 },
@@ -38,17 +41,42 @@
     ];
     let activeChannelId = 'JAVA-101';
 
-    // --- 3. Messages Data ---
-    let allMessages: Record<string, any[]> = {
-        'JAVA-101': [
-            { user: 'Prof. Aicha Dakir', role: 'TEACHER', time: '10:30', text: 'Hello everyone, I have updated the course material on inheritance in Java.', color: 'bg-green-500' },
-            { user: 'Abdelhadi Ait Boubker', role: 'STUDENT', time: '10:45', text: 'Thank you Sir! Will the exam also cover interfaces?', color: 'bg-yellow-500' }
-        ],
-        'WEB-202': [{ user: 'Prof. Aicha', text: 'Welcome to the Web course!', color: 'bg-blue-500', time: '09:00' }],
-        'ALGO-303': [{ user: 'Prof. Aicha', text: 'Merge sort is important.', color: 'bg-orange-500', time: '14:20' }]
+    // --- 3. Messages Logic (REAL DATA FROM BACKEND) ---
+    let currentMessages: any[] = [];
+    let isLoading = false;
+
+    // GET: Jib l-messages mn l-backend
+    async function fetchDiscussions() {
+        try {
+            const res = await fetch('http://localhost:8080/discussions/all');
+            if (res.ok) {
+                currentMessages = await res.json();
+            }
+        } catch (error) {
+            console.error("Backend offline or CORS error", error);
+        }
+    }
+
+    // POST: Sift message jdid
+    const handleSend = async () => {
+        if (!newMessage.trim()) return;
+
+        const url = `http://localhost:8080/discussions/add?content=${encodeURIComponent(newMessage)}&user_id=${$user?.id || 'Abdelwahhab'}`;
+
+        try {
+            const res = await fetch(url, { method: 'POST' });
+            if (res.ok) {
+                newMessage = "";
+                await fetchDiscussions(); // Refresh l-lista
+                toast.success('Message sent! 🚀');
+            } else {
+                toast.error('Error sending message');
+            }
+        } catch (error) {
+            toast.error('Backend offline!');
+        }
     };
 
-    $: currentMessages = allMessages[activeChannelId] || [];
     $: activeChannel = channels.find(ch => ch.id === activeChannelId);
 
     // --- 4. State & Filtering ---
@@ -66,21 +94,6 @@
             toast.success($i18n.t('Link copied! 📋'));
             showInviteModal = false;
         });
-    };
-
-    const handleSend = () => {
-        if (!newMessage.trim()) return;
-        const msgObj = { 
-            id: Date.now(), 
-            user: 'Me', 
-            role: 'TEACHER', 
-            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), 
-            text: newMessage, 
-            color: 'bg-indigo-600' 
-        };
-        if (!allMessages[activeChannelId]) allMessages[activeChannelId] = [];
-        allMessages[activeChannelId] = [...allMessages[activeChannelId], msgObj];
-        newMessage = "";
     };
 </script>
 

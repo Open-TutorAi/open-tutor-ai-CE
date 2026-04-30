@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
 	import { onMount, getContext } from 'svelte';
+	import type { Writable } from 'svelte/store';
+	import type { i18n as i18nType } from 'i18next';
 
 	import { user } from '$lib/stores';
 	import { updateUserProfile, getSessionUser } from '$lib/apis/auths';
@@ -11,10 +13,6 @@
 	import { settings, theme } from '$lib/stores';
 	import { getLanguages } from '$lib/i18n';
 
-
-	const i18n = getContext('i18n');
-	import type { Writable } from 'svelte/store';
-	import type { i18n as i18nType } from 'i18next';
 	const i18n = getContext<Writable<i18nType>>('i18n');
 
 	export let saveHandler: Function = () => {};
@@ -52,10 +50,9 @@
 		selectedTheme = _theme;
 	};
 
-
 	const submitHandler = async () => {
 		if (!$user) return;
-		
+
 		if (name !== $user.name) {
 			if (profileImageUrl === generateInitialsImage($user.name) || profileImageUrl === '') {
 				profileImageUrl = generateInitialsImage(name);
@@ -82,8 +79,6 @@
 	};
 
 	onMount(async () => {
-		name = $user.name;
-		profileImageUrl = $user.profile_image_url;
 		if ($user) {
 			name = $user.name;
 			profileImageUrl = $user.profile_image_url;
@@ -97,7 +92,9 @@
 	});
 </script>
 
-<div class="flex flex-col h-full justify-between text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-5">
+<div
+	class="flex flex-col h-full justify-between text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-5"
+>
 	<div class="space-y-4 overflow-y-scroll max-h-[28rem] lg:max-h-full custom-scrollbar">
 		<input
 			id="profile-image-input"
@@ -105,11 +102,12 @@
 			type="file"
 			hidden
 			accept="image/*"
-			on:change={(e) => {
+			on:change={() => {
 				const files = profileImageInputElement.files ?? [];
+				if (files.length === 0) return;
+
 				let reader = new FileReader();
 				reader.onload = (event) => {
-					let originalImageUrl = `${event.target.result}`;
 					let originalImageUrl = `${event.target?.result}`;
 
 					const img = new Image();
@@ -141,7 +139,6 @@
 						const offsetY = (250 - newHeight) / 2;
 
 						// Draw the image on the canvas
-						ctx.drawImage(img, offsetX, offsetY, newWidth, newHeight);
 						ctx?.drawImage(img, offsetX, offsetY, newWidth, newHeight);
 
 						// Get the base64 representation of the compressed image
@@ -154,18 +151,13 @@
 					};
 				};
 
-				if (
-					files.length > 0 &&
-					['image/gif', 'image/webp', 'image/jpeg', 'image/png'].includes(files[0]['type'])
-				) {
+				if (['image/gif', 'image/webp', 'image/jpeg', 'image/png'].includes(files[0]['type'])) {
 					reader.readAsDataURL(files[0]);
 				}
 			}}
 		/>
 
 		<div class="space-y-2">
-			<!-- <div class=" text-sm font-medium">{$i18n.t('Account')}</div> -->
-
 			<div class="flex space-x-5 items-center">
 				<div class="flex flex-col">
 					<div class="self-center mt-2">
@@ -186,7 +178,9 @@
 							<div
 								class="absolute flex justify-center rounded-full bottom-0 left-0 right-0 top-0 h-full w-full overflow-hidden bg-gray-700 bg-fixed opacity-0 transition duration-300 ease-in-out hover:opacity-50"
 							>
-								<div class="absolute flex justify-center items-center inset-0 rounded-full bg-black/50 opacity-0 hover:opacity-100 transition duration-300">
+								<div
+									class="absolute flex justify-center items-center inset-0 rounded-full bg-black/50 opacity-0 hover:opacity-100 transition duration-300"
+								>
 									<svg
 										xmlns="http://www.w3.org/2000/svg"
 										viewBox="0 0 20 20"
@@ -204,7 +198,9 @@
 				</div>
 
 				<div class="flex-1 flex flex-col self-center gap-1">
-					<div class="text-sm font-semibold text-gray-700 dark:text-gray-300">{$i18n.t('Profile Image')}</div>
+					<div class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+						{$i18n.t('Profile Image')}
+					</div>
 
 					<div class="flex gap-2 flex-wrap">
 						<button
@@ -238,12 +234,10 @@
 									toast.error('Failed to load Gravatar image');
 								}
 								profileImageInputElement.value = '';
-								}}
-							>
+							}}
+						>
 							{$i18n.t('Use Gravatar')}
 						</button>
-
-
 
 						<button
 							class="text-xs text-red-600 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-lg hover:bg-red-100 dark:hover:bg-red-900 transition"
@@ -257,7 +251,9 @@
 
 			<div class="pt-2">
 				<div class="flex flex-col w-full">
-					<div class="mb-1 text-xs font-semibold text-gray-600 dark:text-gray-400">{$i18n.t('Name')}</div>
+					<div class="mb-1 text-xs font-semibold text-gray-600 dark:text-gray-400">
+						{$i18n.t('Name')}
+					</div>
 
 					<div class="flex-1">
 						<input
@@ -312,7 +308,6 @@
 		</div>
 
 		<hr class="border-t border-gray-200 dark:border-gray-700 my-4" />
-
 	</div>
 
 	<div class="flex justify-end pt-4">
