@@ -7,7 +7,6 @@
 	let error: string | null = null;
 	const i18n: any = getContext('i18n');
 
-<<<<<<< HEAD
 	onMount(async () => {
 		try {
 			loading = true;
@@ -19,45 +18,6 @@
 			}
 
 			console.log('Current user role:', $user.role);
-=======
-	let loading = true;
-	let error = null;
-    const i18n = getContext('i18n');
-
-  onMount(async () => {
-    try {
-      loading = true;
-      
-      if (!$user) {
-        console.log("No user found, redirecting to auth page");
-        await goto('/auth');
-        return;
-      }
-
-      console.log("Current user role:", $user.role);
-      
-      if ($user.role !== 'teacher') {
-        console.log("User is not a teacher, redirecting to home");
-        await goto(`/${$user.role}`);
-        return;
-      }else{
-        await goto(`/teacher/dashboard`);
-      }
-      
-      loading = false;
-    } catch (err) {
-      console.error("Error in student page:", err);
-      error = err.message || "An error occurred";
-      loading = false;
-    }
-  });
-</script>
-            if (!$user) {
-                console.log('No user found, redirecting to auth page');
-                goto('/auth');
-                return;
-            }
->>>>>>> 4f8e763b8ec48fe19c4ef0f70a0b4f2c1b7b4f11
 
 			if ($user.role !== 'teacher') {
 				console.log('User is not a teacher, redirecting to home');
@@ -67,7 +27,6 @@
 				await goto(`/teacher/dashboard`);
 			}
 
-<<<<<<< HEAD
 			loading = false;
 		} catch (err) {
 			console.error('Error in student page:', err);
@@ -75,31 +34,6 @@
 			loading = false;
 		}
 	});
-=======
-            // Allow access to teachers AND admins
-            if ($user.role !== 'teacher' && $user.role !== 'admin') {
-                console.log('User is not a teacher or admin, redirecting to home');
-                await goto(`/${$user.role}`);
-                return;
-            }
-			// Allow access to teachers
-			if ($user.role !== 'teacher') {
-				console.log('User is not a teacher, redirecting to home');
-				await goto(`/${$user.role}`);
-				return;
-			}else{
-       			await goto(`/teacher/dashboard`);
-     		}
-
-            // User has the correct role, continue loading the page
-            loading = false;
-        } catch (err: any) {
-            console.error('Error in teacher page:', err);
-            error = err.message || 'An error occurred';
-            loading = false;
-        }
-    });
->>>>>>> 4f8e763b8ec48fe19c4ef0f70a0b4f2c1b7b4f11
 </script>
 
 {#if loading}
@@ -169,7 +103,3 @@
 		</div>
 	</div>
 {/if}
-<<<<<<< HEAD
-=======
-
->>>>>>> 4f8e763b8ec48fe19c4ef0f70a0b4f2c1b7b4f11
