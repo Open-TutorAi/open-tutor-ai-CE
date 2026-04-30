@@ -1,6 +1,6 @@
-<!-- assignments/+page.svelte -->
+<!-- Assignment/+page.svelte -->
 <script lang="ts">
-	import Assignments from '$lib/components/teacher/pages/Assignments.svelte';
+	import Assignment from '$lib/components/teacher/pages/Assignments.svelte';
 </script>
 
-<Assignments />
+<Assignment />
