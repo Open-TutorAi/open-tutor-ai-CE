@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import { io } from 'socket.io-client';
 	import { spring } from 'svelte/motion';
 	import PyodideWorker from '$lib/workers/pyodide.worker?worker';
@@ -7,7 +7,7 @@
 		stiffness: 0.05
 	});
 
-	import { onMount, tick, setContext } from 'svelte';
+	import { onMount, onDestroy, tick, setContext } from 'svelte';
 	import {
 		config,
 		user,
@@ -25,7 +25,8 @@
 		temporaryChatEnabled,
 		isLastActiveTab,
 		isApp,
-		appInfo
+		appInfo,
+		appData
 	} from '$lib/stores';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
@@ -55,8 +56,9 @@
 
 	const BREAKPOINT = 768;
 
+	/** @param {boolean} enableWebsocket */
 	const setupSocket = async (enableWebsocket) => {
-		const _socket = io(`${TUTOR_BASE_URL}` || undefined, {
+		const _socket = io(TUTOR_BASE_URL || /** @type {any} */ (undefined), {
 			reconnection: true,
 			reconnectionDelay: 1000,
 			reconnectionDelayMax: 5000,
@@ -102,9 +104,17 @@
 		});
 	};
 
+	/**
+	 * @param {string} id
+	 * @param {string} code
+	 * @param {Function} cb
+	 */
 	const executePythonAsWorker = async (id, code, cb) => {
+		/** @type {any} */
 		let result = null;
+		/** @type {string | null} */
 		let stdout = null;
+		/** @type {string | null} */
 		let stderr = null;
 
 		let executing = true;
@@ -182,6 +192,7 @@
 			executing = false;
 		};
 
+		/** @param {ErrorEvent} event */
 		pyodideWorker.onerror = (event) => {
 			console.log('pyodideWorker.onerror', event);
 
@@ -203,6 +214,10 @@
 		};
 	};
 
+	/**
+	 * @param {any} event
+	 * @param {Function} cb
+	 */
 	const chatEventHandler = async (event, cb) => {
 		const chat = $page.url.pathname.includes(`/c/${event.chat_id}`);
 
@@ -252,16 +267,16 @@
 			} else if (type === 'chat:tags') {
 				tags.set(await getAllTags(localStorage.token));
 			}
-		} else if (data?.session_id === $socket.id) {
+		} else if (data?.session_id === $socket?.id) {
 			if (type === 'execute:python') {
 				console.log('execute:python', data);
 				executePythonAsWorker(data.id, data.code, cb);
 			} else if (type === 'request:chat:completion') {
-				console.log(data, $socket.id);
+				console.log(data, $socket?.id);
 				const { session_id, channel, form_data, model } = data;
 
 				try {
-					const directConnections = $settings?.directConnections ?? {};
+					const directConnections = $settings?.directConnections;
 
 					if (directConnections) {
 						const urlIdx = model?.urlIdx;
@@ -295,6 +310,7 @@
 									console.log({ status: true });
 
 									// res will either be SSE or JSON
+									if (!res.body) throw new Error('Response body is null');
 									const reader = res.body.getReader();
 									const decoder = new TextDecoder();
 
@@ -337,7 +353,7 @@
 					console.error('chatCompletion', error);
 					cb(error);
 				} finally {
-					$socket.emit(channel, {
+					$socket?.emit(channel, {
 						done: true
 					});
 				}
@@ -347,6 +363,9 @@
 		}
 	};
 
+	/**
+	 * @param {any} event
+	 */
 	const channelEventHandler = async (event) => {
 		if (event.data?.type === 'typing') {
 			return;
@@ -443,14 +462,7 @@
 		theme.set(localStorage.theme);
 
 		mobile.set(window.innerWidth < BREAKPOINT);
-		const onResize = () => {
-			if (window.innerWidth < BREAKPOINT) {
-				mobile.set(true);
-			} else {
-				mobile.set(false);
-			}
-		};
-
+		mobile.set(window.innerWidth < BREAKPOINT);
 		window.addEventListener('resize', onResize);
 
 		let backendConfig = null;
@@ -463,12 +475,10 @@
 		// Initialize i18n even if we didn't get a backend config,
 		// so `/error` can show something that's not `undefined`.
 
-		initI18n();
+		initI18n(backendConfig?.default_locale);
 		if (!localStorage.locale) {
 			const languages = await getLanguages();
-			const browserLanguages = navigator.languages
-				? navigator.languages
-				: [navigator.language || navigator.userLanguage];
+			const browserLanguages = navigator.languages ? navigator.languages : [navigator.language];
 			const lang = backendConfig.default_locale
 				? backendConfig.default_locale
 				: bestMatchingLanguage(languages, browserLanguages, 'en-US');
@@ -561,13 +571,22 @@
 			document.getElementById('splash-screen')?.remove();
 			loaded = true;
 		}
+	});
 
-		return () => {
+	const onResize = () => {
+		if (window.innerWidth < BREAKPOINT) {
+			mobile.set(true);
+		} else {
+			mobile.set(false);
+		}
+	};
+
+	onDestroy(() => {
+		if (typeof window !== 'undefined') {
 			window.removeEventListener('resize', onResize);
-		};
+		}
 	});
 </script>
-
 <svelte:head>
 	<title>{$TUTOR_NAME}</title>
 	<link crossorigin="anonymous" rel="icon" href="{TUTOR_FRONT_URL}/static/favicon.png" />

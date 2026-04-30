@@ -3,4 +3,4 @@
 	import Messages from '$lib/components/teacher/pages/Messages.svelte';
 </script>
 
-<Messages/>
+<Messages />
