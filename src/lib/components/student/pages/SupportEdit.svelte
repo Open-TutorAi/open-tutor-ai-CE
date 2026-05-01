@@ -79,19 +79,44 @@
 	// Access types
 	const accessTypes = ['Private', 'Public', 'Shared'];
 
-	// Predefined subjects
-	const subjects = [
+	// Key shared with creation page for persisting custom subjects
+	const CUSTOM_SUBJECTS_KEY = 'customSubjects';
+
+	// Built-in default subjects
+	const defaultSubjects = [
 		{ id: 'mathematics', name: 'Mathematics', icon: '📊' },
 		{ id: 'science', name: 'Science', icon: '🔬' },
 		{ id: 'history', name: 'History', icon: '🏛️' },
 		{ id: 'computer-science', name: 'Computer Science', icon: '💻' },
 		{ id: 'english', name: 'English', icon: '📚' },
-		{ id: 'Geography', name: 'Geography', icon: '🌍' },
-		{ id: 'Chemistry', name: 'Chemistry', icon: '🔬' },
-		{ id: 'Biology', name: 'Biology', icon: '🌿' },
-		{ id: 'Physics', name: 'Physics', icon: '⚛️' },
-		{ id: 'Other', name: 'Other', icon: '❓' }
+		{ id: 'geography', name: 'Geography', icon: '🌍' },
+		{ id: 'chemistry', name: 'Chemistry', icon: '🔬' },
+		{ id: 'biology', name: 'Biology', icon: '🌿' },
+		{ id: 'physics', name: 'Physics', icon: '⚛️' }
 	];
+
+	// Reactive subjects list that will include any saved customs
+	let subjects = [...defaultSubjects];
+
+	// Load custom subjects from localStorage (browser-only)
+	if (browser) {
+		try {
+			const stored = localStorage.getItem(CUSTOM_SUBJECTS_KEY);
+			if (stored) {
+				const customList = JSON.parse(stored);
+				if (Array.isArray(customList)) {
+					customList.forEach((c: any) => {
+						if (c && c.id && !subjects.some(s => s.id === c.id)) {
+							subjects.push(c);
+						}
+					});
+				}
+			}
+		} catch (e) {
+			console.error('Failed to load custom subjects', e);
+		}
+	}
+
 
 	// Subject pagination
 	let subjectPageIndex = 0;
@@ -114,6 +139,33 @@
 	function nextSubjectPage() {
 		if (subjectPageIndex < totalSubjectPages - 1) {
 			subjectPageIndex++;
+		}
+	}
+
+	// Helper: if student entered/edited a custom subject, store it locally for reuse
+	function addCustomSubjectIfNeeded() {
+		const name = customSubject.trim();
+		if (!name) return;
+
+		if (!subjects.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+			const id = name.toLowerCase().replace(/\s+/g, '-');
+			const newSubj = { id, name, icon: '⭐️', custom: true };
+			subjects = [...subjects, newSubj];
+
+			if (browser) {
+				try {
+					const existing = localStorage.getItem(CUSTOM_SUBJECTS_KEY);
+					const list = existing ? JSON.parse(existing) : [];
+					if (Array.isArray(list)) {
+						list.push(newSubj);
+						localStorage.setItem(CUSTOM_SUBJECTS_KEY, JSON.stringify(list));
+					} else {
+						localStorage.setItem(CUSTOM_SUBJECTS_KEY, JSON.stringify([newSubj]));
+					}
+				} catch (e) {
+					console.error('Failed to persist custom subject', e);
+				}
+			}
 		}
 	}
 
@@ -144,6 +196,15 @@
 			shortDescription = support.short_description || '';
 			selectedSubject = support.subject || '';
 			customSubject = support.custom_subject || '';
+
+			// If a custom subject is present but not yet in the subjects list (e.g. different device), add it so it renders as a card
+			if (customSubject && !subjects.some(s => s.name.toLowerCase() === customSubject.toLowerCase())) {
+				const id = customSubject.toLowerCase().replace(/\s+/g, '-');
+				const tempSubj = { id, name: customSubject, icon: '⭐️', custom: true };
+				subjects = [...subjects, tempSubj];
+				// Preselect this subject so it appears active
+				selectedSubject = id;
+			}
 			selectedCourse = support.course_id || '';
 			learningObjective = support.learning_objective || '';
 			selectedLearningType = support.learning_type || null;
@@ -186,6 +247,8 @@
 
 	// Update support in database
 	async function updateSupportInDatabase() {
+		// Ensure any new custom subject is persisted
+		addCustomSubjectIfNeeded();
 		if (!supportId || !browser) return;
 
 		const token = localStorage.getItem('token');
@@ -361,7 +424,7 @@
 					</div>
 
 					<div
-						class="bg-gray-50 dark:bg-gray-750 p-6 rounded-lg border border-gray-100 dark:border-gray-700"
+						class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border border-gray-100 dark:border-gray-700"
 					>
 						<label class="block text-gray-800 dark:text-gray-200 font-medium mb-4 text-sm">
 							{$i18n.t("Choose a subject you'd like to study")}
@@ -442,6 +505,7 @@
 								<input
 									type="text"
 									bind:value={customSubject}
+									on:input={() => (selectedSubject = '')}
 									placeholder={$i18n.t('Enter your custom subject')}
 									class="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
 								/>
@@ -458,7 +522,7 @@
 						</h3>
 
 						<div
-							class="mb-8 bg-gray-50 dark:bg-gray-750 p-6 rounded-lg border border-gray-100 dark:border-gray-700"
+							class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border border-gray-100 dark:border-gray-700"
 						>
 							<label
 								for="learningObjective"
@@ -480,7 +544,7 @@
 						</div>
 
 						<div
-							class="bg-gray-50 dark:bg-gray-750 p-6 rounded-lg border border-gray-100 dark:border-gray-700"
+							class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border border-gray-100 dark:border-gray-700"
 						>
 							<div class="mb-4">
 								<label class="block text-gray-700 dark:text-gray-200 font-medium text-sm">
@@ -585,7 +649,7 @@
 						</h3>
 
 						<div
-							class="bg-gray-50 dark:bg-gray-750 p-6 rounded-lg border border-gray-100 dark:border-gray-700 mb-8"
+							class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border border-gray-100 dark:border-gray-700"
 						>
 							<div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
 								<!-- Content Language -->
@@ -666,7 +730,7 @@
 
 						<!-- Keywords -->
 						<div
-							class="bg-gray-50 dark:bg-gray-750 p-6 rounded-lg border border-gray-100 dark:border-gray-700 mb-8"
+							class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border border-gray-100 dark:border-gray-700"
 						>
 							<label class="block text-gray-800 dark:text-gray-200 font-medium mb-2 text-sm">
 								{$i18n.t('Keywords (for search & recommendations)')}
@@ -685,7 +749,7 @@
 								/>
 								<button
 									on:click={addKeyword}
-									class="w-full sm:w-auto px-4 py-3 bg-blue-500 text-white rounded-lg sm:rounded-l-none hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors font-medium flex items-center justify-center"
+									class="w-full sm:w-auto px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg sm:rounded-l-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors font-semibold flex items-center justify-center"
 								>
 									<span>{$i18n.t('Add')}</span>
 								</button>
@@ -733,7 +797,7 @@
 
 						<!-- Availability -->
 						<div
-							class="bg-gray-50 dark:bg-gray-750 p-6 rounded-lg border border-gray-100 dark:border-gray-700"
+							class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border border-gray-100 dark:border-gray-700"
 						>
 							<label class="block text-gray-800 dark:text-gray-200 font-medium mb-2 text-sm">
 								{$i18n.t('Availability')}
@@ -772,14 +836,13 @@
 				<div class="flex justify-end space-x-4 border-t border-gray-200 dark:border-gray-700 pt-6">
 					<button
 						on:click={() => goto(`/student/support/${supportId}`)}
-						class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+						class="px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
 					>
 						{$i18n.t('Cancel')}
 					</button>
-
 					<button
 						on:click={updateSupportInDatabase}
-						class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+						class="inline-flex items-center justify-center gap-2 px-5 py-2 text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
 						disabled={!canUpdate}
 					>
 						{#if isSubmitting}

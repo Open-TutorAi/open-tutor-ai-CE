@@ -59,5 +59,8 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      - name: Build SvelteKit (required before tests)
+        run: npm run build
+        
       - name: Run vitest
         run: npm run test:frontend
