@@ -1,31 +1,34 @@
 import os
 os.environ["SUPPRESS_WEBUI_BANNER"] = "true"
+
 import open_tutorai.patches
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from open_webui.main import app as webui_app
 from open_webui.config import CORS_ALLOW_ORIGIN
 from open_webui.models.users import Users
+
 from open_tutorai.config import AppConfig
 from open_tutorai.models.database import init_database
 
+# ✅ routers (résolution du conflit ici)
 from open_tutorai.routers import (
     response_feedbacks,
     auths,
-    supports
+    supports,
+    blockly
 )
 
-from open_tutorai.env import (
-    CHANGELOG,
-)
+from open_tutorai.env import CHANGELOG
 
 # Version info
 VERSION = "1.0.0"
 TUTORAI_BUILD_HASH = os.getenv("TUTORAI_BUILD_HASH", "dev-build")
+
 os.environ["SUPPRESS_WEBUI_BANNER"] = "true"
 
 print(
-    rf"""
+rf"""
  ██████╗ ██████╗ ███████╗███╗   ██╗    ████████╗██╗   ██╗████████╗ ██████╗ ██████╗    █████╗ ██╗
 ██╔═══██╗██╔══██╗██╔════╝████╗  ██║    ╚══██╔══╝██║   ██║╚══██╔══╝██╔═══██╗██╔══██╗  ██╔══██╗██║
 ██║   ██║██████╔╝█████╗  ██╔██╗ ██║       ██║   ██║   ██║   ██║   ██║   ██║██████╔╝  ███████║██║
@@ -39,18 +42,20 @@ https://github.com/R2D-dev/open-tutor-ai-CE
 """
 )
 
-# Create main FastAPI app
+# Create FastAPI app
 app = FastAPI(
     title="Open TutorAI",
     version=VERSION,
 )
 
-# Handle wildcard origin with credentials by reflecting request origin
+# CORS config
 origins = CORS_ALLOW_ORIGIN
 allow_origin_regex = None
+
 if "*" in origins:
     origins = []
     allow_origin_regex = ".*"
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -59,34 +64,33 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.state.config = AppConfig()
-# app.state.USER_COUNT = 10
 
-# Initialize the database tables on startup
+app.state.config = AppConfig()
+
+# Startup DB
 @app.on_event("startup")
 async def startup_db_client():
-    """Initialize the database tables when the app starts"""
     try:
         init_database()
         print("Support database tables initialized successfully")
     except Exception as e:
         print(f"Error initializing database tables: {str(e)}")
 
-
-# Health check endpoint
+# Health check
 @app.post("/tutorai/health")
 async def health_check():
     return {"status": "okay"}
 
-
-# Include routers of open_tutorai
+# Routers
 app.include_router(response_feedbacks.router, prefix="/api/v1", tags=["response-feedbacks"])
 app.include_router(auths.router, prefix="/auths", tags=["auths"])
 app.include_router(supports.router, prefix="/api/v1", tags=["supports"])
+app.include_router(blockly.router)
 
+# Changelog
 @app.get("/api/changelog")
 async def get_app_changelog():
     return {key: CHANGELOG[key] for idx, key in enumerate(CHANGELOG) if idx < 5}
 
-# Mount the entire OpenWebUI app
+# Mount frontend
 app.mount("/", webui_app)
