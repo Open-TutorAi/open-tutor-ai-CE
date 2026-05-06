@@ -588,6 +588,14 @@
 			</div>
 		</div>
 	{:else}
+
+<!-- 🔥 FAQ LINK -->
+		<div class="p-4 flex justify-end">
+			<a href="/faq" class="text-blue-500 hover:underline">
+				❓ Aide / FAQ
+			</a>
+		</div>
+
 		<slot />
 	{/if}
 {/if}
