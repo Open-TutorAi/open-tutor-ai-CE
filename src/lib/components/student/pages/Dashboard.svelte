@@ -376,6 +376,7 @@
 	<div class="flex justify-end">
 		<div class="flex gap-4">
 			<button
+				id="create-support-btn"
 				class="flex items-center gap-2 bg-indigo-500 dark:bg-indigo-600 text-white py-3 px-6 rounded-full hover:bg-indigo-600 dark:hover:bg-indigo-700 transition-colors"
 				on:click={toggleSupportPopup}
 			>
@@ -596,6 +597,7 @@
 			<!-- Create Support Button -->
 			<div class="flex justify-center mb-8">
 				<button
+					id="create-support-submit-btn"
 					class="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 text-white py-3 px-12 rounded-full font-medium"
 					on:click={handleCreateSupport}
 				>

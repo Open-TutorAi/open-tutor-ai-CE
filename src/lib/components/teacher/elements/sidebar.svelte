@@ -51,7 +51,7 @@
 		// Set active page based on URL path when component mounts
 		const pathSegments = $page.url.pathname.split('/');
 		if (pathSegments.length >= 3) {
-			let pageFromUrl = pathSegments[2]; // student/dashboard -> "dashboard"
+			let pageFromUrl = pathSegments[2]; // teacher/dashboard -> "dashboard"
 
 			// Map chat routes to support
 			if (pageFromUrl === 'chat' || pageFromUrl === 'c') {
@@ -59,7 +59,7 @@
 			}
 			
 			// Mark support nav item as active for support pages
-			// Format: /student/support/ID, /student/support/ID/edit, /student/support/create
+			// Format: /teacher/support/ID, /teacher/support/ID/edit, /teacher/support/create
 			if (pageFromUrl === 'support') {
 				pageFromUrl = 'supports';
 			}
@@ -89,7 +89,7 @@
 			}
 			
 			// Mark support nav item as active for support pages
-			// Format: /student/support/ID, /student/support/ID/edit, /student/support/create
+			// Format: /teacher/support/ID, /teacher/support/ID/edit, /teacher/support/create
 			if (pageFromUrl === 'support') {
 				pageFromUrl = 'supports';
 			}
@@ -114,7 +114,7 @@
 	}
 
 	// Determine current role from the URL path
-	$: currentRole = $page.url.pathname.split('/')[1] || 'student';
+	$: currentRole = $page.url.pathname.split('/')[1] || 'teacher';
 
 	function toggleSidebar() {
 		isSidebarOpen = !isSidebarOpen;
@@ -158,12 +158,7 @@
 			{ id: 'messages', label: 'Messages', icon: Message },
 			{ id: 'settings', label: 'Profile & Settings', icon: Settings }
 		],
-		teacher: [{ id: 'dashboard', label: 'Dashboard', icon: Dashboard },
-    { id: 'classrooms', label: 'My Classes', icon: Classroom },
-    { id: 'students', label: 'Students', icon: Assignment },   // réutilisation d'icône
-    { id: 'assignments', label: 'Assignments', icon: Assignment },
-    { id: 'messages', label: 'Messages', icon: Message },
-    { id: 'settings', label: 'Profile & Settings', icon: Settings }],
+		teacher: [],
 		parent: []
 	};
 </script>
