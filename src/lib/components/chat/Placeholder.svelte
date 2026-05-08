@@ -25,18 +25,30 @@
 	import AvatarSelection from './AvatarSelection.svelte';
 
 	// Props that must be kept for component compatibility
+	// @ts-ignore - Props kept for backward compatibility even if unused
 	export let createMessagePair: Function;
+	// @ts-ignore - Props kept for backward compatibility even if unused
 	export let stopResponse: Function;
+	// @ts-ignore - Props kept for backward compatibility even if unused
 	export let autoScroll = false;
+	// @ts-ignore - Props kept for backward compatibility even if unused
 	export let atSelectedModel: any | undefined;
-	export let selectedModels: [''];
+	export let selectedModels: string[] = [];
+	// @ts-ignore - Props kept for backward compatibility even if unused
 	export let history: any;
+	// @ts-ignore - Props kept for backward compatibility even if unused
 	export let prompt = '';
+	// @ts-ignore - Props kept for backward compatibility even if unused
 	export let files: any[] = [];
+	// @ts-ignore - Props kept for backward compatibility even if unused
 	export let selectedToolIds: any[] = [];
+	// @ts-ignore - Props kept for backward compatibility even if unused
 	export let imageGenerationEnabled = false;
+	// @ts-ignore - Props kept for backward compatibility even if unused
 	export let codeInterpreterEnabled = false;
+	// @ts-ignore - Props kept for backward compatibility even if unused
 	export let webSearchEnabled = false;
+	// @ts-ignore - Props kept for backward compatibility even if unused
 	export let transparentBackground = false;
 
 	// State for chat type selection - use type assertion to avoid TS errors
@@ -55,7 +67,7 @@
 		selectedChatType = type;
 
 		if (selectedModels.length === 0 || selectedModels.every(model => !model || model === '')) {
-			toast.error($i18n.t('Please select a model before starting a chat'));
+			toast.error(t('Please select a model before starting a chat'));
 			return;
 		}
 		
@@ -101,7 +113,7 @@
 
 		if (selectedModels.length === 0 || selectedModels.every(model => !model || model === '')) {
 			// No model selected, show error and prevent further actions
-			toast.error($i18n.t('A model must be selected before starting the chat'));
+			toast.error(t('A model must be selected before starting the chat'));
 			showingAvatarSelection = false; // Go back to chat type selection
 			
 			if (typeof window !== 'undefined' && window.localStorage) {
@@ -117,7 +129,7 @@
 			dispatch('submit', initialPrompt);
 		} catch (error) {
 			console.error('Error starting chat with avatar:', error);
-			toast.error($i18n.t('Failed to start avatar chat. Please try again.'));
+			toast.error(t('Failed to start avatar chat. Please try again.'));
 			
 			if (typeof window !== 'undefined' && window.localStorage) {
 				window.localStorage.removeItem('pendingSupportData');
@@ -159,12 +171,28 @@
 				class="max-w-5xl w-full px-4 py-6 md:py-10"
 				in:scale={{ duration: 400, start: 0.95, opacity: 0 }}
 			>
-				<div class="text-center mb-6 md:mb-8">
-					<h1
-						class="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 md:mb-4 text-gray-800 dark:text-white tracking-tight"
-					>
-						{$i18n.t('Choose Your Experience')}
-					</h1>
+				<div class="welcome-card bg-orange-50 dark:bg-gray-800 border border-orange-200 dark:border-gray-700 rounded-xl p-4 mb-6 text-left shadow-sm">
+                                                <div class="flex items-center gap-2 mb-2">
+                                                        <span class="text-xl">👋</span>
+                                                        <h2 class="font-bold text-orange-600 dark:text-orange-400 text-base">
+                                                                {$i18n.t('Welcome to OpenTutorAI!')}
+                                                        </h2>
+                                                </div>
+                                                <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                                                        {$i18n.t('Here are some tips to get the most out of your AI tutor:')}
+                                                </p>
+                                                <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1 list-none">
+                                                        <li>💡 {$i18n.t('Ask specific questions like "Explain recursion with an example"')}</li>
+                                                        <li>🔁 {$i18n.t('Ask for a summary: "Summarize this in 3 points"')}</li>
+                                                        <li>❓ {$i18n.t('Say "I did not understand" to get a simpler explanation')}</li>
+                                                        <li>📝 {$i18n.t('Request exercises: "Give me a practice problem"')}</li>
+                                                </ul>
+                                        </div>
+                                        <div class="text-center mb-6 md:mb-8">
+                                        <h1
+                                                class="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 md:mb-4 text-gray-800 dark:text-white tracking-tight"                                        >
+                                                {$i18n.t('Choose Your Experience')}
+                                        </h1>
 					<p class="text-sm md:text-base text-gray-600 dark:text-gray-300 max-w-lg mx-auto">
 						{$i18n.t(
 							'Select the type of chat experience you prefer. You can change this anytime from the settings.'
@@ -183,7 +211,7 @@
 						on:keydown={(e) => handleKeydown(e, 'text')}
 						tabindex="0"
 						role="button"
-						aria-label={$i18n.t('Start text chat')}
+							aria-label={t('Start text chat')}
 					>
 						<div
 							class="absolute inset-0 bg-cover bg-center opacity-10"
@@ -226,7 +254,7 @@
 											d="M5 13l4 4L19 7"
 										></path>
 									</svg>
-									{$i18n.t('Fast responses')}
+									{t('Fast responses')}
 								</li>
 								<li class="flex items-center">
 									<svg
@@ -242,7 +270,7 @@
 											d="M5 13l4 4L19 7"
 										></path>
 									</svg>
-									{$i18n.t('Resource-efficient')}
+									{t('Resource-efficient')}
 								</li>
 								<li class="flex items-center">
 									<svg
@@ -258,7 +286,7 @@
 											d="M5 13l4 4L19 7"
 										></path>
 									</svg>
-									{$i18n.t('Code blocks support')}
+									{t('Code blocks support')}
 								</li>
 							</ul>
 							<div class="mt-5 md:mt-6 w-full">
@@ -281,7 +309,7 @@
 						on:keydown={(e) => handleKeydown(e, 'avatar')}
 						tabindex="0"
 						role="button"
-						aria-label={$i18n.t('Start avatar chat')}
+							aria-label={t('Start avatar chat')}
 					>
 						<div
 							class="absolute inset-0 bg-cover bg-center opacity-10"
@@ -327,7 +355,7 @@
 											d="M5 13l4 4L19 7"
 										></path>
 									</svg>
-									{$i18n.t('Realistic animations')}
+									{t('Realistic animations')}
 								</li>
 								<li class="flex items-center">
 									<svg
@@ -343,7 +371,7 @@
 											d="M5 13l4 4L19 7"
 										></path>
 									</svg>
-									{$i18n.t('Natural voice synthesis')}
+									{t('Natural voice synthesis')}
 								</li>
 								<li class="flex items-center">
 									<svg
@@ -359,7 +387,7 @@
 											d="M5 13l4 4L19 7"
 										></path>
 									</svg>
-									{$i18n.t('Immersive experience')}
+									{t('Immersive experience')}
 								</li>
 							</ul>
 							<div class="mt-5 md:mt-6 w-full">
@@ -393,14 +421,16 @@
 		width: 100%;
 		display: flex;
 		justify-content: center;
-		align-items: center;
+		overflow-y: auto;
+		overflow-x: hidden;
 	}
 
 	.content-wrapper {
 		width: 100%;
 		display: flex;
+		flex-direction: column;
 		align-items: center;
-		justify-content: center;
+		justify-content: flex-start;
 		padding: 0.5rem 0;
 	}
 
