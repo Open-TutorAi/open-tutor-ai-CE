@@ -127,14 +127,14 @@
       const dracoLoader = new DRACOLoader();
       
       // Try to use the static draco folders if available, with fallback
-      dracoLoader.setDecoderPath('/static/draco/');
+      dracoLoader.setDecoderPath('/draco/');
       console.log("DracoLoader path set");
       
       // Initialize GLTF loader with DRACO
       const loader = new GLTFLoader();
       loader.setDRACOLoader(dracoLoader);
       
-      const modelPath = `/static/classroom/classroom_${classroomModel}.glb`;
+      const modelPath = `/classroom/classroom_${classroomModel}.glb`;
       console.log("Attempting to load model from:", modelPath);
       // Remove existing classroom if present
       if (classroom && scene) {
@@ -297,7 +297,7 @@
   // Preload classroom models
   function preloadModel(path: string) {
     const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath('/static/draco/');
+    dracoLoader.setDecoderPath('/draco/');
     
     const loader = new GLTFLoader();
     loader.setDRACOLoader(dracoLoader);
@@ -316,6 +316,6 @@
   }
   
   // Preload both classroom models
-  preloadModel('/static/classroom/classroom_default.glb');
-  preloadModel('/static/classroom/classroom_alternative.glb');
+  preloadModel('/classroom/classroom_default.glb');
+  preloadModel('/classroom/classroom_alternative.glb');
 </script> 
