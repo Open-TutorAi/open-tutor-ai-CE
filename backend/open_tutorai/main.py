@@ -12,7 +12,8 @@ from open_tutorai.models.database import init_database
 from open_tutorai.routers import (
     response_feedbacks,
     auths,
-    supports
+    supports,
+    flashcards,
 )
 
 from open_tutorai.env import (
@@ -83,6 +84,7 @@ async def health_check():
 app.include_router(response_feedbacks.router, prefix="/api/v1", tags=["response-feedbacks"])
 app.include_router(auths.router, prefix="/auths", tags=["auths"])
 app.include_router(supports.router, prefix="/api/v1", tags=["supports"])
+app.include_router(flashcards.router, prefix="/api/v1", tags=["flashcards"])
 
 @app.get("/api/changelog")
 async def get_app_changelog():
