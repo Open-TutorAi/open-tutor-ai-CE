@@ -223,33 +223,79 @@
 			{/if}
 		</div>
 
-		<nav class="mt-2">
-			{#if navItems[currentRole] && navItems[currentRole].length > 0}
-				<ul>
-					{#each navItems[currentRole] as item}
-						<li class="mb-1 px-2">
-							<button
-								on:click={() => setActivePage(currentRole, item.id)}
-								class={`flex items-center px-4 py-3 rounded-lg w-full text-left transition-colors duration-200 ${currentActivePage === item.id ? 'bg-blue-500 text-white' : isDarkMode ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-800 hover:bg-gray-200'}`}
-								title={$i18n.t(item.label)}
-							>
-								<span class="grid place-items-center w-6 h-6">
-									<svelte:component this={item.icon} />
-								</span>
-								{#if isSidebarOpen}
-									<span class="ml-3 text-sm font-medium">{$i18n.t(item.label)}</span>
-								{/if}
-							</button>
-						</li>
-					{/each}
-				</ul>
-			{:else}
-				<div class={`px-4 py-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-sm italic`}>
-					{isSidebarOpen ? 'No navigation items available' : ''}
-				</div>
-			{/if}
-		</nav>
+<nav class="mt-2">
+    {#if navItems[currentRole] && navItems[currentRole].length > 0}
+        <!-- Navigation principale -->
+        <ul>
+            {#each navItems[currentRole] as item}
+                <li class="mb-1 px-2">
+                    <button
+                        on:click={() => setActivePage(currentRole, item.id)}
+                        class={`flex items-center px-4 py-3 rounded-lg w-full text-left transition-colors duration-200 ${
+                            currentActivePage === item.id
+                                ? 'bg-blue-500 text-white'
+                                : isDarkMode
+                                    ? 'text-gray-300 hover:bg-gray-800'
+                                    : 'text-gray-800 hover:bg-gray-200'
+                        }`}
+                        title={$i18n.t(item.label)}
+                    >
+                        <span class="grid place-items-center w-6 h-6">
+                            <svelte:component this={item.icon} />
+                        </span>
 
+                        {#if isSidebarOpen}
+                            <span class="ml-3 text-sm font-medium">
+                                {$i18n.t(item.label)}
+                            </span>
+                        {/if}
+                    </button>
+                </li>
+            {/each}
+        </ul>
+
+        <!-- Section Outils d'apprentissage -->
+        <div class="mt-4">
+            {#if isSidebarOpen}
+                <div
+                    class={`px-4 py-2 text-xs uppercase font-semibold ${
+                        isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                    }`}
+                >
+                    {$i18n.t("Outils d'apprentissage")}
+                </div>
+            {/if}
+
+            <!-- Sous-liste -->
+            <ul class="mt-1">
+                <li class="mb-1 px-2">
+                    <button
+                        on:click={() => setActivePage(currentRole, 'PythonEditor')}
+                        class={`flex items-center px-4 py-3 rounded-lg w-full text-left transition-colors duration-200 ${
+                            currentActivePage === 'PythonEditor'
+                                ? 'bg-blue-500 text-white'
+                                : isDarkMode
+                                    ? 'text-gray-300 hover:bg-gray-800'
+                                    : 'text-gray-800 hover:bg-gray-200'
+                        }`}
+                        title="Python Editor"
+                    >
+                        <!-- Icône -->
+                        <span class="grid place-items-center w-6 h-6">
+                            🐍
+                        </span>
+
+                        {#if isSidebarOpen}
+                            <span class="ml-3 text-sm font-medium">
+                                Python Editor
+                            </span>
+                        {/if}
+                    </button>
+                </li>
+            </ul>
+        </div>
+    {/if}
+</nav>
 		{#if isSidebarOpen}
 			<div class="absolute bottom-0 left-0 right-0 p-4 hidden md:block">
 				<div

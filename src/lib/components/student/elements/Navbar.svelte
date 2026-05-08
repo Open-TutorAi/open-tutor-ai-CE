@@ -313,6 +313,7 @@
 			</svg>
 		</button>
 
+
 		<!-- User Avatar dropdown -->
 		<div class="relative" id="user-dropdown-container">
 			<button
