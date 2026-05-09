@@ -1,6 +1,6 @@
-<!-- messages/+page.svelte -->
+<!-- Discussions/+page.svelte -->
 <script lang="ts">
-	import Messages from '$lib/components/teacher/pages/Messages.svelte';
+	import Discussions from '$lib/components/teacher/pages/Discussions.svelte';
 </script>
 
-<Messages/>
+<Discussions />
