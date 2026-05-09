@@ -11,7 +11,9 @@
 	import Message from '$lib/components/icons/Messages.svelte';
 	import type { ComponentType } from 'svelte';
 	import { writable, type Writable } from 'svelte/store';
-	const i18n = getContext('i18n');
+	import type { Writable } from 'svelte/store';
+	import type { i18n as i18nType } from 'i18next';
+	const i18n = getContext<Writable<i18nType>>('i18n');
 
 	// Use a simple boolean for sidebar state instead of a store
 	export let isSidebarOpen = true;
