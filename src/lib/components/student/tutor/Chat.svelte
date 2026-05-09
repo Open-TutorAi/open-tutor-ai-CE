@@ -96,6 +96,7 @@
 	import Spinner from '$lib/components/common/Spinner.svelte';
 	import AvatarChat from '$lib/components/chat/AvatarChat.svelte';
 	import FullscreenButton from '$lib/components/chat/FullscreenButton.svelte';
+	import PedagogicalShortcuts from './PedagogicalShortcuts.svelte';
 
 	// Debug: Print user permissions when they change
 	$: if ($user) {
@@ -155,6 +156,11 @@
 	let chatFiles = [];
 	let files = [];
 	let params = {};
+
+	const applyPedagogicalShortcut = async (shortcutPrompt: string) => {
+		prompt = shortcutPrompt;
+		await tick();
+	};
 
 	// Make avatarActive reactive to settings changes
 	// This ensures avatarActive updates whenever settings.avatarEnabled changes
@@ -2853,6 +2859,9 @@
 									<FullscreenButton onClick={toggleFullscreen} />
 								</div>
 								<div class="absolute bottom-0 left-0 right-0 z-20 animate-float {$isFullscreenAvatar ? 'px-8 pb-8' : ''}">
+									<PedagogicalShortcuts
+										on:select={(e) => applyPedagogicalShortcut(e.detail)}
+									/>
 									<MessageInput
 										{history}
 										{selectedModels}
@@ -2912,6 +2921,9 @@
 									</div>
 								</div>
 								<div class="w-full pt-2 relative z-20">
+									<PedagogicalShortcuts
+										on:select={(e) => applyPedagogicalShortcut(e.detail)}
+									/>
 									<MessageInput
 										{history}
 										{selectedModels}
