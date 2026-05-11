@@ -372,3 +372,28 @@ input[type='number'] {
 .hljs-strong {
 	font-weight: 700;
 }
+
+/* Fullscreen Avatar Mode Styles */
+:fullscreen {
+	background-color: rgb(17 24 39); /* gray-900 */
+}
+
+:fullscreen .avatar-fullscreen-container {
+	width: 100vw;
+	height: 100vh;
+}
+
+/* Webkit (Chrome, Safari) */
+:-webkit-full-screen {
+	background-color: rgb(17 24 39);
+}
+
+/* Firefox */
+:-moz-full-screen {
+	background-color: rgb(17 24 39);
+}
+
+/* Microsoft Edge */
+:-ms-fullscreen {
+	background-color: rgb(17 24 39);
+}
