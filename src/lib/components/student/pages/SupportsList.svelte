@@ -7,6 +7,7 @@
 	import type { Writable } from 'svelte/store';
 	import { browser } from '$app/environment';
 	import SupportCard from '$lib/components/student/elements/SupportCard.svelte';
+	import { isDemo, demoData } from '$lib/stores';
 
 	// Get i18n from context with proper typing
 	interface I18n {
@@ -18,6 +19,8 @@
 	let supports: any[] = [];
 	let loading = true;
 	let error: string | null = null;
+	
+	$: displaySupports = $isDemo ? $demoData.supports : supports;
 
 	// Load supports
 	onMount(async () => {
@@ -35,6 +38,12 @@
 
 	// Load supports without status filter
 	async function loadSupports() {
+		if ($isDemo) {
+			console.log('Demo mode: using mock supports');
+			loading = false;
+			return;
+		}
+		
 		const token = localStorage.getItem('token');
 		if (!token) {
 			error = $i18n.t('Authentication required');
@@ -71,12 +80,18 @@
 			</div>
 
 			<button
-				on:click={() => goto('/student/support/create')}
-				class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm"
+				on:click={() => {
+					if ($isDemo) {
+						toast.info($i18n.t('Creating supports is disabled in demo mode'));
+					} else {
+						goto('/student/support/create');
+					}
+				}}
+				class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm {$isDemo ? 'opacity-75 cursor-not-allowed' : ''}"
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
-					class="h-5 w-5 mr-2"
+					class="h-5 w-5"
 					viewBox="0 0 20 20"
 					fill="currentColor"
 				>
@@ -108,7 +123,7 @@
 					/>
 				</svg>
 				<span class="ml-2 text-gray-700 dark:text-gray-300 font-medium">
-					{$i18n.t('All Support')}
+					{$i18n.t('All Supports')}
 				</span>
 			</div>
 			
@@ -193,7 +208,7 @@
 					</button>
 				</div>
 			</div>
-		{:else if supports.length === 0}
+		{:else if displaySupports.length === 0}
 			<!-- Empty state -->
 			<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 text-center">
 				<div
@@ -243,7 +258,7 @@
 		{:else}
 			<!-- Support list -->
 			<div class="space-y-4">
-				{#each supports as support (support.id)}
+				{#each displaySupports as support (support.id)}
 					<SupportCard {support} i18n={$i18n} />
 				{/each}
 			</div>
