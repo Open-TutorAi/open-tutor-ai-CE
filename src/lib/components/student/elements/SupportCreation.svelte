@@ -279,7 +279,7 @@
 		'Objectives',
 		'Level',
 		'Details',
-		'Avatar',
+		// 'Avatar',
 		'Review'
 	];
 
@@ -416,19 +416,44 @@
 		}
 	}
 
-	// Predefined subjects
-	const subjects = [
-		{ id: 'Mathematics', name: 'Mathematics', icon: '📊' },
-		{ id: 'Science', name: 'Science', icon: '🔬' },
-		{ id: 'History', name: 'History', icon: '🏛️' },
-		{ id: 'Computer-science', name: 'Computer Science', icon: '💻' },
-		{ id: 'English', name: 'English', icon: '📚' },
-		{ id: 'Geography', name: 'Geography', icon: '🌍' },
-		{ id: 'Chemistry', name: 'Chemistry', icon: '🔬' },
-		{ id: 'Biology', name: 'Biology', icon: '🌿' },
-		{ id: 'Physics', name: 'Physics', icon: '⚛️' },
-		{ id: 'Other', name: 'Other', icon: '❓' }
+	// Key for storing custom subjects in localStorage
+	const CUSTOM_SUBJECTS_KEY = 'customSubjects';
+
+	// Built-in subjects shipped with the app
+	const defaultSubjects = [
+		{ id: 'mathematics', name: 'Mathematics', icon: '📊' },
+		{ id: 'science', name: 'Science', icon: '🔬' },
+		{ id: 'history', name: 'History', icon: '🏛️' },
+		{ id: 'computer-science', name: 'Computer Science', icon: '💻' },
+		{ id: 'english', name: 'English', icon: '📚' },
+		{ id: 'geography', name: 'Geography', icon: '🌍' },
+		{ id: 'chemistry', name: 'Chemistry', icon: '🔬' },
+		{ id: 'biology', name: 'Biology', icon: '🌿' },
+		{ id: 'physics', name: 'Physics', icon: '⚛️' }
 	];
+
+	// Reactive list that will include any custom subjects read from localStorage
+	let subjects = [...defaultSubjects];
+
+	// Load custom subjects once on component load (browser-only)
+	if (browser) {
+		try {
+			const saved = localStorage.getItem(CUSTOM_SUBJECTS_KEY);
+			if (saved) {
+				const parsed = JSON.parse(saved);
+				if (Array.isArray(parsed)) {
+					parsed.forEach((subj: any) => {
+						if (subj && subj.id && !subjects.some(s => s.id === subj.id)) {
+							subjects.push(subj);
+						}
+					});
+				}
+			}
+		} catch (e) {
+			console.error('Failed to load custom subjects from localStorage', e);
+		}
+	}
+
 
 	// Subject pagination
 	let subjectPageIndex = 0;
@@ -561,20 +586,51 @@
 		}
 	}
 
+	// Helper: persist a custom subject typed by the user
+	function addCustomSubjectIfNeeded() {
+		const name = customSubject.trim();
+		if (!name) return;
+
+		// Avoid duplicates (case-insensitive)
+		if (!subjects.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+			const id = name.toLowerCase().replace(/\s+/g, '-');
+			const newSubject = { id, name, icon: '⭐️', custom: true };
+			subjects = [...subjects, newSubject];
+
+			// Persist to localStorage for future sessions
+			if (browser) {
+				try {
+					const existing = localStorage.getItem(CUSTOM_SUBJECTS_KEY);
+					const list = existing ? JSON.parse(existing) : [];
+					if (Array.isArray(list)) {
+						list.push(newSubject);
+						localStorage.setItem(CUSTOM_SUBJECTS_KEY, JSON.stringify(list));
+					} else {
+						localStorage.setItem(CUSTOM_SUBJECTS_KEY, JSON.stringify([newSubject]));
+					}
+				} catch (e) {
+					console.error('Failed to persist custom subject', e);
+				}
+			}
+		}
+	}
+
 	// Navigation functions
 	function nextStep() {
+		// If we are exiting the Subject step, store any custom subject the user typed
+		if (currentStep === 0) {
+			addCustomSubjectIfNeeded();
+		}
+
 		if (currentStep < steps.length - 1) {
-			// Add transition direction class for content
 			const contentEl = document.querySelector('.step-content-enter');
 			if (contentEl) {
 				contentEl.classList.remove('step-content-enter');
 				contentEl.classList.add('step-content-exit');
-				
-				// Use a timeout to allow animation to complete before changing step
 				setTimeout(() => {
-			currentStep++;
+					currentStep++;
 				}, 300);
-		} else {
+			} else {
 				currentStep++;
 			}
 		} else {
@@ -677,8 +733,7 @@
 		computer_science: 'computer',
 		languages: 'translate',
 		business: 'business',
-		philosophy: 'psychology',
-		other: 'school'
+		philosophy: 'psychology'
 	};
 </script>
 
@@ -842,7 +897,8 @@
 								</div>
 						</div>
 
-							<div class="bg-gray-50 dark:bg-gray-750 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
+							<div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border border-gray-100 dark:border-gray-700"
+>
 								<label class="block text-gray-800 dark:text-gray-200 font-medium mb-4 text-sm">
 								{$i18n.t("Choose a subject you'd like to study")}
 									<span class="text-red-500 ml-1">*</span>
@@ -990,7 +1046,7 @@
 								{$i18n.t('Define your learning objectives')}
 							</h3>
 							
-							<div class="mb-8 bg-gray-50 dark:bg-gray-750 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
+							<div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
 								<div class="flex items-center justify-between mb-3">
 								<label
 									for="learningObjective"
@@ -1007,9 +1063,9 @@
 										xmlns="http://www.w3.org/2000/svg"
 										class="h-5 w-5"
 										viewBox="0 0 20 20"
-												fill="currentColor"
+										fill="currentColor"
 									>
-												<path d="M11 17a1 1 0 001.447.894l4-2A1 1 0 0017 15V9.236a1 1 0 00-1.447-.894l-4 2a1 1 0 00-.553.894V17zM15.211 6.276a1 1 0 000-1.788l-4.764-2.382a1 1 0 00-.894 0L4.789 4.488a1 1 0 000 1.788l4.764 2.382a1 1 0 00.894 0l4.764-2.382zM4.447 8.342A1 1 0 003 9.236V15a1 1 0 00.553.894l4 2A1 1 0 009 17v-5.764a1 1 0 00-.553-.894l-4-2z" />
+										<path d="M11 17a1 1 0 001.447.894l4-2A1 1 0 0017 15V9.236a1 1 0 00-1.447-.894l-4 2a1 1 0 00-.553.894V17zM15.211 6.276a1 1 0 000-1.788l-4.764-2.382a1 1 0 00-.894 0L4.789 4.488a1 1 0 000 1.788l4.764 2.382a1 1 0 00.894 0l4.764-2.382zM4.447 8.342A1 1 0 003 9.236V15a1 1 0 00.553.894l4 2A1 1 0 009 17v-5.764a1 1 0 00-.553-.894l-4-2z" />
 									</svg>
 								</button>
 										<div class="absolute z-10 right-0 w-64 p-3 bg-white dark:bg-gray-800 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 text-sm border border-gray-200 dark:border-gray-700 mt-2">
@@ -1030,7 +1086,7 @@
 							></textarea>
 						</div>
 
-							<div class="bg-gray-50 dark:bg-gray-750 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
+							<div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
 								<div class="mb-4">
 									<label class="block text-gray-700 dark:text-gray-200 font-medium text-sm">
 									{$i18n.t('How can I support you today?')}
@@ -1124,7 +1180,7 @@
 								{$i18n.t('These additional details help us personalize your support experience')}
 							</p>
 							
-							<div class="bg-gray-50 dark:bg-gray-750 p-6 rounded-lg border border-gray-100 dark:border-gray-700 mb-8">
+							<div class="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg border border-gray-100 dark:border-gray-700 mb-8">
 						<div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
 							<!-- Content Language -->
 							<div>
@@ -1179,7 +1235,7 @@
 						</div>
 
 						<!-- Keywords -->
-							<div class="bg-gray-50 dark:bg-gray-750 p-6 rounded-lg border border-gray-100 dark:border-gray-700 mb-8">
+							<div class="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg border border-gray-100 dark:border-gray-700 mb-8">
 								<label class="block text-gray-800 dark:text-gray-200 font-medium mb-2 text-sm">
 								{$i18n.t('Keywords (for search & recommendations)')}
 							</label>
@@ -1231,7 +1287,7 @@
 						</div>
 
 						<!-- Availability -->
-							<div class="bg-gray-50 dark:bg-gray-750 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
+							<div class="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg border border-gray-100 dark:border-gray-700">
 								<label class="block text-gray-800 dark:text-gray-200 font-medium mb-2 text-sm">
 								{$i18n.t('Availability')}
 							</label>
@@ -1264,15 +1320,15 @@
 							</div>
 						</div>
 					</div>
-				{:else if currentStep === 5}
+				<!-- {:else if currentStep === 5} -->
 					<!-- Avatar step placeholder -->
-					<div class="space-y-6 step-content-enter">
+					<!-- <div class="space-y-6 step-content-enter">
 					<div class="text-gray-800 dark:text-gray-200">
 						<h3 class="text-xl font-semibold mb-4">{$i18n.t('Choose Your Avatar')}</h3>
 						<p>{$i18n.t('This step would allow selecting a tutor avatar.')}</p>
 						</div>
-					</div>
-				{:else if currentStep === 6}
+					</div> -->
+				{:else if currentStep === 5}
 					<!-- Review step - Clean, professional design -->
 					<div class="space-y-8 step-content-enter">
 						<div>
@@ -1289,10 +1345,10 @@
 								<div class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-5 flex items-center justify-between">
 									<div class="flex-1">
 										<h4 class="text-lg font-bold text-white">{supportTitle}</h4>
-										{#if selectedSubject}
+										{#if selectedSubject || customSubject}
 											<div class="flex items-center mt-2">
 												<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-white/20 text-white">
-													{selectedSubject ? subjects.find(s => s.id === selectedSubject)?.name || customSubject : customSubject}
+													{selectedSubject ? (subjects.find(s => s.id === selectedSubject)?.name ?? selectedSubject) : customSubject}
 												</span>
 					</div>
 				{/if}
@@ -1442,7 +1498,7 @@
 									{/if}
 
 									<!-- Confirmation Message -->
-									<div class="px-6 py-5 bg-gray-50 dark:bg-gray-750">
+									<div class="px-6 py-5 bg-gray-50 dark:bg-gray-700">
 										<div class="flex items-center text-gray-700 dark:text-gray-300">
 											<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -1467,7 +1523,7 @@
 							prevStep();
 						}
 					}}
-					class="px-6 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200 font-medium flex items-center"
+					class="px-6 py-2.5 text-sm font-semibold bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors duration-200 flex items-center"
 					disabled={isSubmitting}
 				>
 					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -1478,7 +1534,7 @@
 
 				<button
 					on:click={nextStep}
-					class="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 font-medium flex items-center shadow-sm"
+					class="px-6 py-2.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white dark:bg-gradient-to-r dark:from-blue-600 dark:to-indigo-600 dark:hover:from-blue-700 dark:hover:to-indigo-700 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center shadow-sm"
 					disabled={!canProceed || isSubmitting}
 				>
 					{#if isSubmitting}
