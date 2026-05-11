@@ -120,12 +120,11 @@ async def signup(request: Request, response: Response, form_data: AddUserForm):
                         meta=first_model.meta,
                         params=first_model.params,
                         access_control=None,  # Make public
-                        is_active=first_model.is_active
+                        is_active=first_model.is_active,
                     )
                     Models.update_model_by_id(first_model.id, updated_model)
                 else:
                     print("No models found.")
-
 
             expires_delta = parse_duration(request.app.state.config.JWT_EXPIRES_IN)
             expires_at = None
@@ -184,6 +183,7 @@ async def signup(request: Request, response: Response, form_data: AddUserForm):
             raise HTTPException(500, detail=ERROR_MESSAGES.CREATE_USER_ERROR)
     except Exception as err:
         raise HTTPException(500, detail=ERROR_MESSAGES.DEFAULT(err))
+
 
 @router.get("/user-count")
 async def get_user_count():
