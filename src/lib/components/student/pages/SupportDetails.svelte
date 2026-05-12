@@ -8,12 +8,56 @@
 	import type { Writable } from 'svelte/store';
 	import { browser } from '$app/environment';
 	import ConfirmDialog from '$lib/components/student/elements/ConfirmDialog.svelte';
+	import { isDemo, demoData } from '$lib/stores';
 
 	// Get i18n from context with proper typing
 	interface I18n {
 		t: (key: string) => string;
 	}
 	const i18n = getContext<Writable<I18n>>('i18n');
+
+	// Key shared with other pages for persisting custom subjects
+	const CUSTOM_SUBJECTS_KEY = 'customSubjects';
+
+	// Built-in default subjects
+	const defaultSubjects = [
+		{ id: 'mathematics', name: 'Mathematics', icon: '📊' },
+		{ id: 'science', name: 'Science', icon: '🔬' },
+		{ id: 'history', name: 'History', icon: '🏛️' },
+		{ id: 'computer-science', name: 'Computer Science', icon: '💻' },
+		{ id: 'english', name: 'English', icon: '📚' },
+		{ id: 'geography', name: 'Geography', icon: '🌍' },
+		{ id: 'chemistry', name: 'Chemistry', icon: '🔬' },
+		{ id: 'biology', name: 'Biology', icon: '🌿' },
+		{ id: 'physics', name: 'Physics', icon: '⚛️' },
+	];
+
+	// Subjects including any persisted customs (browser only)
+	let subjects = [...defaultSubjects];
+	if (browser) {
+		try {
+			const stored = localStorage.getItem(CUSTOM_SUBJECTS_KEY);
+			if (stored) {
+				const list = JSON.parse(stored);
+				if (Array.isArray(list)) {
+					list.forEach((s: any) => {
+						if (s && s.id && !subjects.some(d => d.id === s.id)) {
+							subjects.push(s);
+						}
+					});
+				}
+			}
+		} catch (e) {
+			console.error('Failed to load custom subjects', e);
+		}
+	}
+
+	function getSubjectInfo(id: string, customName?: string) {
+		const found = subjects.find(s => s.id === id);
+		if (found) return `${found.icon ?? ''} ${found.name}`;
+		if (customName) return `⭐️ ${customName}`;
+		return id;
+	}
 
 	// Support data
 	let support: any = null;
@@ -31,13 +75,6 @@
 		if (!browser) return;
 
 		try {
-			const token = localStorage.getItem('token');
-			if (!token) {
-				error = $i18n.t('Authentication required');
-				loading = false;
-				return;
-			}
-
 			if (!supportId) {
 				error = $i18n.t('Support ID is required');
 				loading = false;
@@ -45,6 +82,33 @@
 			}
 
 			console.log(`Loading support with ID: ${supportId}`);
+			
+			// Check if in demo mode
+			if ($isDemo && supportId.startsWith('demo-')) {
+				// Load from mock data
+				const mockSupport = $demoData.supports.find(s => s.id === supportId);
+				if (mockSupport) {
+					support = {
+						...mockSupport,
+						short_description: mockSupport.description,
+						status: mockSupport.progress < 30 ? 'not-started' : mockSupport.progress < 100 ? 'in-progress' : 'completed',
+						created_at: new Date().toISOString(),
+						updated_at: new Date().toISOString()
+				};
+			} else {
+					error = $i18n.t('Demo support not found');
+				}
+				loading = false;
+				return;
+			}
+			
+			const token = localStorage.getItem('token');
+			if (!token) {
+				error = $i18n.t('Authentication required');
+				loading = false;
+				return;
+			}
+
 			support = await getSupportById(token, supportId);
 			console.log('Support data loaded:', support);
 		} catch (err: any) {
@@ -77,6 +141,11 @@
 	async function handleDelete() {
 		if (!browser || !supportId) return;
 
+		if ($isDemo) {
+			toast.info($i18n.t('Deleting is disabled in demo mode'));
+			return;
+		}
+
 		try {
 			const token = localStorage.getItem('token');
 			if (!token) {
@@ -100,6 +169,17 @@
 	// Handle starting a chat for this support
 	function handleStartChat(event: MouseEvent) {
 		if (!support || !support.id) return;
+		
+		if ($isDemo) {
+			const demoSupport = $demoData.supports.find(s => s.id === support.id);
+			if (demoSupport?.chatId) {
+				event.preventDefault();
+				goto(`/student/c/${demoSupport.chatId}`);
+			} else {
+				goto('/student/chat');
+			}
+			return;
+		}
 		
 		// Save support data to localStorage for chat linking
 		const supportData = {
@@ -196,7 +276,7 @@
 			<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden mb-6">
 				<!-- Title and actions header -->
 				<div
-					class="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+					class="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 dark:from-blue-600 dark:to-indigo-600"
 				>
 					<div>
 						<h2 class="text-xl font-bold text-white">{support.title}</h2>
@@ -224,7 +304,7 @@
 						<div class="flex items-center gap-2">
 							<button
 								on:click={() => goto(`/student/support/${support.id}/edit`)}
-								class="inline-flex items-center px-3 py-1.5 bg-white text-gray-700 border border-gray-300 rounded hover:bg-gray-50 text-sm font-medium"
+								class="inline-flex items-center px-3 py-1.5 text-sm font-semibold text-blue-600 bg-white border border-blue-600 rounded-full hover:bg-blue-50 transition-colors"
 							>
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
@@ -241,7 +321,7 @@
 
 							<button
 								on:click={() => (showDeleteConfirm = true)}
-								class="inline-flex items-center px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 text-sm font-medium"
+								class="inline-flex items-center px-3 py-1.5 text-sm font-semibold text-white bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 rounded-full transition-colors"
 							>
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
@@ -278,10 +358,7 @@
 									{$i18n.t('Subject')}
 								</h4>
 								<p class="text-gray-800 dark:text-gray-200">
-									{support.subject}
-									{#if support.custom_subject}
-										- {support.custom_subject}
-									{/if}
+									{getSubjectInfo(support.subject, support.custom_subject)}
 								</p>
 							</div>
 
@@ -387,7 +464,7 @@
 									{$i18n.t('Description')}
 								</h4>
 								<div
-									class="bg-gray-50 dark:bg-gray-750 p-4 rounded-lg border border-gray-100 dark:border-gray-700"
+									class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700"
 								>
 									<p class="text-gray-800 dark:text-gray-200">{support.short_description}</p>
 								</div>
@@ -400,7 +477,7 @@
 									{$i18n.t('Learning Objectives')}
 								</h4>
 								<div
-									class="bg-gray-50 dark:bg-gray-750 p-4 rounded-lg border border-gray-100 dark:border-gray-700"
+									class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700"
 								>
 									<p class="text-gray-800 dark:text-gray-200">{support.learning_objective}</p>
 								</div>
@@ -514,7 +591,7 @@
 										>
 										<a
 											href={`/student/c/${support.chat_id}`}
-											class="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm bg-blue-100 dark:bg-blue-900 px-3 py-1 rounded-full"
+											class="inline-flex items-center text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100 text-sm bg-blue-100 dark:bg-blue-800 px-3 py-1 rounded-full transition-colors"
 										>
 											<svg
 												xmlns="http://www.w3.org/2000/svg"
@@ -566,14 +643,21 @@
 					>
 						<button
 							on:click={() => goto('/student/supports')}
-							class="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+							class="px-4 py-2 text-sm font-semibold bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors"
 						>
 							{$i18n.t('Back to List')}
 						</button>
 
 						<button
+							on:click={() => {
+								if ($isDemo) {
+									toast.info($i18n.t('Editing supports is disabled in demo mode'));
+								} else {
+									goto(`/student/support/${support.id}/edit`);
+								}
+							}}
+							class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors {$isDemo ? 'opacity-75 cursor-not-allowed' : ''}"
 							on:click={() => goto(`/student/support/${support.id}/edit`)}
-							class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
 						>
 							{$i18n.t('Edit Support')}
 						</button>

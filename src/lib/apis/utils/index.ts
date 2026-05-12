@@ -1,26 +1,28 @@
 import { TUTOR_API_BASE_URL } from '$lib/constants';
 
 export const getGravatarUrl = async (token: string, email: string) => {
-	let error = null;
+  try {
+    const res = await fetch(`${TUTOR_API_BASE_URL}/utils/gravatar?email=${email}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      }
+    });
 
-	const res = await fetch(`${TUTOR_API_BASE_URL}/utils/gravatar?email=${email}`, {
-		method: 'GET',
-		headers: {
-			'Content-Type': 'application/json',
-			Authorization: `Bearer ${token}`
-		}
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.log(err);
-			error = err;
-			return null;
-		});
+    if (!res.ok) {
+      const err = await res.json();
+      throw err;
+    }
 
-	return res;
+    // Parse JSON once, expect a string URL
+    const url = await res.json();  // assuming API returns just the string URL
+
+    return url;  // directly return it
+  } catch (error) {
+    console.error('getGravatarUrl error:', error);
+    return null;
+  }
 };
 
 export const executeCode = async (token: string, code: string) => {
