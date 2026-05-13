@@ -12,7 +12,7 @@ from sqlalchemy.orm import sessionmaker
 
 from open_webui.internal.db import engine
 from open_webui.utils.auth import get_verified_user
-from open_tutorai.models.database import FlashcardSet
+from open_tutorai.models.database import FlashcardSet, Support
 
 log = logging.getLogger(__name__)
 log.setLevel("INFO")
@@ -92,6 +92,62 @@ def _get_set_or_404(db, set_id: str, user_id: str) -> FlashcardSet:
     return fs
 
 
+def _validate_support_ownership(db, support_id: str, user_id: str) -> Support:
+    support = db.query(Support).filter(
+        Support.id == support_id,
+        Support.user_id == user_id,
+    ).first()
+    if not support:
+        raise HTTPException(status_code=400, detail="support_id is invalid or does not belong to the current user")
+    return support
+
+
+def _validate_flashcards(raw_cards):
+    if not isinstance(raw_cards, list):
+        raise ValueError("flashcards must be a list")
+
+    validated_cards = []
+    for item in raw_cards:
+        if not isinstance(item, dict):
+            raise ValueError("each flashcard must be an object")
+
+        question = item.get("question")
+        answer = item.get("answer")
+        if not isinstance(question, str) or not isinstance(answer, str):
+            raise ValueError("flashcard question and answer must be strings")
+
+        question = question.strip()
+        answer = answer.strip()
+        if not question or not answer:
+            raise ValueError("flashcard question and answer must not be empty")
+
+        if len(question) > 500:
+            question = question[:500].rstrip()
+        if len(answer) > 1500:
+            answer = answer[:1500].rstrip()
+
+        validated_cards.append(CardItem(question=question, answer=answer).dict())
+
+    if len(validated_cards) < 3 or len(validated_cards) > 10:
+        raise ValueError("flashcards must contain between 3 and 10 cards")
+
+    return validated_cards
+
+
+def _normalize_known_indices(known_indices: list[int], card_count: int) -> list[int]:
+    if card_count <= 0:
+        return []
+
+    invalid = [idx for idx in known_indices if idx < 0 or idx >= card_count]
+    if invalid:
+        raise HTTPException(
+            status_code=422,
+            detail=f"known_indices contains invalid card indexes: {invalid}",
+        )
+
+    return sorted(set(known_indices))
+
+
 # ---------- routes ----------
 
 @router.post("/flashcards/generate", response_model=FlashcardSetResponse)
@@ -128,27 +184,42 @@ async def generate_flashcards(
         raise HTTPException(status_code=502, detail="Could not reach LLM")
 
     try:
-        content = r.json()["choices"][0]["message"]["content"].strip()
-        # Strip markdown code fences if model wrapped the JSON
+        response_json = r.json()
+        choices = response_json.get("choices")
+        if not isinstance(choices, list) or len(choices) == 0:
+            raise ValueError("LLM response contains no completion choices")
+
+        content = choices[0].get("message", {}).get("content")
+        if not isinstance(content, str):
+            raise ValueError("LLM response missing message content")
+
+        content = content.strip()
         if content.startswith("```"):
             content = content.split("```")[1]
             if content.startswith("json"):
                 content = content[4:]
+
         data = json.loads(content.strip())
         raw_cards = data.get("flashcards", [])
         if not raw_cards:
             raise ValueError("empty flashcards list")
+        raw_cards = _validate_flashcards(raw_cards)
     except Exception as e:
         log.error(f"Failed to parse LLM response: {e}")
         raise HTTPException(status_code=500, detail="Could not parse flashcards from LLM response")
 
     db = SessionLocal()
     try:
+        source_label = body.source_label
+        if body.support_id:
+            support = _validate_support_ownership(db, body.support_id, user.id)
+            source_label = f"Support: {support.subject}"
+
         fs = FlashcardSet(
             id=str(uuid.uuid4()),
             user_id=user.id,
             title=body.title,
-            source_label=body.source_label,
+            source_label=source_label,
             support_id=body.support_id,
             model_used=body.model,
             cards=raw_cards,
@@ -196,7 +267,7 @@ async def update_progress(
     db = SessionLocal()
     try:
         fs = _get_set_or_404(db, set_id, user.id)
-        fs.known_indices = body.known_indices
+        fs.known_indices = _normalize_known_indices(body.known_indices, len(fs.cards or []))
         fs.updated_at = datetime.utcnow()
         db.commit()
         db.refresh(fs)
