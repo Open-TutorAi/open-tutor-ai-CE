@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import sessionmaker
 
 from open_webui.internal.db import engine
-from open_webui.utils.auth import get_verified_user
+from open_tutorai.utils.auth import get_verified_user
 from open_webui.models.models import Models
 from open_tutorai.models.database import Course, CoursePlan, CourseFile
 
