@@ -19,6 +19,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 from open_webui.internal.db import Base, get_db, JSONField
 
+
 PREFIX = "opentutorai_"
 
 
@@ -81,6 +82,67 @@ class SupportFile(Base):
 
     def __repr__(self):
         return f"<SupportFile(id={self.id}, support_id={self.support_id}, filename={self.filename})>"
+
+
+
+class Course(Base):
+    """
+    Table for storing teacher-created courses.
+    """
+    __tablename__ = f"{PREFIX}course"
+
+    id = Column(String, primary_key=True, index=True)
+    teacher_id = Column(String, index=True, nullable=False)
+    title = Column(String, nullable=False)
+    language = Column(String, nullable=False)
+    category = Column(String, nullable=True)
+    custom_category = Column(String, nullable=True)
+    level = Column(String, nullable=False)
+    objectives = Column(Text, nullable=True)
+    status = Column(String, nullable=False, default="draft")
+    model_used = Column(String, nullable=True)
+    created_at = Column(DateTime, nullable=False, server_default=func.now())
+    updated_at = Column(DateTime, nullable=True, onupdate=func.now())
+    meta_data = Column(JSONField, nullable=True)
+    chat_id = Column(String, ForeignKey("chat.id", ondelete="SET NULL"), index=True, nullable=True)
+
+    def __repr__(self):
+        return f"<Course(id={self.id}, teacher_id={self.teacher_id}, title={self.title})>"
+    
+class CourseFile(Base):
+    __tablename__ = f"{PREFIX}course_file"
+
+    id = Column(String, primary_key=True, index=True)
+    course_id = Column(String, ForeignKey(f"{PREFIX}course.id", ondelete="CASCADE"), nullable=False)
+    filename = Column(String, nullable=False)
+    file_path = Column(String, nullable=False)
+    file_type = Column(String, nullable=True)
+    file_size = Column(Integer, nullable=True)
+    created_at = Column(DateTime, nullable=False, server_default=func.now())
+
+    course = relationship("Course", backref="files")
+
+    def __repr__(self):
+        return f"<CourseFile(id={self.id}, course_id={self.course_id}, filename={self.filename})>"
+    
+class CoursePlan(Base):
+    """
+    Stores the generated course plan (JSON).
+    """
+    __tablename__ = f"{PREFIX}course_plan"
+
+    id = Column(String, primary_key=True, index=True)
+    course_id = Column(String, ForeignKey(f"{PREFIX}course.id", ondelete="CASCADE"), nullable=False, index=True)
+    plan_json = Column(JSONField, nullable=False)   # full plan (chapters, sections)
+    generated_at = Column(DateTime, nullable=False, server_default=func.now())
+    updated_at = Column(DateTime, nullable=True, onupdate=func.now())
+
+    course = relationship("Course", backref="plans")
+
+    def __repr__(self):
+        return f"<CoursePlan(id={self.id}, course_id={self.course_id})>"
+
+
 
 
 def init_database():

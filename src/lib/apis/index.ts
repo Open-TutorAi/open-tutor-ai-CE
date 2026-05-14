@@ -7,7 +7,8 @@ export const getModels = async (
 	base: boolean = false
 ) => {
 	let error = null;
-	const res = await fetch(`${TUTOR_BASE_URL}/api/models${base ? '/base' : ''}`, {
+	const apiUrl = `/api/v1/teacher/courses/models/available`;
+	const res = await fetch(apiUrl, {
 		method: 'GET',
 		headers: {
 			Accept: 'application/json',
@@ -16,12 +17,17 @@ export const getModels = async (
 		}
 	})
 		.then(async (res) => {
-			if (!res.ok) throw await res.json();
+			if (!res.ok) {
+				const errorData = await res.json();
+				const errorMessage = errorData?.detail || errorData?.message || errorData?.error || `API returned ${res.status}: ${res.statusText}`;
+				const err = new Error(errorMessage);
+				throw err;
+			}
 			return res.json();
 		})
 		.catch((err) => {
 			error = err;
-			console.log(err);
+			console.log('Failed to fetch models:', err);
 			return null;
 		});
 
