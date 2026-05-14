@@ -154,8 +154,12 @@ def init_database():
     create_all() only creates tables that don't exist yet.
     """
     from open_webui.internal.db import engine
+    from open_tutorai.models.migrations import run_migrations
 
     Base.metadata.create_all(bind=engine, checkfirst=True)
     print("OpenTutorAI database tables initialized successfully")
+    
+    # Run migrations for schema updates
+    run_migrations(engine)
 
     return engine
