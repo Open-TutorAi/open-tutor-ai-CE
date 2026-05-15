@@ -135,8 +135,24 @@ def get_db():
     finally:
         db.close()
 
+
+def _course_meta(course: Course) -> dict:
+    meta_data = getattr(course, "meta_data", None)
+    return meta_data if isinstance(meta_data, dict) else {}
+
 def _to_response(course: Course) -> CourseResponse:
-    keywords_list = course.keywords.split(",") if course.keywords else None
+    meta_data = _course_meta(course)
+    raw_keywords = getattr(course, "keywords", None) or meta_data.get("keywords")
+
+    def pick(name: str):
+        return getattr(course, name, None) or meta_data.get(name)
+
+    if isinstance(raw_keywords, list):
+        keywords_list = raw_keywords
+    elif raw_keywords:
+        keywords_list = [item.strip() for item in str(raw_keywords).split(",") if item.strip()]
+    else:
+        keywords_list = None
     return CourseResponse(
         id=course.id,
         teacher_id=course.teacher_id,
@@ -146,13 +162,13 @@ def _to_response(course: Course) -> CourseResponse:
         custom_category=course.custom_category,
         level=course.level,
         objectives=course.objectives,
-        short_description=course.short_description,
-        estimated_duration=course.estimated_duration,
-        access_type=course.access_type,
+        short_description=pick("short_description"),
+        estimated_duration=pick("estimated_duration"),
+        access_type=pick("access_type"),
         keywords=keywords_list,
-        start_date=course.start_date,
-        end_date=course.end_date,
-        avatar_id=course.avatar_id,
+        start_date=pick("start_date"),
+        end_date=pick("end_date"),
+        avatar_id=pick("avatar_id"),
         status=course.status,
         model_used=course.model_used,
         chat_id=course.chat_id,
@@ -181,6 +197,19 @@ async def create_course(
     """Créer un nouveau cours (équivalent à POST /supports/create)"""
     new_id = str(uuid.uuid4())
     keywords_str = ",".join(course_data.keywords) if course_data.keywords else None
+    meta_data = {
+        key: value
+        for key, value in {
+            "short_description": course_data.short_description,
+            "estimated_duration": course_data.estimated_duration,
+            "access_type": course_data.access_type,
+            "keywords": keywords_str,
+            "start_date": course_data.start_date,
+            "end_date": course_data.end_date,
+            "avatar_id": course_data.avatar_id,
+        }.items()
+        if value is not None
+    }
 
     course = Course(
         id=new_id,
@@ -194,7 +223,7 @@ async def create_course(
         short_description=course_data.short_description,
         estimated_duration=course_data.estimated_duration,
         access_type=course_data.access_type,
-        keywords=keywords_str,
+        meta_data=meta_data or None,
         start_date=course_data.start_date,
         end_date=course_data.end_date,
         avatar_id=course_data.avatar_id,
@@ -430,7 +459,30 @@ async def update_course(
     # Appliquer les modifications uniquement si le champ est fourni (non None)
     update_dict = update_data.dict(exclude_unset=True)
     if "keywords" in update_dict and update_dict["keywords"] is not None:
-        update_dict["keywords"] = ",".join(update_dict["keywords"])
+        keywords_str = ",".join(update_dict["keywords"])
+        existing_meta_data = _course_meta(course).copy()
+        existing_meta_data["keywords"] = keywords_str
+        course.meta_data = existing_meta_data
+        update_dict.pop("keywords")
+
+    meta_updates = {}
+    for meta_key in (
+        "short_description",
+        "estimated_duration",
+        "access_type",
+        "start_date",
+        "end_date",
+        "avatar_id",
+    ):
+        if meta_key in update_dict:
+            meta_updates[meta_key] = update_dict.pop(meta_key)
+
+    if meta_updates:
+        existing_meta_data = _course_meta(course).copy()
+        for key, value in meta_updates.items():
+            if value is not None:
+                existing_meta_data[key] = value
+        course.meta_data = existing_meta_data
 
     for key, value in update_dict.items():
         setattr(course, key, value)
