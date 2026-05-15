@@ -53,6 +53,7 @@ export default defineConfig({
 		proxy: {
 			'/api': {
 				target: 'http://open-tutor-backend:8080',
+				target: 'http://localhost:8080',
 				changeOrigin: true,
 				secure: false,
 				configure: (proxy, _options) => {
@@ -69,6 +70,7 @@ export default defineConfig({
 			},
 			'/ws': {
 				target: 'ws://open-tutor-backend:8080',
+				target: 'http://localhost:8080',
 				ws: true,
 				changeOrigin: true,
 			}

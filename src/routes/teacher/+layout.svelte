@@ -7,7 +7,9 @@
 	import Sidebar from '$lib/components/teacher/elements/Sidebar.svelte';
 	import Navbar from '$lib/components/teacher/elements/Navbar.svelte';
 
-	import { user, theme } from '$lib/stores';
+	import { getModels, getVersionUpdates } from '$lib/apis';
+	import { config, user, settings, models, theme} from '$lib/stores';
+	
 
 	const activePage = writable('dashboard');
 	let isSidebarOpen = true;
@@ -45,7 +47,15 @@
 		localStorage.setItem('theme', newTheme);
 	}
 
-	onMount(() => {
+	onMount(async () => {
+		
+		models.set(
+			await getModels(
+				localStorage.token,
+				$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
+			)
+		);
+
 		const currentUser = get(user);
 		if (!currentUser) {
 			goto('/auth');
