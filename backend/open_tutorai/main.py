@@ -77,7 +77,7 @@ async def health_check():
 
 # Include routers of open_tutorai
 app.include_router(response_feedbacks.router, prefix="/api/v1", tags=["response-feedbacks"])
-app.include_router(auths.router, prefix="/auths", tags=["auths"])
+app.include_router(auths.router, prefix="/api/v1/auths", tags=["auths"])
 app.include_router(supports.router, prefix="/api/v1", tags=["supports"])
 app.include_router(teacher_courses.router, prefix="/api/v1", tags=["teacher-courses"])
 
