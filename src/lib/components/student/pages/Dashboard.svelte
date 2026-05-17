@@ -1,14 +1,17 @@
 <!-- Dashboard.svelte -->
 <script lang="ts">
-	import { getContext, onMount, onDestroy } from 'svelte';
-	import type { Writable } from 'svelte/store';
-	import type { i18n as i18nType } from 'i18next';
-	import { goto } from '$app/navigation';
-	import { browser } from '$app/environment';
-	import { chatId as storeChatId } from '$lib/stores';
-	import CourseCard from '../elements/CourseCard.svelte';
-	import { getSupportRequests, type SupportResponse, updateSupportChatId } from '$lib/apis/supports';
-	import { page } from '$app/stores';
+import { getContext, onMount, onDestroy } from 'svelte';
+import type { Writable } from 'svelte/store';
+import type { i18n as i18nType } from 'i18next';
+import { goto } from '$app/navigation';
+import { browser } from '$app/environment';
+import { chatId as storeChatId } from '$lib/stores';
+import CourseCard from '../elements/CourseCard.svelte';
+import { getSupportRequests, type SupportResponse, updateSupportChatId } from '$lib/apis/supports';
+import { page } from '$app/stores';
+import StatisticsPanel  from '../dashboard/StatisticsPanel.svelte';
+import PerformanceGauge from '../dashboard/PerformanceGauge.svelte';
+import CalendarWidget   from '../dashboard/CalendarWidget.svelte';
 
 	const i18n = getContext<Writable<i18nType>>('i18n');
 	type PerfFilter = 'weekly' | 'monthly';
@@ -281,172 +284,45 @@
 		<!-- 3-column grid -->
 		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
-			<!-- ▌1. STATISTICS PANEL ▐ -->
-			<div class="rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 p-5 flex flex-col gap-4">
-				<h3 class="text-base font-bold text-gray-800 dark:text-white">{$i18n.t('Statistics')}</h3>
-				<div class="flex flex-col sm:flex-row items-center gap-5">
-					<!-- Stat bars -->
-					<div class="flex flex-col gap-3 flex-1 w-full">
-						<!-- Participation -->
-						<div class="flex items-center gap-3">
-							<div class="w-9 h-9 rounded-full flex items-center justify-center bg-indigo-100 dark:bg-indigo-900/30 shrink-0">
-								<svg class="w-5 h-5 text-indigo-500" fill="currentColor" viewBox="0 0 24 24">
-									<path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
-								</svg>
-							</div>
-							<div class="flex-1">
-								<div class="flex justify-between mb-1">
-									<span class="text-xs font-medium text-gray-600 dark:text-gray-300">{$i18n.t('Participation')}</span>
-									<span class="text-xs font-bold text-indigo-500">{Math.round(animParticipation)}%</span>
-								</div>
-								<div class="h-1.5 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
-									<div class="h-full rounded-full bg-indigo-500" style="width:{animParticipation}%"></div>
-								</div>
-							</div>
-						</div>
-						<!-- Tasks & Exam -->
-						<div class="flex items-center gap-3">
-							<div class="w-9 h-9 rounded-full flex items-center justify-center bg-emerald-100 dark:bg-emerald-900/30 shrink-0">
-								<svg class="w-5 h-5 text-emerald-500" fill="currentColor" viewBox="0 0 24 24">
-									<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-								</svg>
-							</div>
-							<div class="flex-1">
-								<div class="flex justify-between mb-1">
-									<span class="text-xs font-medium text-gray-600 dark:text-gray-300">{$i18n.t('Tasks & Exam')}</span>
-									<span class="text-xs font-bold text-emerald-500">{Math.round(animTasksExam)}%</span>
-								</div>
-								<div class="h-1.5 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
-									<div class="h-full rounded-full bg-emerald-500" style="width:{animTasksExam}%"></div>
-								</div>
-							</div>
-						</div>
-						<!-- Quiz -->
-						<div class="flex items-center gap-3">
-							<div class="w-9 h-9 rounded-full flex items-center justify-center bg-amber-100 dark:bg-amber-900/30 shrink-0">
-								<svg class="w-5 h-5 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
-									<path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
-								</svg>
-							</div>
-							<div class="flex-1">
-								<div class="flex justify-between mb-1">
-									<span class="text-xs font-medium text-gray-600 dark:text-gray-300">{$i18n.t('Quiz')}</span>
-									<span class="text-xs font-bold text-amber-500">{Math.round(animQuiz)}%</span>
-								</div>
-								<div class="h-1.5 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
-									<div class="h-full rounded-full bg-amber-500" style="width:{animQuiz}%"></div>
-								</div>
-							</div>
-						</div>
-					</div>
+				<!-- À la place du bloc 1 -->
+	<StatisticsPanel
+		{animParticipation}
+		{animTasksExam}
+		{animQuiz}
+		{animGrades}
+		{ringOffset}
+		{ringCirc}
+		{ringR}
+	/>
 
-					<!-- Circular grades ring -->
-					<div class="flex flex-col items-center shrink-0">
-						<div class="relative w-28 h-28">
-							<svg class="w-full h-full -rotate-90" viewBox="0 0 128 128">
-								<circle cx="64" cy="64" r={ringR} fill="none" stroke="#e5e7eb" class="dark:stroke-gray-700" stroke-width="10"/>
-								<circle cx="64" cy="64" r={ringR} fill="none" stroke="#6366f1" stroke-width="10"
-									stroke-linecap="round" stroke-dasharray={ringCirc} stroke-dashoffset={ringOffset}/>
-							</svg>
-							<div class="absolute inset-0 flex flex-col items-center justify-center">
-								<span class="text-xl font-extrabold text-gray-800 dark:text-white">{Math.round(animGrades)}%</span>
-								<span class="text-[9px] text-gray-400 dark:text-gray-500 text-center leading-tight px-1">{$i18n.t('Grades Completed')}</span>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
+			<!-- À la place du bloc 2 -->
+<PerformanceGauge
+    {animPoints}
+    {animNeedle}
+    {gFillPath}
+    {gBgPath}
+    {gNeedleTip}
+    {gFillLarge}
+    {gcx}
+    {gcy}
+    {gR}
+    {zoneArc}
+/>
 
-			<!-- ▌2. PERFORMANCE GAUGE ▐ -->
-			<div class="rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 p-5 flex flex-col gap-2">
-				<h3 class="text-base font-bold text-gray-800 dark:text-white">{$i18n.t('Performance')}</h3>
-				<div class="flex items-center gap-2 mb-1">
-					<span class="w-3 h-3 rounded-sm bg-indigo-500 inline-block"></span>
-					<span class="text-xs text-gray-500 dark:text-gray-400">{$i18n.t('Point Progress')}</span>
-				</div>
-				<div class="flex flex-col items-center flex-1 justify-center">
-					<svg viewBox="0 0 200 105" class="w-full max-w-[200px]" aria-label={$i18n.t('Performance gauge')}>
-						<defs>
-							<linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-								<stop offset="0%"   stop-color="#ef4444"/>
-								<stop offset="50%"  stop-color="#f59e0b"/>
-								<stop offset="100%" stop-color="#10b981"/>
-							</linearGradient>
-						</defs>
-						<path d={zoneArc(180,120,gR)} fill="none" stroke="#ef4444" stroke-width="13" opacity="0.15"/>
-						<path d={zoneArc(120, 60,gR)} fill="none" stroke="#f59e0b" stroke-width="13" opacity="0.15"/>
-						<path d={zoneArc( 60,  0,gR)} fill="none" stroke="#10b981" stroke-width="13" opacity="0.15"/>
-						<path d={gBgPath}   fill="none" stroke="#e5e7eb" class="dark:stroke-gray-700" stroke-width="13" stroke-linecap="round" opacity="0.5"/>
-						<path d={gFillPath} fill="none" stroke="url(#gaugeGrad)" stroke-width="13" stroke-linecap="round"/>
-						<line x1={gcx} y1={gcy} x2={gNeedleTip.x} y2={gNeedleTip.y}
-							stroke="#374151" class="dark:stroke-gray-200" stroke-width="2.5" stroke-linecap="round"/>
-						<circle cx={gcx} cy={gcy} r="5"   fill="#374151" class="dark:fill-gray-200"/>
-						<circle cx={gcx} cy={gcy} r="2.5" fill="white"   class="dark:fill-gray-800"/>
-						<text x="20"  y="103" font-size="7" fill="#ef4444" text-anchor="middle" font-family="sans-serif">Low</text>
-						<text x="100" y="16"  font-size="7" fill="#f59e0b" text-anchor="middle" font-family="sans-serif">Mid</text>
-						<text x="180" y="103" font-size="7" fill="#10b981" text-anchor="middle" font-family="sans-serif">High</text>
-					</svg>
-					<div class="text-center mt-2">
-						<p class="text-xs text-gray-400 dark:text-gray-500">{$i18n.t('Your Point')}</p>
-						<p class="text-2xl font-extrabold text-gray-800 dark:text-white tracking-tight">
-							{Math.round(animPoints).toLocaleString()}
-						</p>
-					</div>
-				</div>
-			</div>
 
-			<!-- ▌3. CALENDAR WIDGET ▐ -->
-			<div class="sm:col-span-2 lg:col-span-1 rounded-2xl bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 p-5 flex flex-col gap-3">
-				<div class="flex items-center justify-between">
-					<button on:click={calPrev}
-						class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-500 dark:text-gray-400"
-						aria-label={$i18n.t('Previous month')}>
-						<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-							<path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/>
-						</svg>
-					</button>
-					<h3 class="text-sm font-bold text-gray-800 dark:text-white">{MONS[calMonth]} {calYear}</h3>
-					<button on:click={calNext}
-						class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-500 dark:text-gray-400"
-						aria-label={$i18n.t('Next month')}>
-						<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-							<path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
-						</svg>
-					</button>
-				</div>
-				<div class="grid grid-cols-7 text-center">
-					{#each DOW as d, i}
-						<span class="text-[10px] font-semibold uppercase {i === 0 || i === 6 ? 'text-red-400' : 'text-gray-400 dark:text-gray-500'}">{d}</span>
-					{/each}
-				</div>
-				<div class="grid grid-cols-7 gap-y-1 text-center">
-					{#each calCells as day}
-						{#if day === null}
-							<span></span>
-						{:else}
-							<button
-								on:click={() => calSelected = day}
-								class="relative mx-auto w-7 h-7 flex items-center justify-center rounded-full text-xs font-medium transition-all duration-150
-									{isToday(day)
-										? 'bg-indigo-500 text-white shadow-md hover:bg-indigo-600'
-										: calSelected === day
-										? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300'
-										: isSunSat(day)
-										? 'text-red-500 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-										: 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}"
-								aria-pressed={calSelected === day}
-								aria-label="{day} {MONS[calMonth]} {calYear}"
-							>
-								{day}
-								{#if eventDays.includes(day) && !isToday(day)}
-									<span class="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-indigo-400"></span>
-								{/if}
-							</button>
-						{/if}
-					{/each}
-				</div>
-			</div>
-		</div>
+		<!-- À la place du bloc 3 -->
+<CalendarWidget
+    {calCells}
+    {calMonth}
+    {calYear}
+    {calSelected}
+    calEventDays={eventDays}   
+    {isToday}
+    {isSunSat}
+    {calPrev}
+    {calNext}
+    on:selectDay={(e) => calSelected = e.detail}
+/>
 	</section>
 	<!-- ████████████████████████ END PERFORMANCE DASHBOARD ████████████████████████ -->
 
