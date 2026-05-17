@@ -2,23 +2,11 @@
 	import { toast } from 'svelte-sonner';
 	import { onMount, getContext, tick, createEventDispatcher } from 'svelte';
 	import { fade, scale } from 'svelte/transition';
+	import type { Writable } from 'svelte/store';
+	import type { i18n as i18nType } from 'i18next';
 
 	const dispatch = createEventDispatcher();
-
-	// Get i18n from context with proper typing to fix the linter errors
-	interface I18nContext {
-		t?: (key: string) => string;
-	}
-	const i18n: I18nContext = getContext('i18n') || {};
-
-	// Safe translation function to handle cases where i18n.t might not be available
-	function t(key: string): string {
-		if (i18n && typeof i18n.t === 'function') {
-			return i18n.t(key);
-		}
-		// Fallback to the key itself if translation is not available
-		return key;
-	}
+	const i18n = getContext<Writable<i18nType>>('i18n');
 
 	import { settings, user } from '$lib/stores';
 	import { goto } from '$app/navigation';
@@ -51,7 +39,7 @@
 	// @ts-ignore - Props kept for backward compatibility even if unused
 	export let transparentBackground = false;
 
-	// State for chat type selection - use type assertion to avoid TS errors
+	// State for chat type selection
 	let selectedChatType =
 		($settings as any)?.avatarEnabled !== undefined
 			? ($settings as any).avatarEnabled
@@ -59,84 +47,63 @@
 				: 'text'
 			: 'text';
 
-	// Add state to track if we're showing avatar selection
 	let showingAvatarSelection = false;
+	let dismissed = localStorage.getItem('welcomeCardDismissed') === 'true';
 
-	// Function to set chat type preference and start chat
 	const startChat = async (type: 'text' | 'avatar') => {
 		selectedChatType = type;
 
 		if (selectedModels.length === 0 || selectedModels.every(model => !model || model === '')) {
-			toast.error(t('Please select a model before starting a chat'));
+			toast.error($i18n.t('Please select a model before starting a chat'));
 			return;
 		}
-		
+
 		if (typeof window !== 'undefined' && window.sessionStorage) {
-			console.log('Saving selected models to sessionStorage:', selectedModels);
 			window.sessionStorage.setItem('selectedModels', JSON.stringify(selectedModels));
 		}
 
 		if (type === 'text') {
-			// For text chat, update settings and start immediately
 			settings.update((s) => {
 				const updatedSettings = { ...s };
 				(updatedSettings as any).avatarEnabled = false;
 				return updatedSettings;
 			});
-
-			// Save settings to localStorage for persistence
 			localStorage.setItem('settings', JSON.stringify($settings));
-
-			// Force UI update before submitting
 			await tick();
-
-			// Send a default prompt to initialize the chat
-			const initialPrompt = 'Hello';
-			dispatch('submit', initialPrompt);
+			dispatch('submit', 'Hello');
 		} else {
 			settings.update((s) => {
 				const updatedSettings = { ...s };
 				(updatedSettings as any).avatarEnabled = true;
 				return updatedSettings;
 			});
-			
 			localStorage.setItem('settings', JSON.stringify($settings));
-			
 			showingAvatarSelection = true;
 		}
 	};
 
-	// Handle avatar selection completion
 	const handleAvatarSelected = async (event: { detail: { avatarId: string } }) => {
-		// Avatar selection already updated settings, now initialize chat
 		await tick();
 
 		if (selectedModels.length === 0 || selectedModels.every(model => !model || model === '')) {
-			// No model selected, show error and prevent further actions
-			toast.error(t('A model must be selected before starting the chat'));
-			showingAvatarSelection = false; // Go back to chat type selection
-			
+			toast.error($i18n.t('A model must be selected before starting the chat'));
+			showingAvatarSelection = false;
 			if (typeof window !== 'undefined' && window.localStorage) {
 				window.localStorage.removeItem('pendingSupportData');
 			}
-			
 			return;
 		}
 
-		const initialPrompt = 'Hello';
-		
 		try {
-			dispatch('submit', initialPrompt);
+			dispatch('submit', 'Hello');
 		} catch (error) {
 			console.error('Error starting chat with avatar:', error);
-			toast.error(t('Failed to start avatar chat. Please try again.'));
-			
+			toast.error($i18n.t('Failed to start avatar chat. Please try again.'));
 			if (typeof window !== 'undefined' && window.localStorage) {
 				window.localStorage.removeItem('pendingSupportData');
 			}
 		}
 
-		// Fallback navigation if chat doesn't initialize
 		setTimeout(() => {
 			if (history && !history.currentId) {
 				if (typeof window !== 'undefined' && window.localStorage) {
@@ -147,12 +114,10 @@
 		}, 300);
 	};
 
-	// Handle going back from avatar selection to chat type selection
 	const handleAvatarSelectionBack = () => {
 		showingAvatarSelection = false;
 	};
 
-	// Handle keyboard navigation
 	const handleKeydown = (event: KeyboardEvent, type: 'text' | 'avatar') => {
 		if (event.key === 'Enter' || event.key === ' ') {
 			startChat(type);
@@ -161,42 +126,56 @@
 </script>
 
 {#if showingAvatarSelection}
-	<!-- Show avatar selection screen -->
 	<AvatarSelection on:select={handleAvatarSelected} on:back={handleAvatarSelectionBack} />
 {:else}
-	<!-- Chat type selection screen with improved centering -->
 	<div class="page-container">
 		<div class="content-wrapper">
 			<div
 				class="max-w-5xl w-full px-4 py-6 md:py-10"
 				in:scale={{ duration: 400, start: 0.95, opacity: 0 }}
 			>
-				<div class="welcome-card bg-orange-50 dark:bg-gray-800 border border-orange-200 dark:border-gray-700 rounded-xl p-4 mb-6 text-left shadow-sm">
-                                                <div class="flex items-center gap-2 mb-2">
-                                                        <span class="text-xl">👋</span>
-                                                        <h2 class="font-bold text-orange-600 dark:text-orange-400 text-base">
-                                                                {$i18n.t('Welcome to OpenTutorAI!')}
-                                                        </h2>
-                                                </div>
-                                                <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                                                        {$i18n.t('Here are some tips to get the most out of your AI tutor:')}
-                                                </p>
-                                                <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1 list-none">
-                                                        <li>💡 {$i18n.t('Ask specific questions like "Explain recursion with an example"')}</li>
-                                                        <li>🔁 {$i18n.t('Ask for a summary: "Summarize this in 3 points"')}</li>
-                                                        <li>❓ {$i18n.t('Say "I did not understand" to get a simpler explanation')}</li>
-                                                        <li>📝 {$i18n.t('Request exercises: "Give me a practice problem"')}</li>
-                                                </ul>
-                                        </div>
-                                        <div class="text-center mb-6 md:mb-8">
-                                        <h1
-                                                class="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 md:mb-4 text-gray-800 dark:text-white tracking-tight"                                        >
-                                                {$i18n.t('Choose Your Experience')}
-                                        </h1>
+				{#if !dismissed}
+					<section
+						aria-label={$i18n.t('Welcome tips')}
+						class="bg-orange-50 dark:bg-gray-800 border border-orange-200 dark:border-gray-700 rounded-xl p-4 mb-6 text-left shadow-sm"
+					>
+						<div class="flex items-center justify-between mb-2">
+							<div class="flex items-center gap-2">
+								<span aria-hidden="true">👋</span>
+								<h2 class="font-bold text-orange-600 dark:text-orange-400 text-base">
+									{$i18n.t('Welcome to OpenTutorAI!')}
+								</h2>
+							</div>
+							<button
+								class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 underline"
+								on:click={() => {
+									dismissed = true;
+									localStorage.setItem('welcomeCardDismissed', 'true');
+								}}
+							>
+								{$i18n.t("Don't show again")}
+							</button>
+						</div>
+						<p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
+							{$i18n.t('Here are some tips to get the most out of your AI tutor:')}
+						</p>
+						<ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1 list-none">
+							<li>💡 {$i18n.t('Ask specific questions like "Explain recursion with an example"')}</li>
+							<li>🔁 {$i18n.t('Ask for a summary: "Summarize this in 3 points"')}</li>
+							<li>❓ {$i18n.t('Say "I did not understand" to get a simpler explanation')}</li>
+							<li>📝 {$i18n.t('Request exercises: "Give me a practice problem"')}</li>
+						</ul>
+					</section>
+				{/if}
+
+				<div class="text-center mb-6 md:mb-8">
+					<h1
+						class="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 md:mb-4 text-gray-800 dark:text-white tracking-tight"
+					>
+						{$i18n.t('Choose Your Experience')}
+					</h1>
 					<p class="text-sm md:text-base text-gray-600 dark:text-gray-300 max-w-lg mx-auto">
-						{$i18n.t(
-							'Select the type of chat experience you prefer. You can change this anytime from the settings.'
-						)}
+						{$i18n.t('Select the type of chat experience you prefer. You can change this anytime from the settings.')}
 					</p>
 				</div>
 
@@ -211,13 +190,8 @@
 						on:keydown={(e) => handleKeydown(e, 'text')}
 						tabindex="0"
 						role="button"
-							aria-label={t('Start text chat')}
+						aria-label={$i18n.t('Start text chat')}
 					>
-						<div
-							class="absolute inset-0 bg-cover bg-center opacity-10"
-							style="background-image: url('https://cdn-icons-png.flaticon.com/512/2665/2665038.png')"
-						></div>
-
 						<div class="relative p-5 md:p-6 flex flex-col items-center text-center h-full">
 							<div
 								class="mb-4 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 p-3 md:p-5 w-16 h-16 md:w-20 md:h-20 flex items-center justify-center"
@@ -241,52 +215,22 @@
 							</p>
 							<ul class="text-left text-gray-600 dark:text-gray-300 space-y-2 mt-auto text-sm">
 								<li class="flex items-center">
-									<svg
-										class="w-4 h-4 md:w-5 md:h-5 mr-2 text-blue-500"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M5 13l4 4L19 7"
-										></path>
+									<svg class="w-4 h-4 md:w-5 md:h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
 									</svg>
-									{t('Fast responses')}
+									{$i18n.t('Fast responses')}
 								</li>
 								<li class="flex items-center">
-									<svg
-										class="w-4 h-4 md:w-5 md:h-5 mr-2 text-blue-500"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M5 13l4 4L19 7"
-										></path>
+									<svg class="w-4 h-4 md:w-5 md:h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
 									</svg>
-									{t('Resource-efficient')}
+									{$i18n.t('Resource-efficient')}
 								</li>
 								<li class="flex items-center">
-									<svg
-										class="w-4 h-4 md:w-5 md:h-5 mr-2 text-blue-500"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M5 13l4 4L19 7"
-										></path>
+									<svg class="w-4 h-4 md:w-5 md:h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
 									</svg>
-									{t('Code blocks support')}
+									{$i18n.t('Code blocks support')}
 								</li>
 							</ul>
 							<div class="mt-5 md:mt-6 w-full">
@@ -309,13 +253,8 @@
 						on:keydown={(e) => handleKeydown(e, 'avatar')}
 						tabindex="0"
 						role="button"
-							aria-label={t('Start avatar chat')}
+						aria-label={$i18n.t('Start avatar chat')}
 					>
-						<div
-							class="absolute inset-0 bg-cover bg-center opacity-10"
-							style="background-image: url('https://cdn-icons-png.flaticon.com/512/4712/4712037.png')"
-						></div>
-
 						<div class="relative p-5 md:p-6 flex flex-col items-center text-center h-full">
 							<div
 								class="mb-4 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 p-3 md:p-5 w-16 h-16 md:w-20 md:h-20 flex items-center justify-center"
@@ -328,9 +267,7 @@
 									stroke="currentColor"
 									stroke-width="2"
 								>
-									<path
-										d="M12 2a5 5 0 0 0-5 5v2a5 5 0 0 0 10 0V7a5 5 0 0 0-5-5zm-9 16v-1a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v1"
-									></path>
+									<path d="M12 2a5 5 0 0 0-5 5v2a5 5 0 0 0 10 0V7a5 5 0 0 0-5-5zm-9 16v-1a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v1"></path>
 									<circle cx="12" cy="10" r="3"></circle>
 								</svg>
 							</div>
@@ -342,52 +279,22 @@
 							</p>
 							<ul class="text-left text-gray-600 dark:text-gray-300 space-y-2 mt-auto text-sm">
 								<li class="flex items-center">
-									<svg
-										class="w-4 h-4 md:w-5 md:h-5 mr-2 text-purple-500"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M5 13l4 4L19 7"
-										></path>
+									<svg class="w-4 h-4 md:w-5 md:h-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
 									</svg>
-									{t('Realistic animations')}
+									{$i18n.t('Realistic animations')}
 								</li>
 								<li class="flex items-center">
-									<svg
-										class="w-4 h-4 md:w-5 md:h-5 mr-2 text-purple-500"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M5 13l4 4L19 7"
-										></path>
+									<svg class="w-4 h-4 md:w-5 md:h-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
 									</svg>
-									{t('Natural voice synthesis')}
+									{$i18n.t('Natural voice synthesis')}
 								</li>
 								<li class="flex items-center">
-									<svg
-										class="w-4 h-4 md:w-5 md:h-5 mr-2 text-purple-500"
-										fill="none"
-										stroke="currentColor"
-										viewBox="0 0 24 24"
-									>
-										<path
-											stroke-linecap="round"
-											stroke-linejoin="round"
-											stroke-width="2"
-											d="M5 13l4 4L19 7"
-										></path>
+									<svg class="w-4 h-4 md:w-5 md:h-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
 									</svg>
-									{t('Immersive experience')}
+									{$i18n.t('Immersive experience')}
 								</li>
 							</ul>
 							<div class="mt-5 md:mt-6 w-full">
@@ -401,12 +308,9 @@
 					</div>
 				</div>
 
-				<!-- Footer text -->
 				<div class="mt-6 md:mt-8 text-center">
 					<p class="text-xs md:text-sm text-gray-500 dark:text-gray-400">
-						{$i18n.t(
-							'Your chat selection will determine how the AI presents information to you. You can switch between these modes at any time using the settings panel.'
-						)}
+						{$i18n.t('Your chat selection will determine how the AI presents information to you. You can switch between these modes at any time using the settings panel.')}
 					</p>
 				</div>
 			</div>
@@ -415,7 +319,6 @@
 {/if}
 
 <style>
-	/* Fixed layout for better visibility on all screen sizes */
 	.page-container {
 		height: 100%;
 		width: 100%;
@@ -434,14 +337,12 @@
 		padding: 0.5rem 0;
 	}
 
-	/* Adjust for larger screens */
 	@media (min-height: 700px) {
 		.content-wrapper {
 			padding: 2rem 0;
 		}
 	}
 
-	/* Extra small screens */
 	@media (max-height: 500px) {
 		.page-container {
 			padding-top: 0.5rem;
