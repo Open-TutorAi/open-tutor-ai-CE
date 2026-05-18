@@ -98,6 +98,18 @@ export const demoData = writable<DemoData>({
 	courses: []
 });
 
+// Course Creation - persist data across navigation
+export const courseCreationData = writable({
+	courseTitle: '',
+	courseLanguage: 'fr-FR',
+	courseCategory: '',
+	customCategory: '',
+	courseLevel: '',
+	pedagogicalObjectives: '',
+	uploadedFiles: [] as File[],
+	selectedModel: ''
+});
+
 export type Model = OpenAIModel | OllamaModel;
 
 type BaseModel = {

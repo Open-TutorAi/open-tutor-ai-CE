@@ -3,7 +3,7 @@
     import { goto } from '$app/navigation';
     import { browser } from '$app/environment';
     import { TUTOR_FRONT_URL } from '$lib/constants';
-    import { models } from '$lib/stores';
+    import { models, courseCreationData } from '$lib/stores';
     import { getModels } from '$lib/apis';
 
     const i18n = getContext('i18n');
@@ -30,6 +30,29 @@
     let generatedCourseData: any = null;
     let isLoadingModels = true;
     let modelLoadError = '';
+
+    // === Load course data from store if available (when returning from plan editor) ===
+    let unsubscribe: any;
+
+    onMount(() => {
+        unsubscribe = courseCreationData.subscribe(data => {
+            if (data && (data.courseTitle || data.courseCategory || data.courseLevel || data.pedagogicalObjectives || data.selectedModel)) {
+                courseTitle = data.courseTitle;
+                courseLanguage = data.courseLanguage;
+                courseCategory = data.courseCategory;
+                customCategory = data.customCategory;
+                courseLevel = data.courseLevel;
+                pedagogicalObjectives = data.pedagogicalObjectives;
+                uploadedFiles = data.uploadedFiles ?? uploadedFiles;
+                selectedModel = data.selectedModel;
+                showCustomCategory = courseCategory === 'Autre';
+            }
+        });
+
+        return () => {
+            if (unsubscribe) unsubscribe();
+        };
+    });
 
     // === Reactive: auto-select first model ===
     // Auto-sélectionner le premier modèle disponible
@@ -172,6 +195,18 @@
             alert($i18n.t('Veuillez sélectionner un modèle'));
             return;
         }
+
+        // Save current form data to store for recovery if needed
+        courseCreationData.set({
+            courseTitle,
+            courseLanguage,
+            courseCategory,
+            customCategory,
+            courseLevel,
+            pedagogicalObjectives,
+            uploadedFiles,
+            selectedModel
+        });
 
         isGenerating = true;
         generationSuccess = false;
@@ -496,7 +531,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
             </svg>
-            {$i18n.t('Générer le cours')}
+            {$i18n.t('Compiler')}
         </button>
     </div>
 </div>
@@ -550,8 +585,30 @@
                         </button>
                         <button class="btn-primary" on:click={() => {
                             closeModal();
+                            // Clear the saved form data since course generation is successful
+                            courseCreationData.set({
+                                courseTitle: '',
+                                courseLanguage: 'fr-FR',
+                                courseCategory: '',
+                                customCategory: '',
+                                courseLevel: '',
+                                pedagogicalObjectives: '',
+                                uploadedFiles: [],
+                                selectedModel: ''
+                            });
                             goto('/teacher/courses?view=plan', {
-                                state: { courseData: generatedCourseData }
+                                state: {
+                                    courseData: {
+                                        course_id:  generatedCourseData.course_id,
+                                        title:      generatedCourseData.course.title,
+                                        language:   generatedCourseData.course.language,
+                                        category:   generatedCourseData.course.category,
+                                        level:      generatedCourseData.course.level,
+                                        objectives: generatedCourseData.course.objectives,
+                                        files:      uploadedFiles,
+                                        plan:       generatedCourseData.plan, 
+                                    }
+                                }
                             });
                         }}>
                             {$i18n.t('Voir le cours')}

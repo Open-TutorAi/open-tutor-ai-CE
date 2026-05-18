@@ -525,25 +525,49 @@ async def update_course(
 async def delete_course(
     course_id: str, user=Depends(get_verified_user), db=Depends(get_db)
 ):
-    """Supprimer un cours et ses fichiers/plans associés."""
+    """
+    Supprimer un cours et TOUT ce qui lui est lié :
+    - Enrollments des étudiants (CourseEnrollment)
+    - Fichiers physiques + enregistrements (CourseFile)
+    - Plans du cours (CoursePlan)
+    - Le cours lui-même
+    """
+    from open_tutorai.models.database import CourseEnrollment
+
     course = _get_course_or_404(db, course_id, user.id)
 
-    # Supprimer d'abord les fichiers liés
+    # ── 1. Supprimer les enrollments des étudiants ──────────────
+    enrollments_deleted = (
+        db.query(CourseEnrollment)
+        .filter(CourseEnrollment.course_id == course_id)
+        .delete(synchronize_session=False)
+    )
+    log.info(f"Cours {course_id} : {enrollments_deleted} enrollment(s) supprimé(s)")
+
+    # ── 2. Supprimer les fichiers physiques + DB ─────────────────
     files = db.query(CourseFile).filter(CourseFile.course_id == course_id).all()
     for f in files:
         try:
-            if os.path.exists(f.file_path):
+            if f.file_path and os.path.exists(f.file_path):
                 os.remove(f.file_path)
+                log.info(f"Fichier supprimé : {f.file_path}")
         except Exception as e:
             log.warning(f"Erreur suppression fichier {f.file_path}: {e}")
-    db.query(CourseFile).filter(CourseFile.course_id == course_id).delete()
 
-    # Supprimer les plans
-    db.query(CoursePlan).filter(CoursePlan.course_id == course_id).delete()
+    db.query(CourseFile).filter(CourseFile.course_id == course_id).delete(
+        synchronize_session=False
+    )
 
-    # Supprimer le cours
+    # ── 3. Supprimer les plans ───────────────────────────────────
+    db.query(CoursePlan).filter(CoursePlan.course_id == course_id).delete(
+        synchronize_session=False
+    )
+
+    # ── 4. Supprimer le cours lui-même ───────────────────────────
     db.delete(course)
     db.commit()
+
+    log.info(f"Cours {course_id} supprimé définitivement par teacher {user.id}")
 
 
 # ---------------------------------------------------------------
@@ -695,7 +719,7 @@ async def save_course_plan(
     db.commit()
     db.refresh(plan)
 
-    return _to_response_plan(plan)
+    return PlanResponse(course_id=course_id, plan=plan.plan_json)
 
 
 # ---------------------------------------------------------------
@@ -735,3 +759,19 @@ async def get_available_models(user=Depends(get_verified_user)):
             "data": [],
             "message": f"Failed to fetch models: {str(e)}",
         }
+
+
+# ── GET /teacher/courses/{course_id}/students/count ────────────
+@router.get("/{course_id}/students/count")
+async def get_students_count(
+    course_id: str, user=Depends(get_verified_user), db=Depends(get_db)
+):
+    _get_course_or_404(db, course_id, user.id)
+    from open_tutorai.models.database import CourseEnrollment
+
+    count = (
+        db.query(CourseEnrollment)
+        .filter(CourseEnrollment.course_id == course_id)
+        .count()
+    )
+    return {"count": count}
