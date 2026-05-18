@@ -310,5 +310,5 @@ cypress/videos
 cypress/screenshots
 .vscode/settings.json
 
-# Ignored files by ZN ABDERRAHIM
+# Ignored files by ZN
 eziane_docs
