@@ -25,7 +25,7 @@
 	let showForgotPassword = false;
 	let showTermsModal = false;
 	let showPrivacyModal = false;
-	let mode = $config?.features.enable_ldap ? 'ldap' : 'signin'; // Default is signin
+	let mode = 'signin'; // Default is signin, will be updated in onMount
 	let firstName = '';
 	let lastName = '';
 	let email = '';
@@ -224,6 +224,11 @@
 			await goto(`/${$user.role}`);
 		}
 		await checkOauthCallback();
+
+		// Set mode based on config after it's initialized
+		if ($config?.features?.enable_ldap) {
+			mode = 'ldap';
+		}
 
 		loaded = true;
 		if (($config?.features.auth_trusted_header ?? false) || $config?.features.auth === false) {

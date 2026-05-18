@@ -1,7 +1,10 @@
 <script lang="ts">
-    import { getContext } from 'svelte';
+    import { getContext, onMount } from 'svelte';
     import { goto } from '$app/navigation';
+    import { browser } from '$app/environment';
     import { TUTOR_FRONT_URL } from '$lib/constants';
+    import { models } from '$lib/stores';
+    import { getModels } from '$lib/apis';
 
     const i18n = getContext('i18n');
 
@@ -14,15 +17,71 @@
     let pedagogicalObjectives = '';
     let uploadedFiles: File[] = [];
     let isDragOver = false;
+    let selectedModel = '';
 
     // Custom select UI states
     let isLangOpen = false;
     let isCategoryOpen = false;
 
     // === Modal states ===
-    let isGenerating = false;          // Is modal visible?
-    let generationSuccess = false;     // Has generation finished?
-    let progress = 0;                 // Progress bar
+    let isGenerating = false;
+    let generationSuccess = false;
+    let progress = 0;
+    let generatedCourseData: any = null;
+    let isLoadingModels = true;
+    let modelLoadError = '';
+
+    // === Reactive: auto-select first model ===
+    // Auto-sélectionner le premier modèle disponible
+    $: if ($models?.length && !selectedModel) {
+        selectedModel = $models[0]?.id ?? '';
+    }
+
+    // === Load models on mount ===
+    onMount(async () => {
+        if (!browser) return;
+
+        isLoadingModels = true;
+        modelLoadError = '';
+
+        try {
+            const token = localStorage.getItem('token') ?? '';
+            if (!token) {
+                modelLoadError = 'Authentication token not found. Please log in again.';
+                console.error('No token found');
+                isLoadingModels = false;
+                return;
+            }
+
+            const availableModels = await getModels(token);
+
+            console.log('MODELS loaded:', availableModels);
+
+            if (!availableModels || availableModels.length === 0) {
+                modelLoadError = 'No models available from server. Check Ollama/API connection.';
+                console.warn('No models returned from API');
+            } else {
+                models.set(availableModels);
+                modelLoadError = '';
+            }
+
+        } catch (error) {
+            let errorMsg = 'Unknown error occurred';
+            
+            if (error instanceof Error) {
+                errorMsg = error.message;
+            } else if (typeof error === 'object' && error !== null) {
+                errorMsg = (error as any).message || (error as any).statusText || JSON.stringify(error);
+            } else if (typeof error === 'string') {
+                errorMsg = error;
+            }
+            
+            modelLoadError = `Failed to load models: ${errorMsg}`;
+            console.error('Failed to load models:', error);
+        } finally {
+            isLoadingModels = false;
+        }
+    });
 
     // === Lock/unlock body scroll ===
     function lockBodyScroll(lock: boolean) {
@@ -31,15 +90,8 @@
         }
     }
 
-    // Category keys (will be translated when displayed)
-    const categoryKeys = [
-        'Informatique',
-        'Chimie',
-        'Mathématique',
-        'Autre'
-    ];
+    const categoryKeys = ['Informatique', 'Chimie', 'Mathématique', 'Autre'];
 
-    // Level keys (will be translated when displayed)
     const levelKeys = [
         { id: 'primary-school', key: 'Primary school' },
         { id: 'middle-school', key: 'Middle school' },
@@ -47,25 +99,21 @@
         { id: 'university', key: 'University' }
     ];
 
-    // Language keys (will be translated when displayed)
     const languageKeys = [
         { id: 'en-US', key: 'English' },
         { id: 'fr-FR', key: 'Français' },
         { id: 'ar-MA', key: 'العربية' }
     ];
 
-    // Reactive categories with current language
     $: categories = categoryKeys.map(key => ({ key, label: $i18n.t(key) }));
-    
-    // Reactive levels with current language
     $: levels = levelKeys.map(item => ({ id: item.id, label: $i18n.t(item.key) }));
-    
-    // Reactive languages with current language
     $: languages = languageKeys.map(item => ({ id: item.id, label: $i18n.t(item.key) }));
 
     $: showCustomCategory = courseCategory === 'Autre';
     $: selectedLangLabel = languages.find(l => l.id === courseLanguage)?.label || $i18n.t('Sélectionnez une langue');
-    $: selectedCatLabel = courseCategory ? categories.find(c => c.key === courseCategory)?.label || courseCategory : $i18n.t('Sélectionnez une catégorie');
+    $: selectedCatLabel = courseCategory
+        ? categories.find(c => c.key === courseCategory)?.label || courseCategory
+        : $i18n.t('Sélectionnez une catégorie');
 
     function closeLangMenu() { setTimeout(() => isLangOpen = false, 150); }
     function closeCatMenu() { setTimeout(() => isCategoryOpen = false, 150); }
@@ -99,16 +147,15 @@
         uploadedFiles = uploadedFiles.filter((_, i) => i !== index);
     }
 
-    // === Close modal (also used after success) ===
     function closeModal() {
         isGenerating = false;
         generationSuccess = false;
         progress = 0;
-        lockBodyScroll(false); // Re-enable page scroll
+        lockBodyScroll(false);
     }
 
-    // === Simulated generation ===
-    function generateCourse() {
+    // === Real API call with XHR for upload progress ===
+    async function generateCourse() {
         const finalCategory = showCustomCategory ? customCategory : courseCategory;
 
         if (!courseTitle || !courseLanguage || !finalCategory || !courseLevel || !pedagogicalObjectives) {
@@ -121,38 +168,69 @@
             return;
         }
 
-        // Validation passed -> show modal and lock scroll
+        if (!selectedModel) {
+            alert($i18n.t('Veuillez sélectionner un modèle'));
+            return;
+        }
+
         isGenerating = true;
         generationSuccess = false;
         progress = 0;
         lockBodyScroll(true);
 
-        // Simulate progress
-        const interval = setInterval(() => {
-            if (progress < 90) {
-                progress += 10;
-            }
-        }, 200);
+        try {
+            const token = localStorage.getItem('token') ?? '';
+            const formData = new FormData();
 
-        // Simulate API call (2 seconds)
-        setTimeout(() => {
-            clearInterval(interval);
-            progress = 100;
-            
-            // Business logic goes here
-            console.log({
-                title: courseTitle,
-                language: courseLanguage,
-                category: finalCategory,
-                level: courseLevel,
-                objectives: pedagogicalObjectives,
-                files: uploadedFiles
+            formData.append('title', courseTitle);
+            formData.append('language', courseLanguage);
+            formData.append('category', finalCategory);
+            formData.append('level', courseLevel);
+            formData.append('objectives', pedagogicalObjectives);
+            formData.append('model', selectedModel);
+            uploadedFiles.forEach(file => formData.append('files', file));
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/api/v1/teacher/courses/generate');
+            xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    progress = Math.round((e.loaded / e.total) * 60);
+                }
+            };
+
+            const result = await new Promise<any>((resolve, reject) => {
+                xhr.onload = () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            resolve(JSON.parse(xhr.responseText));
+                        } catch {
+                            reject(new Error('Invalid JSON response'));
+                        }
+                    } else {
+                        try {
+                            const err = JSON.parse(xhr.responseText);
+                            reject(new Error(err.detail ?? `Server error ${xhr.status}`));
+                        } catch {
+                            reject(new Error(`Server error ${xhr.status}`));
+                        }
+                    }
+                };
+                xhr.onerror = () => reject(new Error('Network error'));
+                xhr.onabort = () => reject(new Error('Request aborted'));
+                xhr.send(formData);
             });
 
+            progress = 100;
+            generatedCourseData = result;
             generationSuccess = true;
-            // Keep scroll locked until the user closes the modal
-            
-        }, 2000);
+
+        } catch (e: any) {
+            lockBodyScroll(false);
+            isGenerating = false;
+            alert($i18n.t(e?.message ?? 'Erreur lors de la génération'));
+        }
     }
 </script>
 
@@ -205,11 +283,10 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </div>
-                    
                     {#if isLangOpen}
                         <ul class="custom-select-options">
                             {#each languages as lang}
-                                <li class="custom-option {courseLanguage === lang.id ? 'selected' : ''}" 
+                                <li class="custom-option {courseLanguage === lang.id ? 'selected' : ''}"
                                     on:click={() => { courseLanguage = lang.id; isLangOpen = false; }}>
                                     {lang.label}
                                     {#if courseLanguage === lang.id}
@@ -233,11 +310,10 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </div>
-
                     {#if isCategoryOpen}
                         <ul class="custom-select-options">
                             {#each categories as category}
-                                <li class="custom-option {courseCategory === category.key ? 'selected' : ''}" 
+                                <li class="custom-option {courseCategory === category.key ? 'selected' : ''}"
                                     on:click={() => { courseCategory = category.key; isCategoryOpen = false; }}>
                                     {category.label}
                                     {#if courseCategory === category.key}
@@ -248,7 +324,6 @@
                         </ul>
                     {/if}
                 </div>
-                
                 {#if showCustomCategory}
                     <input
                         type="text"
@@ -276,6 +351,61 @@
                     </button>
                 {/each}
             </div>
+        </div>
+
+        <!-- Model selector -->
+        <div class="form-group">
+            <label for="selectedModel" class="form-label">
+                {$i18n.t('Modèle IA')} <span class="required-asterisk">*</span>
+            </label>
+            <div class="select-wrapper">
+                <select
+                    id="selectedModel"
+                    bind:value={selectedModel}
+                    class="form-control"
+                    disabled={isLoadingModels || !($models?.length)}
+                >
+                    <option value="" disabled>
+                        {isLoadingModels ? $i18n.t('Chargement des modèles...') : ($models?.length ? $i18n.t('Sélectionnez un modèle') : $i18n.t('Aucun modèle disponible'))}
+                    </option>
+                    {#each $models ?? [] as m}
+                        <option value={m.id}>{m.name ?? m.id}</option>
+                    {/each}
+                </select>
+                {#if isLoadingModels}
+                    <div class="select-spinner">
+                        <svg class="spinner" viewBox="0 0 50 50">
+                            <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="2" />
+                        </svg>
+                    </div>
+                {/if}
+            </div>
+            {#if !isLoadingModels && modelLoadError}
+                <p class="model-warn">
+                    <span style="display: inline-block; margin-right: 0.5rem;">⚠️</span>
+                    <span>{modelLoadError}</span>
+                    <button type="button" on:click={async () => {
+                        isLoadingModels = true;
+                        modelLoadError = '';
+                        const token = localStorage.getItem('token') ?? '';
+                        const availableModels = await getModels(token);
+                        if (availableModels?.length > 0) {
+                            models.set(availableModels);
+                        } else {
+                            modelLoadError = 'No models found. Check API connection.';
+                        }
+                        isLoadingModels = false;
+                    }} style="margin-left: 0.5rem; padding: 0.25rem 0.5rem; cursor: pointer;">
+                        {$i18n.t('Réessayer')}
+                    </button>
+                </p>
+            {/if}
+            {#if !isLoadingModels && !($models?.length) && !modelLoadError}
+                <p class="model-warn">
+                    <span style="display: inline-block; margin-right: 0.5rem;">⚠️</span> 
+                    {$i18n.t('Aucun modèle disponible. Assurez-vous que Ollama est lancé et qu\'au moins un modèle est téléchargé.')}
+                </p>
+            {/if}
         </div>
     </div>
 
@@ -361,7 +491,7 @@
     </div>
 
     <div class="form-actions">
-        <button type="button" on:click={generateCourse} class="btn-primary">
+        <button type="button" on:click={generateCourse} class="btn-primary" disabled={isGenerating}>
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -379,7 +509,6 @@
             {#if !generationSuccess}
                 <!-- STATE: LOADING -->
                 <div class="modal-loading">
-                    <!-- Combined logo + spinner -->
                     <div class="logo-spinner-wrap">
                         <svg class="spinner-ring" viewBox="0 0 80 80">
                             <circle cx="40" cy="40" r="34" fill="none" stroke="#e2e8f0" stroke-width="5"/>
@@ -392,7 +521,7 @@
 
                     <h3 class="modal-title">{$i18n.t('Génération en cours')}</h3>
                     <p class="modal-subtitle">{$i18n.t('Veuillez patienter pendant que nous créons votre cours...')}</p>
-                    
+
                     <div class="progress-container">
                         <div class="progress-bar" style="width: {progress}%;">
                             <span class="progress-text">{progress}%</span>
@@ -414,25 +543,15 @@
 
                     <h3 class="modal-title">{$i18n.t('Cours généré avec succès !')}</h3>
                     <p class="modal-subtitle">{$i18n.t('Votre cours a été créé et est maintenant disponible.')}</p>
-                    
+
                     <div class="modal-actions">
                         <button class="btn-secondary" on:click={closeModal}>
                             {$i18n.t('Fermer')}
                         </button>
                         <button class="btn-primary" on:click={() => {
                             closeModal();
-                            const finalCategory = showCustomCategory ? customCategory : courseCategory;
                             goto('/teacher/courses?view=plan', {
-                                state: {
-                                    courseData: {
-                                        title: courseTitle,
-                                        language: courseLanguage,
-                                        category: finalCategory,
-                                        level: courseLevel,
-                                        objectives: pedagogicalObjectives,
-                                        files: uploadedFiles
-                                    }
-                                }
+                                state: { courseData: generatedCourseData }
                             });
                         }}>
                             {$i18n.t('Voir le cours')}
@@ -444,13 +563,11 @@
         </div>
     </div>
 {/if}
+
 <style>
     /* ============================================
-    MODAL STYLES (FIXED)
+       MODAL STYLES
        ============================================ */
- /* ============================================
-   MODAL STYLES
-   ============================================ */
     .modal-overlay {
         position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
@@ -479,7 +596,6 @@
         box-shadow: 0 32px 64px -12px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06);
     }
 
-    /* --- Loading State --- */
     .modal-loading {
         display: flex;
         flex-direction: column;
@@ -487,7 +603,6 @@
         gap: 1rem;
     }
 
-    /* Spinner ring avec logo au centre */
     .logo-spinner-wrap {
         position: relative;
         width: 100px;
@@ -531,7 +646,6 @@
         object-fit: contain;
     }
 
-    /* --- Success State --- */
     .modal-success {
         display: flex;
         flex-direction: column;
@@ -585,7 +699,6 @@
         height: 14px;
     }
 
-    /* --- Shared text --- */
     .modal-title {
         font-size: 1.375rem;
         font-weight: 700;
@@ -606,7 +719,6 @@
 
     :global(.dark) .modal-subtitle { color: #94a3b8; }
 
-    /* --- Progress Bar --- */
     .progress-container {
         width: 100%;
         height: 9px;
@@ -636,7 +748,6 @@
         color: white;
     }
 
-    /* --- Actions --- */
     .modal-actions {
         display: flex;
         gap: 0.75rem;
@@ -673,7 +784,6 @@
         background: #334155;
     }
 
-    /* --- Animations --- */
     @keyframes fadeIn {
         from { opacity: 0; }
         to { opacity: 1; }
@@ -693,16 +803,17 @@
         50%  { stroke-dasharray: 120 94; stroke-dashoffset: -45; }
         100% { stroke-dasharray: 120 94; stroke-dashoffset: -165; }
     }
+
     /* ============================================
-    EXISTING STYLES (UNCHANGED)
+       EXISTING STYLES
        ============================================ */
-	.header-banner {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		margin-bottom: 1.5rem;
-		position: relative;
-	}
+    .header-banner {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
 
     .header-illustration {
         display: flex;
@@ -710,7 +821,7 @@
 
     .icon-books svg {
         height: 70px;
-        width: 80px; 
+        width: 80px;
         display: block;
         object-fit: contain;
     }
@@ -833,6 +944,55 @@
         resize: vertical;
         min-height: 120px;
         line-height: 1.6;
+    }
+
+    .model-warn {
+        font-size: 0.8125rem;
+        color: #92400e;
+        background-color: #fef3c7;
+        border: 1px solid #fcd34d;
+        border-radius: 0.5rem;
+        padding: 0.6rem 0.875rem;
+        margin: 0.5rem 0 0;
+        line-height: 1.5;
+    }
+
+    :global(.dark) .model-warn {
+        background-color: #78350f;
+        border-color: #b45309;
+        color: #fde68a;
+    }
+
+    .select-wrapper {
+        position: relative;
+    }
+
+    .select-wrapper select:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .select-spinner {
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .spinner {
+        width: 1.2rem;
+        height: 1.2rem;
+        color: #2563eb;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
     }
 
     .custom-select-wrapper {
@@ -963,9 +1123,9 @@
     }
 
     .level-dot.primary-school { background: #22c55e; }
-    .level-dot.middle-school { background: #0ea5e9; }
-    .level-dot.high-school { background: #f59e0b; }
-    .level-dot.university { background: #ef4444; }
+    .level-dot.middle-school  { background: #0ea5e9; }
+    .level-dot.high-school    { background: #f59e0b; }
+    .level-dot.university     { background: #ef4444; }
 
     .dropzone {
         border: 2px dashed #cbd5e1;
@@ -1129,12 +1289,17 @@
         gap: 0.5rem;
     }
 
-    .btn-primary:hover {
+    .btn-primary:hover:not(:disabled) {
         background-color: #1d4ed8;
     }
 
-    .btn-primary:active {
+    .btn-primary:active:not(:disabled) {
         transform: scale(0.98);
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
     }
 
     .btn-primary svg {
@@ -1143,13 +1308,8 @@
     }
 
     /* DARK MODE */
-    :global(.dark) .page-title {
-        color: #f1f5f9;
-    }
-
-    :global(.dark) .page-subtitle {
-        color: #94a3b8;
-    }
+    :global(.dark) .page-title { color: #f1f5f9; }
+    :global(.dark) .page-subtitle { color: #94a3b8; }
 
     :global(.dark) .card {
         background-color: #111827;
@@ -1157,18 +1317,11 @@
         box-shadow: none;
     }
 
-    :global(.dark) .section {
-        border-bottom-color: #1f2937;
-    }
-
-    :global(.dark) .section-title {
-        color: #f1f5f9;
-    }
+    :global(.dark) .section { border-bottom-color: #1f2937; }
+    :global(.dark) .section-title { color: #f1f5f9; }
 
     :global(.dark) .form-label,
-    :global(.dark) .files-title {
-        color: #94a3b8;
-    }
+    :global(.dark) .files-title { color: #94a3b8; }
 
     :global(.dark) .form-control {
         border-color: #374151;
@@ -1188,23 +1341,11 @@
         border-color: #374151;
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
     }
-    
-    :global(.dark) .custom-option {
-        color: #f1f5f9;
-    }
 
-    :global(.dark) .custom-option:hover {
-        background-color: #374151;
-    }
-
-    :global(.dark) .custom-option.selected {
-        background-color: #1e3a5f;
-        color: #60a5fa;
-    }
-    
-    :global(.dark) .check-icon {
-        color: #60a5fa;
-    }
+    :global(.dark) .custom-option { color: #f1f5f9; }
+    :global(.dark) .custom-option:hover { background-color: #374151; }
+    :global(.dark) .custom-option.selected { background-color: #1e3a5f; color: #60a5fa; }
+    :global(.dark) .check-icon { color: #60a5fa; }
 
     :global(.dark) .level-btn {
         border-color: #374151;
@@ -1230,38 +1371,19 @@
         border-color: #1eb288;
     }
 
-    :global(.dark) .dropzone-text {
-        color: #d1d5db;
-    }
-
-    :global(.dark) .dropzone-hint {
-        color: #6b7280;
-    }
+    :global(.dark) .dropzone-text { color: #d1d5db; }
+    :global(.dark) .dropzone-hint { color: #6b7280; }
 
     :global(.dark) .file-item {
         background-color: #1f2937;
         border-color: #374151;
     }
 
-    :global(.dark) .file-name {
-        color: #e5e7eb;
-    }
-
-    :global(.dark) .file-size {
-        color: #6b7280;
-    }
-
-    :global(.dark) .btn-remove {
-        color: #6b7280;
-    }
-
-    :global(.dark) .btn-remove:hover {
-        color: #f87171;
-    }
-
-    :global(.dark) .form-actions {
-        border-top-color: #1f2937;
-    }
+    :global(.dark) .file-name { color: #e5e7eb; }
+    :global(.dark) .file-size { color: #6b7280; }
+    :global(.dark) .btn-remove { color: #6b7280; }
+    :global(.dark) .btn-remove:hover { color: #f87171; }
+    :global(.dark) .form-actions { border-top-color: #1f2937; }
 
     @media (max-width: 640px) {
         .header-banner {
@@ -1270,34 +1392,23 @@
             gap: 1rem;
         }
 
-        .page-title {
-            font-size: 1.75rem;
-        }
-
-        .card {
-            padding: 1.25rem;
-        }
+        .page-title { font-size: 1.75rem; }
+        .card { padding: 1.25rem; }
 
         .form-row {
             grid-template-columns: 1fr;
             gap: 0;
         }
 
-        .level-group {
-            flex-direction: column;
-        }
+        .level-group { flex-direction: column; }
 
-        .form-actions {
-            flex-direction: column-reverse;
-        }
+        .form-actions { flex-direction: column-reverse; }
 
         .btn-primary {
             width: 100%;
             justify-content: center;
         }
 
-        .modal-actions {
-            flex-direction: column;
-        }
+        .modal-actions { flex-direction: column; }
     }
 </style>
