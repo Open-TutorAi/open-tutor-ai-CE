@@ -5,6 +5,9 @@ This module defines the database tables specific to OpenTutorAI while using
 the same database connection as OpenWebUI to maintain compatibility.
 """
 
+from datetime import datetime
+
+import uuid
 from sqlalchemy import (
     Column,
     Integer,
@@ -13,6 +16,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Boolean,
+    UniqueConstraint,
     func,
     ARRAY,
 )
@@ -157,13 +161,41 @@ class CoursePlan(Base):
         return f"<CoursePlan(id={self.id}, course_id={self.course_id})>"
 
 
+class CourseEnrollment(Base):
+    """
+    Tracks which students are enrolled in which courses.
+    The course_id IS the participation code the student enters.
+    """
+
+    __tablename__ = f"{PREFIX}course_enrollment"
+
+    id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
+    course_id = Column(
+        String,
+        ForeignKey(f"{PREFIX}course.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    student_id = Column(String, nullable=False, index=True)
+    enrolled_at = Column(DateTime, nullable=False, server_default=func.now())
+    status = Column(String, nullable=False, default="active")
+
+    course = relationship("Course", backref="enrollments")
+
+    __table_args__ = (
+        UniqueConstraint(
+            "course_id", "student_id", name=f"uq_{PREFIX}enrollment_course_student"
+        ),
+    )
+
+    def __repr__(self):
+        return f"<CourseEnrollment(course_id={self.course_id}, student_id={self.student_id})>"
+
+
 def init_database():
     """
     Initialize the database tables for OpenTutorAI.
     Call this function when your app starts to ensure all tables exist.
-
-    This is safe to call even if tables already exist, as SQLAlchemy's
-    create_all() only creates tables that don't exist yet.
     """
     from open_webui.internal.db import engine
     from open_tutorai.models.migrations import run_migrations
