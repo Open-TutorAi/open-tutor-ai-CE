@@ -127,6 +127,126 @@ Follow these steps to set up the project locally:
      npm install
      npm run dev
      ```
+
+### 🐳 Docker & Docker Compose Setup (Recommended)
+
+For a hassle-free setup without installing Python, Node.js, or other dependencies, use Docker and Docker Compose.
+
+#### Prerequisites
+1. **Install Docker and Docker Compose** from [docker.com](https://www.docker.com/get-started)
+2. **Git** for cloning the repository
+3. **At least 8GB RAM** (recommended for AI models)
+
+#### Step 1: Clone the Repository
+```bash
+git clone https://github.com/Open-TutorAi/open-tutor-ai-CE.git
+cd open-tutor-ai-CE
+```
+
+#### Step 2: Set Up Environment Variables
+```bash
+cp .env.example .env
+```
+
+Edit `.env` file with a text editor. Default values are fine for local development:
+```
+OLLAMA_BASE_URL='http://localhost:11434'
+OPENAI_API_BASE_URL=''
+OPENAI_API_KEY=''
+ENABLE_SIGNUP=true
+WEBUI_SECRET_KEY=mysecretkey
+SUPPRESS_WEBUI_BANNER=true
+SCARF_NO_ANALYTICS=true
+DO_NOT_TRACK=true
+ANONYMIZED_TELEMETRY=false
+```
+
+#### Step 3: Choose Your Setup Method
+
+**Option A: Full Stack with Docker Compose (Recommended)**
+
+Ensure your `docker-compose.yaml` includes the Ollama service:
+```yaml
+ollama:
+  image: ollama/ollama:latest
+  container_name: ollama
+  ports:
+    - "11434:11434"
+  volumes:
+    - ollama:/root/.ollama
+  networks:
+    - app-network
+
+volumes:
+  ollama:
+```
+
+Also ensure the backend service has this environment variable:
+```yaml
+environment:
+  - PYTHONUNBUFFERED=1
+  - OLLAMA_BASE_URL=http://ollama:11434
+```
+
+Then start all services:
+```bash
+docker compose up --build
+```
+
+This starts backend (port 8080), frontend (port 5173), and Ollama (port 11434) together.
+
+**Option B: Docker Compose without Ollama in Compose**
+
+If your `docker-compose.yaml` does NOT include the Ollama service, start only backend and frontend:
+```bash
+docker compose up --build
+```
+
+Then in another terminal, start Ollama separately:
+```bash
+chmod +x run-ollama-docker.sh
+./run-ollama-docker.sh
+```
+
+Ensure `.env` has the correct Ollama URL:
+```
+OLLAMA_BASE_URL='http://localhost:11434'
+```
+
+#### Step 4: Download AI Models
+
+Once Ollama is running, download a model:
+```bash
+docker exec -it ollama ollama pull llama3.2
+```
+
+Verify the model is installed:
+```bash
+docker exec -it ollama ollama list
+```
+
+If the backend was already running before the model was installed, restart it:
+```bash
+docker restart open-tutor-backend
+```
+
+#### Step 5: Access the Application
+
+Open your browser and go to `http://localhost:5173`. You should see the Open TutorAI interface!
+
+- **Create an account** or log in
+- **Select the model** (llama3.2 or any model you pulled)
+- **Start a chat** with the AI
+
+#### Stopping the Services
+
+To stop all containers:
+```bash
+docker compose down
+```
+
+Or press `Ctrl + C` in the terminal where Docker Compose is running.
+
 ---
 
 ### Troubleshooting
