@@ -166,6 +166,7 @@ class CourseEnrollment(Base):
     Tracks which students are enrolled in which courses.
     The course_id IS the participation code the student enters.
     """
+
     __tablename__ = f"{PREFIX}course_enrollment"
 
     id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
@@ -182,7 +183,9 @@ class CourseEnrollment(Base):
     course = relationship("Course", backref="enrollments")
 
     __table_args__ = (
-        UniqueConstraint("course_id", "student_id", name=f"uq_{PREFIX}enrollment_course_student"),
+        UniqueConstraint(
+            "course_id", "student_id", name=f"uq_{PREFIX}enrollment_course_student"
+        ),
     )
 
     def __repr__(self):

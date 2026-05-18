@@ -18,7 +18,10 @@ from sqlalchemy.orm import sessionmaker
 from open_webui.internal.db import engine
 from open_tutorai.utils.auth import get_verified_user
 from open_tutorai.models.database import (
-    Course, CourseEnrollment, CoursePlan, CourseFile
+    Course,
+    CourseEnrollment,
+    CoursePlan,
+    CourseFile,
 )
 
 log = logging.getLogger(__name__)
@@ -30,6 +33,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+
 def get_db():
     db = SessionLocal()
     try:
@@ -39,6 +43,7 @@ def get_db():
 
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
+
 
 class EnrollRequest(BaseModel):
     course_id: str
@@ -60,16 +65,19 @@ class SectionDetail(BaseModel):
     title: str
     status: str = "not-started"
 
+
 class ChapterDetail(BaseModel):
     id: str
     title: str
     sections: List[SectionDetail] = []
+
 
 class CourseFileDetail(BaseModel):
     id: str
     name: str
     size_kb: int = 0
     type: str = "application/pdf"
+
 
 class CourseDetailResponse(BaseModel):
     id: str
@@ -88,15 +96,16 @@ class CourseDetailResponse(BaseModel):
 
 # ── Internal helpers ──────────────────────────────────────────────────────────
 
+
 def _get_teacher_name(teacher_id: str) -> str:
     teacher_name = "Professeur"
     try:
         from open_webui.models.users import Users
+
         teacher = Users.get_user_by_id(teacher_id)
         if teacher:
-            teacher_name = (
-                getattr(teacher, "name", None)
-                or getattr(teacher, "email", "Professeur")
+            teacher_name = getattr(teacher, "name", None) or getattr(
+                teacher, "email", "Professeur"
             )
     except Exception:
         pass
@@ -104,9 +113,7 @@ def _get_teacher_name(teacher_id: str) -> str:
 
 
 def _build_enrolled_response(
-    course: Course,
-    enrollment: CourseEnrollment,
-    db
+    course: Course, enrollment: CourseEnrollment, db
 ) -> EnrolledCourseResponse:
     return EnrolledCourseResponse(
         id=course.id,
@@ -116,17 +123,14 @@ def _build_enrolled_response(
         level=course.level,
         teacher_name=_get_teacher_name(course.teacher_id),
         enrolled_at=(
-            enrollment.enrolled_at.isoformat()
-            if enrollment.enrolled_at else ""
+            enrollment.enrolled_at.isoformat() if enrollment.enrolled_at else ""
         ),
-        status=(
-            enrollment.status
-            if hasattr(enrollment, "status") else "active"
-        ),
+        status=(enrollment.status if hasattr(enrollment, "status") else "active"),
     )
 
 
 # ── ROUTE 1: GET / — Liste des cours rejoints ─────────────────────────────────
+
 
 @router.get("/", response_model=List[EnrolledCourseResponse])
 async def list_enrolled_courses(
@@ -152,6 +156,7 @@ async def list_enrolled_courses(
 
 
 # ── ROUTE 2: POST /enroll — Rejoindre un cours ────────────────────────────────
+
 
 @router.post("/enroll", response_model=EnrolledCourseResponse, status_code=201)
 async def enroll_in_course(
@@ -182,10 +187,7 @@ async def enroll_in_course(
         .first()
     )
     if existing:
-        raise HTTPException(
-            status_code=409,
-            detail="Vous êtes déjà inscrit à ce cours"
-        )
+        raise HTTPException(status_code=409, detail="Vous êtes déjà inscrit à ce cours")
 
     enrollment = CourseEnrollment(
         course_id=course_id,
@@ -202,6 +204,7 @@ async def enroll_in_course(
 
 
 # ── ROUTE 3: GET /{course_id} — Détail d'un cours ────────────────────────────
+
 
 @router.get("/{course_id}", response_model=CourseDetailResponse)
 async def get_course_detail(
@@ -223,8 +226,7 @@ async def get_course_detail(
     )
     if not enrollment:
         raise HTTPException(
-            status_code=404,
-            detail="Cours introuvable ou accès non autorisé"
+            status_code=404, detail="Cours introuvable ou accès non autorisé"
         )
 
     course = db.query(Course).filter(Course.id == course_id).first()
@@ -233,11 +235,7 @@ async def get_course_detail(
 
     # Chapitres + sections
     chapters_data: List[ChapterDetail] = []
-    course_plan = (
-        db.query(CoursePlan)
-        .filter(CoursePlan.course_id == course_id)
-        .first()
-    )
+    course_plan = db.query(CoursePlan).filter(CoursePlan.course_id == course_id).first()
 
     if course_plan and course_plan.plan_json:
         plan = course_plan.plan_json
@@ -259,11 +257,7 @@ async def get_course_detail(
             )
 
     # Fichiers
-    db_files = (
-        db.query(CourseFile)
-        .filter(CourseFile.course_id == course_id)
-        .all()
-    )
+    db_files = db.query(CourseFile).filter(CourseFile.course_id == course_id).all()
     files_data = [
         CourseFileDetail(
             id=f.id,
@@ -286,14 +280,14 @@ async def get_course_detail(
         files=files_data,
         chapters=chapters_data,
         enrolled_at=(
-            enrollment.enrolled_at.isoformat()
-            if enrollment.enrolled_at else ""
+            enrollment.enrolled_at.isoformat() if enrollment.enrolled_at else ""
         ),
         status=enrollment.status or "active",
     )
 
 
 # ── ROUTE 4: DELETE /{course_id} — Se désinscrire d'un cours ─────────────────
+
 
 @router.delete("/{course_id}", status_code=204)
 async def unenroll_from_course(
@@ -314,10 +308,7 @@ async def unenroll_from_course(
         .first()
     )
     if not enrollment:
-        raise HTTPException(
-            status_code=404,
-            detail="Inscription introuvable"
-        )
+        raise HTTPException(status_code=404, detail="Inscription introuvable")
 
     db.delete(enrollment)
     db.commit()

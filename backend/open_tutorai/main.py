@@ -88,7 +88,6 @@ app.include_router(teacher_courses.router, prefix="/api/v1", tags=["teacher-cour
 app.include_router(student_courses.router, prefix="/api/v1", tags=["student-courses"])
 
 
-
 @app.get("/api/changelog")
 async def get_app_changelog():
     return {key: CHANGELOG[key] for idx, key in enumerate(CHANGELOG) if idx < 5}
