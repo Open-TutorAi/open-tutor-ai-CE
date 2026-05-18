@@ -47,6 +47,8 @@ jobs:
   test-frontend:
     name: 'Frontend Unit Tests'
     runs-on: ubuntu-latest
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
