@@ -31,7 +31,6 @@ ALGORITHM = "HS256"
 ##############
 
 
-
 def get_verified_teacher_or_admin_user(user=Depends(get_current_user)):
     if user.role not in {"teacher", "admin"}:
         raise HTTPException(
@@ -40,6 +39,7 @@ def get_verified_teacher_or_admin_user(user=Depends(get_current_user)):
         )
     return user
 
+
 def get_verified_user(user=Depends(get_current_user)):
     if user.role not in {"user", "teacher", "admin"}:
         raise HTTPException(
@@ -47,6 +47,7 @@ def get_verified_user(user=Depends(get_current_user)):
             detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
         )
     return user
+
 
 def get_verified_teacher(user=Depends(get_current_user)):
     if user.role != "teacher":
