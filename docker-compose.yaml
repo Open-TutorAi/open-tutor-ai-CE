@@ -18,6 +18,7 @@ services:
       - .env
     environment:
       - PYTHONUNBUFFERED=1
+      - OLLAMA_BASE_URL=http://ollama:11434
     command: uvicorn open_tutorai.main:app --host 0.0.0.0 --port 8080 --reload
     networks:
       - app-network
@@ -53,3 +54,16 @@ services:
         condition: service_healthy
     networks:
       - app-network
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama:/root/.ollama
+    networks:
+      - app-network
+
+volumes:
+  ollama:
