@@ -53,6 +53,7 @@ Rules:
 # Pydantic Models (mirroring SupportCreateRequest / SupportResponse)
 # ---------------------------------------------------------------
 
+
 class CourseCreateRequest(BaseModel):
     title: str
     language: str
@@ -70,6 +71,7 @@ class CourseCreateRequest(BaseModel):
     chat_id: Optional[str] = None
     model: Optional[str] = None
 
+
 class CourseUpdateRequest(BaseModel):
     title: Optional[str] = None
     language: Optional[str] = None
@@ -85,6 +87,7 @@ class CourseUpdateRequest(BaseModel):
     end_date: Optional[str] = None
     avatar_id: Optional[str] = None
     chat_id: Optional[str] = None
+
 
 class CourseResponse(BaseModel):
     id: str
@@ -108,13 +111,16 @@ class CourseResponse(BaseModel):
     created_at: str
     updated_at: Optional[str] = None
 
+
 class PlanRequest(BaseModel):
     chapters: List[dict]
     objectives: Optional[str] = None
 
+
 class PlanResponse(BaseModel):
     course_id: str
     plan: dict
+
 
 class PlanGenerationRequest(BaseModel):
     model: str
@@ -124,9 +130,11 @@ class PlanGenerationRequest(BaseModel):
     level: str
     objectives: Optional[str] = None
 
+
 # ---------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------
+
 
 def get_db():
     db = SessionLocal()
@@ -140,6 +148,7 @@ def _course_meta(course: Course) -> dict:
     meta_data = getattr(course, "meta_data", None)
     return meta_data if isinstance(meta_data, dict) else {}
 
+
 def _to_response(course: Course) -> CourseResponse:
     meta_data = _course_meta(course)
     raw_keywords = getattr(course, "keywords", None) or meta_data.get("keywords")
@@ -150,7 +159,9 @@ def _to_response(course: Course) -> CourseResponse:
     if isinstance(raw_keywords, list):
         keywords_list = raw_keywords
     elif raw_keywords:
-        keywords_list = [item.strip() for item in str(raw_keywords).split(",") if item.strip()]
+        keywords_list = [
+            item.strip() for item in str(raw_keywords).split(",") if item.strip()
+        ]
     else:
         keywords_list = None
     return CourseResponse(
@@ -176,14 +187,17 @@ def _to_response(course: Course) -> CourseResponse:
         updated_at=course.updated_at.isoformat() if course.updated_at else None,
     )
 
+
 def _get_course_or_404(db, course_id: str, teacher_id: str) -> Course:
-    course = db.query(Course).filter(
-        Course.id == course_id,
-        Course.teacher_id == teacher_id
-    ).first()
+    course = (
+        db.query(Course)
+        .filter(Course.id == course_id, Course.teacher_id == teacher_id)
+        .first()
+    )
     if not course:
         raise HTTPException(status_code=404, detail="Cours introuvable")
     return course
+
 
 # ---------------------------------------------------------------
 # 1. POST /teacher/courses – Créer un nouveau cours
@@ -192,7 +206,7 @@ def _get_course_or_404(db, course_id: str, teacher_id: str) -> Course:
 async def create_course(
     course_data: CourseCreateRequest,
     user=Depends(get_verified_user),
-    db=Depends(get_db)
+    db=Depends(get_db),
 ):
     """Créer un nouveau cours (équivalent à POST /supports/create)"""
     new_id = str(uuid.uuid4())
@@ -239,6 +253,7 @@ async def create_course(
     log.info(f"Cours créé : {course.id} par {user.id}")
     return _to_response(course)
 
+
 # ---------------------------------------------------------------
 # 1b. POST /courses/generate – Génération complète du cours (create + upload + generate plan)
 # ---------------------------------------------------------------
@@ -253,7 +268,7 @@ async def generate_course_full(
     model: str = Form(...),
     files: List[UploadFile] = File(...),
     user=Depends(get_verified_user),
-    db=Depends(get_db)
+    db=Depends(get_db),
 ):
     """
     Comprehensive endpoint for course generation:
@@ -261,13 +276,13 @@ async def generate_course_full(
     2. Uploads and stores the files
     3. Generates the course plan using the specified model
     """
-    
+
     if not files:
         raise HTTPException(status_code=400, detail="No files provided")
-    
+
     if not model:
         raise HTTPException(status_code=400, detail="No model specified")
-    
+
     # Step 1: Create the course
     course_id = str(uuid.uuid4())
     course = Course(
@@ -287,23 +302,23 @@ async def generate_course_full(
     db.commit()
     db.refresh(course)
     log.info(f"Cours créé : {course_id} par {user.id}")
-    
+
     # Step 2: Handle file uploads (store metadata, not actual files yet)
     upload_dir = os.path.join("/tmp", "course_uploads", course_id)
     os.makedirs(upload_dir, exist_ok=True)
-    
+
     file_contents = []
     file_metadata = []
-    
+
     for uploaded_file in files:
         try:
             contents = await uploaded_file.read()
             file_path = os.path.join(upload_dir, uploaded_file.filename or "unknown")
-            
+
             # Save file to disk
             with open(file_path, "wb") as f:
                 f.write(contents)
-            
+
             # Create CourseFile record
             course_file = CourseFile(
                 id=str(uuid.uuid4()),
@@ -311,50 +326,59 @@ async def generate_course_full(
                 filename=uploaded_file.filename or "unknown",
                 file_path=file_path,
                 file_type=uploaded_file.content_type,
-                file_size=len(contents)
+                file_size=len(contents),
             )
             db.add(course_file)
-            
-            file_metadata.append({
-                "filename": uploaded_file.filename,
-                "size": len(contents)
-            })
-            
+
+            file_metadata.append(
+                {"filename": uploaded_file.filename, "size": len(contents)}
+            )
+
             log.info(f"Fichier sauvegardé : {file_path}")
         except Exception as e:
-            log.error(f"Erreur lors du traitement du fichier {uploaded_file.filename}: {e}")
-            raise HTTPException(status_code=400, detail=f"Error processing file {uploaded_file.filename}")
-    
+            log.error(
+                f"Erreur lors du traitement du fichier {uploaded_file.filename}: {e}"
+            )
+            raise HTTPException(
+                status_code=400,
+                detail=f"Error processing file {uploaded_file.filename}",
+            )
+
     db.commit()
-    
+
     # Step 3: Generate course plan using the selected model
     auth_header = request.headers.get("authorization", "")
     port = int(os.environ.get("PORT", "8080"))
-    
-    user_message = json.dumps({
-        "title": title,
-        "language": language,
-        "category": category,
-        "level": level,
-        "objectives": objectives,
-        "files": file_metadata
-    })
-    
+
+    user_message = json.dumps(
+        {
+            "title": title,
+            "language": language,
+            "category": category,
+            "level": level,
+            "objectives": objectives,
+            "files": file_metadata,
+        }
+    )
+
     payload = {
         "model": model,
         "messages": [
             {"role": "system", "content": COURSE_PLAN_SYSTEM_PROMPT},
-            {"role": "user", "content": user_message}
+            {"role": "user", "content": user_message},
         ],
         "stream": False,
     }
-    
+
     try:
         async with httpx.AsyncClient(timeout=120) as client:
             r = await client.post(
                 f"http://localhost:{port}/api/chat/completions",
                 json=payload,
-                headers={"Authorization": auth_header, "Content-Type": "application/json"},
+                headers={
+                    "Authorization": auth_header,
+                    "Content-Type": "application/json",
+                },
             )
         r.raise_for_status()
     except httpx.HTTPStatusError as e:
@@ -367,29 +391,31 @@ async def generate_course_full(
         course.status = "error"
         db.commit()
         raise HTTPException(status_code=502, detail="Could not reach LLM")
-    
+
     try:
         content = r.json()["choices"][0]["message"]["content"].strip()
-        
+
         # Strip markdown code fences if model wrapped the JSON
         if content.startswith("```json"):
             content = content[7:]
         elif content.startswith("```"):
             content = content[3:]
-        
+
         if content.endswith("```"):
             content = content[:-3]
-        
+
         plan = json.loads(content.strip())
-        
+
         if "chapters" not in plan:
             raise ValueError("missing 'chapters' key in plan")
     except Exception as e:
         log.error(f"Failed to parse LLM response: {e}")
         course.status = "error"
         db.commit()
-        raise HTTPException(status_code=500, detail="Could not parse course plan from LLM response")
-    
+        raise HTTPException(
+            status_code=500, detail="Could not parse course plan from LLM response"
+        )
+
     # Step 4: Save the generated plan
     plan_id = str(uuid.uuid4())
     course_plan = CoursePlan(
@@ -399,29 +425,28 @@ async def generate_course_full(
         generated_at=datetime.utcnow(),
     )
     db.add(course_plan)
-    
+
     course.status = "plan_generated"
     course.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(course)
-    
+
     log.info(f"Plan généré pour le cours {course_id} avec le modèle {model}")
-    
+
     return {
         "course_id": course_id,
         "course": _to_response(course),
         "plan": plan,
-        "files_count": len(files)
+        "files_count": len(files),
     }
+
 
 # ---------------------------------------------------------------
 # 2. GET /teacher/courses – Liste des cours de l'enseignant
 # ---------------------------------------------------------------
 @router.get("/", response_model=List[CourseResponse])
 async def list_teacher_courses(
-    status: Optional[str] = None,
-    user=Depends(get_verified_user),
-    db=Depends(get_db)
+    status: Optional[str] = None, user=Depends(get_verified_user), db=Depends(get_db)
 ):
     """Liste tous les cours créés par cet enseignant."""
     query = db.query(Course).filter(Course.teacher_id == user.id)
@@ -430,18 +455,18 @@ async def list_teacher_courses(
     courses = query.order_by(Course.created_at.desc()).all()
     return [_to_response(c) for c in courses]
 
+
 # ---------------------------------------------------------------
 # 3. GET /teacher/courses/{course_id} – Détail d'un cours
 # ---------------------------------------------------------------
 @router.get("/{course_id}", response_model=CourseResponse)
 async def get_course(
-    course_id: str,
-    user=Depends(get_verified_user),
-    db=Depends(get_db)
+    course_id: str, user=Depends(get_verified_user), db=Depends(get_db)
 ):
     """Obtenir les informations d'un cours."""
     course = _get_course_or_404(db, course_id, user.id)
     return _to_response(course)
+
 
 # ---------------------------------------------------------------
 # 4. PUT /teacher/courses/{course_id} – Mettre à jour un cours
@@ -451,7 +476,7 @@ async def update_course(
     course_id: str,
     update_data: CourseUpdateRequest,
     user=Depends(get_verified_user),
-    db=Depends(get_db)
+    db=Depends(get_db),
 ):
     """Mettre à jour les informations d'un cours (enseignant uniquement)."""
     course = _get_course_or_404(db, course_id, user.id)
@@ -492,14 +517,13 @@ async def update_course(
     db.refresh(course)
     return _to_response(course)
 
+
 # ---------------------------------------------------------------
 # 5. DELETE /teacher/courses/{course_id} – Supprimer un cours
 # ---------------------------------------------------------------
 @router.delete("/{course_id}", status_code=204)
 async def delete_course(
-    course_id: str,
-    user=Depends(get_verified_user),
-    db=Depends(get_db)
+    course_id: str, user=Depends(get_verified_user), db=Depends(get_db)
 ):
     """
     Supprimer un cours et TOUT ce qui lui est lié :
@@ -558,7 +582,7 @@ async def generate_course_plan(
     request: Request,
     body: PlanGenerationRequest,
     user=Depends(get_verified_user),
-    db=Depends(get_db)
+    db=Depends(get_db),
 ):
     """
     Génère un plan de cours via le LLM local.
@@ -571,19 +595,21 @@ async def generate_course_plan(
     auth_header = request.headers.get("authorization", "")
     port = int(os.environ.get("PORT", "8080"))
 
-    user_message = json.dumps({
-        "title": body.title,
-        "language": body.language,
-        "category": body.category,
-        "level": body.level,
-        "objectives": body.objectives
-    })
+    user_message = json.dumps(
+        {
+            "title": body.title,
+            "language": body.language,
+            "category": body.category,
+            "level": body.level,
+            "objectives": body.objectives,
+        }
+    )
 
     payload = {
         "model": body.model,
         "messages": [
             {"role": "system", "content": COURSE_PLAN_SYSTEM_PROMPT},
-            {"role": "user", "content": user_message}
+            {"role": "user", "content": user_message},
         ],
         "stream": False,
     }
@@ -593,7 +619,10 @@ async def generate_course_plan(
             r = await client.post(
                 f"http://localhost:{port}/api/chat/completions",
                 json=payload,
-                headers={"Authorization": auth_header, "Content-Type": "application/json"},
+                headers={
+                    "Authorization": auth_header,
+                    "Content-Type": "application/json",
+                },
             )
         r.raise_for_status()
     except httpx.HTTPStatusError as e:
@@ -614,7 +643,9 @@ async def generate_course_plan(
             raise ValueError("missing 'chapters' key")
     except Exception as e:
         log.error(f"Failed to parse LLM response: {e}")
-        raise HTTPException(status_code=500, detail="Could not parse plan from LLM response")
+        raise HTTPException(
+            status_code=500, detail="Could not parse plan from LLM response"
+        )
 
     plan_id = str(uuid.uuid4())
     new_plan = CoursePlan(
@@ -632,21 +663,23 @@ async def generate_course_plan(
     log.info(f"Plan généré pour le cours {course_id} avec le modèle {body.model}")
     return PlanResponse(course_id=course_id, plan=plan)
 
+
 # ---------------------------------------------------------------
 # 7. GET /teacher/courses/{course_id}/plan – Récupérer le plan actuel
 # ---------------------------------------------------------------
 @router.get("/{course_id}/plan", response_model=PlanResponse)
 async def get_course_plan(
-    course_id: str,
-    user=Depends(get_verified_user),
-    db=Depends(get_db)
+    course_id: str, user=Depends(get_verified_user), db=Depends(get_db)
 ):
     """Récupérer le plan de cours existant."""
     course = _get_course_or_404(db, course_id, user.id)
-    existing_plan = db.query(CoursePlan).filter(CoursePlan.course_id == course_id).first()
+    existing_plan = (
+        db.query(CoursePlan).filter(CoursePlan.course_id == course_id).first()
+    )
     if not existing_plan:
         raise HTTPException(status_code=404, detail="Aucun plan trouvé pour ce cours")
     return PlanResponse(course_id=course_id, plan=existing_plan.plan_json)
+
 
 # ---------------------------------------------------------------
 # 8. PUT /teacher/courses/{course_id}/plan – Sauvegarder/modifier le plan
@@ -656,7 +689,7 @@ async def save_course_plan(
     course_id: str,
     plan_data: PlanRequest,
     user=Depends(get_verified_user),
-    db=Depends(get_db)
+    db=Depends(get_db),
 ):
     """Sauvegarde le plan modifié par l'enseignant (ou le crée)."""
     course = _get_course_or_404(db, course_id, user.id)
@@ -666,7 +699,9 @@ async def save_course_plan(
         course.objectives = plan_data.objectives
 
     # Création ou mise à jour du plan
-    existing_plan = db.query(CoursePlan).filter(CoursePlan.course_id == course_id).first()
+    existing_plan = (
+        db.query(CoursePlan).filter(CoursePlan.course_id == course_id).first()
+    )
     plan_json = {"chapters": plan_data.chapters}
 
     if existing_plan:
@@ -698,25 +733,27 @@ async def get_available_models(user=Depends(get_verified_user)):
     """Get list of available AI models."""
     try:
         all_models = Models.get_all_models()
-        
+
         # Filter to only public models or models created by the user
         available_models = []
         if all_models:
             for model in all_models:
                 model_data = {
-                    "id": getattr(model, 'id', str(model)),
-                    "name": getattr(model, 'name', None) or getattr(model, 'title', None) or str(getattr(model, 'id', model)),
-                    "is_public": getattr(model, 'is_public', None),
+                    "id": getattr(model, "id", str(model)),
+                    "name": getattr(model, "name", None)
+                    or getattr(model, "title", None)
+                    or str(getattr(model, "id", model)),
+                    "is_public": getattr(model, "is_public", None),
                 }
 
                 # Include model if it has a valid ID
                 if model_data["id"]:
                     available_models.append(model_data)
-        
+
         return {
             "status": "ok",
             "data": available_models,
-            "message": f"Found {len(available_models)} available models"
+            "message": f"Found {len(available_models)} available models",
         }
     except Exception as e:
         log.error(f"Error fetching models: {str(e)}")
