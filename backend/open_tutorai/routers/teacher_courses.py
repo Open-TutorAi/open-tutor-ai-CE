@@ -371,7 +371,7 @@ async def generate_course_full(
     }
 
     try:
-        async with httpx.AsyncClient(timeout=120) as client:
+        async with httpx.AsyncClient(timeout=300) as client:
             r = await client.post(
                 f"http://localhost:{port}/api/chat/completions",
                 json=payload,
@@ -381,16 +381,21 @@ async def generate_course_full(
                 },
             )
         r.raise_for_status()
+    except httpx.TimeoutException as e:
+        log.error(f"LLM call timed out after 300 seconds: {e}")
+        course.status = "error"
+        db.commit()
+        raise HTTPException(status_code=500, detail="LLM generation timed out (exceeded 5 minutes)")
     except httpx.HTTPStatusError as e:
         log.error(f"LLM call failed: {e.response.status_code} {e.response.text}")
         course.status = "error"
         db.commit()
-        raise HTTPException(status_code=502, detail="Failed to generate course plan")
+        raise HTTPException(status_code=500, detail=f"LLM returned error: {e.response.status_code}")
     except Exception as e:
         log.error(f"LLM call error: {e}")
         course.status = "error"
         db.commit()
-        raise HTTPException(status_code=502, detail="Could not reach LLM")
+        raise HTTPException(status_code=500, detail="Failed to reach LLM backend")
 
     try:
         content = r.json()["choices"][0]["message"]["content"].strip()
@@ -404,10 +409,18 @@ async def generate_course_full(
         if content.endswith("```"):
             content = content[:-3]
 
-        plan = json.loads(content.strip())
+        content = content.strip()
+        plan = json.loads(content)
 
         if "chapters" not in plan:
             raise ValueError("missing 'chapters' key in plan")
+    except json.JSONDecodeError as je:
+        log.error(f"JSON parsing error: {je}. Raw content: {content[:500]}")
+        course.status = "error"
+        db.commit()
+        raise HTTPException(
+            status_code=500, detail="LLM returned invalid JSON structure"
+        )
     except Exception as e:
         log.error(f"Failed to parse LLM response: {e}")
         course.status = "error"
@@ -525,25 +538,49 @@ async def update_course(
 async def delete_course(
     course_id: str, user=Depends(get_verified_user), db=Depends(get_db)
 ):
-    """Supprimer un cours et ses fichiers/plans associés."""
+    """
+    Supprimer un cours et TOUT ce qui lui est lié :
+    - Enrollments des étudiants (CourseEnrollment)
+    - Fichiers physiques + enregistrements (CourseFile)
+    - Plans du cours (CoursePlan)
+    - Le cours lui-même
+    """
+    from open_tutorai.models.database import CourseEnrollment
+
     course = _get_course_or_404(db, course_id, user.id)
 
-    # Supprimer d'abord les fichiers liés
+    # ── 1. Supprimer les enrollments des étudiants ──────────────
+    enrollments_deleted = (
+        db.query(CourseEnrollment)
+        .filter(CourseEnrollment.course_id == course_id)
+        .delete(synchronize_session=False)
+    )
+    log.info(f"Cours {course_id} : {enrollments_deleted} enrollment(s) supprimé(s)")
+
+    # ── 2. Supprimer les fichiers physiques + DB ─────────────────
     files = db.query(CourseFile).filter(CourseFile.course_id == course_id).all()
     for f in files:
         try:
-            if os.path.exists(f.file_path):
+            if f.file_path and os.path.exists(f.file_path):
                 os.remove(f.file_path)
+                log.info(f"Fichier supprimé : {f.file_path}")
         except Exception as e:
             log.warning(f"Erreur suppression fichier {f.file_path}: {e}")
-    db.query(CourseFile).filter(CourseFile.course_id == course_id).delete()
 
-    # Supprimer les plans
-    db.query(CoursePlan).filter(CoursePlan.course_id == course_id).delete()
+    db.query(CourseFile).filter(CourseFile.course_id == course_id).delete(
+        synchronize_session=False
+    )
 
-    # Supprimer le cours
+    # ── 3. Supprimer les plans ───────────────────────────────────
+    db.query(CoursePlan).filter(CoursePlan.course_id == course_id).delete(
+        synchronize_session=False
+    )
+
+    # ── 4. Supprimer le cours lui-même ───────────────────────────
     db.delete(course)
     db.commit()
+
+    log.info(f"Cours {course_id} supprimé définitivement par teacher {user.id}")
 
 
 # ---------------------------------------------------------------
@@ -588,7 +625,7 @@ async def generate_course_plan(
     }
 
     try:
-        async with httpx.AsyncClient(timeout=90) as client:
+        async with httpx.AsyncClient(timeout=300) as client:
             r = await client.post(
                 f"http://localhost:{port}/api/chat/completions",
                 json=payload,
@@ -598,22 +635,38 @@ async def generate_course_plan(
                 },
             )
         r.raise_for_status()
+    except httpx.TimeoutException as e:
+        log.error(f"LLM call timed out after 300 seconds: {e}")
+        raise HTTPException(status_code=500, detail="LLM generation timed out (exceeded 5 minutes)")
     except httpx.HTTPStatusError as e:
         log.error(f"LLM call failed: {e.response.status_code} {e.response.text}")
-        raise HTTPException(status_code=502, detail="LLM call failed")
+        raise HTTPException(status_code=500, detail=f"LLM returned error: {e.response.status_code}")
     except Exception as e:
         log.error(f"LLM call error: {e}")
-        raise HTTPException(status_code=502, detail="Could not reach LLM")
+        raise HTTPException(status_code=500, detail="Failed to reach LLM backend")
 
     try:
         content = r.json()["choices"][0]["message"]["content"].strip()
+        
+        # Strip markdown code fences if model wrapped the JSON
         if content.startswith("```json"):
             content = content[7:]
+        elif content.startswith("```"):
+            content = content[3:]
+
         if content.endswith("```"):
             content = content[:-3]
+
+        content = content.strip()
         plan = json.loads(content)
+        
         if "chapters" not in plan:
-            raise ValueError("missing 'chapters' key")
+            raise ValueError("missing 'chapters' key in plan")
+    except json.JSONDecodeError as je:
+        log.error(f"JSON parsing error: {je}. Raw content: {content[:500]}")
+        raise HTTPException(
+            status_code=500, detail="LLM returned invalid JSON structure"
+        )
     except Exception as e:
         log.error(f"Failed to parse LLM response: {e}")
         raise HTTPException(
@@ -695,7 +748,7 @@ async def save_course_plan(
     db.commit()
     db.refresh(plan)
 
-    return _to_response_plan(plan)
+    return PlanResponse(course_id=course_id, plan=plan.plan_json)
 
 
 # ---------------------------------------------------------------
@@ -735,3 +788,19 @@ async def get_available_models(user=Depends(get_verified_user)):
             "data": [],
             "message": f"Failed to fetch models: {str(e)}",
         }
+
+
+# ── GET /teacher/courses/{course_id}/students/count ────────────
+@router.get("/{course_id}/students/count")
+async def get_students_count(
+    course_id: str, user=Depends(get_verified_user), db=Depends(get_db)
+):
+    _get_course_or_404(db, course_id, user.id)
+    from open_tutorai.models.database import CourseEnrollment
+
+    count = (
+        db.query(CourseEnrollment)
+        .filter(CourseEnrollment.course_id == course_id)
+        .count()
+    )
+    return {"count": count}

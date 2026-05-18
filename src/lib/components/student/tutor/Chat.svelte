@@ -84,6 +84,7 @@
 	} from '$lib/apis';
 	import { getTools } from '$lib/apis/tools';
 	import { getSupportById } from '$lib/apis/supports';
+	import { getCourseById } from '$lib/apis/courses';
 
 	import Banner from '$lib/components/common/Banner.svelte';
 	import MessageInput from '$lib/components/chat/MessageInput.svelte';
@@ -545,6 +546,11 @@
 					window.localStorage.removeItem('pendingSupportData');
 					toast.error($i18n.t('Support linking canceled due to chat creation failure'));
 				}
+				// Clean up any pending course data
+				if (window.localStorage.getItem('pendingCourseData')) {
+					window.localStorage.removeItem('pendingCourseData');
+					toast.error($i18n.t('Course linking canceled due to chat creation failure'));
+				}
 			}
 		});
 		
@@ -960,6 +966,126 @@
 		}
 	}
 
+	/**
+	 * Generates a system prompt based on course details with plan injection
+	 * @param {string} courseId - The ID of the course
+	 * @returns {Promise<string|null>} - The generated system prompt or null if failed
+	 */
+	const generateCourseSystemPrompt = async (courseId) => {
+		try {
+			console.log(`Fetching course details for ID: ${courseId}`);
+			const token = localStorage.getItem('token');
+			if (!token) {
+				console.error('No token found, cannot fetch course details');
+				return null;
+			}
+			
+			// Fetch course details from API
+			const courseDetails = await getCourseById(token, courseId);
+			if (!courseDetails) {
+				console.error('Failed to fetch course details');
+				return null;
+			}
+					
+			// Construct system prompt
+			let systemPrompt = `You are a highly experienced educator, instructional designer, and tutor. You specialize in creating clear, engaging, and progressive step-by-step lessons for any topic and any academic level. You combine best practices in pedagogy (e.g., scaffolding, active recall, formative feedback) with adaptive teaching strategies. Your role is to guide the learner through a structured learning path. You guide the learner one concept at a time, combining effective teaching strategies, personalized communication style, and the most suitable reasoning method, in a way that is tailored to their needs, level, and learning goals.`;
+			systemPrompt += `You are an educational tutor specializing in ${courseDetails.title}.\n\n`;
+			
+			// Add directive to acknowledge context in first response
+			systemPrompt += `IMPORTANT INSTRUCTIONS: This is a learning session for the course "${courseDetails.title}". In your FIRST response, introduce yourself as a tutor for this course and briefly mention the learning path and structure based on the course plan. Even if the student's first message is generic (like "hello"), you should respond by acknowledging the course and learning objectives described below.\n\n`;
+			
+			// Important note about not asking for information already provided
+			systemPrompt += `CRITICAL INSTRUCTION: DO NOT ask the student about their educational level, background, prior knowledge, or learning objectives. This information has ALREADY been provided below and you must use it directly without asking the student to repeat it. Your first message should immediately begin teaching based on these details without asking any preliminary questions.\n\n`;
+			
+			// Add explicit first message format
+			systemPrompt += `Begin your first message by saying: "Welcome to ${courseDetails.title}. We'll be learning about ${courseDetails.title} at the ${courseDetails.level} level." Then immediately provide a brief overview of the learning path and start with the first concept. Do not ask what they want to learn or what their background is.\n\n`;
+			
+			// Add title and course structure
+			systemPrompt += `COURSE: ${courseDetails.title}\n`;
+			
+			// Add course plan/structure from chapters
+			if (courseDetails.chapters && courseDetails.chapters.length > 0) {
+				systemPrompt += `\nCOURSE PLAN & STRUCTURE:\n`;
+				courseDetails.chapters.forEach((chapter, chIdx) => {
+					systemPrompt += `  Chapter ${chIdx + 1}: ${chapter.title}\n`;
+					if (chapter.sections && chapter.sections.length > 0) {
+						chapter.sections.forEach((section, secIdx) => {
+							systemPrompt += `    - Section ${secIdx + 1}: ${section.title}\n`;
+						});
+					}
+				});
+				systemPrompt += `\nYour teaching should follow this course structure. Guide the student through each chapter and section progressively. Use the chapter and section titles as your roadmap for lesson planning.\n`;
+			}
+			
+			// Add learning objectives
+			if (courseDetails.objectives) {
+				systemPrompt += `\nLEARNING OBJECTIVES: The student should be able to:\n`;
+				const objectives = courseDetails.objectives.split('\n').filter(o => o.trim());
+				objectives.forEach((obj) => {
+					systemPrompt += `- ${obj.trim()}\n`;
+				});
+			}
+			
+			// Add education level with stronger emphasis
+			if (courseDetails.level) {
+				systemPrompt += `\nEDUCATION LEVEL: ${courseDetails.level}\n`;
+				
+				// Adjust language and complexity based on level
+				if (courseDetails.level === 'primary') {
+					systemPrompt += `Use simple language and explanations appropriate for young learners. Keep concepts concrete and use lots of examples.\n`;
+				} else if (courseDetails.level === 'middle') {
+					systemPrompt += `Use moderately complex explanations with clear examples. Build on foundational knowledge gradually.\n`;
+				} else if (courseDetails.level === 'high') {
+					systemPrompt += `Use more detailed explanations and challenging concepts appropriate for high school students. Encourage deeper analytical thinking.\n`;
+				} else if (courseDetails.level === 'university') {
+					systemPrompt += `Use advanced concepts and academic language appropriate for university-level education. Encourage rigorous critical thinking.\n`;
+				}
+				
+				// Add explicit note about education level
+				systemPrompt += `NOTE: The student is at the ${courseDetails.level} education level. Do not ask them about their level.\n`;
+			}
+			
+			// Add language preference
+			if (courseDetails.language) {
+				systemPrompt += `\nPREFERRED LANGUAGE: ${courseDetails.language}\n`;
+				systemPrompt += `Please respond primarily in ${courseDetails.language} unless the student asks otherwise.\n`;
+			}
+			
+			// Add course category if available
+			if (courseDetails.category) {
+				systemPrompt += `\nCOURSE CATEGORY: ${courseDetails.category}\n`;
+			}
+			
+			// Check for files and mention them
+			if (courseDetails.files && courseDetails.files.length > 0) {
+				systemPrompt += `\nCOURSE MATERIALS: The student has access to ${courseDetails.files.length} file(s) as course materials:\n`;
+				
+				// List the files
+				for (const file of courseDetails.files) {
+					systemPrompt += `- ${file.name} (${file.type || 'unknown type'})\n`;
+				}
+				
+				// Add a note about using the content of these materials
+				systemPrompt += `\nWhen answering questions, you should reference and use the content from these materials whenever relevant. If the student asks about content from these materials, prioritize information from them in your answers.\n`;
+			}
+			
+			// Add general instruction
+			systemPrompt += `\nYour goal is to help the student achieve all the learning objectives by providing clear explanations, examples, analogies, and guided practice appropriate for their level. Follow the course structure and build understanding progressively. Be engaging, supportive, and patient throughout the learning process.\n\n`;
+			
+			// Add reminder to stay focused on the topic
+			systemPrompt += `FINAL REMINDER: DO NOT ask the student about information they've already provided such as their educational level, background, or learning goals. Instead, directly begin helping them progress through the course. Always keep your responses relevant to the course (${courseDetails.title}) and learning objectives described above. Your role is to provide structured guidance on the course material following the course plan. If the student says only "hello" or provides a very brief message, jump straight into teaching the first chapter/section - don't waste time with preliminary questions.`;
+			
+			// Add the static prompt template
+			systemPrompt += promptData.prompt;
+
+			console.log('Generated course system prompt:', systemPrompt);
+			return systemPrompt;
+		} catch (error) {
+			console.error('Error generating course system prompt:', error);
+			return null;
+		}
+	}
+
 	const initNewChat = async () => {
 		if ($page.url.searchParams.get('models')) {
 			console.log('here');
@@ -1150,6 +1276,62 @@
 				}
 			} catch (error) {
 				console.error('Error processing pendingSupportData:', error);
+			}
+		}
+		
+		// Check for pending course data and add system prompt if exists
+		const pendingCourseData = localStorage.getItem('pendingCourseData');
+		if (pendingCourseData) {
+			try {
+				const courseData = JSON.parse(pendingCourseData);
+				if (courseData && courseData.id) {
+					console.log('Found pending course data:', courseData);
+					
+					// Generate system prompt from course data
+					const systemPrompt = await generateCourseSystemPrompt(courseData.id);
+					if (systemPrompt) {
+						// Create a system message with the course context
+						const systemMessageId = uuidv4();
+						history.messages[systemMessageId] = {
+							id: systemMessageId,
+							role: 'system',
+							content: systemPrompt,
+							done: true,
+							timestamp: Date.now()
+						};
+						
+						console.log('Added course system prompt to chat history');
+					}
+					
+					// Fetch course details to get associated files
+					try {
+						const token = localStorage.getItem('token');
+						const courseDetails = await getCourseById(token, courseData.id);
+						
+						// Process course files
+						if (courseDetails && courseDetails.files && courseDetails.files.length > 0) {
+							console.log('Course has associated files:', courseDetails.files);
+							
+							// Add files to chat
+							for (const file of courseDetails.files) {
+								chatFiles.push({
+									id: file.id,
+									name: file.name,
+									type: file.type || 'application/octet-stream',
+									size: file.size_kb * 1024 || 0,
+									url: `${TUTOR_API_BASE_URL}/files/${file.id}`,
+									from_course: true
+								});
+							}
+							
+							console.log('Added course files to chat:', chatFiles);
+						}
+					} catch (fileError) {
+						console.error('Error fetching course files:', fileError);
+					}
+				}
+			} catch (error) {
+				console.error('Error processing pendingCourseData:', error);
 			}
 		}
 	};
@@ -2579,6 +2761,8 @@
 				// Check for pending support ID to link with the chat
 				let supportId = null;
 				let supportTitle = null;
+				let courseId = null;
+				let courseTitle = null;
 				try {
 					const pendingSupportData = localStorage.getItem('pendingSupportData');
 					if (pendingSupportData) {
@@ -2599,13 +2783,34 @@
 							}
 						}
 					}
+					
+					// Check for pending course data
+					const pendingCourseData = localStorage.getItem('pendingCourseData');
+					if (pendingCourseData) {
+						const courseData = JSON.parse(pendingCourseData);
+						courseId = courseData?.id || null;
+						
+						// Try to get course title to use as chat title
+						if (courseId) {
+							try {
+								const token = localStorage.getItem('token');
+								const courseDetails = await getCourseById(token, courseId);
+								if (courseDetails && courseDetails.title) {
+									courseTitle = courseDetails.title;
+									console.log(`Using course title for chat: ${courseTitle}`);
+								}
+							} catch (titleError) {
+								console.error('Error getting course title:', titleError);
+							}
+						}
+					}
 				} catch (error) {
-					console.error('Error parsing pendingSupportData:', error);
+					console.error('Error parsing pending data:', error);
 				}
 				
 				chat = await createNewChat(localStorage.token, {
 					id: _chatId,
-					title: supportTitle || $i18n.t('New Chat'),
+					title: supportTitle || courseTitle || $i18n.t('New Chat'),
 					models: selectedModels,
 					system: $settings.system ?? undefined,
 					params: params,
@@ -2631,6 +2836,12 @@
 					// We don't immediately remove pendingSupportData here because the updateSupportWithChatId
 					// functions in SupportCreation and Dashboard components need it to update the support
 					// They will remove it after they successfully update the support through the API
+				}
+				
+				// Clean up pending course data if it was used
+				if (courseId) {
+					console.log('Successfully created chat for course, cleaning up pending course data');
+					localStorage.removeItem('pendingCourseData');
 				}
 
 				window.history.replaceState(history.state, '', `/student/c/${_chatId}`);
@@ -2658,9 +2869,10 @@
 		} catch (error) {
 			console.error('Error in initChatHandler:', error);
 			
-			// Clear any pending support data when chat initialization fails
+			// Clear any pending support/course data when chat initialization fails
 			if (typeof window !== 'undefined' && window.localStorage) {
 				window.localStorage.removeItem('pendingSupportData');
+				window.localStorage.removeItem('pendingCourseData');
 			}
 			
 			// Notify that chat creation failed
