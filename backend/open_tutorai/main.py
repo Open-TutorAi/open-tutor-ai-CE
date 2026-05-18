@@ -21,7 +21,8 @@ VERSION = "1.0.0"
 TUTORAI_BUILD_HASH = os.getenv("TUTORAI_BUILD_HASH", "dev-build")
 os.environ["SUPPRESS_WEBUI_BANNER"] = "true"
 
-print(rf"""
+print(
+    rf"""
  ██████╗ ██████╗ ███████╗███╗   ██╗    ████████╗██╗   ██╗████████╗ ██████╗ ██████╗    █████╗ ██╗
 ██╔═══██╗██╔══██╗██╔════╝████╗  ██║    ╚══██╔══╝██║   ██║╚══██╔══╝██╔═══██╗██╔══██╗  ██╔══██╗██║
 ██║   ██║██████╔╝█████╗  ██╔██╗ ██║       ██║   ██║   ██║   ██║   ██║   ██║██████╔╝  ███████║██║
@@ -31,7 +32,8 @@ print(rf"""
 v{VERSION} - empowering education through open-source AI tutoring.
 {f"Commit: {TUTORAI_BUILD_HASH}" if TUTORAI_BUILD_HASH != "dev-build" else ""}
 https://github.com/Open-TutorAi/open-tutor-ai-CE
-""")
+"""
+)
 
 
 # Create main FastAPI app
@@ -76,7 +78,9 @@ async def health_check():
 
 
 # Include routers of open_tutorai
-app.include_router(response_feedbacks.router, prefix="/api/v1", tags=["response-feedbacks"])
+app.include_router(
+    response_feedbacks.router, prefix="/api/v1", tags=["response-feedbacks"]
+)
 app.include_router(auths.router, prefix="/api/v1/auths", tags=["auths"])
 app.include_router(supports.router, prefix="/api/v1", tags=["supports"])
 app.include_router(teacher_courses.router, prefix="/api/v1", tags=["teacher-courses"])

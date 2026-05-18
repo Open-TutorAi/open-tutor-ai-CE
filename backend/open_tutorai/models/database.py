@@ -84,11 +84,11 @@ class SupportFile(Base):
         return f"<SupportFile(id={self.id}, support_id={self.support_id}, filename={self.filename})>"
 
 
-
 class Course(Base):
     """
     Table for storing teacher-created courses.
     """
+
     __tablename__ = f"{PREFIX}course"
 
     id = Column(String, primary_key=True, index=True)
@@ -104,16 +104,23 @@ class Course(Base):
     created_at = Column(DateTime, nullable=False, server_default=func.now())
     updated_at = Column(DateTime, nullable=True, onupdate=func.now())
     meta_data = Column(JSONField, nullable=True)
-    chat_id = Column(String, ForeignKey("chat.id", ondelete="SET NULL"), index=True, nullable=True)
+    chat_id = Column(
+        String, ForeignKey("chat.id", ondelete="SET NULL"), index=True, nullable=True
+    )
 
     def __repr__(self):
-        return f"<Course(id={self.id}, teacher_id={self.teacher_id}, title={self.title})>"
-    
+        return (
+            f"<Course(id={self.id}, teacher_id={self.teacher_id}, title={self.title})>"
+        )
+
+
 class CourseFile(Base):
     __tablename__ = f"{PREFIX}course_file"
 
     id = Column(String, primary_key=True, index=True)
-    course_id = Column(String, ForeignKey(f"{PREFIX}course.id", ondelete="CASCADE"), nullable=False)
+    course_id = Column(
+        String, ForeignKey(f"{PREFIX}course.id", ondelete="CASCADE"), nullable=False
+    )
     filename = Column(String, nullable=False)
     file_path = Column(String, nullable=False)
     file_type = Column(String, nullable=True)
@@ -124,16 +131,23 @@ class CourseFile(Base):
 
     def __repr__(self):
         return f"<CourseFile(id={self.id}, course_id={self.course_id}, filename={self.filename})>"
-    
+
+
 class CoursePlan(Base):
     """
     Stores the generated course plan (JSON).
     """
+
     __tablename__ = f"{PREFIX}course_plan"
 
     id = Column(String, primary_key=True, index=True)
-    course_id = Column(String, ForeignKey(f"{PREFIX}course.id", ondelete="CASCADE"), nullable=False, index=True)
-    plan_json = Column(JSONField, nullable=False)   # full plan (chapters, sections)
+    course_id = Column(
+        String,
+        ForeignKey(f"{PREFIX}course.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    plan_json = Column(JSONField, nullable=False)  # full plan (chapters, sections)
     generated_at = Column(DateTime, nullable=False, server_default=func.now())
     updated_at = Column(DateTime, nullable=True, onupdate=func.now())
 
@@ -141,8 +155,6 @@ class CoursePlan(Base):
 
     def __repr__(self):
         return f"<CoursePlan(id={self.id}, course_id={self.course_id})>"
-
-
 
 
 def init_database():
@@ -158,7 +170,7 @@ def init_database():
 
     Base.metadata.create_all(bind=engine, checkfirst=True)
     print("OpenTutorAI database tables initialized successfully")
-    
+
     # Run migrations for schema updates
     run_migrations(engine)
 
