@@ -9,8 +9,9 @@ from open_webui.config import CORS_ALLOW_ORIGIN
 from open_webui.models.users import Users
 from open_tutorai.config import AppConfig
 from open_tutorai.models.database import init_database
-
+from open_tutorai.routers import student_courses
 from open_tutorai.routers import response_feedbacks, auths, supports, teacher_courses
+
 
 from open_tutorai.env import (
     CHANGELOG,
@@ -80,6 +81,8 @@ app.include_router(response_feedbacks.router, prefix="/api/v1", tags=["response-
 app.include_router(auths.router, prefix="/api/v1/auths", tags=["auths"])
 app.include_router(supports.router, prefix="/api/v1", tags=["supports"])
 app.include_router(teacher_courses.router, prefix="/api/v1", tags=["teacher-courses"])
+app.include_router(student_courses.router, prefix="/api/v1", tags=["student-courses"])
+
 
 
 @app.get("/api/changelog")

@@ -13,6 +13,12 @@ log = logging.getLogger(__name__)
 def _add_missing_columns(engine, table_name, columns_to_add):
     try:
         inspector = inspect(engine)
+
+        # Table may not exist yet (first run) — skip safely
+        if table_name not in inspector.get_table_names():
+            log.debug("Table %s does not exist yet, skipping migration", table_name)
+            return
+
         columns = {col["name"] for col in inspector.get_columns(table_name)}
 
         for column_name, column_sql in columns_to_add.items():
@@ -48,6 +54,20 @@ def migrate_course_columns(engine):
     )
 
 
+def migrate_enrollment_table(engine):
+    """
+    Ensures the enrollment table has all required columns.
+    The table itself is created by Base.metadata.create_all().
+    """
+    _add_missing_columns(
+        engine,
+        "opentutorai_course_enrollment",
+        {
+            "status": "VARCHAR DEFAULT 'active'",
+        },
+    )
+
+
 def run_migrations(engine):
     """
     Run all pending migrations.
@@ -55,4 +75,5 @@ def run_migrations(engine):
     """
     log.info("Running OpenTutorAI migrations...")
     migrate_course_columns(engine)
+    migrate_enrollment_table(engine)
     log.info("All migrations completed")
