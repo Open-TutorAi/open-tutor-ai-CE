@@ -17,16 +17,22 @@ def _add_missing_columns(engine, table_name, columns_to_add):
 
         for column_name, column_sql in columns_to_add.items():
             if column_name in columns:
-                log.debug("%s column already exists in %s table", column_name, table_name)
+                log.debug(
+                    "%s column already exists in %s table", column_name, table_name
+                )
                 continue
 
             log.info("Adding %s column to %s table...", column_name, table_name)
             with engine.connect() as conn:
                 conn.execute(
-                    text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_sql}")
+                    text(
+                        f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_sql}"
+                    )
                 )
                 conn.commit()
-            log.info("Successfully added %s column to %s table", column_name, table_name)
+            log.info(
+                "Successfully added %s column to %s table", column_name, table_name
+            )
     except Exception as e:
         log.error("Error migrating %s table: %s", table_name, str(e))
         raise
