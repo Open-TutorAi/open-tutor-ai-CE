@@ -182,10 +182,12 @@
 		if (!activeSet || !currentCard) return;
 		const idx = currentCard.idx;
 		if (!activeSet.known_indices.includes(idx)) {
-			activeSet.known_indices = [...activeSet.known_indices, idx];
+			const previous = activeSet.known_indices;
+			activeSet.known_indices = [...previous, idx];
 			activeSet.known_count = activeSet.known_indices.length;
 			sets = sets.map((s) => s.id === activeSet!.id ? activeSet! : s);
-			await saveProgress();
+			const ok = await saveProgress(previous);
+			if (!ok) return; // revert handled in saveProgress; don't advance
 		}
 		// reset flip then advance
 		const card = studyCards.find((c) => c.idx === idx);
@@ -197,35 +199,50 @@
 	async function markUnknown() {
 		if (!activeSet || !currentCard) return;
 		const idx = currentCard.idx;
-		activeSet.known_indices = activeSet.known_indices.filter((i) => i !== idx);
+		const previous: number[] = activeSet.known_indices;
+		activeSet.known_indices = previous.filter((i: number) => i !== idx);
 		activeSet.known_count = activeSet.known_indices.length;
 		sets = sets.map((s) => s.id === activeSet!.id ? activeSet! : s);
 		const card = studyCards.find((c) => c.idx === idx);
 		if (card) { card.flipped = false; studyCards = studyCards; }
-		await saveProgress();
+		const ok = await saveProgress(previous);
+		if (!ok) return;
 		if (currentPos < displayCards.length - 1) currentPos++;
 	}
 
-	async function saveProgress() {
-		if (!activeSet) return;
+	// Persists known_indices to the backend. On failure, reverts the optimistic
+	// update to `previous` so UI and server stay in sync. Returns true on success.
+	async function saveProgress(previous: number[]): Promise<boolean> {
+		if (!activeSet) return false;
 		savingProgress = true;
 		const token = localStorage.getItem('token') ?? '';
 		try {
 			const updated = await updateProgress(token, activeSet.id, activeSet.known_indices);
 			activeSet = { ...activeSet, updated_at: updated.updated_at };
-		} catch { /* silent — UI already updated */ }
-		finally { savingProgress = false; }
+			return true;
+		} catch {
+			if (activeSet) {
+				activeSet.known_indices = previous;
+				activeSet.known_count = previous.length;
+				sets = sets.map((s) => s.id === activeSet!.id ? activeSet! : s);
+			}
+			toast.error('Could not save progress — change reverted');
+			return false;
+		} finally {
+			savingProgress = false;
+		}
 	}
 
-	function resetSet() {
+	async function resetSet() {
 		if (!activeSet) return;
+		const previous = activeSet.known_indices;
 		activeSet.known_indices = [];
 		activeSet.known_count = 0;
 		studyCards = studyCards.map((c) => ({ ...c, flipped: false }));
 		currentPos = 0;
 		reviewUnknownsOnly = false;
 		sets = sets.map((s) => s.id === activeSet!.id ? activeSet! : s);
-		saveProgress();
+		await saveProgress(previous);
 	}
 
 	function startReviewUnknowns() {

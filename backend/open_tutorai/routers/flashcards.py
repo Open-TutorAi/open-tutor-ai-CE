@@ -159,7 +159,14 @@ async def generate_flashcards(
     if not body.messages:
         raise HTTPException(status_code=400, detail="No messages provided")
 
+    # OpenWebUI's /api/chat/completions endpoint runs `Depends(get_verified_user)`,
+    # so the caller's bearer token must be re-presented on the inner loopback call.
+    # We forward only the Authorization header (no cookies, no body rewrite) and the
+    # target is the same process, so the token never leaves this backend.
     auth_header = request.headers.get("authorization", "")
+    # OpenWebUI is mounted at "/" of this same FastAPI process (see main.py),
+    # so /api/chat/completions is always reached via loopback. PORT is the only
+    # part that varies between environments — host stays localhost by design.
     port = int(os.environ.get("PORT", "8080"))
 
     payload = {

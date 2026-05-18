@@ -1,3 +1,14 @@
+"""create flashcard_set table
+
+NOTE: At the time this migration was added, the rest of the project did not yet
+use Alembic — existing tables (`opentutorai_support`, `opentutorai_support_file`)
+are created via `Base.metadata.create_all()` in `init_database()`
+(see open_tutorai/models/database.py). This file was added in response to PR
+review feedback requesting a migration for the new `opentutorai_flashcard_set`
+table. The table is also picked up by `create_all()` in dev, so the migration
+is currently a safety net rather than the primary schema-management path.
+"""
+
 from alembic import op
 import sqlalchemy as sa
 
