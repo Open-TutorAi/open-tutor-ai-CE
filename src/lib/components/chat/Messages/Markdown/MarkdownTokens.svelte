@@ -34,9 +34,11 @@
 		return 'h' + depth;
 	};
 
-	const exportTableToCSVHandler = (token, tokenIdx = 0) => {
-		console.log('Exporting table to CSV');
+	const textAlignStyle = (align?: string | null) => {
+		return `text-align: ${align ?? 'left'}`;
+	};
 
+	const exportTableToCSVHandler = (token, tokenIdx = 0) => {
 		// Extract header row text and escape for CSV.
 		const header = token.header.map((headerCell) => `"${headerCell.text.replace(/"/g, '""')}"`);
 
@@ -55,10 +57,6 @@
 
 		// Join the rows using commas (,) as the separator and rows using newline (\n).
 		const csvContent = csvData.map((row) => row.join(',')).join('\n');
-
-		// Log rows and CSV content to ensure everything is correct.
-		console.log(csvData);
-		console.log(csvContent);
 
 		// To handle Unicode characters, you need to prefix the data with a BOM:
 		const bom = '\uFEFF'; // BOM for UTF-8
@@ -116,9 +114,9 @@
 								<th
 									scope="col"
 									class="px-3! py-1.5! cursor-pointer border border-gray-100 dark:border-gray-850"
-									style={token.align[headerIdx] ? '' : `text-align: ${token.align[headerIdx]}`}
+									style={textAlignStyle(token.align[headerIdx])}
 								>
-									<div class="flex flex-col gap-1.5 text-left">
+									<div class="flex flex-col gap-1.5">
 										<div class="shrink-0 break-normal">
 											<MarkdownInlineTokens
 												id={`${id}-${tokenIdx}-header-${headerIdx}`}
@@ -137,7 +135,7 @@
 								{#each row ?? [] as cell, cellIdx}
 									<td
 										class="px-3! py-1.5! text-gray-900 dark:text-white w-max border border-gray-100 dark:border-gray-850"
-										style={token.align[cellIdx] ? '' : `text-align: ${token.align[cellIdx]}`}
+										style={textAlignStyle(token.align[cellIdx])}
 									>
 										<div class="flex flex-col break-normal">
 											<MarkdownInlineTokens
@@ -154,10 +152,11 @@
 				</table>
 			</div>
 
-			<div class=" absolute top-1 right-1.5 z-20 invisible group-hover:visible">
+			<div class=" absolute top-1 right-1.5 z-20 invisible group-hover:visible group-focus-within:visible">
 				<Tooltip content={$i18n.t('Export to CSV')}>
 					<button
 						class="p-1 rounded-lg bg-transparent transition"
+						aria-label={$i18n.t('Export table to CSV')}
 						on:click={(e) => {
 							e.stopPropagation();
 							exportTableToCSVHandler(token, tokenIdx);
