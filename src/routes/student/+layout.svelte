@@ -7,9 +7,12 @@
 
 	import Sidebar from '$lib/components/student/elements/Sidebar.svelte';
 	import Navbar from '$lib/components/student/elements/Navbar.svelte';
+	import DemoModeBanner from '$lib/components/DemoModeBanner.svelte';
 
 	import { getModels, getVersionUpdates } from '$lib/apis';
-	import { config, user, settings, models, theme, isFullscreenAvatar } from '$lib/stores';
+	import { config, user, settings, models, theme, isDemo, demoData, originalUserData, isFullscreenAvatar} from '$lib/stores';
+	import { generateDemoData } from '$lib/utils/mockData';
+	import { toast } from 'svelte-sonner';
 
 	const activePage = writable('dashboard');
 	let isSidebarOpen = true;
@@ -50,8 +53,51 @@
 		localStorage.setItem('theme', newTheme);
 	}
 
+	function toggleDemoMode() {
+		if ($isDemo) {
+			// Exit demo mode
+			if ($originalUserData) {
+				user.set($originalUserData);
+				originalUserData.set(null);
+			}
+			demoData.set({
+				dashboard: null,
+				chats: [],
+				supports: [],
+				assignments: [],
+				courses: []
+			});
+			isDemo.set(false);
+			localStorage.removeItem('demoMode');
+			toast.success('Demo mode deactivated. Back to your real data.');
+		} else {
+			// Enter demo mode
+			originalUserData.set($user);
+			const mockData = generateDemoData();
+			demoData.set(mockData);
+			isDemo.set(true);
+			localStorage.setItem('demoMode', 'true');
+			toast.success('Demo mode activated. You\'re now exploring with sample data.');
+		}
+	}
+
 	onMount(async () => {
 		console.log('Student layout mounted');
+		
+		// Check if demo mode was previously active
+		const wasDemoMode = localStorage.getItem('demoMode') === 'true';
+		if (wasDemoMode && !$isDemo) {
+			console.log('Restoring demo mode from localStorage');
+			const mockData = generateDemoData();
+			originalUserData.set($user);
+			demoData.set(mockData);
+			isDemo.set(true);
+		} else if ($isDemo && $demoData.chats.length === 0) {
+			// Ensure demo data is loaded
+			const mockData = generateDemoData();
+			demoData.set(mockData);
+		}
+		
 		models.set(
 			await getModels(
 				localStorage.token,
@@ -119,6 +165,10 @@
 				isDarkMode={currentIsDarkMode}
 				on:darkModeToggle={toggleDarkMode}
 			/>
+		{/if}
+
+		{#if $isDemo}
+			<DemoModeBanner on:toggle={toggleDemoMode} />
 		{/if}
 
 		<!-- Main content with proper scrolling -->
