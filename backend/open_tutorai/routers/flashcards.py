@@ -31,6 +31,7 @@ Rules:
 
 # ---------- Pydantic models ----------
 
+
 class CardItem(BaseModel):
     question: str
     answer: str
@@ -64,6 +65,7 @@ class FlashcardSetResponse(BaseModel):
 
 # ---------- helpers ----------
 
+
 def _to_response(fs: FlashcardSet) -> FlashcardSetResponse:
     cards = fs.cards or []
     known = fs.known_indices or []
@@ -83,22 +85,33 @@ def _to_response(fs: FlashcardSet) -> FlashcardSetResponse:
 
 
 def _get_set_or_404(db, set_id: str, user_id: str) -> FlashcardSet:
-    fs = db.query(FlashcardSet).filter(
-        FlashcardSet.id == set_id,
-        FlashcardSet.user_id == user_id,
-    ).first()
+    fs = (
+        db.query(FlashcardSet)
+        .filter(
+            FlashcardSet.id == set_id,
+            FlashcardSet.user_id == user_id,
+        )
+        .first()
+    )
     if not fs:
         raise HTTPException(status_code=404, detail="Flashcard set not found")
     return fs
 
 
 def _validate_support_ownership(db, support_id: str, user_id: str) -> Support:
-    support = db.query(Support).filter(
-        Support.id == support_id,
-        Support.user_id == user_id,
-    ).first()
+    support = (
+        db.query(Support)
+        .filter(
+            Support.id == support_id,
+            Support.user_id == user_id,
+        )
+        .first()
+    )
     if not support:
-        raise HTTPException(status_code=400, detail="support_id is invalid or does not belong to the current user")
+        raise HTTPException(
+            status_code=400,
+            detail="support_id is invalid or does not belong to the current user",
+        )
     return support
 
 
@@ -150,6 +163,7 @@ def _normalize_known_indices(known_indices: list[int], card_count: int) -> list[
 
 # ---------- routes ----------
 
+
 @router.post("/flashcards/generate", response_model=FlashcardSetResponse)
 async def generate_flashcards(
     request: Request,
@@ -180,7 +194,10 @@ async def generate_flashcards(
             r = await client.post(
                 f"http://localhost:{port}/api/chat/completions",
                 json=payload,
-                headers={"Authorization": auth_header, "Content-Type": "application/json"},
+                headers={
+                    "Authorization": auth_header,
+                    "Content-Type": "application/json",
+                },
             )
         r.raise_for_status()
     except httpx.HTTPStatusError as e:
@@ -213,7 +230,9 @@ async def generate_flashcards(
         raw_cards = _validate_flashcards(raw_cards)
     except Exception as e:
         log.error(f"Failed to parse LLM response: {e}")
-        raise HTTPException(status_code=500, detail="Could not parse flashcards from LLM response")
+        raise HTTPException(
+            status_code=500, detail="Could not parse flashcards from LLM response"
+        )
 
     db = SessionLocal()
     try:
@@ -274,7 +293,9 @@ async def update_progress(
     db = SessionLocal()
     try:
         fs = _get_set_or_404(db, set_id, user.id)
-        fs.known_indices = _normalize_known_indices(body.known_indices, len(fs.cards or []))
+        fs.known_indices = _normalize_known_indices(
+            body.known_indices, len(fs.cards or [])
+        )
         fs.updated_at = datetime.utcnow()
         db.commit()
         db.refresh(fs)
