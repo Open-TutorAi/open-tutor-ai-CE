@@ -88,18 +88,12 @@
 	
 	
 
-    const handleShortcut = async (event) => {
-    const text = event.detail;
-    
-    prompt = text;
-    
-    await tick(); 
-    
-    const sendButton = document.getElementById('send-message-button');
-    if (sendButton) {
-        sendButton.click();
-    }
-    };
+	const handleShortcut = async (event) => {
+		const text = event.detail;
+		prompt = text;
+		await tick();
+		document.getElementById('send-message-button')?.click();
+	};
 
 
 
