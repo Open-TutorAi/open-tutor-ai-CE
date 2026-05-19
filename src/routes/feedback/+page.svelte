@@ -1,0 +1,97 @@
+<script>
+  import { enhance } from '$app/forms';
+
+  // 'data' contient les feedbacks envoyés par +page.server.js
+  export let data;
+  // 'form' contient le résultat de l'envoi du formulaire
+  export let form;
+</script>
+
+<div class="max-w-2xl mx-auto p-6 space-y-8">
+  
+  <!-- Titre Principal -->
+  <h1 class="text-3xl font-bold text-center">📝 User Feedback</h1>
+
+  <!-- Formulaire d'envoi -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <form method="POST" use:enhance class="space-y-4">
+      
+      <div>
+        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          placeholder="Your name"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          required
+        />
+      </div>
+
+      <div>
+        <label for="feedback" class="block text-sm font-medium text-gray-700 mb-1">Your Feedback</label>
+        <textarea
+          id="feedback"
+          name="feedback"
+          rows="4"
+          placeholder="Write your feedback here..."
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          required
+        ></textarea>
+      </div>
+
+      <button
+        type="submit"
+        class="w-full sm:w-auto bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition font-medium"
+      >
+        Send Feedback
+      </button>
+    </form>
+
+    <!-- Notifications (Succès / Erreur) -->
+    {#if form?.success}
+      <div class="mt-4 p-3 bg-green-50 text-green-700 border border-green-200 rounded-lg text-sm">
+        ✅ Merci pour votre feedback ! Il a bien été enregistré.
+      </div>
+    {/if}
+    
+    {#if form?.error}
+      <div class="mt-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-lg text-sm">
+        ❌ {form.error}
+      </div>
+    {/if}
+  </div>
+
+  <!-- Liste des Feedbacks -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+      💬 Feedbacks reçus
+      <span class="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+        {data.feedbacks?.length || 0}
+      </span>
+    </h2>
+
+    {#if data.feedbacks?.length === 0}
+      <div class="text-center py-8 text-gray-400">
+        <p>Aucun feedback pour le moment. Soyez le premier !</p>
+      </div>
+    {:else}
+      <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+        {#each data.feedbacks as f}
+          <div class="border-b border-gray-100 pb-3 last:border-0">
+            <div class="flex justify-between items-start mb-1">
+              <span class="font-semibold text-gray-800">{f.name || 'Anonyme'}</span>
+              <span class="text-xs text-gray-400 whitespace-nowrap ml-2">
+                {new Date(f.created_at).toLocaleDateString('fr-FR', {
+                  day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                })}
+              </span>
+            </div>
+            <p class="text-gray-600 whitespace-pre-wrap text-sm leading-relaxed">{f.message}</p>
+          </div>
+        {/each}
+      </div>
+    {/if}
+  </div>
+
+</div>

@@ -589,14 +589,18 @@
 		</div>
 	{:else}
 
-<!-- 🔥 FAQ LINK -->
-		<div class="p-4 flex justify-end">
-			<a href="/faq" class="text-blue-500 hover:underline">
-				❓ Aide / FAQ
-			</a>
-		</div>
+<!-- 🔥 HELP LINKS -->
+<div class="p-4 flex justify-end gap-4">
+	<a href="/faq" class="text-blue-500 hover:underline">
+		❓ Aide / FAQ
+	</a>
 
-		<slot />
+	<a href="/feedback" class="text-blue-500 hover:underline">
+		📝 Feedback
+	</a>
+</div>
+
+<slot />
 	{/if}
 {/if}
 
