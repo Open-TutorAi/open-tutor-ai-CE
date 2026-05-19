@@ -18,6 +18,8 @@
 	interface I18n {
 		t: (key: string) => string;
 	}
+	let showCreateMenu = false;
+
 	const i18n = getContext<Writable<I18n>>('i18n');
 
 	// For checking chat ID creation
@@ -688,7 +690,8 @@
 			<!-- Enhanced header with progress stepper -->
 			<div class="mb-8">
 				<!-- Custom stepper with connecting lines -->
-				<ol class="flex items-center w-full">
+				<div class="flex justify-end mb-6 relative"><div class="relative"><button on:click={() => (showCreateMenu = !showCreateMenu)} class="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">+ {$i18n.t('Créer')}</button>{#if showCreateMenu}<div class="fixed inset-0 z-10" on:click={() => (showCreateMenu = false)}></div><div class="absolute right-0 mt-2 w-60 bg-white dark:bg-gray-800 rounded-xl shadow-xl border z-20 overflow-hidden"><button on:click={() => { showCreateMenu = false; goto('/student/supports/create'); }} class="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-blue-50 transition-colors"><span>📄</span><span class="text-sm font-medium text-gray-700 dark:text-gray-200">{$i18n.t('Créer un support')}</span></button><div class="border-t border-gray-100 dark:border-gray-700"></div><button on:click={() => { showCreateMenu = false; goto('/student/blockly/new'); }} class="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-purple-50 transition-colors"><span>🧩</span><span class="text-sm font-medium text-gray-700 dark:text-gray-200">{$i18n.t('Créer avec Blockly')}</span></button></div>{/if}</div></div>
+<ol class="flex items-center w-full">
 					{#each steps as step, index}
 						<li class={`flex items-center ${index < steps.length - 1 ? 'w-full' : ''}`}>
 							<!-- Step circle with number or checkmark -->
