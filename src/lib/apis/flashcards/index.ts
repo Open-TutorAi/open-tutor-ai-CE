@@ -65,5 +65,17 @@ export const updateProgress = (
 		body: JSON.stringify({ known_indices })
 	});
 
+export const updateFlashcardSet = (
+	token: string,
+	id: string,
+	cards: Flashcard[],
+	known_indices?: number[],
+	title?: string
+): Promise<FlashcardSet> =>
+	apiFetch(`${TUTOR_API_BASE_URL}/flashcards/sets/${id}`, token, {
+		method: 'PATCH',
+		body: JSON.stringify({ cards, known_indices, title })
+	});
+
 export const deleteFlashcardSet = (token: string, id: string): Promise<void> =>
 	apiFetch(`${TUTOR_API_BASE_URL}/flashcards/sets/${id}`, token, { method: 'DELETE' });

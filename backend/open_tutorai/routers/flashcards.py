@@ -48,6 +48,15 @@ class ProgressUpdateRequest(BaseModel):
     known_indices: list[int]
 
 
+class FlashcardSetUpdateRequest(BaseModel):
+    cards: list[dict]
+    # Caller is responsible for re-mapping known_indices to the new card
+    # positions — server has no way to track identity across a positional
+    # array. Omit to reset progress to empty.
+    known_indices: Optional[list[int]] = None
+    title: Optional[str] = None
+
+
 class FlashcardSetResponse(BaseModel):
     id: str
     title: str
@@ -275,6 +284,37 @@ async def update_progress(
     try:
         fs = _get_set_or_404(db, set_id, user.id)
         fs.known_indices = _normalize_known_indices(body.known_indices, len(fs.cards or []))
+        fs.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(fs)
+        return _to_response(fs)
+    finally:
+        db.close()
+
+
+@router.patch("/flashcards/sets/{set_id}", response_model=FlashcardSetResponse)
+async def update_flashcard_set(
+    set_id: str,
+    body: FlashcardSetUpdateRequest,
+    user=Depends(get_verified_user),
+):
+    try:
+        validated_cards = _validate_flashcards(body.cards)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+    db = SessionLocal()
+    try:
+        fs = _get_set_or_404(db, set_id, user.id)
+        fs.cards = validated_cards
+        fs.known_indices = _normalize_known_indices(
+            body.known_indices or [], len(validated_cards)
+        )
+        if body.title is not None:
+            title = body.title.strip()
+            if not title:
+                raise HTTPException(status_code=422, detail="title must not be empty")
+            fs.title = title[:200]
         fs.updated_at = datetime.utcnow()
         db.commit()
         db.refresh(fs)
