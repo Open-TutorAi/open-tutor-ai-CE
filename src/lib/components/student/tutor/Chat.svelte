@@ -435,6 +435,19 @@
 			case 'action':
 				if (data.action === 'continue') document.getElementById('continue-response-button')?.click();
 				break;
+			case 'execute':
+				eventCallback = cb ?? null;
+				try {
+					const asyncFunction = new Function(`return (async () => { ${data.code} })()`);
+					const result = await asyncFunction();
+
+					if (cb) {
+						cb(result);
+					}
+				} catch (error) {
+					console.error('Error executing code:', error);
+				}
+				break;
 			case 'confirmation':
 				showConfirmDialog(data, cb, false);
 				break;
