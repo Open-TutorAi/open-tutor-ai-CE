@@ -82,22 +82,25 @@ class SupportFile(Base):
     def __repr__(self):
         return f"<SupportFile(id={self.id}, support_id={self.support_id}, filename={self.filename})>"
 
+
 class FlashcardSet(Base):
     __tablename__ = f"{PREFIX}flashcard_set"
 
     id = Column(String, primary_key=True, index=True)
     user_id = Column(String, index=True, nullable=False)
     title = Column(String, nullable=False)
-    source_label = Column(String, nullable=True)   # e.g. "Support: Algebra" or "Manual"
+    source_label = Column(String, nullable=True)  # e.g. "Support: Algebra" or "Manual"
     support_id = Column(String, nullable=True)
     model_used = Column(String, nullable=True)
-    cards = Column(JSONField, nullable=False)        # [{"question": "...", "answer": "..."}]
+    cards = Column(JSONField, nullable=False)  # [{"question": "...", "answer": "..."}]
     known_indices = Column(JSONField, nullable=False, default=list)  # [0, 2, 5]
     created_at = Column(DateTime, nullable=False, server_default=func.now())
     updated_at = Column(DateTime, nullable=True, onupdate=func.now())
 
     def __repr__(self):
-        return f"<FlashcardSet(id={self.id}, user_id={self.user_id}, title={self.title})>"
+        return (
+            f"<FlashcardSet(id={self.id}, user_id={self.user_id}, title={self.title})>"
+        )
 
 
 def init_database():
