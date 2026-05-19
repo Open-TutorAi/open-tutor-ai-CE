@@ -309,3 +309,21 @@ dist
 cypress/videos
 cypress/screenshots
 .vscode/settings.json
+
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables
+.env
+
+# Auto-generated Vector Database
+
+**/chroma_db/
+
+# Virtual Environments
+venv/
+env/
+tutorai-env/
