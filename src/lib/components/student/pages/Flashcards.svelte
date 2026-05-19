@@ -215,7 +215,8 @@
 	async function markKnown() {
 		if (!activeSet || !currentCard) return;
 		const idx = currentCard.idx;
-		if (!activeSet.known_indices.includes(idx)) {
+		const wasAlreadyKnown = activeSet.known_indices.includes(idx);
+		if (!wasAlreadyKnown) {
 			const previous = activeSet.known_indices;
 			activeSet.known_indices = [...previous, idx];
 			activeSet.known_count = activeSet.known_indices.length;
@@ -225,7 +226,19 @@
 		}
 		const card = studyCards.find((c) => c.idx === idx);
 		if (card) { card.flipped = false; studyCards = studyCards; }
-		if (currentPos < displayCards.length - 1) currentPos++;
+
+		// In "unknowns only" mode, the card we just marked known is now filtered
+		// out of displayCards — the next unknown has already shifted into the
+		// current position, so we shouldn't increment. We only clamp in case we
+		// were on the last unknown (currentPos would otherwise point past the end
+		// and currentCard would become null, making the card "disappear").
+		if (reviewUnknownsOnly && !wasAlreadyKnown) {
+			if (currentPos > displayCards.length - 1 && displayCards.length > 0) {
+				currentPos = displayCards.length - 1;
+			}
+		} else if (currentPos < displayCards.length - 1) {
+			currentPos++;
+		}
 	}
 
 	async function markUnknown() {
