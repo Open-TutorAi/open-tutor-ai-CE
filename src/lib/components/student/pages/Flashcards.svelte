@@ -16,6 +16,20 @@
 	import { getSupportRequests, type SupportResponse } from '$lib/apis/supports';
 	import { getChatById } from '$lib/apis/chats';
 
+	import Plus from '$lib/components/icons/Plus.svelte';
+	import GarbageBin from '$lib/components/icons/GarbageBin.svelte';
+	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
+	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
+	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
+	import Check from '$lib/components/icons/Check.svelte';
+	import XMark from '$lib/components/icons/XMark.svelte';
+	import Sparkles from '$lib/components/icons/Sparkles.svelte';
+	import BookOpen from '$lib/components/icons/BookOpen.svelte';
+	import ArrowPath from '$lib/components/icons/ArrowPath.svelte';
+	import ArrowsPointingOut from '$lib/components/icons/ArrowsPointingOut.svelte';
+	import Keyboard from '$lib/components/icons/Keyboard.svelte';
+	import QuestionMarkCircle from '$lib/components/icons/QuestionMarkCircle.svelte';
+
 	interface I18n { t: (key: string) => string }
 	const i18n = getContext<Writable<I18n>>('i18n');
 
@@ -46,12 +60,14 @@
 	let currentPos = 0;
 	let reviewUnknownsOnly = false;
 	let savingProgress = false;
+	let focusMode = false;
+	let showShortcuts = false;
 
 	// ── keyboard ──────────────────────────────────────────────
 	let keyHandler: (e: KeyboardEvent) => void;
 
 	// ── derived ───────────────────────────────────────────────
-	$: if ($models?.length && !selectedModel) selectedModel = $models[0]?.id ?? '';
+	$: if ($models.length && !selectedModel) selectedModel = $models[0]?.id ?? '';
 
 	$: displayCards = reviewUnknownsOnly
 		? studyCards.filter((c) => !isKnown(c.idx))
@@ -77,6 +93,11 @@
 			else if (e.key === 'ArrowLeft')  { e.preventDefault(); prev(); }
 			else if (e.key === 'k' || e.key === 'K') { if (currentCard.flipped) markKnown(); }
 			else if (e.key === 'u' || e.key === 'U') { if (currentCard.flipped) markUnknown(); }
+			else if (e.key === '?') { showShortcuts = !showShortcuts; }
+			else if (e.key === 'Escape') {
+				if (showShortcuts) showShortcuts = false;
+				else if (focusMode) focusMode = false;
+			}
 		};
 		window.addEventListener('keydown', keyHandler);
 	});
@@ -90,7 +111,7 @@
 	async function loadSets(token: string) {
 		loadingSets = true;
 		try { sets = await getFlashcardSets(token); }
-		catch { toast.error('Could not load your flashcard sets'); }
+		catch { toast.error($i18n.t('Could not load your flashcard sets')); }
 		finally { loadingSets = false; }
 	}
 
@@ -110,7 +131,7 @@
 
 	async function generate() {
 		const token = localStorage.getItem('token') ?? '';
-		if (!selectedModel) { toast.error('Please select a model first'); return; }
+		if (!selectedModel) { toast.error($i18n.t('Please select a model first')); return; }
 
 		let messages: { role: string; content: string }[] = [];
 		let title = customTitle.trim();
@@ -119,37 +140,36 @@
 
 		if (selectedSupportId) {
 			const sup = supports.find((s) => s.id === selectedSupportId);
-			if (!sup?.chat_id) { toast.error('This support has no chat session yet'); return; }
+			if (!sup?.chat_id) { toast.error($i18n.t('This support has no chat session yet')); return; }
 			try {
 				const chatData = await getChatById(token, sup.chat_id);
 				messages = extractMessages(chatData);
-			} catch { toast.error('Could not load the chat for this support'); return; }
+			} catch { toast.error($i18n.t('Could not load the chat for this support')); return; }
 			if (!title) title = sup.title;
 			source_label = `Support: ${sup.subject}`;
 			support_id = sup.id;
 		} else if (manualText.trim()) {
 			messages = [{ role: 'user', content: manualText.trim() }];
-			if (!title) title = 'Manual set';
-			source_label = 'Manual';
+			if (!title) title = $i18n.t('Manual set');
+			source_label = $i18n.t('Manual');
 		} else {
-			toast.error('Select a support session or paste some text first');
+			toast.error($i18n.t('Select a support session or paste some text first'));
 			return;
 		}
 
-		if (!messages.length) { toast.error('No messages found in this session'); return; }
+		if (!messages.length) { toast.error($i18n.t('No messages found in this session')); return; }
 
 		generating = true;
 		try {
 			const newSet = await generateFlashcards(token, messages, selectedModel, title, source_label, support_id);
 			sets = [newSet, ...sets];
-			toast.success(`"${newSet.title}" created — ${newSet.card_count} cards`);
+			toast.success(`"${newSet.title}" — ${newSet.card_count} ${$i18n.t('cards')}`);
 			openSet(newSet);
-			// reset form
 			selectedSupportId = '';
 			manualText = '';
 			customTitle = '';
 		} catch (e: any) {
-			toast.error(e?.message ?? 'Failed to generate flashcards');
+			toast.error(e?.message ?? $i18n.t('Failed to generate flashcards'));
 		} finally {
 			generating = false;
 		}
@@ -170,13 +190,27 @@
 
 	function flip() {
 		if (!currentCard) return;
-		// mutate the card in studyCards
 		const card = studyCards.find((c) => c.idx === currentCard!.idx);
 		if (card) { card.flipped = !card.flipped; studyCards = studyCards; }
 	}
 
 	function next() { if (currentPos < displayCards.length - 1) currentPos++; }
 	function prev() { if (currentPos > 0) currentPos--; }
+
+	// Jumps to the card with the given original index. If we're in "unknowns
+	// only" mode and the target is filtered out, switch back to all-cards mode
+	// so the jump is reachable. Also resets the flip state of the target card.
+	function jumpToCard(idx: number) {
+		const pos = displayCards.findIndex((c) => c.idx === idx);
+		if (pos !== -1) {
+			currentPos = pos;
+		} else {
+			reviewUnknownsOnly = false;
+			currentPos = idx;
+		}
+		const card = studyCards.find((c) => c.idx === idx);
+		if (card) { card.flipped = false; studyCards = studyCards; }
+	}
 
 	async function markKnown() {
 		if (!activeSet || !currentCard) return;
@@ -187,12 +221,10 @@
 			activeSet.known_count = activeSet.known_indices.length;
 			sets = sets.map((s) => s.id === activeSet!.id ? activeSet! : s);
 			const ok = await saveProgress(previous);
-			if (!ok) return; // revert handled in saveProgress; don't advance
+			if (!ok) return;
 		}
-		// reset flip then advance
 		const card = studyCards.find((c) => c.idx === idx);
 		if (card) { card.flipped = false; studyCards = studyCards; }
-		// skip past known cards in review mode
 		if (currentPos < displayCards.length - 1) currentPos++;
 	}
 
@@ -226,7 +258,7 @@
 				activeSet.known_count = previous.length;
 				sets = sets.map((s) => s.id === activeSet!.id ? activeSet! : s);
 			}
-			toast.error('Could not save progress — change reverted');
+			toast.error($i18n.t('Could not save progress — change reverted'));
 			return false;
 		} finally {
 			savingProgress = false;
@@ -247,7 +279,7 @@
 
 	function startReviewUnknowns() {
 		const hasUnknown = studyCards.some((c) => !isKnown(c.idx));
-		if (!hasUnknown) { toast.success('All cards are known! Reset to start again.'); return; }
+		if (!hasUnknown) { toast.success($i18n.t('All cards are known. Reset to start again.')); return; }
 		reviewUnknownsOnly = true;
 		currentPos = 0;
 	}
@@ -255,13 +287,11 @@
 	// ── delete (two-click confirm) ────────────────────────────
 	async function handleDelete(id: string) {
 		if (pendingDeleteId !== id) {
-			// first click
 			if (deleteTimer) clearTimeout(deleteTimer);
 			pendingDeleteId = id;
 			deleteTimer = setTimeout(() => { pendingDeleteId = null; }, 3000);
 			return;
 		}
-		// second click → confirmed
 		if (deleteTimer) { clearTimeout(deleteTimer); deleteTimer = null; }
 		pendingDeleteId = null;
 		const token = localStorage.getItem('token') ?? '';
@@ -269,8 +299,8 @@
 			await deleteFlashcardSet(token, id);
 			sets = sets.filter((s) => s.id !== id);
 			if (activeSet?.id === id) { activeSet = null; view = 'list'; }
-			toast.success('Set deleted');
-		} catch { toast.error('Could not delete the set'); }
+			toast.success($i18n.t('Set deleted'));
+		} catch { toast.error($i18n.t('Could not delete the set')); }
 	}
 
 	function formatDate(iso: string) {
@@ -284,91 +314,89 @@
 <div class="flex h-full min-h-screen bg-gray-50 dark:bg-gray-900">
 
 	<!-- ── LEFT PANEL: set list ──────────────────────────────── -->
-	<aside class="w-72 shrink-0 flex flex-col border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-y-auto">
-
-		<div class="px-4 py-5 border-b border-gray-100 dark:border-gray-700">
-			<h1 class="text-lg font-bold text-gray-900 dark:text-white">Flashcards</h1>
-			<p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Your revision card sets</p>
+	<!-- visible on md+ always (unless focus mode); on mobile only when listing -->
+	<aside
+		class="w-full md:w-72 md:shrink-0 flex-col border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-y-auto
+			{focusMode && view === 'study'
+				? 'hidden'
+				: view === 'list'
+					? 'flex'
+					: 'hidden md:flex'}"
+	>
+		<div class="px-5 py-5 border-b border-gray-100 dark:border-gray-700">
+			<h1 class="text-base font-semibold text-gray-900 dark:text-white">{$i18n.t('Flashcards')}</h1>
+			<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{$i18n.t('Your revision card sets')}</p>
 		</div>
 
 		<div class="p-3">
 			<button
 				on:click={() => { activeSet = null; view = 'create'; }}
-				class="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
+				class="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm"
 			>
-				<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-				</svg>
-				New set
+				<Plus className="w-4 h-4" strokeWidth="2" />
+				{$i18n.t('New set')}
 			</button>
 		</div>
 
-		<!-- set list -->
 		<div class="flex-1 overflow-y-auto px-2 pb-4 space-y-1">
 			{#if loadingSets}
 				{#each Array(3) as _}
-					<div class="h-16 rounded-lg bg-gray-100 dark:bg-gray-700 animate-pulse mx-1 my-1"></div>
+					<div class="h-16 rounded-lg bg-gray-100 dark:bg-gray-700/60 animate-pulse mx-1 my-1"></div>
 				{/each}
 			{:else if sets.length === 0}
 				<div class="text-center py-10 px-4">
-					<div class="text-3xl mb-2">🗂️</div>
-					<p class="text-sm text-gray-400 dark:text-gray-500">No sets yet.<br/>Click "New set" to generate one.</p>
+					<div class="mx-auto w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mb-3">
+						<BookOpen className="w-5 h-5 text-gray-400 dark:text-gray-500" strokeWidth="1.5" />
+					</div>
+					<p class="text-sm text-gray-500 dark:text-gray-400">{$i18n.t('No sets yet')}</p>
+					<p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{$i18n.t('Create one to start studying')}</p>
 				</div>
 			{:else}
 				{#each sets as set (set.id)}
 					{@const active = activeSet?.id === set.id}
 					{@const pct = set.card_count ? Math.round((set.known_count / set.card_count) * 100) : 0}
 					<div
-						class="group relative flex flex-col gap-1 px-3 py-2.5 rounded-lg cursor-pointer transition-colors
+						class="group relative flex flex-col gap-1.5 px-3 py-2.5 rounded-lg cursor-pointer transition-colors
 							{active
-								? 'bg-blue-50 dark:bg-blue-900/30 ring-1 ring-blue-300 dark:ring-blue-700'
-								: 'hover:bg-gray-100 dark:hover:bg-gray-700/50'}"
+								? 'bg-gray-100 dark:bg-gray-700/60 ring-1 ring-gray-200 dark:ring-gray-600'
+								: 'hover:bg-gray-50 dark:hover:bg-gray-700/40'}"
 						role="button"
 						tabindex="0"
 						on:click={() => openSet(set)}
 						on:keydown={(e) => e.key === 'Enter' && openSet(set)}
 					>
-						<div class="flex items-start justify-between gap-1 min-w-0">
+						<div class="flex items-start justify-between gap-2 min-w-0">
 							<span class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate leading-snug">
 								{set.title}
 							</span>
-							<!-- delete button -->
 							<button
 								on:click|stopPropagation={() => handleDelete(set.id)}
-								class="shrink-0 rounded p-0.5 opacity-0 group-hover:opacity-100 transition-opacity
+								class="shrink-0 rounded p-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity
 									{pendingDeleteId === set.id
-										? 'text-red-500 opacity-100'
+										? 'text-red-600 dark:text-red-400 opacity-100'
 										: 'text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400'}"
-								title={pendingDeleteId === set.id ? 'Click again to confirm delete' : 'Delete set'}
+								title={pendingDeleteId === set.id ? $i18n.t('Click again to confirm') : $i18n.t('Delete set')}
+								aria-label={$i18n.t('Delete set')}
 							>
-								{#if pendingDeleteId === set.id}
-									<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-										<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-									</svg>
-								{:else}
-									<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-										<path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-									</svg>
-								{/if}
+								<GarbageBin className="w-4 h-4" strokeWidth="1.75" />
 							</button>
 						</div>
 
 						{#if set.source_label}
-							<span class="text-xs text-gray-400 dark:text-gray-500 truncate">{set.source_label}</span>
+							<span class="text-xs text-gray-500 dark:text-gray-400 truncate">{set.source_label}</span>
 						{/if}
 
-						<div class="flex items-center gap-2 mt-0.5">
-							<!-- mini progress bar -->
+						<div class="flex items-center gap-2">
 							<div class="flex-1 h-1 rounded-full bg-gray-200 dark:bg-gray-600 overflow-hidden">
-								<div class="h-full rounded-full bg-green-500 transition-all" style="width:{pct}%"></div>
+								<div class="h-full rounded-full bg-gray-700 dark:bg-gray-300 transition-all" style="width:{pct}%"></div>
 							</div>
-							<span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">
+							<span class="text-xs text-gray-500 dark:text-gray-400 shrink-0 tabular-nums">
 								{set.known_count}/{set.card_count}
 							</span>
 						</div>
 
 						{#if pendingDeleteId === set.id}
-							<p class="text-xs text-red-500 font-medium mt-0.5">Click trash again to confirm</p>
+							<p class="text-xs text-red-600 dark:text-red-400 mt-0.5">{$i18n.t('Click delete again to confirm')}</p>
 						{/if}
 					</div>
 				{/each}
@@ -377,21 +405,27 @@
 	</aside>
 
 	<!-- ── RIGHT PANEL ────────────────────────────────────────── -->
-	<main class="flex-1 overflow-y-auto">
+	<main
+		class="flex-1 overflow-y-auto
+			{view === 'list' ? 'hidden md:block' : 'block'}"
+	>
 
 		<!-- ════ EMPTY / WELCOME ════ -->
 		{#if view === 'list'}
 			<div class="flex flex-col items-center justify-center h-full min-h-96 text-center px-8 py-16">
-				<div class="text-6xl mb-4">📚</div>
-				<h2 class="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">Start studying</h2>
-				<p class="text-sm text-gray-400 dark:text-gray-500 max-w-xs mb-6">
-					Select a saved set from the left, or generate a new one from a tutoring session or lesson text.
+				<div class="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
+					<BookOpen className="w-6 h-6 text-gray-500 dark:text-gray-400" strokeWidth="1.5" />
+				</div>
+				<h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">{$i18n.t('Start studying')}</h2>
+				<p class="text-sm text-gray-500 dark:text-gray-400 max-w-sm mb-6 leading-relaxed">
+					{$i18n.t('Select a saved set from the left, or generate a new one from a tutoring session or lesson text.')}
 				</p>
 				<button
 					on:click={() => { view = 'create'; }}
-					class="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
+					class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm"
 				>
-					Generate my first set
+					<Plus className="w-4 h-4" strokeWidth="2" />
+					{$i18n.t('Generate my first set')}
 				</button>
 			</div>
 
@@ -401,110 +435,119 @@
 
 				<div class="flex items-center gap-3 mb-6">
 					<button
-						on:click={() => view = sets.length ? 'list' : 'list'}
-						class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+						on:click={() => view = 'list'}
+						class="p-1.5 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors"
+						aria-label={$i18n.t('Back')}
 					>
-						<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-						</svg>
+						<ArrowLeft className="w-5 h-5" strokeWidth="2" />
 					</button>
 					<div>
-						<h2 class="text-xl font-bold text-gray-900 dark:text-white">New flashcard set</h2>
-						<p class="text-sm text-gray-500 dark:text-gray-400">AI will extract key concepts and create revision cards</p>
+						<h2 class="text-xl font-semibold text-gray-900 dark:text-white">{$i18n.t('New flashcard set')}</h2>
+						<p class="text-sm text-gray-500 dark:text-gray-400">{$i18n.t('AI will extract key concepts and create revision cards.')}</p>
 					</div>
 				</div>
 
-				<div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 space-y-5">
+				<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-6">
 
 					<!-- Title -->
 					<div>
-						<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Set name</label>
+						<label for="fc-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{$i18n.t('Set name')}</label>
 						<input
+							id="fc-title"
 							type="text"
 							bind:value={customTitle}
-							placeholder="Auto-filled from source if left blank"
-							class="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+							placeholder={$i18n.t('Auto-filled from source if left blank')}
+							class="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 						/>
 					</div>
 
 					<!-- Model -->
 					<div>
-						<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Model</label>
+						<label for="fc-model" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{$i18n.t('Model')}</label>
 						<select
+							id="fc-model"
 							bind:value={selectedModel}
-							class="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+							class="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 						>
-							{#each $models ?? [] as m}
+							{#each $models as m}
 								<option value={m.id}>{m.name ?? m.id}</option>
 							{/each}
 						</select>
-						{#if !($models?.length)}
-							<p class="text-xs text-amber-500 mt-1">No models available. Check that Ollama is running and has at least one model pulled.</p>
+						{#if !$models.length}
+							<p class="text-xs text-amber-600 dark:text-amber-400 mt-1.5">{$i18n.t('No models available. Check that Ollama is running and has at least one model pulled.')}</p>
 						{/if}
 					</div>
 
-					<!-- Support session -->
-					<div>
-						<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-							From a support session
-						</label>
-						{#if supports.filter(s => s.chat_id).length === 0}
-							<p class="text-sm text-gray-400 dark:text-gray-500">No support sessions with a chat found.</p>
-						{:else}
-							<select
-								bind:value={selectedSupportId}
-								class="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-							>
-								<option value="">— select a session —</option>
-								{#each supports.filter(s => s.chat_id) as s}
-									<option value={s.id}>{s.title} ({s.subject})</option>
-								{/each}
-							</select>
-						{/if}
-					</div>
+					<!-- Section: source -->
+					<div class="pt-2">
+						<p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">{$i18n.t('Source')}</p>
 
-					<!-- Divider -->
-					<div class="flex items-center gap-3">
-						<div class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
-						<span class="text-xs text-gray-400">or paste text directly</span>
-						<div class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
-					</div>
+						<!-- Support session -->
+						<div>
+							<label for="fc-support" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+								{$i18n.t('From a support session')}
+							</label>
+							{#if supports.filter(s => s.chat_id).length === 0}
+								<p class="text-sm text-gray-500 dark:text-gray-400">{$i18n.t('No support sessions with a chat found.')}</p>
+							{:else}
+								<select
+									id="fc-support"
+									bind:value={selectedSupportId}
+									class="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+								>
+									<option value="">{$i18n.t('— select a session —')}</option>
+									{#each supports.filter(s => s.chat_id) as s}
+										<option value={s.id}>{s.title} ({s.subject})</option>
+									{/each}
+								</select>
+							{/if}
+						</div>
 
-					<!-- Manual text -->
-					<div>
-						<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-							Paste lesson or conversation text
-						</label>
-						<textarea
-							bind:value={manualText}
-							rows="6"
-							placeholder="Paste a lesson, notes, or a conversation here…"
-							disabled={!!selectedSupportId}
-							class="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none disabled:opacity-40"
-						></textarea>
-						{#if selectedSupportId}
-							<p class="text-xs text-gray-400 mt-1">Deselect the session above to use manual text instead.</p>
-						{/if}
+						<!-- Divider -->
+						<div class="flex items-center gap-3 my-5">
+							<div class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+							<span class="text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500">{$i18n.t('or')}</span>
+							<div class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+						</div>
+
+						<!-- Manual text -->
+						<div>
+							<label for="fc-manual" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+								{$i18n.t('Paste lesson or conversation text')}
+							</label>
+							<textarea
+								id="fc-manual"
+								bind:value={manualText}
+								rows="6"
+								placeholder={$i18n.t('Paste a lesson, notes, or a conversation here…')}
+								disabled={!!selectedSupportId}
+								class="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none disabled:opacity-50"
+							></textarea>
+							{#if selectedSupportId}
+								<p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">{$i18n.t('Deselect the session above to use manual text instead.')}</p>
+							{/if}
+						</div>
 					</div>
 
 					<!-- Generate -->
 					<button
 						on:click={generate}
 						disabled={generating || !selectedModel}
-						class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-semibold transition-colors shadow-sm"
+						class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gray-900 hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed dark:bg-white dark:hover:bg-gray-100 dark:disabled:bg-gray-600 dark:text-gray-900 text-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
 					>
 						{#if generating}
 							<svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
 								<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
 								<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
 							</svg>
-							Generating cards…
+							{$i18n.t('Generating cards…')}
 						{:else}
-							✨ Generate flashcards
+							<Sparkles className="w-4 h-4" strokeWidth="1.75" />
+							{$i18n.t('Generate flashcards')}
 						{/if}
 					</button>
 
-					<p class="text-xs text-center text-gray-400">The set is saved automatically once generated.</p>
+					<p class="text-xs text-center text-gray-500 dark:text-gray-400">{$i18n.t('The set is saved automatically once generated.')}</p>
 				</div>
 			</div>
 
@@ -517,67 +560,106 @@
 					<div class="flex items-center gap-3 min-w-0">
 						<button
 							on:click={() => view = 'list'}
-							class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 shrink-0"
+							class="p-1.5 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors shrink-0"
+							aria-label={$i18n.t('Back to list')}
 						>
-							<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-								<path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-							</svg>
+							<ArrowLeft className="w-5 h-5" strokeWidth="2" />
 						</button>
 						<div class="min-w-0">
-							<h2 class="text-base font-bold text-gray-900 dark:text-white truncate">{activeSet.title}</h2>
+							<h2 class="text-base font-semibold text-gray-900 dark:text-white truncate">{activeSet.title}</h2>
 							{#if activeSet.source_label}
-								<p class="text-xs text-gray-400 dark:text-gray-500">{activeSet.source_label} · {formatDate(activeSet.created_at)}</p>
+								<p class="text-xs text-gray-500 dark:text-gray-400">{activeSet.source_label} · {formatDate(activeSet.created_at)}</p>
 							{/if}
 						</div>
 					</div>
-					<div class="flex gap-2 shrink-0">
-						{#if reviewUnknownsOnly}
+					<div class="flex items-center gap-1 shrink-0">
+						{#if !reviewUnknownsOnly}
 							<button
-								on:click={() => { reviewUnknownsOnly = false; currentPos = 0; }}
-								class="px-3 py-1.5 text-xs rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 transition-colors"
-							>All cards</button>
+								on:click={() => { reviewUnknownsOnly = true; currentPos = 0; }}
+								class="px-2.5 py-1.5 text-xs rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+							>{$i18n.t('All cards')}</button>
 						{:else}
 							<button
 								on:click={startReviewUnknowns}
-								class="px-3 py-1.5 text-xs rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 transition-colors font-medium"
-							>Review unknowns</button>
+								class="px-2.5 py-1.5 text-xs rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors font-medium"
+							>{$i18n.t('Review unknowns')}</button>
 						{/if}
 						<button
 							on:click={resetSet}
-							class="px-3 py-1.5 text-xs rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 transition-colors"
-						>Reset</button>
+							class="p-1.5 rounded-md text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors"
+							title={$i18n.t('Reset progress')}
+							aria-label={$i18n.t('Reset progress')}
+						>
+							<ArrowPath className="w-4 h-4" strokeWidth="1.75" />
+						</button>
+						<button
+							on:click={() => focusMode = !focusMode}
+							class="p-1.5 rounded-md text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors hidden md:inline-flex"
+							title={focusMode ? $i18n.t('Exit focus mode') : $i18n.t('Focus mode')}
+							aria-label={focusMode ? $i18n.t('Exit focus mode') : $i18n.t('Focus mode')}
+							aria-pressed={focusMode}
+						>
+							<ArrowsPointingOut className="size-4" strokeWidth="1.75" />
+						</button>
+						<button
+							on:click={() => showShortcuts = !showShortcuts}
+							class="p-1.5 rounded-md text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors"
+							title={$i18n.t('Keyboard shortcuts')}
+							aria-label={$i18n.t('Keyboard shortcuts')}
+							aria-expanded={showShortcuts}
+						>
+							<QuestionMarkCircle className="w-4 h-4" strokeWidth="1.75" />
+						</button>
 					</div>
 				</div>
 
-				<!-- progress bar -->
-				<div class="mb-5">
-					<div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1.5">
-						<span>{knownCount} known</span>
+				<!-- segmented progress / card-nav bar -->
+				<div class="mb-6">
+					<div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-2 tabular-nums">
+						<span>{knownCount} / {totalCount} {$i18n.t('known')}</span>
 						<span>{progressPct}%</span>
-						<span>{totalCount - knownCount} to review</span>
 					</div>
-					<div class="h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-						<div
-							class="h-full rounded-full bg-green-500 transition-all duration-500"
-							style="width:{progressPct}%"
-						></div>
+					<div
+						class="flex items-center gap-1"
+						role="group"
+						aria-label={$i18n.t('Card progress')}
+					>
+						{#each activeSet.cards as _card, idx}
+							{@const known = isKnown(idx)}
+							{@const isCurrent = displayCards[currentPos]?.idx === idx}
+							<button
+								on:click={() => jumpToCard(idx)}
+								class="flex-1 h-2 rounded-full transition-colors
+									{known
+										? 'bg-green-500 hover:bg-green-600 dark:bg-green-500 dark:hover:bg-green-400'
+										: 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600'}
+									{isCurrent
+										? 'ring-1 ring-offset-2 ring-gray-500 dark:ring-gray-100'
+										: ''}"
+								title="{$i18n.t('Card')} {idx + 1}{known ? ` · ${$i18n.t('known')}` : ''}"
+								aria-label="{$i18n.t('Card')} {idx + 1} {known ? $i18n.t('known') : $i18n.t('not yet known')}"
+								aria-current={isCurrent ? 'true' : undefined}
+							></button>
+						{/each}
 					</div>
 				</div>
 
 				<!-- ── flip card ── -->
 				{#if displayCards.length === 0}
-					<div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-12 text-center shadow-sm">
-						<div class="text-4xl mb-3">🎉</div>
-						<p class="text-gray-700 dark:text-gray-200 font-semibold">All unknown cards reviewed!</p>
+					<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center">
+						<div class="mx-auto w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mb-3">
+							<Check className="w-5 h-5 text-gray-500 dark:text-gray-400" strokeWidth="2" />
+						</div>
+						<p class="text-sm text-gray-900 dark:text-gray-100 font-medium">{$i18n.t('All unknown cards reviewed.')}</p>
 						<button
 							on:click={() => { reviewUnknownsOnly = false; currentPos = 0; }}
-							class="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-						>See all cards</button>
+							class="mt-4 px-3 py-1.5 text-sm rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+						>{$i18n.t('See all cards')}</button>
 					</div>
 				{:else}
 					<!-- position indicator -->
-					<p class="text-center text-xs text-gray-400 dark:text-gray-500 mb-3">
-						{currentPos + 1} / {displayCards.length}{reviewUnknownsOnly ? ' (unknowns only)' : ''}
+					<p class="text-center text-xs text-gray-500 dark:text-gray-400 mb-3 tabular-nums">
+						{currentPos + 1} / {displayCards.length}{reviewUnknownsOnly ? ` · ${$i18n.t('unknowns only')}` : ''}
 					</p>
 
 					<!-- THE CARD (3D flip) -->
@@ -586,27 +668,24 @@
 							class="card-scene mb-4"
 							role="button"
 							tabindex="0"
+							aria-label={currentCard.flipped ? $i18n.t('Show question') : $i18n.t('Show answer')}
 							on:click={flip}
 							on:keydown={(e) => (e.key === ' ' || e.key === 'Enter') && flip()}
 						>
 							<div class="card-inner {currentCard.flipped ? 'is-flipped' : ''} {isKnown(currentCard.idx) ? 'is-known' : ''}">
 								<!-- FRONT -->
 								<div class="card-face card-front">
-									<div class="card-label">Question</div>
+									<div class="card-label">{$i18n.t('Question')}</div>
 									<p class="card-text">{currentCard.question}</p>
-									<div class="card-hint">
-										<svg class="w-4 h-4 mr-1 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-											<path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5" />
-										</svg>
-										Click or press Space to reveal
-									</div>
+									<div class="card-hint">{$i18n.t('Click or press Space to reveal')}</div>
 								</div>
 								<!-- BACK -->
 								<div class="card-face card-back">
-									<div class="card-label answer-label">Answer</div>
+									<div class="card-back-accent"></div>
+									<div class="card-label answer-label">{$i18n.t('Answer')}</div>
 									<p class="card-text">{currentCard.answer}</p>
 									{#if savingProgress}
-										<div class="absolute top-3 right-3 w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+										<div class="absolute top-3 right-3 w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" aria-label={$i18n.t('Saving')}></div>
 									{/if}
 								</div>
 							</div>
@@ -614,20 +693,22 @@
 
 						<!-- known/unknown (shown only on back) -->
 						{#if currentCard.flipped}
-							<div class="flex gap-3 mb-5">
+							<div class="grid grid-cols-2 gap-3 mb-5">
 								<button
 									on:click={markUnknown}
-									class="flex-1 py-3 rounded-xl border-2 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 font-semibold text-sm transition-colors"
+									class="inline-flex items-center justify-center gap-2 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-medium transition-colors"
 								>
-									✗ Still learning
-									<span class="block text-xs font-normal opacity-60 mt-0.5">(U)</span>
+									<XMark className="w-4 h-4" strokeWidth="2" />
+									{$i18n.t('Still learning')}
+									<kbd class="ml-1 text-[10px] px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-mono">U</kbd>
 								</button>
 								<button
 									on:click={markKnown}
-									class="flex-1 py-3 rounded-xl border-2 border-green-200 dark:border-green-800 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950 font-semibold text-sm transition-colors"
+									class="inline-flex items-center justify-center gap-2 py-2.5 rounded-lg bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 text-white text-sm font-medium transition-colors"
 								>
-									✓ Got it
-									<span class="block text-xs font-normal opacity-60 mt-0.5">(K)</span>
+									<Check className="w-4 h-4" strokeWidth="2.5" />
+									{$i18n.t('Got it')}
+									<kbd class="ml-1 text-[10px] px-1 py-0.5 rounded bg-white/20 dark:bg-gray-900/10 text-white/80 dark:text-gray-900/70 font-mono">K</kbd>
 								</button>
 							</div>
 						{/if}
@@ -637,76 +718,85 @@
 							<button
 								on:click={prev}
 								disabled={currentPos === 0}
-								class="px-4 py-2 text-sm rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 disabled:opacity-40 transition-colors flex items-center gap-1"
+								class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
 							>
-								<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-									<path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-								</svg>
-								Previous
+								<ChevronLeft className="w-4 h-4" strokeWidth="2" />
+								{$i18n.t('Previous')}
 							</button>
 							<button
 								on:click={next}
 								disabled={currentPos === displayCards.length - 1}
-								class="px-4 py-2 text-sm rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 disabled:opacity-40 transition-colors flex items-center gap-1"
+								class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
 							>
-								Next
-								<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-									<path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-								</svg>
+								{$i18n.t('Next')}
+								<ChevronRight className="w-4 h-4" strokeWidth="2" />
 							</button>
 						</div>
 					{/if}
 
-					<!-- keyboard hint -->
-					<p class="text-center text-xs text-gray-300 dark:text-gray-600 mt-4">
-						Space · flip &nbsp;|&nbsp; ←/→ · navigate &nbsp;|&nbsp; K · known &nbsp;|&nbsp; U · unknown
-					</p>
-
-					<!-- all-cards list -->
-					<div class="mt-8">
-						<p class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-3">All cards</p>
-						<div class="space-y-1.5">
-							{#each activeSet.cards as card, idx}
-								{@const known = isKnown(idx)}
-								{@const isCurrent = displayCards[currentPos]?.idx === idx}
-								<button
-									on:click={() => {
-										const pos = displayCards.findIndex(c => c.idx === idx);
-										if (pos !== -1) { currentPos = pos; }
-										else { reviewUnknownsOnly = false; currentPos = idx; }
-									}}
-									class="w-full text-left px-4 py-2.5 rounded-lg border text-sm transition-colors
-										{isCurrent ? 'ring-2 ring-blue-400 ring-offset-1 dark:ring-offset-gray-900' : ''}
-										{known
-											? 'border-green-100 dark:border-green-900 bg-green-50 dark:bg-green-950/40 text-green-800 dark:text-green-300'
-											: 'border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}"
-								>
-									<span class="mr-2 text-xs">{known ? '✓' : '·'}</span>
-									{card.question}
-								</button>
-							{/each}
-						</div>
-					</div>
+					<!-- (the all-cards list lived here; replaced by the segmented progress bar above) -->
 				{/if}
 			</div>
 		{/if}
 	</main>
 </div>
 
+<!-- ── Keyboard shortcuts popover ────────────────────────── -->
+{#if showShortcuts}
+	<div
+		class="fixed bottom-6 right-6 z-50 w-72 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg p-4"
+		role="dialog"
+		aria-label={$i18n.t('Keyboard shortcuts')}
+	>
+		<div class="flex items-center justify-between mb-3">
+			<div class="inline-flex items-center gap-2">
+				<Keyboard className="w-4 h-4 text-gray-500 dark:text-gray-400" strokeWidth="1.75" />
+				<p class="text-sm font-semibold text-gray-900 dark:text-gray-100">{$i18n.t('Shortcuts')}</p>
+			</div>
+			<button
+				on:click={() => showShortcuts = false}
+				class="p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700"
+				aria-label={$i18n.t('Close')}
+			>
+				<XMark className="w-4 h-4" strokeWidth="2" />
+			</button>
+		</div>
+		<ul class="space-y-2 text-sm">
+			{#each [
+				{ keys: ['Space'], label: $i18n.t('Flip card') },
+				{ keys: ['←', '→'], label: $i18n.t('Previous / next') },
+				{ keys: ['K'], label: $i18n.t('Mark known') },
+				{ keys: ['U'], label: $i18n.t('Mark unknown') },
+				{ keys: ['?'], label: $i18n.t('Toggle this panel') },
+				{ keys: ['Esc'], label: $i18n.t('Close / exit focus mode') }
+			] as row}
+				<li class="flex items-center justify-between">
+					<span class="text-gray-600 dark:text-gray-300">{row.label}</span>
+					<span class="inline-flex items-center gap-1">
+						{#each row.keys as k}
+							<kbd class="text-[11px] px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-200 font-mono">{k}</kbd>
+						{/each}
+					</span>
+				</li>
+			{/each}
+		</ul>
+	</div>
+{/if}
+
 <style>
 	/* ── 3D flip card ─────────────────────────────────────── */
 	.card-scene {
-		perspective: 900px;
+		perspective: 1200px;
 		cursor: pointer;
 		user-select: none;
 	}
 
 	.card-inner {
 		position: relative;
-		min-height: 240px;
+		min-height: 260px;
 		transform-style: preserve-3d;
-		transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
-		border-radius: 1rem;
+		transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+		border-radius: 0.75rem;
 	}
 
 	.card-inner.is-flipped {
@@ -718,58 +808,63 @@
 		inset: 0;
 		backface-visibility: hidden;
 		-webkit-backface-visibility: hidden;
-		border-radius: 1rem;
+		border-radius: 0.75rem;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		padding: 2rem;
+		padding: 2.5rem 2rem;
 		text-align: center;
-		border: 2px solid;
-		transition: border-color 0.3s;
+		border: 1px solid #e5e7eb;
+		background: #ffffff;
+		transition: border-color 0.2s;
 	}
 
-	/* front */
-	.card-front {
-		background: white;
-		border-color: #e5e7eb;
-	}
-
-	:global(.dark) .card-front {
+	:global(.dark) .card-face {
 		background: #1f2937;
 		border-color: #374151;
 	}
 
-	.card-inner.is-known .card-front {
-		border-color: #86efac;
-	}
-	:global(.dark) .card-inner.is-known .card-front {
-		border-color: #166534;
-	}
-
-	/* back */
 	.card-back {
-		background: #1d4ed8;
-		border-color: #1d4ed8;
 		transform: rotateY(180deg);
 	}
 
-	:global(.dark) .card-back {
-		background: #1e3a8a;
-		border-color: #1e3a8a;
+	/* subtle accent strip on the answer face — calmer than a full blue fill */
+	.card-back-accent {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 3px;
+		background: #2563eb;
+		border-top-left-radius: 0.75rem;
+		border-top-right-radius: 0.75rem;
+	}
+
+	/* known cards get a quiet green border instead of a loud highlight */
+	.card-inner.is-known .card-front,
+	.card-inner.is-known .card-back {
+		border-color: #86efac;
+	}
+	:global(.dark) .card-inner.is-known .card-front,
+	:global(.dark) .card-inner.is-known .card-back {
+		border-color: #166534;
 	}
 
 	.card-label {
-		font-size: 0.65rem;
-		font-weight: 700;
-		letter-spacing: 0.12em;
+		font-size: 0.7rem;
+		font-weight: 600;
+		letter-spacing: 0.1em;
 		text-transform: uppercase;
-		margin-bottom: 0.75rem;
+		margin-bottom: 1rem;
 		color: #9ca3af;
 	}
 
 	.answer-label {
-		color: #93c5fd;
+		color: #2563eb;
+	}
+	:global(.dark) .answer-label {
+		color: #60a5fa;
 	}
 
 	.card-text {
@@ -777,23 +872,21 @@
 		font-weight: 500;
 		line-height: 1.6;
 		color: #111827;
-		max-width: 42ch;
+		max-width: 44ch;
 	}
 
 	:global(.dark) .card-text {
 		color: #f3f4f6;
 	}
 
-	.card-back .card-text {
-		color: #ffffff;
-	}
-
 	.card-hint {
 		position: absolute;
 		bottom: 1rem;
-		display: flex;
-		align-items: center;
 		font-size: 0.7rem;
-		color: #d1d5db;
+		color: #9ca3af;
+	}
+
+	:global(.dark) .card-hint {
+		color: #6b7280;
 	}
 </style>
