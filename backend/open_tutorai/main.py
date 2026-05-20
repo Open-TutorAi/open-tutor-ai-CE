@@ -13,7 +13,8 @@ from open_tutorai.routers import (
     response_feedbacks,
     auths,
     supports,
-    feedback
+    feedback,
+    faq_questions
 )
 
 from open_tutorai.env import (
@@ -85,6 +86,7 @@ app.include_router(response_feedbacks.router, prefix="/api/v1", tags=["response-
 app.include_router(auths.router, prefix="/auths", tags=["auths"])
 app.include_router(supports.router, prefix="/api/v1", tags=["supports"])
 app.include_router(feedback.router)
+app.include_router(faq_questions.router)  
 
 @app.get("/api/changelog")
 async def get_app_changelog():

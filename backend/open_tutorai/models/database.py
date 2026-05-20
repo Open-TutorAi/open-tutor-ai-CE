@@ -75,6 +75,16 @@ class UserFeedback(Base):
     def __repr__(self):
         return f"<UserFeedback(id={self.id}, name={self.name})>"
 
+class FAQQuestion(Base):
+    __tablename__ = f"{PREFIX}faq_question"
+    
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    email = Column(String, nullable=False)
+    question = Column(Text, nullable=False)
+    reponse = Column(Text, nullable=True)
+    statut = Column(String, default="en_attente")
+    created_at = Column(DateTime, nullable=False, server_default=func.now())
+
 def init_database():
     """
     Initialize the database tables for OpenTutorAI.

@@ -11,8 +11,7 @@ class FeedbackCreate(BaseModel):
     name: str | None = None
     message: str
 
-# Créer la table si elle n'existe pas (sécurité)
-Base.metadata.create_all(bind=engine, tables=[UserFeedback.__table__], checkfirst=True)
+
 
 @router.post("/api/feedback")
 async def create_feedback(form_data: FeedbackCreate):

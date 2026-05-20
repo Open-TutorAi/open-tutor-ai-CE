@@ -76,7 +76,7 @@
         <p>Aucun feedback pour le moment. Soyez le premier !</p>
       </div>
     {:else}
-      <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+      <div class="space-y-4 max-h-[500px] overflow-y-auto pr-2 scrollbar-thin">
         {#each data.feedbacks as f}
           <div class="border-b border-gray-100 pb-3 last:border-0">
             <div class="flex justify-between items-start mb-1">
@@ -95,3 +95,23 @@
   </div>
 
 </div>
+
+<style>
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+</style>
