@@ -14,7 +14,8 @@ from open_tutorai.routers import supports, dashboard
 from open_tutorai.routers import (
     response_feedbacks,
     auths,
-    supports
+    supports,
+    dashboard
 )
 
 from open_tutorai.env import (
@@ -85,7 +86,7 @@ async def health_check():
 app.include_router(response_feedbacks.router, prefix="/api/v1", tags=["response-feedbacks"])
 app.include_router(auths.router, prefix="/auths", tags=["auths"])
 app.include_router(supports.router, prefix="/api/v1", tags=["supports"])
-app.include_router(dashboard.router, prefix="/api/v1")  
+app.include_router(dashboard.router, prefix="/api/v1", tags=["dashboard"])
 
 
 @app.get("/api/changelog")

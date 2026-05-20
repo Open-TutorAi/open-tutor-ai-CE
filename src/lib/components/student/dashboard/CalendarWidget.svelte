@@ -9,7 +9,7 @@
     export let calCells: (number | null)[] = [];
     export let calMonth: number            = 0;
     export let calYear: number             = 0;
-    export let calSelected: number         = 0;
+    export let calSelectedDays: number[]   = [];
     export let calEventDays: number[]      = [];
     export let isToday: (d: number) => boolean  = () => false;
     export let isSunSat: (d: number) => boolean = () => false;
@@ -34,7 +34,7 @@
                 <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/>
             </svg>
         </button>
-        <h3 class="text-sm font-bold text-gray-800 dark:text-white">{MONS[calMonth]} {calYear}</h3>
+        <h3 class="text-sm font-bold text-gray-800 dark:text-white">{$i18n.t(MONS[calMonth])} {calYear}</h3>
         <button on:click={calNext}
             class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-500 dark:text-gray-400"
             aria-label={$i18n.t('Next month')}>
@@ -46,7 +46,7 @@
 
     <div class="grid grid-cols-7 text-center">
         {#each DOW as d, i}
-            <span class="text-[10px] font-semibold uppercase {i === 0 || i === 6 ? 'text-red-400' : 'text-gray-400 dark:text-gray-500'}">{d}</span>
+            <span class="text-[10px] font-semibold uppercase {i === 0 || i === 6 ? 'text-red-400' : 'text-gray-400 dark:text-gray-500'}">{$i18n.t(d)}</span>
         {/each}
     </div>
 
@@ -60,12 +60,12 @@
                     class="relative mx-auto w-7 h-7 flex items-center justify-center rounded-full text-xs font-medium transition-all duration-150
                         {isToday(day)
                             ? 'bg-indigo-500 text-white shadow-md hover:bg-indigo-600'
-                            : calSelected === day
+                            : calSelectedDays.includes(day)
                             ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300'
                             : isSunSat(day)
                             ? 'text-red-500 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                             : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}"
-                    aria-pressed={calSelected === day}
+                    aria-pressed={calSelectedDays.includes(day)}
                     aria-label="{day} {MONS[calMonth]} {calYear}"
                 >
                     {day}

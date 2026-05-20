@@ -8,14 +8,14 @@ import { browser } from '$app/environment';
 import { chatId as storeChatId } from '$lib/stores';
 import CourseCard from '../elements/CourseCard.svelte';
 import { getSupportRequests, type SupportResponse, updateSupportChatId } from '$lib/apis/supports';
+import { getDashboardStats, type DashboardStatsResponse } from '$lib/apis/dashboard';
 import { page } from '$app/stores';
 import StatisticsPanel  from '../dashboard/StatisticsPanel.svelte';
 import PerformanceGauge from '../dashboard/PerformanceGauge.svelte';
 import CalendarWidget   from '../dashboard/CalendarWidget.svelte';
 
 	const i18n = getContext<Writable<i18nType>>('i18n');
-	type PerfFilter = 'weekly' | 'monthly';
-	const perfOptions: PerfFilter[] = ['weekly', 'monthly'];
+	
 	// ─── SUPPORT / COURSE STATE ───────────────────────────────────────────────
 	let userSupports: SupportResponse[] = [];
 	let isLoading = true;
@@ -25,27 +25,16 @@ import CalendarWidget   from '../dashboard/CalendarWidget.svelte';
 	let currentPath = '';
 	let chatIdFromURL = '';
 
-	// ─── PERFORMANCE DASHBOARD STATE ─────────────────────────────────────────
-	let perfFilter: 'monthly' | 'weekly' = 'monthly';
-
-	const statsByFilter = {
-		monthly: { participation: 90, tasksExam: 70, quiz: 85, gradesCompleted: 75 },
-		weekly:  { participation: 72, tasksExam: 55, quiz: 68, gradesCompleted: 60 }
-	};
-	const pointsByFilter    = { monthly: 8966, weekly: 3241 };
-	const maxPointsByFilter = { monthly: 12000, weekly: 5000 };
-
-	$: perfStats     = statsByFilter[perfFilter];
-	$: perfPoints    = pointsByFilter[perfFilter];
-	$: perfMaxPoints = maxPointsByFilter[perfFilter];
+	// ─── PERFORMANCE DASHBOARD STATE (DYNAMIC) ───────────────────────────────
+	let dashboardStats: DashboardStatsResponse | null = null;
+	let lastUpdated = '';
+	let perfFilter: 'weekly' | 'monthly' = 'monthly';
+	const perfOptions: ('weekly' | 'monthly')[] = ['weekly', 'monthly'];
 
 	// Animated values
-	let animGrades        = 0;
+	let animCompletionRate = 0;
 	let animPoints        = 0;
 	let animNeedle        = 0;
-	let animParticipation = 0;
-	let animTasksExam     = 0;
-	let animQuiz          = 0;
 
 	let rafGrades: number;
 	let rafPoints: number;
@@ -64,22 +53,19 @@ import CalendarWidget   from '../dashboard/CalendarWidget.svelte';
 	function triggerPerfAnimations() {
 		cancelAnimationFrame(rafGrades);
 		cancelAnimationFrame(rafPoints);
-		const pg = animGrades, pp = animPoints, pn = animNeedle;
-		const ppar = animParticipation, pte = animTasksExam, pq = animQuiz;
-		rafGrades = animateTo(pg, perfStats.gradesCompleted, 1000, v => animGrades = v);
-		rafPoints = animateTo(pp, perfPoints, 1000, v => animPoints = v);
-		animateTo(pn, perfPoints / perfMaxPoints, 1000, v => animNeedle = v);
-		animateTo(ppar, perfStats.participation, 900, v => animParticipation = v);
-		animateTo(pte, perfStats.tasksExam, 900, v => animTasksExam = v);
-		animateTo(pq, perfStats.quiz, 900, v => animQuiz = v);
+		const targetRate = dashboardStats ? dashboardStats.completionRate : 0;
+		const pg = animCompletionRate, pp = animPoints, pn = animNeedle;
+		rafGrades = animateTo(pg, targetRate, 1000, v => animCompletionRate = v);
+		rafPoints = animateTo(pp, targetRate, 1000, v => animPoints = v);
+		animateTo(pn, targetRate / 100, 1000, v => animNeedle = v);
 	}
 
-	$: if (browser && perfFilter) triggerPerfAnimations();
+	$: if (browser && dashboardStats) triggerPerfAnimations();
 
 	// SVG ring for grades
 	const ringR    = 52;
 	const ringCirc = 2 * Math.PI * ringR;
-	$: ringOffset  = ringCirc - (animGrades / 100) * ringCirc;
+	$: ringOffset  = ringCirc - (animCompletionRate / 100) * ringCirc;
 
 	// SVG gauge (half-circle)
 	const gcx = 100, gcy = 90, gR = 70;
@@ -123,16 +109,84 @@ import CalendarWidget   from '../dashboard/CalendarWidget.svelte';
 		return new Date(calYear, calMonth, d).getDay() % 6 === 0;
 	}
 
-	// ─── DATE RANGE LABEL ─────────────────────────────────────────────────────
-	$: dateRange = (() => {
-		const now = new Date();
-		if (perfFilter === 'monthly') return `${MONS[now.getMonth()]} ${now.getFullYear()}`;
-		const day = now.getDay();
-		const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-		const ws = new Date(now); ws.setDate(diff);
-		const we = new Date(ws); we.setDate(ws.getDate() + 6);
-		return `${ws.toLocaleDateString('en-US',{month:'short',day:'numeric'})} – ${we.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`;
+	// ─── DYNAMIC CALENDAR & RANGE FILTER LOGIC ────────────────────────────────
+	$: calSelectedDays = (() => {
+		if (perfFilter === 'monthly') {
+			return calSelected > 0 ? [calSelected] : [];
+		} else {
+			const dayRef = calSelected > 0 ? calSelected : 1;
+			const refDate = new Date(calYear, calMonth, dayRef);
+			const currentDay = refDate.getDay();
+			const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+			
+			const monday = new Date(refDate);
+			monday.setDate(refDate.getDate() + diffToMonday);
+			
+			const days: number[] = [];
+			for (let i = 0; i < 7; i++) {
+				const d = new Date(monday);
+				d.setDate(monday.getDate() + i);
+				if (d.getMonth() === calMonth && d.getFullYear() === calYear) {
+					days.push(d.getDate());
+				}
+			}
+			return days;
+		}
 	})();
+
+	$: activeRange = (() => {
+		let startDate: Date;
+		let endDate: Date;
+
+		if (perfFilter === 'monthly') {
+			startDate = new Date(calYear, calMonth, 1, 0, 0, 0, 0);
+			endDate = new Date(calYear, calMonth + 1, 0, 23, 59, 59, 999);
+		} else {
+			const dayRef = calSelected > 0 ? calSelected : 1;
+			const refDate = new Date(calYear, calMonth, dayRef);
+			const currentDay = refDate.getDay();
+			const diffToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+			
+			startDate = new Date(refDate);
+			startDate.setDate(refDate.getDate() + diffToMonday);
+			startDate.setHours(0, 0, 0, 0);
+			
+			endDate = new Date(startDate);
+			endDate.setDate(startDate.getDate() + 6);
+			endDate.setHours(23, 59, 59, 999);
+		}
+
+		const formattedStart = startDate.toLocaleDateString(undefined, {month: 'short', day: 'numeric'});
+		const formattedEnd = endDate.toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric'});
+
+		return {
+			startStr: startDate.toISOString(),
+			endStr: endDate.toISOString(),
+			label: perfFilter === 'monthly' 
+				? `${$i18n.t(MONS[calMonth])} ${calYear}`
+				: `${formattedStart} – ${formattedEnd}`
+		};
+	})();
+
+	$: dateRange = activeRange.label;
+
+	async function loadStats(start: string, end: string) {
+		const token = localStorage.getItem('token');
+		if (!token) return;
+		try {
+			const stats = await getDashboardStats(token, start, end);
+			if (stats) {
+				dashboardStats = stats;
+				lastUpdated = stats.lastUpdated;
+			}
+		} catch (e) {
+			console.error('Error fetching dashboard stats:', e);
+		}
+	}
+
+	$: if (browser && activeRange) {
+		loadStats(activeRange.startStr, activeRange.endStr);
+	}
 
 	// ─── SUPPORT LOGIC ────────────────────────────────────────────────────────
 	onMount(async () => {
@@ -152,8 +206,15 @@ import CalendarWidget   from '../dashboard/CalendarWidget.svelte';
 				try {
 					const supports = await getSupportRequests(token);
 					if (supports && Array.isArray(supports)) userSupports = supports;
-				} catch { userSupports = []; } finally { isLoading = false; }
-			} else { isLoading = false; }
+				} catch (e) {
+					console.error('Error fetching supports:', e);
+					userSupports = [];
+				} finally {
+					isLoading = false;
+				}
+			} else {
+				isLoading = false;
+			}
 
 			if (!window.openTutorEvents) window.openTutorEvents = new EventTarget();
 			window.openTutorEvents.addEventListener('chatCreated', ((e: CustomEvent) => {
@@ -261,12 +322,15 @@ import CalendarWidget   from '../dashboard/CalendarWidget.svelte';
 
 	<!-- ████████████████████████ PERFORMANCE DASHBOARD ████████████████████████ -->
 	<section aria-label={$i18n.t('Student Performance Dashboard')}>
-		<!-- Header + filter -->
+		<!-- Header -->
 		<div class="flex items-center justify-between mb-3">
 			<div>
 				<h2 class="text-base font-semibold text-gray-700 dark:text-gray-200">{$i18n.t('Your Performance')}</h2>
-				<p class="text-xs text-gray-400 dark:text-gray-500">{dateRange}</p>
+				<p class="text-xs text-gray-400 dark:text-gray-500">
+					{dateRange}
+				</p>
 			</div>
+			<!-- weekly/monthly filter selector -->
 			<div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-700/60 rounded-full p-1" role="group" aria-label={$i18n.t('Time filter')}>
 				{#each perfOptions as opt}
 					<button
@@ -286,10 +350,11 @@ import CalendarWidget   from '../dashboard/CalendarWidget.svelte';
 
 				<!-- À la place du bloc 1 -->
 	<StatisticsPanel
-		{animParticipation}
-		{animTasksExam}
-		{animQuiz}
-		{animGrades}
+		totalSupports={dashboardStats?.totalSupports || 0}
+		activeSupports={dashboardStats?.activeSupports || 0}
+		completedSupports={dashboardStats?.completedSupports || 0}
+		{animCompletionRate}
+		topSubjects={dashboardStats?.topSubjects || []}
 		{ringOffset}
 		{ringCirc}
 		{ringR}
@@ -315,7 +380,7 @@ import CalendarWidget   from '../dashboard/CalendarWidget.svelte';
     {calCells}
     {calMonth}
     {calYear}
-    {calSelected}
+    {calSelectedDays}
     calEventDays={eventDays}   
     {isToday}
     {isSunSat}
