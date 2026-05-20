@@ -8,8 +8,8 @@
 	let chatData = {};
 	let isRightBarVisible = false;
 	
-	
-	function handleChatEvent(event) {
+	// Typage ajouté pour résoudre le conflit
+	function handleChatEvent(event: any) {
 		// Process chat events and update rightbar if needed
 		chatData = {...chatData, ...event.detail};
 	}
