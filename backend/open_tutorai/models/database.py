@@ -6,8 +6,8 @@ the same database connection as OpenWebUI to maintain compatibility.
 """
 
 from datetime import datetime
-
 import uuid
+
 from sqlalchemy import (
     Column,
     Integer,
@@ -22,7 +22,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 from open_webui.internal.db import Base, get_db, JSONField
-
 
 PREFIX = "opentutorai_"
 
@@ -179,6 +178,8 @@ class CourseEnrollment(Base):
     student_id = Column(String, nullable=False, index=True)
     enrolled_at = Column(DateTime, nullable=False, server_default=func.now())
     status = Column(String, nullable=False, default="active")
+    
+    chat_id = Column(String, nullable=True)  # NEW: chat ID for the student's course conversation
 
     course = relationship("Course", backref="enrollments")
 
@@ -190,6 +191,58 @@ class CourseEnrollment(Base):
 
     def __repr__(self):
         return f"<CourseEnrollment(course_id={self.course_id}, student_id={self.student_id})>"
+
+
+class CourseProgress(Base):
+    """
+    Tracks per‑section completion for each student enrollment.
+    This allows students to resume a course from where they left off.
+    """
+
+    __tablename__ = f"{PREFIX}course_progress"
+
+    id = Column(
+        String, primary_key=True, index=True, default=lambda: str(uuid.uuid4())
+    )
+    enrollment_id = Column(
+        String,
+        ForeignKey(f"{PREFIX}course_enrollment.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    course_id = Column(
+        String,
+        ForeignKey(f"{PREFIX}course.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    student_id = Column(String, nullable=False, index=True)
+
+    chapter_id = Column(String, nullable=False)
+    section_id = Column(String, nullable=False)
+
+    # 'not-started' | 'in-progress' | 'completed'
+    status = Column(String, nullable=False, default="completed")
+
+    completed_at = Column(DateTime, nullable=True)
+    updated_at = Column(DateTime, nullable=True, onupdate=func.now())
+
+    enrollment = relationship("CourseEnrollment", backref="progress")
+
+    __table_args__ = (
+        UniqueConstraint(
+            "enrollment_id",
+            "chapter_id",
+            "section_id",
+            name=f"uq_{PREFIX}progress_enrollment_section",
+        ),
+    )
+
+    def __repr__(self):
+        return (
+            f"<CourseProgress(enrollment_id={self.enrollment_id}, "
+            f"section_id={self.section_id}, status={self.status})>"
+        )
 
 
 def init_database():

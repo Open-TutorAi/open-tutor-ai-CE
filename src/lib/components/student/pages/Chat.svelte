@@ -8,6 +8,7 @@
 	let chatData = {};
 	let isRightBarVisible = false;
 	
+	
 	function handleChatEvent(event) {
 		// Process chat events and update rightbar if needed
 		chatData = {...chatData, ...event.detail};

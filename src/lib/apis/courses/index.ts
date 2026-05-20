@@ -1,6 +1,9 @@
+// src/lib/apis/courses/index.ts — FULL REPLACEMENT
+
 import { TUTOR_API_BASE_URL } from '$lib/constants';
 
-// Types
+// ── Types ──────────────────────────────────────────────────────────────────
+
 export interface CourseFile {
 	id: string;
 	name: string;
@@ -8,16 +11,16 @@ export interface CourseFile {
 	type: string;
 }
 
-export interface Section {
+export interface SectionDetail {
 	id: string;
 	title: string;
 	status: 'not-started' | 'in-progress' | 'completed';
 }
 
-export interface Chapter {
+export interface ChapterDetail {
 	id: string;
 	title: string;
-	sections: Section[];
+	sections: SectionDetail[];
 }
 
 export interface CourseDetailResponse {
@@ -30,44 +33,117 @@ export interface CourseDetailResponse {
 	objectives: string;
 	welcome_message?: string;
 	files: CourseFile[];
-	chapters: Chapter[];
+	chapters: ChapterDetail[];
 	enrolled_at: string;
 	status: string;
+	progress_percentage: number;
+	chat_id: string | null;
 }
 
-/**
- * Fetch course details including chapters, sections, and files
- * @param token - Authentication token
- * @param courseId - ID of the course
- * @returns A promise that resolves to the course details
- */
-export const getCourseById = async (token: string, courseId: string): Promise<CourseDetailResponse | null> => {
-	let error = null;
+export interface SectionProgressResponse {
+	chapter_id: string;
+	section_id: string;
+	status: string;
+	completed_at: string | null;
+}
 
-	const res = await fetch(`${TUTOR_API_BASE_URL}/student/courses/${courseId}`, {
-		method: 'GET',
+export interface ProgressSummaryResponse {
+	total_sections: number;
+	completed_sections: number;
+	progress_percentage: number;
+	sections: SectionProgressResponse[];
+	chat_id: string | null;
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+async function apiFetch<T>(
+	url: string,
+	token: string,
+	options: RequestInit = {}
+): Promise<T> {
+	const res = await fetch(url, {
+		...options,
 		headers: {
 			Accept: 'application/json',
 			'Content-Type': 'application/json',
-			authorization: `Bearer ${token}`
+			Authorization: `Bearer ${token}`,
+			...(options.headers ?? {})
 		}
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.then((json) => {
-			return json;
-		})
-		.catch((err) => {
-			error = err.detail || err;
-			console.log('Error fetching course:', err);
-			return null;
-		});
+	});
 
-	if (error) {
-		throw error;
+	if (!res.ok) {
+		const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+		throw err.detail ?? err;
 	}
 
-	return res;
+	// 204 No Content
+	if (res.status === 204) return undefined as unknown as T;
+	return res.json();
+}
+
+// ── API calls ──────────────────────────────────────────────────────────────
+
+/**
+ * Get full course details including chapters with per-section progress status.
+ */
+export const getCourseById = async (
+	token: string,
+	courseId: string
+): Promise<CourseDetailResponse> => {
+	return apiFetch<CourseDetailResponse>(
+		`${TUTOR_API_BASE_URL}/student/courses/${courseId}`,
+		token
+	);
+};
+
+/**
+ * Get progress summary for a course.
+ */
+export const getCourseProgress = async (
+	token: string,
+	courseId: string
+): Promise<ProgressSummaryResponse> => {
+	return apiFetch<ProgressSummaryResponse>(
+		`${TUTOR_API_BASE_URL}/student/courses/${courseId}/progress`,
+		token
+	);
+};
+
+/**
+ * Mark a section as completed (or update its status).
+ */
+export const updateSectionProgress = async (
+	token: string,
+	courseId: string,
+	chapterId: string,
+	sectionId: string,
+	status: 'not-started' | 'in-progress' | 'completed' = 'completed'
+): Promise<ProgressSummaryResponse> => {
+	return apiFetch<ProgressSummaryResponse>(
+		`${TUTOR_API_BASE_URL}/student/courses/${courseId}/progress`,
+		token,
+		{
+			method: 'PUT',
+			body: JSON.stringify({ chapter_id: chapterId, section_id: sectionId, status })
+		}
+	);
+};
+
+/**
+ * Save the AI chat session ID so the student can resume later.
+ */
+export const saveCourseChatId = async (
+	token: string,
+	courseId: string,
+	chatId: string
+): Promise<void> => {
+	return apiFetch<void>(
+		`${TUTOR_API_BASE_URL}/student/courses/${courseId}/chat`,
+		token,
+		{
+			method: 'PUT',
+			body: JSON.stringify({ chat_id: chatId })
+		}
+	);
 };
