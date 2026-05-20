@@ -1,0 +1,16 @@
+version: "3.9"
+services:
+  piston:
+    image: ghcr.io/engineer-man/piston
+    container_name: piston
+    restart: unless-stopped
+    ports:
+      - "2000:2000"
+    privileged: true
+    volumes:
+      - piston_data:/piston
+    environment:
+      - PISTON_RUN_TIMEOUT=5000
+      - PISTON_COMPILE_TIMEOUT=10000
+volumes:
+  piston_data:
