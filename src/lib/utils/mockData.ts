@@ -224,27 +224,43 @@ function generateDemoCourses() {
 	return [
 		{
 			id: 'demo-course-1',
-			name: 'Biology 101',
-			teacher: 'Dr. Sarah Mitchell',
-			progress: 72,
-			students: 28,
-			thumbnail: '/images/background.jpeg'
+			name: 'Introduction to Algorithmic',
+			teacher: 'Samia AHMED',
+			teacherAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Samia',
+			progress: 0,
+			students: 120,
+			thumbnail: '/images/course_algorithmic_1778276962153.png',
+			level: 'Beginner' as const
 		},
 		{
 			id: 'demo-course-2',
-			name: 'Algebra II',
-			teacher: 'Mr. James Rodriguez',
-			progress: 58,
-			students: 32,
-			thumbnail: '/images/background.jpeg'
+			name: 'The rise and explanation of Islam',
+			teacher: 'Ibrahim AMINE',
+			teacherAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ibrahim',
+			progress: 0,
+			students: 85,
+			thumbnail: '/images/course_islam_1778277060588.png',
+			level: 'Advanced' as const
 		},
 		{
 			id: 'demo-course-3',
-			name: 'World History',
-			teacher: 'Ms. Emily Chen',
-			progress: 85,
-			students: 25,
-			thumbnail: '/images/background.jpeg'
+			name: 'Number Sense and Calculations',
+			teacher: 'Ahmed SAMI',
+			teacherAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmed',
+			progress: 0,
+			students: 210,
+			thumbnail: '/images/course_numbers_1778277164994.png',
+			level: 'Intermediate' as const
+		},
+		{
+			id: 'demo-course-4',
+			name: 'Introduction to Big Data',
+			teacher: 'Samia AHMED',
+			teacherAvatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Samia',
+			progress: 0,
+			students: 150,
+			thumbnail: '/images/course_bigdata_1778277342073.png',
+			level: 'Intermediate' as const
 		}
 	];
 }
