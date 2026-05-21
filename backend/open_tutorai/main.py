@@ -8,25 +8,20 @@ from open_webui.config import CORS_ALLOW_ORIGIN
 from open_webui.models.users import Users
 from open_tutorai.config import AppConfig
 from open_tutorai.models.database import init_database
-
 from open_tutorai.routers import (
     response_feedbacks,
     auths,
     supports,
     blockly
 )
-
 from open_tutorai.env import (
     CHANGELOG,
 )
-
 # Version info
 VERSION = "1.0.0"
 TUTORAI_BUILD_HASH = os.getenv("TUTORAI_BUILD_HASH", "dev-build")
 os.environ["SUPPRESS_WEBUI_BANNER"] = "true"
-
-print(
-    rf"""
+print(rf"""
  ██████╗ ██████╗ ███████╗███╗   ██╗    ████████╗██╗   ██╗████████╗ ██████╗ ██████╗    █████╗ ██╗
 ██╔═══██╗██╔══██╗██╔════╝████╗  ██║    ╚══██╔══╝██║   ██║╚══██╔══╝██╔═══██╗██╔══██╗  ██╔══██╗██║
 ██║   ██║██████╔╝█████╗  ██╔██╗ ██║       ██║   ██║   ██║   ██║   ██║   ██║██████╔╝  ███████║██║
@@ -34,18 +29,14 @@ print(
 ╚██████╔╝██║     ███████╗██║ ╚████║       ██║   ╚██████╔╝   ██║   ╚██████╔╝██║  ██║  ██║  ██║██║
  ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝       ╚═╝    ╚═════╝    ╚═╝    ╚═════╝ ╚═╝  ╚═╝  ╚═╝  ╚═╝╚═╝
 v{VERSION} - empowering education through open-source AI tutoring.
-
 {f"Commit: {TUTORAI_BUILD_HASH}" if TUTORAI_BUILD_HASH != "dev-build" else ""}
-https://github.com/R2D-dev/open-tutor-ai-CE
-"""
-)
-
+https://github.com/Open-TutorAi/open-tutor-ai-CE
+""")
 # Create main FastAPI app
 app = FastAPI(
     title="Open TutorAI",
     version=VERSION,
 )
-
 # Handle wildcard origin with credentials by reflecting request origin
 origins = CORS_ALLOW_ORIGIN
 allow_origin_regex = None
@@ -61,8 +52,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.state.config = AppConfig()
-# app.state.USER_COUNT = 10
-
 # Initialize the database tables on startup
 @app.on_event("startup")
 async def startup_db_client():
@@ -72,23 +61,17 @@ async def startup_db_client():
         print("Support database tables initialized successfully")
     except Exception as e:
         print(f"Error initializing database tables: {str(e)}")
-
-
 # Health check endpoint
 @app.post("/tutorai/health")
 async def health_check():
     return {"status": "okay"}
-
-
 # Include routers of open_tutorai
 app.include_router(response_feedbacks.router, prefix="/api/v1", tags=["response-feedbacks"])
 app.include_router(auths.router, prefix="/auths", tags=["auths"])
 app.include_router(supports.router, prefix="/api/v1", tags=["supports"])
 app.include_router(blockly.router, prefix="/api/blockly", tags=["blockly"])
-
 @app.get("/api/changelog")
 async def get_app_changelog():
     return {key: CHANGELOG[key] for idx, key in enumerate(CHANGELOG) if idx < 5}
-
 # Mount the entire OpenWebUI app
 app.mount("/", webui_app)
