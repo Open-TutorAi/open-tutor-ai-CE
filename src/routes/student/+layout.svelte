@@ -15,7 +15,61 @@
 	import { generateDemoData } from '$lib/utils/mockData';
 	import { toast } from 'svelte-sonner';
 
+// ─────────────────────────────────────────────────────────────
+// Active Page Logic + Course Context Management (UPDATED)
+// ─────────────────────────────────────────────────────────────
 	const activePage = writable('dashboard');
+
+	$: {
+		const path = $page.url.pathname;
+		const hasActiveCourse = typeof window !== 'undefined' && 
+							!!localStorage.getItem('activeCourseData');
+
+		console.log('Current Path:', path);                    // ← Debug
+		console.log('Has Active Course:', hasActiveCourse);    // ← Debug
+
+		if (path.startsWith('/student/classrooms')) {
+			activePage.set('classrooms');
+		} 
+		else if (path.includes('/c/') || path.includes('/chat')) {
+			// هنا المشكل كان
+			activePage.set(hasActiveCourse ? 'classrooms' : 'support');
+		} 
+		else if (path.includes('support') || path.startsWith('/student/supports')) {
+			activePage.set('support');
+		} 
+		else if (path.startsWith('/student/assignments')) {
+			activePage.set('assignments');
+		} 
+		else if (path.startsWith('/student/messages')) {
+			activePage.set('messages');
+		} 
+		else if (path.startsWith('/student/settings') || path.startsWith('/student/profile')) {
+			activePage.set('settings');
+		} 
+		else {
+			activePage.set('dashboard');
+		}
+
+		console.log('Active Page Set To:', get(activePage)); // ← Debug
+	}
+
+	// Cleanup when leaving course context
+	$: {
+		const path = $page.url.pathname;
+		if (typeof window !== 'undefined') {
+			const isInCourseContext = 
+				path.startsWith('/student/classrooms') ||
+				path.includes('/c/') ||
+				path.includes('/chat');
+
+			if (!isInCourseContext) {
+				localStorage.removeItem('activeCourseData');
+				localStorage.removeItem('pendingCourseData');
+				localStorage.removeItem('resumeCourseChat');
+			}
+		}
+	}
 	let isSidebarOpen = true;
 	let username = '';
 

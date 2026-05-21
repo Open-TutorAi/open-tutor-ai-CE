@@ -5,9 +5,10 @@
 	import { page } from '$app/stores';
 	import { isFullscreenAvatar } from '$lib/stores';
 	
-	let chatData: any = {};
+	let chatData = {};
 	let isRightBarVisible = false;
 	
+	// Typage ajouté pour résoudre le conflit
 	function handleChatEvent(event: any) {
 		// Process chat events and update rightbar if needed
 		chatData = {...chatData, ...event.detail};
@@ -62,7 +63,7 @@
 		<div class="rightbar-container h-full w-80 bg-[#F5F7F9] dark:bg-gray-900 rounded-2xl shadow-sm overflow-y-auto transition-transform duration-300 ease-in-out"
 			class:mobile-visible={isRightBarVisible}
 		>
-			<RightBar {...chatData} />
+			<RightBar {chatData} />
 		</div>
 	{/if}
 </div>
