@@ -7,9 +7,12 @@
 
 	import Sidebar from '$lib/components/student/elements/Sidebar.svelte';
 	import Navbar from '$lib/components/student/elements/Navbar.svelte';
+	import DemoModeBanner from '$lib/components/DemoModeBanner.svelte';
 
 	import { getModels, getVersionUpdates } from '$lib/apis';
-	import { config, user, settings, models, theme } from '$lib/stores';
+	import { config, user, settings, models, theme, isDemo, demoData, originalUserData, isFullscreenAvatar} from '$lib/stores';
+	import { generateDemoData } from '$lib/utils/mockData';
+	import { toast } from 'svelte-sonner';
 
 	const activePage = writable('dashboard');
 	let isSidebarOpen = true;
@@ -50,8 +53,51 @@
 		localStorage.setItem('theme', newTheme);
 	}
 
+	function toggleDemoMode() {
+		if ($isDemo) {
+			// Exit demo mode
+			if ($originalUserData) {
+				user.set($originalUserData);
+				originalUserData.set(null);
+			}
+			demoData.set({
+				dashboard: null,
+				chats: [],
+				supports: [],
+				assignments: [],
+				courses: []
+			});
+			isDemo.set(false);
+			localStorage.removeItem('demoMode');
+			toast.success('Demo mode deactivated. Back to your real data.');
+		} else {
+			// Enter demo mode
+			originalUserData.set($user);
+			const mockData = generateDemoData();
+			demoData.set(mockData);
+			isDemo.set(true);
+			localStorage.setItem('demoMode', 'true');
+			toast.success('Demo mode activated. You\'re now exploring with sample data.');
+		}
+	}
+
 	onMount(async () => {
 		console.log('Student layout mounted');
+		
+		// Check if demo mode was previously active
+		const wasDemoMode = localStorage.getItem('demoMode') === 'true';
+		if (wasDemoMode && !$isDemo) {
+			console.log('Restoring demo mode from localStorage');
+			const mockData = generateDemoData();
+			originalUserData.set($user);
+			demoData.set(mockData);
+			isDemo.set(true);
+		} else if ($isDemo && $demoData.chats.length === 0) {
+			// Ensure demo data is loaded
+			const mockData = generateDemoData();
+			demoData.set(mockData);
+		}
+		
 		models.set(
 			await getModels(
 				localStorage.token,
@@ -102,30 +148,39 @@
 <div
 	class="flex h-screen overflow-hidden bg-[#F4F7FE] dark:bg-gray-900 transition-colors duration-200 ease-in-out"
 >
-	<!-- Sidebar with adaptive behavior -->
-	<div class={`sidebar-container ${isSidebarOpen ? '' : 'collapsed'}`}>
-		<Sidebar {isSidebarOpen} {activePage} isDarkMode={currentIsDarkMode} />
-	</div>
+	<!-- Sidebar with adaptive behavior - hide in fullscreen -->
+	{#if !$isFullscreenAvatar}
+		<div class={`sidebar-container ${isSidebarOpen ? '' : 'collapsed'}`}>
+			<Sidebar {isSidebarOpen} {activePage} isDarkMode={currentIsDarkMode} />
+		</div>
+	{/if}
 
 	<!-- Main content area with navbar and slot -->
 	<div class="flex-1 flex flex-col overflow-hidden relative z-10 bg-[#F4F7FE] dark:bg-gray-900">
-		<Navbar
-			{username}
-			{toggleSidebar}
-			isDarkMode={currentIsDarkMode}
-			on:darkModeToggle={toggleDarkMode}
-		/>
+		<!-- Hide navbar in fullscreen -->
+		{#if !$isFullscreenAvatar}
+			<Navbar
+				{username}
+				{toggleSidebar}
+				isDarkMode={currentIsDarkMode}
+				on:darkModeToggle={toggleDarkMode}
+			/>
+		{/if}
+
+		{#if $isDemo}
+			<DemoModeBanner on:toggle={toggleDemoMode} />
+		{/if}
 
 		<!-- Main content with proper scrolling -->
 		<div
-			class="flex-1 overflow-y-auto p-4 md:p-6 bg-[#F4F7FE] dark:bg-gray-900 text-gray-800 dark:text-gray-100"
+			class="flex-1 overflow-y-auto {$isFullscreenAvatar ? '' : 'p-4 md:p-6'} bg-[#F4F7FE] dark:bg-gray-900 text-gray-800 dark:text-gray-100"
 		>
 			<slot />
 		</div>
 	</div>
 
-	<!-- Mobile sidebar overlay when open on mobile - lower z-index than content -->
-	{#if isMobile && isSidebarOpen}
+	<!-- Mobile sidebar overlay when open on mobile - lower z-index than content - hide in fullscreen -->
+	{#if isMobile && isSidebarOpen && !$isFullscreenAvatar}
 		<div
 			class="fixed inset-0 bg-black bg-opacity-70 z-5"
 			on:click={() => {
