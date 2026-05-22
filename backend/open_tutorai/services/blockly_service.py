@@ -1,5 +1,10 @@
+# backend/open_tutorai/services/blockly_service.py
+import asyncio
 import uuid
+import io
 import json
+import traceback
+import time
 import requests
 from typing import AsyncGenerator, Optional, List
 from sqlalchemy.orm import Session
@@ -8,14 +13,77 @@ from open_tutorai.schemas.blockly import (
     ExecutionResult, TestCaseResult, BlocklyTestResponse
 )
 from open_tutorai.models.blockly_submission import BlocklySubmission, BlocklyWorkspaceDraft
-from open_tutorai.services.executor import Judge0Executor
+
+
+class PythonExecutor:
+
+    TIMEOUT_SECONDS = 5
+    MAX_OUTPUT_LENGTH = 10_000
+
+    async def execute(self, code: str) -> ExecutionResult:
+        start = time.time()
+        try:
+            result = await asyncio.wait_for(
+                asyncio.get_event_loop().run_in_executor(None, self._sync_execute, code),
+                timeout=self.TIMEOUT_SECONDS
+            )
+            result.execution_time_ms = (time.time() - start) * 1000
+            return result
+        except asyncio.TimeoutError:
+            return ExecutionResult(
+                error="Délai dépassé : max 5s",
+                timed_out=True,
+                execution_time_ms=self.TIMEOUT_SECONDS * 1000
+            )
+        except Exception as e:
+            return ExecutionResult(
+                error=f"Erreur : {str(e)}",
+                execution_time_ms=(time.time() - start) * 1000
+            )
+
+    def _sync_execute(self, code: str) -> ExecutionResult:
+        stdout_capture = io.StringIO()
+        safe_builtins = {
+            'print': lambda *args, **kwargs: print(*args, **kwargs, file=stdout_capture),
+            'len': len, 'range': range, 'int': int, 'float': float,
+            'str': str, 'bool': bool, 'list': list, 'dict': dict,
+            'tuple': tuple, 'set': set, 'abs': abs, 'max': max,
+            'min': min, 'sum': sum, 'sorted': sorted, 'reversed': reversed,
+            'enumerate': enumerate, 'zip': zip, 'map': map, 'filter': filter,
+            'round': round, 'pow': pow, 'divmod': divmod, 'type': type,
+            'isinstance': isinstance, 'input': self._mock_input,
+            'True': True, 'False': False, 'None': None,
+        }
+        namespace = {'__builtins__': safe_builtins}
+        try:
+            exec(code, namespace)
+            stdout = stdout_capture.getvalue()
+            if len(stdout) > self.MAX_OUTPUT_LENGTH:
+                stdout = stdout[:self.MAX_OUTPUT_LENGTH] + "\n[...tronqué]"
+            return ExecutionResult(stdout=stdout, stderr="")
+        except SyntaxError as e:
+            return ExecutionResult(
+                error=f"Erreur de syntaxe ligne {e.lineno}: {e.msg}",
+                stderr=str(e)
+            )
+        except NameError as e:
+            return ExecutionResult(error=f"Variable non définie: {e}", stderr=str(e))
+        except Exception as e:
+            return ExecutionResult(
+                error=f"{type(e).__name__}: {str(e)}",
+                stderr=traceback.format_exc()
+            )
+
+    @staticmethod
+    def _mock_input(prompt=""):
+        return ""
 
 
 class BlocklyService:
 
     def __init__(self, db: Session):
         self.db = db
-        self.executor = Judge0Executor()
+        self.executor = PythonExecutor()
 
     def get_assignment(self, assignment_id: str, student_id: str) -> Optional[dict]:
         return {
@@ -39,10 +107,12 @@ class BlocklyService:
     async def run_test_cases(self, python_code: str, test_cases: list) -> List[TestCaseResult]:
         results = []
         for i, tc in enumerate(test_cases):
-            inputs = tc.get("inputs", {})
-            stdin_lines = "\n".join(str(v) for v in inputs.values()) if inputs else ""
-            result = await self.executor.execute(python_code, stdin=stdin_lines)
-            actual_output = (result.stdout or "").strip()
+            input_setup = "\n".join(
+                f"{k} = {repr(v)}" for k, v in tc.get("inputs", {}).items()
+            )
+            full_code = f"{input_setup}\n{python_code}" if input_setup else python_code
+            result = await self.executor.execute(full_code)
+            actual_output = result.stdout.strip()
             expected = str(tc["expected_output"]).strip()
             results.append(TestCaseResult(
                 index=i + 1,
@@ -50,7 +120,6 @@ class BlocklyService:
                 expected=expected,
                 got=actual_output,
                 description=tc.get("description"),
-                error=result.error,
             ))
         return results
 
@@ -86,8 +155,11 @@ class BlocklyService:
         student_level: str = "débutant",
         **kwargs
     ) -> AsyncGenerator[str, None]:
+        """Génère un feedback pédagogique via Ollama."""
+
         passed_count = sum(1 for r in test_results if r.passed)
         total_count = len(test_results)
+
         prompt = f"""Tu es un tuteur Python. Réponds en français uniquement.
 
 L'étudiant a soumis ce code pour l'exercice "{assignment['title']}":
@@ -107,7 +179,10 @@ En 3 phrases maximum :
                     "model": "qwen2.5:0.5b",
                     "prompt": prompt,
                     "stream": True,
-                    "options": {"temperature": 0.7, "num_predict": 200}
+                    "options": {
+                        "temperature": 0.7,
+                        "num_predict": 200,
+                    }
                 },
                 stream=True,
                 timeout=120
