@@ -1,9 +1,7 @@
 <script>
   import { onMount } from "svelte";
-  import { get } from "svelte/store";
   import BlocklyEditor from "$lib/components/blockly/BlocklyEditor.svelte";
 
-  // ─── Niveaux de progression ──────────────────────────────────────────────
   const LEVELS = ["débutant", "intermédiaire", "avancé"];
 
   const THEMES_BY_LEVEL = {
@@ -18,28 +16,20 @@
     "avancé":        "implémenter un algorithme complet avec des fonctions",
   };
 
-  // Nombre d'exercices réussis consécutivement avant de passer au niveau suivant
   const PASS_THRESHOLD = 2;
-  // Score minimum pour considérer un exercice "réussi"
   const PASS_SCORE = 70;
 
-  // ─── État global ─────────────────────────────────────────────────────────
-  let phase = "loading"; // loading | exercise | success | levelUp | finished | error
-
-  let currentLevelIndex = 0;           // 0=débutant 1=intermédiaire 2=avancé
-  let consecutiveSuccesses = 0;        // réussites consécutives au niveau courant
+  let phase = "loading";
+  let currentLevelIndex = 0;
+  let consecutiveSuccesses = 0;
   let totalExercisesDone = 0;
   let lastScore = 0;
   let errorMessage = "";
   let streamedText = "";
   let generationProgress = 0;
-
-  // L'exercice courant généré par l'IA
-  let exercise = null;         // { title, description, difficulty, allowed_blocks, test_cases, hints }
-  let assignmentId = null;     // ID retourné après génération
-
-  // Historique de progression pour afficher le parcours
-  let progressHistory = [];    // [{ level, title, score, passed }]
+  let exercise = null;
+  let assignmentId = null;
+  let progressHistory = [];
 
   $: currentLevel = LEVELS[currentLevelIndex];
   $: isLastLevel = currentLevelIndex === LEVELS.length - 1;
@@ -48,25 +38,20 @@
     (LEVELS.length * PASS_THRESHOLD)) * 100
   );
 
-  // ─── Démarrage automatique ───────────────────────────────────────────────
   onMount(async () => {
-    // Essayer de récupérer le niveau sauvegardé (localStorage)
     const saved = localStorage.getItem("blockly_student_progress");
     if (saved) {
       try {
         const data = JSON.parse(saved);
-        currentLevelIndex   = data.levelIndex   ?? 0;
-        consecutiveSuccesses = data.successes    ?? 0;
-        progressHistory     = data.history       ?? [];
-        totalExercisesDone  = data.total         ?? 0;
-      } catch {
-        // Ignorer si corrompu
-      }
+        currentLevelIndex    = data.levelIndex  ?? 0;
+        consecutiveSuccesses = data.successes   ?? 0;
+        progressHistory      = data.history     ?? [];
+        totalExercisesDone   = data.total       ?? 0;
+      } catch {}
     }
     await generateExercise();
   });
 
-  // ─── Sauvegarder la progression ──────────────────────────────────────────
   function saveProgress() {
     localStorage.setItem("blockly_student_progress", JSON.stringify({
       levelIndex: currentLevelIndex,
@@ -76,17 +61,12 @@
     }));
   }
 
-  // ─── Générer un exercice pour le niveau courant ──────────────────────────
   async function generateExercise() {
-    phase         = "loading";
-    streamedText  = "";
-    exercise      = null;
-    assignmentId  = null;
-    errorMessage  = "";
-    generationProgress = 0;
+    phase = "loading"; streamedText = ""; exercise = null;
+    assignmentId = null; errorMessage = ""; generationProgress = 0;
 
-    const themes   = THEMES_BY_LEVEL[currentLevel];
-    const theme    = themes[Math.floor(Math.random() * themes.length)];
+    const themes = THEMES_BY_LEVEL[currentLevel];
+    const theme  = themes[Math.floor(Math.random() * themes.length)];
     const objective = OBJECTIVES_BY_LEVEL[currentLevel];
 
     try {
@@ -94,9 +74,7 @@
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders() },
         body: JSON.stringify({
-          theme,
-          level:          currentLevel,
-          objective,
+          theme, level: currentLevel, objective,
           num_test_cases: currentLevel === "avancé" ? 4 : 3,
         }),
       });
@@ -106,15 +84,13 @@
         throw new Error(err.detail || `Erreur serveur ${res.status}`);
       }
 
-      const reader  = res.body.getReader();
+      const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let buffer   = "";
-      let fullJson = "";
+      let buffer = ""; let fullJson = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n");
         buffer = lines.pop();
@@ -128,8 +104,8 @@
             fullJson += event.content;
             streamedText = fullJson;
             generationProgress = Math.min(95, Math.round((fullJson.length / 800) * 100));
-          }  else if (event.type === "done") {
-                assignmentId = event.assignment_id ?? crypto.randomUUID();
+          } else if (event.type === "done") {
+            assignmentId = event.assignment_id ?? crypto.randomUUID();
             try { exercise = JSON.parse(fullJson); } catch { exercise = null; }
             generationProgress = 100;
             phase = "exercise";
@@ -139,855 +115,460 @@
         }
       }
 
-      // Fallback si le serveur ne renvoie pas d'event "done"
       if (phase === "loading" && fullJson) {
         try { exercise = JSON.parse(fullJson); } catch { exercise = null; }
         phase = exercise ? "exercise" : "error";
         errorMessage = exercise ? "" : "L'IA n'a pas pu générer un exercice valide.";
       }
-
     } catch (e) {
-      errorMessage = e.message;
-      phase = "error";
+      errorMessage = e.message; phase = "error";
     }
   }
 
-  // ─── Callback quand l'élève soumet son code ───────────────────────────────
-  // BlocklyEditor appelle onSubmit({ score, passed }) quand il reçoit le résultat
   function handleSubmit(event) {
     const { score } = event.detail ?? event;
     lastScore = score ?? 0;
     totalExercisesDone += 1;
-
     const passed = lastScore >= PASS_SCORE;
 
-    // Enregistrer dans l'historique
     progressHistory = [...progressHistory, {
-      level:  currentLevel,
-      title:  exercise?.title ?? "Exercice",
-      score:  lastScore,
-      passed,
+      level: currentLevel, title: exercise?.title ?? "Exercice",
+      score: lastScore, passed,
     }];
 
-    if (passed) {
-      consecutiveSuccesses += 1;
-    } else {
-      // Un échec réinitialise le compteur de réussites consécutives
-      consecutiveSuccesses = 0;
-    }
+    if (passed) { consecutiveSuccesses += 1; }
+    else        { consecutiveSuccesses = 0; }
 
     saveProgress();
 
-    // Vérifier si l'élève passe au niveau suivant
     if (consecutiveSuccesses >= PASS_THRESHOLD) {
       consecutiveSuccesses = 0;
-      if (isLastLevel) {
-        phase = "finished";
-      } else {
-        phase = "levelUp";
-      }
+      phase = isLastLevel ? "finished" : "levelUp";
     } else {
       phase = "success";
     }
   }
 
-  // ─── Continuer après l'affichage du résultat ─────────────────────────────
-  async function continueAfterSuccess() {
-    await generateExercise();
-  }
-
-  async function continueAfterLevelUp() {
-    currentLevelIndex += 1;
-    saveProgress();
-    await generateExercise();
-  }
+  async function continueAfterSuccess()  { await generateExercise(); }
+  async function continueAfterLevelUp()  { currentLevelIndex += 1; saveProgress(); await generateExercise(); }
 
   function resetProgress() {
-    currentLevelIndex    = 0;
-    consecutiveSuccesses = 0;
-    totalExercisesDone   = 0;
-    lastScore            = 0;
-    progressHistory      = [];
+    currentLevelIndex = 0; consecutiveSuccesses = 0;
+    totalExercisesDone = 0; lastScore = 0; progressHistory = [];
     localStorage.removeItem("blockly_student_progress");
     generateExercise();
   }
 
-  // ─── Auth helper ─────────────────────────────────────────────────────────
   function authHeaders() {
     const token = localStorage.getItem("token");
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
-  // ─── Couleurs par niveau ──────────────────────────────────────────────────
-  const levelColors = {
-    "débutant":      { bg: "#e8f5e9", text: "#2e7d32", border: "#a5d6a7", accent: "#4caf50" },
-    "intermédiaire": { bg: "#fff3e0", text: "#e65100", border: "#ffcc80", accent: "#ff9800" },
-    "avancé":        { bg: "#fce4ec", text: "#880e4f", border: "#f48fb1", accent: "#e91e63" },
+  const LEVEL_CFG = {
+    "débutant":      { icon:"🌱", label:"Débutant",      color:"#10B981", bg:"#ECFDF5", border:"#6EE7B7" },
+    "intermédiaire": { icon:"🔥", label:"Intermédiaire", color:"#F59E0B", bg:"#FFFBEB", border:"#FDE68A" },
+    "avancé":        { icon:"⚡", label:"Avancé",        color:"#EF4444", bg:"#FEF2F2", border:"#FECACA" },
   };
-
-  const levelIcons = { "débutant": "🌱", "intermédiaire": "🔥", "avancé": "⚡" };
-  const levelLabels = { "débutant": "Débutant", "intermédiaire": "Intermédiaire", "avancé": "Avancé" };
 </script>
 
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
 
-  * { box-sizing: border-box; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  .page {
-    font-family: 'DM Sans', sans-serif;
-    background: #f7f5f0;
-    min-height: 100vh;
-    padding: 0;
-    color: #1a1a1a;
-  }
+:root {
+  --white:  #FFFFFF;
+  --bg:     #F0F4FF;
+  --border: #E0E7FF;
+  --bd2:    #C7D2FE;
+  --ink:    #0F172A;
+  --ink2:   #1E293B;
+  --ink3:   #475569;
+  --ink4:   #94A3B8;
+  --indigo: #4F46E5;
+  --violet: #7C3AED;
+  --green:  #10B981;
+  --amber:  #F59E0B;
+  --red:    #EF4444;
+  --ff: 'Nunito', sans-serif;
+  --fm: 'JetBrains Mono', monospace;
+  --r: 14px;
+}
 
-  /* ── Header barre de progression ── */
-  .progress-header {
-    background: #fff;
-    border-bottom: 1px solid #e8e5de;
-    padding: 14px 32px;
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
+:global(body) { margin:0; padding:0; background:var(--bg); font-family:var(--ff); color:var(--ink); }
 
-  .level-steps {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
+/* ── PAGE ── */
+.page { display:flex; flex-direction:column; min-height:100vh; }
 
-  .level-step {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
+/* ── TOPBAR ── */
+.topbar {
+  height: 54px;
+  background: var(--white); border-bottom: 2px solid var(--border);
+  display: flex; align-items: center; padding: 0 24px; gap: 16px;
+  position: sticky; top: 0; z-index: 20;
+  box-shadow: 0 2px 8px rgba(15,23,42,.05);
+  flex-shrink: 0;
+}
 
-  .step-dot {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    border: 2px solid #e0ddd6;
-    background: #f7f5f0;
-    color: #bbb;
-    font-weight: 600;
-    transition: all 0.3s;
-  }
-  .step-dot.done   { background: #1a1a1a; border-color: #1a1a1a; color: #c8f07a; }
-  .step-dot.active { background: #fff; border-color: #1a1a1a; color: #1a1a1a; box-shadow: 0 0 0 3px rgba(26,26,26,0.1); }
+.tb-brand { display:flex; align-items:center; gap:9px; flex-shrink:0; }
+.tb-logo {
+  width:34px; height:34px; border-radius:10px;
+  background:linear-gradient(135deg,var(--indigo),var(--violet));
+  display:flex; align-items:center; justify-content:center;
+  font-size:.95rem; box-shadow:0 3px 10px rgba(79,70,229,.3);
+}
+.tb-name { font-size:1rem; font-weight:900; color:var(--indigo); letter-spacing:-.02em; }
+.tb-tag {
+  font-size:.6rem; font-weight:900; text-transform:uppercase; letter-spacing:.05em;
+  background:linear-gradient(135deg,var(--indigo),#EC4899); color:#fff;
+  padding:2px 9px; border-radius:20px;
+}
 
-  .step-label {
-    font-size: 12px;
-    color: #aaa;
-    font-weight: 500;
-  }
-  .step-label.active { color: #1a1a1a; }
-  .step-label.done   { color: #666; }
+/* Level steps */
+.tb-levels { display:flex; align-items:center; gap:6px; flex:1; justify-content:center; }
+.lv-step { display:flex; align-items:center; gap:5px; }
+.lv-dot {
+  width:30px; height:30px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.8rem; font-weight:700; border:2px solid var(--border);
+  background:var(--bg); color:var(--ink4); transition:all .25s;
+}
+.lv-dot.done   { background:var(--indigo); border-color:var(--indigo); color:#fff; }
+.lv-dot.active { background:var(--white); border-color:var(--indigo); color:var(--indigo); box-shadow:0 0 0 3px rgba(79,70,229,.15); }
+.lv-name { font-size:.74rem; font-weight:700; color:var(--ink4); transition:color .2s; }
+.lv-name.active { color:var(--indigo); }
+.lv-name.done   { color:var(--ink3); }
+.lv-arrow { color:var(--border); font-size:.8rem; }
 
-  .step-arrow { color: #ddd; font-size: 12px; }
+.tb-right { display:flex; align-items:center; gap:10px; flex-shrink:0; }
 
-  .header-right {
-    margin-left: auto;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
+/* Progress mini */
+.prog-mini { display:flex; align-items:center; gap:7px; }
+.pm-bar { width:80px; height:6px; background:var(--border); border-radius:20px; overflow:hidden; }
+.pm-fill { height:100%; background:linear-gradient(90deg,var(--indigo),#EC4899); border-radius:20px; transition:width .6s ease; }
+.pm-pct { font-size:.7rem; font-weight:800; color:var(--ink3); }
 
-  .mini-progress {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .mini-bar {
-    width: 100px;
-    height: 6px;
-    background: #e8e5de;
-    border-radius: 99px;
-    overflow: hidden;
-  }
-  .mini-bar-fill {
-    height: 100%;
-    background: #1a1a1a;
-    border-radius: 99px;
-    transition: width 0.5s ease;
-  }
-  .mini-pct { font-size: 12px; color: #888; font-weight: 500; }
+/* Pips */
+.pips { display:flex; gap:5px; align-items:center; }
+.pip { width:10px; height:10px; border-radius:50%; border:2px solid var(--border); background:var(--bg); transition:all .2s; }
+.pip.on { background:var(--green); border-color:var(--green); }
 
-  .successes-pips {
-    display: flex;
-    gap: 4px;
-    align-items: center;
-  }
-  .pip {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    border: 1.5px solid #ccc;
-    background: #f0f0f0;
-    transition: all 0.2s;
-  }
-  .pip.filled { background: #4caf50; border-color: #4caf50; }
+/* ── MAIN CONTENT ── */
+.main { flex:1; display:flex; flex-direction:column; }
 
-  /* ── Contenu principal ── */
-  .main {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 40px 24px;
-  }
+/* ─────────────────────────────────
+   LOADING
+───────────────────────────────── */
+.loading-screen {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  flex:1; gap:24px; padding:60px 20px; text-align:center;
+}
+.ai-orb {
+  width:72px; height:72px; border-radius:50%; position:relative;
+  background:conic-gradient(var(--indigo),var(--violet),#EC4899,var(--indigo));
+  animation:orb-spin 2s linear infinite;
+  box-shadow:0 0 32px rgba(79,70,229,.3);
+}
+.ai-orb::after {
+  content:""; position:absolute; inset:6px;
+  background:var(--bg); border-radius:50%;
+}
+@keyframes orb-spin { to{transform:rotate(360deg)} }
+.loading-title { font-size:1.4rem; font-weight:900; color:var(--ink); }
+.loading-sub { font-size:.85rem; color:var(--ink3); max-width:300px; line-height:1.7; }
+.gen-track { width:240px; height:5px; background:var(--border); border-radius:20px; overflow:hidden; }
+.gen-fill { height:100%; background:linear-gradient(90deg,var(--indigo),#EC4899); border-radius:20px; transition:width .4s ease; }
 
-  /* ── Écran de chargement ── */
-  .loading-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 100px 40px;
-    gap: 28px;
-    text-align: center;
-  }
+/* ─────────────────────────────────
+   EXERCISE PHASE — full height layout
+───────────────────────────────── */
+.exercise-phase {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: fade-up .4s ease both;
+}
+@keyframes fade-up { from{opacity:0;transform:translateY(12px)} }
 
-  .ai-orb {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: conic-gradient(#c8f07a, #1a1a1a, #c8f07a);
-    animation: spin 2s linear infinite;
-    position: relative;
-  }
-  .ai-orb::after {
-    content: "";
-    position: absolute;
-    inset: 6px;
-    background: #f7f5f0;
-    border-radius: 50%;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+/* Sub-header: niveau badge + exercice num */
+.ex-subheader {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 20px; background:var(--white);
+  border-bottom:2px solid var(--border); flex-shrink:0;
+}
+.lv-badge {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:4px 13px; border-radius:20px; font-size:.72rem; font-weight:800;
+  border:2px solid;
+}
+.ex-num-txt { font-size:.72rem; color:var(--ink4); font-weight:700; margin-left:auto; }
 
-  .loading-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: 26px;
-    font-style: italic;
-  }
-  .loading-sub { font-size: 14px; color: #888; max-width: 300px; line-height: 1.7; }
+/* BlocklyEditor takes all remaining space */
+.editor-wrap { flex:1; overflow:hidden; display:flex; flex-direction:column; }
 
-  .gen-bar-wrap {
-    width: 260px;
-    height: 4px;
-    background: #e0ddd6;
-    border-radius: 99px;
-    overflow: hidden;
-  }
-  .gen-bar-fill {
-    height: 100%;
-    background: #1a1a1a;
-    border-radius: 99px;
-    transition: width 0.4s ease;
-  }
+/* ─────────────────────────────────
+   RESULT SCREEN
+───────────────────────────────── */
+.result-screen {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  flex:1; gap:22px; padding:60px 24px; text-align:center;
+  animation:fade-up .4s ease both;
+}
+.res-emoji { font-size:3.5rem; }
+.res-ring {
+  width:90px; height:90px; border-radius:50%; border:6px solid var(--border);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  position:relative;
+}
+.res-ring.pass { border-color:var(--green); }
+.res-ring.fail { border-color:var(--red); }
+.res-score { font-size:1.7rem; font-weight:900; font-family:var(--fm); }
+.res-denom { font-size:.72rem; color:var(--ink4); }
+.res-title { font-size:1.4rem; font-weight:900; color:var(--ink); }
+.res-sub { font-size:.85rem; color:var(--ink3); max-width:360px; line-height:1.7; }
+.btn-continue {
+  padding:11px 28px; background:linear-gradient(135deg,var(--indigo),var(--violet));
+  border:none; color:#fff; border-radius:var(--r);
+  font-family:var(--ff); font-size:.88rem; font-weight:900;
+  cursor:pointer; transition:all .15s;
+  box-shadow:0 4px 14px rgba(79,70,229,.3);
+}
+.btn-continue:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(79,70,229,.4); }
 
-  /* ── Exercice ── */
-  .exercise-section {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    animation: fadeUp 0.5s ease;
-  }
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
+/* ─────────────────────────────────
+   LEVEL UP
+───────────────────────────────── */
+.levelup-screen {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  flex:1; gap:24px; padding:60px 24px; text-align:center;
+  animation:fade-up .4s ease both;
+}
+.lu-rocket { font-size:4rem; animation:rocket-bounce .6s ease-in-out infinite alternate; }
+@keyframes rocket-bounce { from{transform:translateY(0)} to{transform:translateY(-12px)} }
+.lu-title { font-size:1.8rem; font-weight:900; color:var(--ink); }
+.lu-sub { font-size:.88rem; color:var(--ink3); max-width:360px; line-height:1.7; }
+.lu-next-card {
+  background:var(--white); border:2px solid var(--border); border-radius:var(--r);
+  padding:18px 24px; display:flex; align-items:center; gap:14px;
+  min-width:280px; box-shadow:0 4px 16px rgba(0,0,0,.06);
+}
+.lu-next-icon { font-size:2rem; }
+.lu-next-info { text-align:left; }
+.lu-next-lbl { font-size:.6rem; font-weight:900; text-transform:uppercase; letter-spacing:.08em; color:var(--ink4); margin-bottom:4px; }
+.lu-next-name { font-size:1rem; font-weight:900; color:var(--ink); }
 
-  .ex-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .level-badge {
-    padding: 5px 14px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    border: 1.5px solid;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-  .ex-num {
-    font-size: 13px;
-    color: #aaa;
-    margin-left: auto;
-  }
+/* ─────────────────────────────────
+   FINISHED
+───────────────────────────────── */
+.finished-screen {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  flex:1; gap:22px; padding:60px 24px; text-align:center;
+  animation:fade-up .4s ease both;
+}
+.trophy { font-size:5rem; animation:trophy-spin 1s ease .2s both; }
+@keyframes trophy-spin { from{transform:rotateY(-90deg);opacity:0} to{transform:rotateY(0);opacity:1} }
+.fin-title { font-size:1.6rem; font-weight:900; color:var(--ink); }
+.fin-sub { font-size:.85rem; color:var(--ink3); max-width:380px; line-height:1.7; }
 
-  .ex-card {
-    background: #fff;
-    border: 1px solid #e8e5de;
-    border-radius: 16px;
-    overflow: hidden;
-  }
-  .ex-card-top {
-    padding: 28px 32px 22px;
-    border-bottom: 1px solid #f0ede6;
-  }
-  .ex-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: 24px;
-    margin-bottom: 10px;
-    letter-spacing: -0.3px;
-  }
-  .ex-desc { font-size: 15px; color: #444; line-height: 1.75; }
+.history-list { display:flex; flex-direction:column; gap:6px; width:100%; max-width:460px; text-align:left; }
+.hist-item {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 13px; background:var(--white);
+  border:2px solid var(--border); border-radius:var(--r);
+  font-size:.78rem;
+}
+.hist-lv-badge { padding:2px 9px; border-radius:20px; font-size:.62rem; font-weight:800; border:2px solid; flex-shrink:0; }
+.hist-title { flex:1; color:var(--ink3); }
+.hist-score { font-family:var(--fm); font-size:.75rem; font-weight:700; }
+.hist-score.pass { color:var(--green); }
+.hist-score.fail { color:var(--red); }
 
-  .ex-card-body {
-    padding: 24px 32px;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-  }
+.btn-restart {
+  padding:10px 24px; background:var(--bg); border:2px solid var(--border);
+  color:var(--ink2); border-radius:var(--r); font-family:var(--ff);
+  font-size:.84rem; font-weight:700; cursor:pointer; transition:all .15s;
+}
+.btn-restart:hover { border-color:var(--indigo); color:var(--indigo); background:#EEF2FF; }
 
-  .section-label {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #aaa;
-    margin-bottom: 10px;
-  }
-
-  .blocks-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
-  .block-chip {
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    background: #f7f5f0;
-    border: 1px solid #e8e5de;
-    border-radius: 6px;
-    padding: 4px 10px;
-    color: #555;
-  }
-
-  .tests { display: flex; flex-direction: column; gap: 8px; }
-  .test-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    background: #f7f5f0;
-    border-radius: 10px;
-    padding: 12px 16px;
-  }
-  .test-num { font-family: 'DM Mono', monospace; font-size: 11px; color: #bbb; padding-top: 2px; }
-  .test-body { display: flex; flex-direction: column; gap: 4px; }
-  .test-desc { font-size: 13px; color: #666; }
-  .test-output {
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    background: #1a1a1a;
-    color: #c8f07a;
-    padding: 3px 10px;
-    border-radius: 5px;
-    display: inline-block;
-  }
-
-  .hints { display: flex; flex-direction: column; gap: 8px; }
-  .hint-row { display: flex; align-items: flex-start; gap: 10px; }
-  .hint-dot {
-    width: 22px; height: 22px;
-    border-radius: 50%;
-    background: #f0ede6;
-    border: 1.5px solid #e0ddd6;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px; color: #999;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; margin-top: 2px;
-  }
-  .hint-text { font-size: 14px; color: #555; line-height: 1.6; }
-
-  /* Blockly editor placeholder */
-  .editor-placeholder {
-    background: #fff;
-    border: 1px solid #e8e5de;
-    border-radius: 16px;
-    padding: 32px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    align-items: center;
-    justify-content: center;
-    min-height: 300px;
-    color: #999;
-    font-size: 14px;
-  }
-
-  /* ── Écran résultat (succès / échec) ── */
-  .result-screen {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 24px;
-    padding: 60px 40px;
-    text-align: center;
-    animation: fadeUp 0.4s ease;
-  }
-
-  .result-icon { font-size: 64px; }
-
-  .result-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: 30px;
-    font-style: italic;
-  }
-  .result-sub { font-size: 16px; color: #666; max-width: 380px; line-height: 1.7; }
-
-  .score-ring {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    border: 6px solid #e8e5de;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-  }
-  .score-ring.passed { border-color: #4caf50; }
-  .score-ring.failed { border-color: #ef5350; }
-  .score-num { font-family: 'DM Mono', monospace; font-size: 26px; font-weight: 600; }
-  .score-label { font-size: 10px; color: #aaa; margin-top: 2px; }
-
-  .btn-continue {
-    padding: 14px 32px;
-    background: #1a1a1a;
-    color: #c8f07a;
-    border: none;
-    border-radius: 10px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s, transform 0.1s;
-  }
-  .btn-continue:hover { background: #333; transform: translateY(-1px); }
-  .btn-continue:active { transform: translateY(0); }
-
-  /* ── Level Up ── */
-  .levelup-screen {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 28px;
-    padding: 60px 40px;
-    text-align: center;
-    animation: fadeUp 0.5s ease;
-  }
-
-  .levelup-badge {
-    padding: 10px 24px;
-    border-radius: 99px;
-    font-size: 15px;
-    font-weight: 600;
-    border: 2px solid;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .levelup-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: 36px;
-    font-style: italic;
-    line-height: 1.2;
-  }
-  .levelup-sub { font-size: 16px; color: #666; max-width: 380px; line-height: 1.7; }
-
-  .next-level-preview {
-    background: #fff;
-    border: 1px solid #e8e5de;
-    border-radius: 14px;
-    padding: 20px 28px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    max-width: 340px;
-    width: 100%;
-  }
-  .next-icon { font-size: 32px; }
-  .next-info { text-align: left; }
-  .next-label { font-size: 11px; color: #aaa; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
-  .next-name { font-size: 18px; font-weight: 600; color: #1a1a1a; }
-
-  /* ── Fini ── */
-  .finished-screen {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 24px;
-    padding: 60px 40px;
-    text-align: center;
-    animation: fadeUp 0.5s ease;
-  }
-
-  .trophy { font-size: 80px; }
-
-  .history-list {
-    width: 100%;
-    max-width: 500px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    text-align: left;
-  }
-  .history-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    background: #fff;
-    border: 1px solid #e8e5de;
-    border-radius: 10px;
-    font-size: 13px;
-  }
-  .history-item .h-icon { font-size: 16px; }
-  .history-item .h-level {
-    padding: 2px 8px;
-    border-radius: 99px;
-    font-size: 10px;
-    font-weight: 600;
-    border: 1px solid;
-    flex-shrink: 0;
-  }
-  .history-item .h-title { flex: 1; color: #444; }
-  .history-item .h-score { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 600; }
-  .history-item .h-score.passed { color: #4caf50; }
-  .history-item .h-score.failed { color: #ef5350; }
-
-  .btn-restart {
-    padding: 12px 28px;
-    background: #f7f5f0;
-    color: #1a1a1a;
-    border: 1.5px solid #e8e5de;
-    border-radius: 10px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 15px;
-    font-weight: 500;
-    cursor: pointer;
-  }
-  .btn-restart:hover { background: #eee; }
-
-  /* ── Erreur ── */
-  .error-wrap {
-    background: #fff5f5;
-    border: 1px solid #fecaca;
-    border-radius: 12px;
-    padding: 28px 32px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-start;
-    margin: 40px auto;
-    max-width: 520px;
-  }
-  .error-title { font-size: 16px; font-weight: 600; color: #991b1b; }
-  .error-msg { font-family: 'DM Mono', monospace; font-size: 13px; color: #b91c1c; line-height: 1.6; }
-  .btn-retry {
-    padding: 10px 20px;
-    background: #1a1a1a;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 500;
-  }
-  .btn-retry:hover { background: #333; }
+/* ─────────────────────────────────
+   ERROR
+───────────────────────────────── */
+.error-card {
+  margin:40px auto; max-width:480px;
+  background:#FEF2F2; border:2px solid #FECACA; border-radius:var(--r);
+  padding:24px 28px; display:flex; flex-direction:column; gap:12px;
+}
+.err-title { font-size:.92rem; font-weight:900; color:var(--red); }
+.err-msg { font-family:var(--fm); font-size:.78rem; color:#B91C1C; line-height:1.65; }
+.btn-retry {
+  align-self:flex-start; padding:8px 18px; background:var(--red); border:none;
+  color:#fff; border-radius:var(--r); font-family:var(--ff); font-size:.8rem;
+  font-weight:800; cursor:pointer; transition:all .15s;
+}
+.btn-retry:hover { background:#DC2626; }
 </style>
 
 <div class="page">
 
-  <!-- ═══════════════════════════════════════════════════════════════════════ -->
-  <!-- Header : barre de progression sticky                                   -->
-  <!-- ═══════════════════════════════════════════════════════════════════════ -->
-  <div class="progress-header">
-    <div class="level-steps">
+  <!-- ══ TOPBAR ══ -->
+  <header class="topbar">
+    <div class="tb-brand">
+      <div class="tb-logo">🧩</div>
+      <span class="tb-name">OpenTutorAI</span>
+      <span class="tb-tag">Blockly</span>
+    </div>
+
+    <!-- Niveau steps -->
+    <div class="tb-levels">
       {#each LEVELS as lvl, i}
-        <div class="level-step">
-          <div class="step-dot {i < currentLevelIndex ? 'done' : i === currentLevelIndex ? 'active' : ''}">
-            {#if i < currentLevelIndex}✓{:else}{levelIcons[lvl]}{/if}
+        <div class="lv-step">
+          <div class="lv-dot {i < currentLevelIndex ? 'done' : i === currentLevelIndex ? 'active' : ''}">
+            {#if i < currentLevelIndex}✓{:else}{LEVEL_CFG[lvl].icon}{/if}
           </div>
-          <span class="step-label {i < currentLevelIndex ? 'done' : i === currentLevelIndex ? 'active' : ''}">
-            {levelLabels[lvl]}
+          <span class="lv-name {i < currentLevelIndex ? 'done' : i === currentLevelIndex ? 'active' : ''}">
+            {LEVEL_CFG[lvl].label}
           </span>
         </div>
-        {#if i < LEVELS.length - 1}
-          <span class="step-arrow">›</span>
-        {/if}
+        {#if i < LEVELS.length - 1}<span class="lv-arrow">›</span>{/if}
       {/each}
     </div>
 
-    <div class="header-right">
-      <!-- Pip indicators pour réussites consécutives -->
+    <div class="tb-right">
       {#if phase === "exercise" || phase === "success"}
-        <div class="successes-pips">
+        <div class="pips">
           {#each Array(PASS_THRESHOLD) as _, i}
-            <div class="pip {i < consecutiveSuccesses ? 'filled' : ''}"></div>
+            <div class="pip {i < consecutiveSuccesses ? 'on' : ''}"></div>
           {/each}
         </div>
       {/if}
-
-      <div class="mini-progress">
-        <div class="mini-bar">
-          <div class="mini-bar-fill" style="width: {progressPct}%"></div>
-        </div>
-        <span class="mini-pct">{progressPct}%</span>
+      <div class="prog-mini">
+        <div class="pm-bar"><div class="pm-fill" style="width:{progressPct}%"></div></div>
+        <span class="pm-pct">{progressPct}%</span>
       </div>
     </div>
-  </div>
+  </header>
 
   <div class="main">
 
-    <!-- ═══════════════════════════════════════════════════════════════════ -->
-    <!-- CHARGEMENT : L'IA génère l'exercice                                -->
-    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- ══ LOADING ══ -->
     {#if phase === "loading"}
-      <div class="loading-wrap">
+      <div class="loading-screen">
         <div class="ai-orb"></div>
-        <div class="loading-title">L'IA prépare ton exercice…</div>
-        <div class="loading-sub">
-          Niveau <strong>{currentLevel}</strong> — adapté à ta progression.
-          Quelques secondes suffisent.
-        </div>
-        <div class="gen-bar-wrap">
-          <div class="gen-bar-fill" style="width: {generationProgress}%"></div>
-        </div>
+        <p class="loading-title">L'IA prépare ton exercice…</p>
+        <p class="loading-sub">Niveau <strong>{currentLevel}</strong> — adapté à ta progression.</p>
+        <div class="gen-track"><div class="gen-fill" style="width:{generationProgress}%"></div></div>
       </div>
 
-    <!-- ═══════════════════════════════════════════════════════════════════ -->
-    <!-- EXERCICE : afficher l'exercice + l'éditeur Blockly                 -->
-    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- ══ EXERCISE ══ -->
     {:else if phase === "exercise" && exercise}
-      <div class="exercise-section">
-
-        <!-- En-tête -->
-        <div class="ex-header">
-          <span
-            class="level-badge"
-            style="
-              background: {levelColors[currentLevel].bg};
-              color: {levelColors[currentLevel].text};
-              border-color: {levelColors[currentLevel].border};
-            "
-          >
-            {levelIcons[currentLevel]} {levelLabels[currentLevel]}
+      <div class="exercise-phase">
+        <!-- Sub-header -->
+        <div class="ex-subheader">
+          <span class="lv-badge" style="
+            background:{LEVEL_CFG[currentLevel].bg};
+            color:{LEVEL_CFG[currentLevel].color};
+            border-color:{LEVEL_CFG[currentLevel].border}">
+            {LEVEL_CFG[currentLevel].icon} {LEVEL_CFG[currentLevel].label}
           </span>
-          <span class="ex-num">Exercice #{totalExercisesDone + 1}</span>
+          <span class="ex-num-txt">Exercice #{totalExercisesDone + 1}</span>
         </div>
 
-        <!-- Carte de l'exercice -->
-        <div class="ex-card">
-          <div class="ex-card-top">
-            <div class="ex-title">{exercise.title}</div>
-            <div class="ex-desc">{exercise.description}</div>
-          </div>
-
-          <div class="ex-card-body">
-
-            {#if exercise.allowed_blocks?.length}
-              <div>
-                <div class="section-label">Blocs disponibles</div>
-                <div class="blocks-wrap">
-                  {#each exercise.allowed_blocks as block}
-                    <span class="block-chip">{block}</span>
-                  {/each}
-                </div>
-              </div>
-            {/if}
-
-            {#if exercise.test_cases?.length}
-              <div>
-                <div class="section-label">{exercise.test_cases.length} cas de test à réussir</div>
-                <div class="tests">
-                  {#each exercise.test_cases as tc, i}
-                    <div class="test-row">
-                      <span class="test-num">#{i + 1}</span>
-                      <div class="test-body">
-                        {#if tc.description}
-                          <span class="test-desc">{tc.description}</span>
-                        {/if}
-                        <span class="test-output">{tc.expected_output}</span>
-                      </div>
-                    </div>
-                  {/each}
-                </div>
-              </div>
-            {/if}
-
-            {#if exercise.hints?.length}
-              <div>
-                <div class="section-label">Indices si tu bloques</div>
-                <div class="hints">
-                  {#each exercise.hints as hint, i}
-                    <div class="hint-row">
-                      <span class="hint-dot">{i + 1}</span>
-                      <span class="hint-text">{hint}</span>
-                    </div>
-                  {/each}
-                </div>
-              </div>
-            {/if}
-
-          </div>
+        <!-- BlocklyEditor occupe tout l'espace restant -->
+        <div class="editor-wrap">
+          {#if assignmentId}
+            <BlocklyEditor
+              assignmentId={assignmentId}
+              exerciseTitle={exercise.title}
+              description={exercise.description}
+              hints={exercise.hints ?? []}
+              on:submit={handleSubmit}
+            />
+          {/if}
         </div>
-
-        <!-- Éditeur Blockly — passe l'assignmentId et écoute l'événement submit -->
-        {#if assignmentId}
-          <BlocklyEditor
-            assignmentId={assignmentId}
-            exerciseTitle={exercise.title}
-            description={exercise.description}
-            hints={exercise.hints ?? []}
-            on:submit={handleSubmit}
-          />
-        {:else}
-          <!--
-            Fallback si le backend ne renvoie pas d'assignment_id dans l'event "done" :
-            on crée un exercice virtuel côté client pour que l'élève puisse quand même coder.
-            Dans ce cas, handleSubmit sera appelé avec le score retourné par BlocklyEditor.
-          -->
-          <div class="editor-placeholder">
-            <span style="font-size:32px">🧩</span>
-            <span>Éditeur Blockly en attente de l'ID d'exercice…</span>
-          </div>
-        {/if}
-
       </div>
 
-    <!-- ═══════════════════════════════════════════════════════════════════ -->
-    <!-- RÉSULTAT : après soumission, avant le prochain exercice            -->
-    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- ══ RESULT ══ -->
     {:else if phase === "success"}
       <div class="result-screen">
-        <div class="result-icon">{lastScore >= PASS_SCORE ? "🎉" : "💪"}</div>
-
-        <div class="score-ring {lastScore >= PASS_SCORE ? 'passed' : 'failed'}">
-          <span class="score-num">{lastScore}</span>
-          <span class="score-label">/ 100</span>
+        <div class="res-emoji">{lastScore >= PASS_SCORE ? "🎉" : "💪"}</div>
+        <div class="res-ring {lastScore >= PASS_SCORE ? 'pass' : 'fail'}">
+          <span class="res-score">{lastScore}</span>
+          <span class="res-denom">/100</span>
         </div>
-
-        {#if lastScore >= PASS_SCORE}
-          <div class="result-title">Bien joué !</div>
-          <div class="result-sub">
-            Tu as réussi cet exercice avec {lastScore}/100.
+        <h2 class="res-title">{lastScore >= PASS_SCORE ? "Bien joué !" : "Continue !"}</h2>
+        <p class="res-sub">
+          {#if lastScore >= PASS_SCORE}
+            Tu as réussi avec {lastScore}/100.
             {#if consecutiveSuccesses < PASS_THRESHOLD}
-              Encore {PASS_THRESHOLD - consecutiveSuccesses} réussite{PASS_THRESHOLD - consecutiveSuccesses > 1 ? 's' : ''}
-              pour passer au niveau suivant.
+              Encore {PASS_THRESHOLD - consecutiveSuccesses} réussite{PASS_THRESHOLD - consecutiveSuccesses > 1 ? 's' : ''} pour passer au niveau suivant.
             {/if}
-          </div>
-        {:else}
-          <div class="result-title">Continue !</div>
-          <div class="result-sub">
-            Tu as obtenu {lastScore}/100. Il faut {PASS_SCORE} minimum pour valider.
-            Un nouvel exercice t'attend — tu vas y arriver !
-          </div>
-        {/if}
-
-        <button class="btn-continue" on:click={continueAfterSuccess}>
-          Exercice suivant →
-        </button>
+          {:else}
+            Tu as obtenu {lastScore}/100. Il faut {PASS_SCORE} minimum. Un nouvel exercice t'attend !
+          {/if}
+        </p>
+        <button class="btn-continue" on:click={continueAfterSuccess}>Exercice suivant →</button>
       </div>
 
-    <!-- ═══════════════════════════════════════════════════════════════════ -->
-    <!-- LEVEL UP : passage au niveau supérieur                             -->
-    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- ══ LEVEL UP ══ -->
     {:else if phase === "levelUp"}
       {@const nextLevel = LEVELS[currentLevelIndex + 1]}
       <div class="levelup-screen">
-        <div style="font-size: 72px">🚀</div>
-
-        <span
-          class="levelup-badge"
-          style="
-            background: {levelColors[currentLevel].bg};
-            color: {levelColors[currentLevel].text};
-            border-color: {levelColors[currentLevel].border};
-          "
-        >
-          {levelIcons[currentLevel]} Niveau {levelLabels[currentLevel]} validé !
+        <div class="lu-rocket">🚀</div>
+        <span class="lv-badge" style="
+          background:{LEVEL_CFG[currentLevel].bg};
+          color:{LEVEL_CFG[currentLevel].color};
+          border-color:{LEVEL_CFG[currentLevel].border};
+          font-size:.8rem;padding:6px 16px">
+          {LEVEL_CFG[currentLevel].icon} Niveau {LEVEL_CFG[currentLevel].label} validé !
         </span>
-
-        <div class="levelup-title">Tu montes de niveau !</div>
-        <div class="levelup-sub">
-          Félicitations ! Tu as maîtrisé le niveau {currentLevel}.
-          Tu passes maintenant au niveau <strong>{nextLevel}</strong>.
-        </div>
-
-        <div class="next-level-preview">
-          <span class="next-icon">{levelIcons[nextLevel]}</span>
-          <div class="next-info">
-            <div class="next-label">Prochain niveau</div>
-            <div class="next-name">{levelLabels[nextLevel]}</div>
+        <h2 class="lu-title">Tu montes de niveau !</h2>
+        <p class="lu-sub">Félicitations ! Tu passes au niveau <strong>{nextLevel}</strong>.</p>
+        <div class="lu-next-card">
+          <span class="lu-next-icon">{LEVEL_CFG[nextLevel].icon}</span>
+          <div class="lu-next-info">
+            <div class="lu-next-lbl">Prochain niveau</div>
+            <div class="lu-next-name">{LEVEL_CFG[nextLevel].label}</div>
           </div>
         </div>
-
         <button class="btn-continue" on:click={continueAfterLevelUp}>
-          Commencer {levelLabels[nextLevel]} →
+          Commencer {LEVEL_CFG[nextLevel].label} →
         </button>
       </div>
 
-    <!-- ═══════════════════════════════════════════════════════════════════ -->
-    <!-- FINISHED : tous les niveaux complétés                              -->
-    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- ══ FINISHED ══ -->
     {:else if phase === "finished"}
       <div class="finished-screen">
         <div class="trophy">🏆</div>
-        <div class="result-title" style="font-size:34px">
-          Félicitations, tu as tout maîtrisé !
-        </div>
-        <div class="result-sub">
-          Tu as complété les 3 niveaux ({totalExercisesDone} exercices au total).
-          Tu es prêt pour des défis encore plus grands !
-        </div>
+        <h2 class="fin-title">Félicitations, tu as tout maîtrisé !</h2>
+        <p class="fin-sub">Tu as complété les 3 niveaux ({totalExercisesDone} exercices). Tu es prêt pour des défis encore plus grands !</p>
 
         {#if progressHistory.length > 0}
           <div class="history-list">
             {#each progressHistory as item}
-              <div class="history-item">
-                <span class="h-icon">{item.passed ? "✅" : "❌"}</span>
-                <span
-                  class="h-level"
-                  style="
-                    background: {levelColors[item.level]?.bg ?? '#f5f5f5'};
-                    color: {levelColors[item.level]?.text ?? '#333'};
-                    border-color: {levelColors[item.level]?.border ?? '#ddd'};
-                  "
-                >
-                  {levelIcons[item.level]} {item.level}
+              <div class="hist-item">
+                <span>{item.passed ? "✅" : "❌"}</span>
+                <span class="hist-lv-badge" style="
+                  background:{LEVEL_CFG[item.level]?.bg};
+                  color:{LEVEL_CFG[item.level]?.color};
+                  border-color:{LEVEL_CFG[item.level]?.border}">
+                  {LEVEL_CFG[item.level]?.icon} {item.level}
                 </span>
-                <span class="h-title">{item.title}</span>
-                <span class="h-score {item.passed ? 'passed' : 'failed'}">{item.score}/100</span>
+                <span class="hist-title">{item.title}</span>
+                <span class="hist-score {item.passed ? 'pass' : 'fail'}">{item.score}/100</span>
               </div>
             {/each}
           </div>
         {/if}
-
-        <button class="btn-restart" on:click={resetProgress}>
-          ↺ Recommencer depuis le début
-        </button>
+        <button class="btn-restart" on:click={resetProgress}>↺ Recommencer depuis le début</button>
       </div>
 
-    <!-- ═══════════════════════════════════════════════════════════════════ -->
-    <!-- ERREUR                                                              -->
-    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <!-- ══ ERROR ══ -->
     {:else if phase === "error"}
-      <div class="error-wrap">
-        <div class="error-title">La génération a échoué</div>
-        <div class="error-msg">{errorMessage}</div>
-        <button class="btn-retry" on:click={generateExercise}>
-          ↺ &nbsp;Réessayer
-        </button>
+      <div class="error-card">
+        <div class="err-title">La génération a échoué</div>
+        <div class="err-msg">{errorMessage}</div>
+        <button class="btn-retry" on:click={generateExercise}>↺ Réessayer</button>
       </div>
     {/if}
 
