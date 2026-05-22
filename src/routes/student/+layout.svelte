@@ -1,6 +1,7 @@
 <!-- Student Layout -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
+	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { get, writable, derived } from 'svelte/store';
@@ -81,6 +82,7 @@
 	let windowWidth: number;
 	let isMobile: boolean = false;
 	let loading = true;
+	let handleResize: () => void;
 
 	// Derive isDarkMode from theme store
 	const isDarkMode = derived(theme, ($theme) => {
@@ -115,7 +117,14 @@
 				originalUserData.set(null);
 			}
 			demoData.set({
-				dashboard: null,
+				dashboard: {
+					progress: 0,
+					coursesCompleted: 0,
+					currentStreak: 0,
+					weeklyGoal: { completed: 0, target: 5 },
+					totalLearningHours: 0,
+					achievements: 0
+				},
 				chats: [],
 				supports: [],
 				assignments: [],
@@ -179,7 +188,7 @@
 		document.documentElement.classList.toggle('dark', isDark);
 
 		// Handle resize events for responsive design
-		const handleResize = () => {
+		handleResize = () => {
 			windowWidth = window.innerWidth;
 			isMobile = windowWidth < 768;
 
@@ -192,10 +201,12 @@
 
 		window.addEventListener('resize', handleResize);
 		handleResize();
+	});
 
-		return () => {
+	onDestroy(() => {
+		if (browser && handleResize) {
 			window.removeEventListener('resize', handleResize);
-		};
+		}
 	});
 </script>
 
