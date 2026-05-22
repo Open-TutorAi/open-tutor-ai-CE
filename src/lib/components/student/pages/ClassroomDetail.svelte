@@ -76,7 +76,26 @@
         }
     }
 
-    onMount(chargerDetailsCours);
+    onMount(() => {
+        chargerDetailsCours();
+
+        // Listen for course progress updates and refresh data
+        const handleProgressUpdate = (event: CustomEvent) => {
+            const { courseId: updatedCourseId } = event.detail;
+            if (updatedCourseId === courseId) {
+                console.log('[ClassroomDetail] Course progress updated, refreshing data...');
+                chargerDetailsCours();
+            }
+        };
+
+        if (typeof window !== 'undefined') {
+            window.addEventListener('courseProgressUpdated', handleProgressUpdate as EventListener);
+
+            return () => {
+                window.removeEventListener('courseProgressUpdated', handleProgressUpdate as EventListener);
+            };
+        }
+    });
 
     // ── Progress helpers ───────────────────────────────────────────────────
     $: progressPct = cours?.progress_percentage ?? 0;
@@ -121,23 +140,48 @@
     }
 
     // ── Start / Resume learning ────────────────────────────────────────────
-	function demarrerApprentissage() {
+	async function demarrerApprentissage() {
 		if (!cours) return;
 
-		if (cours.chat_id) {
-			localStorage.setItem(
-				'resumeCourseChat',
-				JSON.stringify({ courseId: cours.id, chatId: cours.chat_id })
-			);
-			// نظف pendingCourseData باش ميخلقش chat جديد
-			localStorage.removeItem('pendingCourseData');
-		} else {
-			localStorage.removeItem('resumeCourseChat');
-			localStorage.setItem(
-				'pendingCourseData',
-				JSON.stringify({ id: cours.id, type: 'course' })
-			);
+		// Refresh course data to get the latest chat_id from the backend
+		// This ensures we don't use stale data if a chat was previously saved
+		try {
+			const token = localStorage.getItem('token') ?? '';
+			const coursLatest = await getCourseById(token, courseId);
+			
+			if (coursLatest.chat_id) {
+				// Existing chat session - resume it
+				localStorage.setItem(
+					'resumeCourseChat',
+					JSON.stringify({ courseId: coursLatest.id, chatId: coursLatest.chat_id })
+				);
+				localStorage.removeItem('pendingCourseData');
+			} else {
+				// New chat session - create one
+				localStorage.removeItem('resumeCourseChat');
+				localStorage.setItem(
+					'pendingCourseData',
+					JSON.stringify({ id: coursLatest.id, type: 'course' })
+				);
+			}
+		} catch (e) {
+			console.error('Failed to refresh course data:', e);
+			// Fallback to current course data if refresh fails
+			if (cours.chat_id) {
+				localStorage.setItem(
+					'resumeCourseChat',
+					JSON.stringify({ courseId: cours.id, chatId: cours.chat_id })
+				);
+				localStorage.removeItem('pendingCourseData');
+			} else {
+				localStorage.removeItem('resumeCourseChat');
+				localStorage.setItem(
+					'pendingCourseData',
+					JSON.stringify({ id: cours.id, type: 'course' })
+				);
+			}
 		}
+
 		goto(`/student/classrooms/${courseId}/learn`);
 	}
 

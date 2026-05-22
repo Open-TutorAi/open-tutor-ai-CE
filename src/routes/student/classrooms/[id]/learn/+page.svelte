@@ -20,10 +20,15 @@
 
 		const token = localStorage.getItem('token') ?? '';
 
-		// 1. Fetch course details
+		// 1. Fetch course details to get the latest chat_id from backend
 		let courseDetail: any = null;
 		try {
 			courseDetail = await getCourseById(token, courseId);
+			console.log('[Learn Page] Course details loaded:', {
+				courseId,
+				hasChatId: !!courseDetail?.chat_id,
+				chatId: courseDetail?.chat_id
+			});
 
 			if (courseDetail) {
 				localStorage.setItem(
@@ -45,22 +50,29 @@
 		if (resumeRaw) {
 			try {
 				const { courseId: rCourseId, chatId: rChatId } = JSON.parse(resumeRaw);
+				console.log('[Learn Page] Found resumeCourseChat:', { rCourseId, rChatId, currentCourseId: courseId });
 
 				if (rCourseId === courseId && rChatId) {
 					resumeChatId = rChatId;
+					console.log('[Learn Page] Using resumed chat ID:', resumeChatId);
 				}
-			} catch {}
+			} catch (e) {
+				console.error('[Learn Page] Error parsing resumeCourseChat:', e);
+			}
 
+			// Always clean up after reading
 			localStorage.removeItem('resumeCourseChat');
 		}
 
 		// Fallback to backend saved chat_id
 		if (!resumeChatId && courseDetail?.chat_id) {
 			resumeChatId = courseDetail.chat_id;
+			console.log('[Learn Page] Using backend chat_id:', resumeChatId);
 		}
 
 		if (resumeChatId) {
 			// Existing chat: pass chatId directly to Chat component
+			console.log('[Learn Page] Resuming existing chat:', resumeChatId);
 			localStorage.removeItem('pendingCourseData');
 
 			resolvedChatId = resumeChatId;
@@ -69,6 +81,7 @@
 			localStorage.setItem(`course-chat-${resumeChatId}`, courseId);
 		} else {
 			// New chat flow
+			console.log('[Learn Page] Starting new chat for course:', courseId);
 			localStorage.setItem(
 				'pendingCourseData',
 				JSON.stringify({
@@ -90,13 +103,41 @@
 
 			const handler = (event: CustomEvent) => {
 				const newChatId = event.detail?.chatId;
+				const success = event.detail?.success;
 
-				if (newChatId && event.detail?.success && !chatSaved) {
+				console.log('[Learn Page] chatCreated event received:', {
+					newChatId,
+					success,
+					chatSaved,
+					shouldSave: newChatId && success && !chatSaved
+				});
+
+				if (newChatId && success && !chatSaved) {
 					chatSaved = true;
 
-					saveCourseChatId(token, courseId, newChatId).catch((err) => {
-						console.error('Failed to save course chat_id:', err);
+					console.log('[Learn Page] Saving chat_id to backend:', {
+						courseId,
+						newChatId,
+						token: token ? 'present' : 'missing'
 					});
+
+					saveCourseChatId(token, courseId, newChatId)
+						.then(() => {
+							console.log('[Learn Page] Successfully saved chat_id:', newChatId);
+						})
+						.catch((err) => {
+							console.error('[Learn Page] Failed to save course chat_id:', err);
+							// Try again after a short delay
+							setTimeout(() => {
+								saveCourseChatId(token, courseId, newChatId)
+									.then(() => {
+										console.log('[Learn Page] Retry: Successfully saved chat_id:', newChatId);
+									})
+									.catch((retryErr) => {
+										console.error('[Learn Page] Retry failed for chat_id:', retryErr);
+									});
+							}, 2000);
+						});
 				}
 			};
 

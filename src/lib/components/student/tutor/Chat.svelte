@@ -1,3 +1,5 @@
+
+
 <!-- chat page -->
 
 <script lang="ts">
@@ -14,7 +16,7 @@
 
 	import { get, type Unsubscriber, type Writable } from 'svelte/store';
 	import type { i18n as i18nType } from 'i18next';
-	import { TUTOR_BASE_URL, TUTOR_API_BASE_URL } from '$lib/constants';
+	import { TUTOR_BASE_URL } from '$lib/constants';
 	import promptData  from './prompt.json';
 
 
@@ -84,12 +86,13 @@
 	} from '$lib/apis';
 	import { getTools } from '$lib/apis/tools';
 	import { getSupportById } from '$lib/apis/supports';
-	import { getCourseById, saveCourseChatId, updateSectionProgress } from '$lib/apis/courses';
+	import { getCourseById } from '$lib/apis/courses';
 	import {
-		buildCourseProgressTrackingPrompt,
+		resolveCourseIdForChat,
 		applyCourseProgressSignalsFromContent,
-		resolveCourseIdForChat
+		buildCourseProgressTrackingPrompt
 	} from '$lib/utils/courseProgressTracker';
+
 	import Banner from '$lib/components/common/Banner.svelte';
 	import MessageInput from '$lib/components/chat/MessageInput.svelte';
 	import Messages from '$lib/components/chat/Messages.svelte';
@@ -101,8 +104,6 @@
 	import Spinner from '$lib/components/common/Spinner.svelte';
 	import AvatarChat from '$lib/components/chat/AvatarChat.svelte';
 	import FullscreenButton from '$lib/components/chat/FullscreenButton.svelte';
-	
-
 
 	// Debug: Print user permissions when they change
 	$: if ($user) {
@@ -113,67 +114,9 @@
 			features: $user?.permissions?.features
 		});
 	}
+
 	export let chatIdProp = '';
 	export let courseIdProp = '';
-
-	let activeCourseId = '';
-	function syncActiveCourseId() {
-		const resolved = resolveCourseIdForChat({
-			courseIdProp,
-			chatId: $chatId || chatIdProp,
-			pathname: $page.url.pathname
-		});
-		if (resolved) {
-			activeCourseId = resolved;
-			// Keep localStorage mapping fresh for future page loads
-			if ($chatId && $chatId !== 'local' && resolved) {
-				localStorage.setItem(`course-chat-${$chatId}`, resolved);
-			}
-		}
-		return activeCourseId;
-	}
-
-	const getActiveCourseId = () => {
-		const resolved = resolveCourseIdForChat({
-			courseIdProp,
-			chatId: $chatId || chatIdProp,
-			pathname: $page.url.pathname
-		});
-
-		if (resolved) {
-			activeCourseId = resolved;
-			return resolved;
-		}
-
-		return activeCourseId;
-	};
-
-	const withCourseProgressTracking = async (systemContent: string) => {
-		const courseId = getActiveCourseId();
-	
-		if (!courseId) {
-			return systemContent;
-		}
-	
-		// Avoid duplicate injection
-		if (systemContent?.includes('COURSE_PROGRESS_TRACKING_INSTRUCTIONS')) {
-			return systemContent;
-		}
-	
-		const trackingPrompt = await buildCourseProgressTrackingPrompt(
-			localStorage.token,
-			courseId
-		).catch((err) => {
-			console.error('[CourseProgress] Failed to build dynamic progress prompt:', err);
-			return '';
-		});
-	
-		if (!trackingPrompt) {
-			return systemContent;
-		}
-	
-		return `${systemContent}\n\n${trackingPrompt}`;
-	};
 
 	let loading = false;
 
@@ -595,7 +538,6 @@
 
 	onMount(async () => {
 		console.log('mounted');
-
 		
 		// Initialize global event target if it doesn't exist
 		if (typeof window !== 'undefined' && !window.openTutorEvents) {
@@ -890,137 +832,267 @@
 	 * @param {string} supportId - The ID of the support
 	 * @returns {Promise<string|null>} - The generated system prompt or null if failed
 	 */
+	const generateSupportSystemPrompt = async (supportId) => {
+		try {
+			console.log(`Fetching support details for ID: ${supportId}`);
+			const token = localStorage.getItem('token');
+			if (!token) {
+				console.error('No token found, cannot fetch support details');
+				return null;
+			}
+			
+			// Fetch support details from API
+			const supportDetails = await getSupportById(token, supportId);
+			if (!supportDetails) {
+				console.error('Failed to fetch support details');
+				return null;
+			}
+						
+			// Construct system prompt
+			let systemPrompt = `You are a highly experienced educator, instructional designer, and tutor. You specialize in creating clear, engaging, and progressive step-by-step lessons for any topic and any academic level. You combine best practices in pedagogy (e.g., scaffolding, active recall, formative feedback) with adaptive teaching strategies. Your role is to guide me through a structured learning path, You guide the learner one concept at a time, combining effective teaching strategies,  personalized communication style, and the most suitable reasoning method, in a way that is tailored to my needs, level, and learning goals.`
+			systemPrompt+=`You are an educational tutor specializing in ${supportDetails.subject || 'various subjects'}`;
+			
+			if (supportDetails.custom_subject) {
+				systemPrompt += `, particularly in ${supportDetails.custom_subject}`;
+			}
+			
+			systemPrompt += `.\n\n`;
+			
+			// Add directive to acknowledge context in first response
+			systemPrompt += `IMPORTANT INSTRUCTIONS: This is a learning session about ${supportDetails.title}. In your FIRST response, introduce yourself as a tutor for this specific topic and briefly mention what you'll be covering based on the learning objective. Even if the user's first message is generic (like "hello"), you should respond by acknowledging the course topic and learning goals described below.\n\n`;
+			
+			// Important note about not asking for information already provided - STRENGTHENED
+			systemPrompt += `CRITICAL INSTRUCTION: DO NOT ask the student about their educational level, background, prior knowledge, or learning objectives. This information has ALREADY been provided below and you must use it directly without asking the student to repeat it. Your first message should immediately begin teaching based on these details without asking any preliminary questions about the student's goals or background.\n\n`;
+			
+			// Add explicit first message format
+			systemPrompt += `Begin your first message by saying: "I'm your tutor for ${supportDetails.title}. We'll be working on ${supportDetails.learning_objective || 'this topic'} today." Then immediately start providing relevant content. Do not ask what they want to learn or what their background is.\n\n`;
+			
+			// Add title and description
+			systemPrompt += `TOPIC: ${supportDetails.title}\n`;
+			
+			if (supportDetails.short_description) {
+				systemPrompt += `DESCRIPTION: ${supportDetails.short_description}\n`;
+			}
+			
+			// Add learning objective
+			if (supportDetails.learning_objective) {
+				systemPrompt += `\nLEARNING OBJECTIVE: ${supportDetails.learning_objective}\n`;
+			}
+			
+			// Add learning type
+			if (supportDetails.learning_type) {
+				systemPrompt += `LEARNING TYPE: ${supportDetails.learning_type}\n`;
+				
+				// Add specific guidance based on learning type
+				if (supportDetails.learning_type === 'exam') {
+					systemPrompt += `Focus on exam preparation, practice questions, and assessment strategies.\n`;
+				} else if (supportDetails.learning_type === 'course') {
+					systemPrompt += `Focus on comprehensive understanding of course material and concepts.\n`;
+				} else if (supportDetails.learning_type === 'skill') {
+					systemPrompt += `Focus on practical skill-building and application of knowledge.\n`;
+				}
+			}
+			
+			// Add education level with stronger emphasis
+			if (supportDetails.level) {
+				systemPrompt += `EDUCATION LEVEL: ${supportDetails.level}\n`;
+				
+				// Adjust language and complexity based on level
+				if (supportDetails.level === 'primary') {
+					systemPrompt += `Use simple language and explanations appropriate for young learners.\n`;
+				} else if (supportDetails.level === 'middle') {
+					systemPrompt += `Use moderately complex explanations with clear examples.\n`;
+				} else if (supportDetails.level === 'high') {
+					systemPrompt += `Use more detailed explanations and challenging concepts appropriate for high school students.\n`;
+				} else if (supportDetails.level === 'university') {
+					systemPrompt += `Use advanced concepts and academic language appropriate for university-level education.\n`;
+				}
+				
+				// Add explicit note about education level
+				systemPrompt += `NOTE: The student is at the ${supportDetails.level} education level. Do not ask them about their level.\n`;
+			}
+			
+			// Add language preference
+			if (supportDetails.content_language) {
+				systemPrompt += `PREFERRED LANGUAGE: ${supportDetails.content_language}\n`;
+				systemPrompt += `Please respond in ${supportDetails.content_language} unless the student asks otherwise.\n`;
+			}
+			
+			// Add keywords
+			if (supportDetails.keywords && supportDetails.keywords.length > 0) {
+				systemPrompt += `\nKEY CONCEPTS: ${supportDetails.keywords.join(', ')}\n`;
+			}
+			
+			// Check for files and try to enhance context with file content if possible
+			if (supportDetails.files && supportDetails.files.length > 0) {
+				systemPrompt += `\nCOURSE MATERIALS: The student has uploaded ${supportDetails.files.length} file(s) as course materials:\n`;
+				
+				// List the files
+				for (const file of supportDetails.files) {
+					systemPrompt += `- ${file.filename} (${file.file_type || 'unknown type'})\n`;
+				}
+				
+				// Add a note about using the content of these materials
+				systemPrompt += `\nWhen answering questions, you should reference and use the content from these materials whenever relevant. The content will be made available through the chat interface. If the student asks about content from these materials, prioritize information from them in your answers.\n`;
+				
+				// Try to extract text content from text-based files if possible
+				try {
+					for (const file of supportDetails.files) {
+						if (file.file_type && 
+							(file.file_type.includes('text') || 
+							file.file_type.includes('pdf') || 
+							file.file_type.includes('document'))) {
+							
+							// In a real implementation, you would fetch and process text content from files
+							// For now, we just add a note that the content will be referenced
+							systemPrompt += `\nNote: Content from ${file.filename} will be made available for reference.\n`;
+						}
+					}
+				} catch (fileError) {
+					console.error('Error processing file content:', fileError);
+				}
+			}
+			
+			// Add estimated duration if available to guide session planning
+			if (supportDetails.estimated_duration) {
+				systemPrompt += `\nESTIMATED DURATION: This learning session is planned for ${supportDetails.estimated_duration}. Please pace your teaching accordingly.\n`;
+			}
+			
+			// Add general instruction
+			systemPrompt += `\nYour goal is to help the student achieve their learning objective by providing clear explanations, examples, analogies, and guided practice appropriate for their level. Adjust your teaching style, complexity, and examples based on their interactions. Be engaging, supportive, and patient throughout the learning process.\n\n`;
+			
+			//systemPrompt+= promptData;
+			// Add reminder to stay focused on the topic and not ask redundant questions - STRENGTHENED
+			systemPrompt += `FINAL REMINDER: DO NOT ask the student about information they've already provided such as their educational level, background, or learning goals. Instead, directly begin helping them with their learning objective. Always keep your responses relevant to the topic (${supportDetails.title}) and learning objectives described above. Your role is to provide structured guidance on this specific subject matter. If the student says only "hello" or provides a very brief message, jump straight into teaching the topic - don't waste time with preliminary questions.`;
+			systemPrompt += promptData.prompt;
+
+				console.log('Generated system prompt:', systemPrompt);
+			return systemPrompt;
+		} catch (error) {
+			console.error('Error generating support system prompt:', error);
+			return null;
+		}
+	}
+
+	/**
+	 * Generates a system prompt based on course details with plan injection
+	 * @param {string} courseId - The ID of the course
+	 * @returns {Promise<string|null>} - The generated system prompt or null if failed
+	 */
 	const generateCourseSystemPrompt = async (courseId) => {
 		try {
 			console.log(`Fetching course details for ID: ${courseId}`);
-
-			activeCourseId = courseId;
-
 			const token = localStorage.getItem('token');
 			if (!token) {
 				console.error('No token found, cannot fetch course details');
 				return null;
 			}
-
+			
+			// Fetch course details from API
 			const courseDetails = await getCourseById(token, courseId);
-
 			if (!courseDetails) {
 				console.error('Failed to fetch course details');
 				return null;
 			}
-
-			let systemPrompt = `You are a highly experienced educator, instructional designer, and tutor. You specialize in creating clear, engaging, and progressive step-by-step lessons for any topic and any academic level. You combine best practices in pedagogy with adaptive teaching strategies. Your role is to guide the learner through a structured learning path. You guide the learner one concept at a time, combining effective teaching strategies, personalized communication style, and the most suitable reasoning method.`;
-
-			systemPrompt += `\n\nYou are an educational tutor specializing in ${courseDetails.title}.\n\n`;
-
-			systemPrompt += `IMPORTANT INSTRUCTIONS: This is a learning session for the course "${courseDetails.title}". In your FIRST response, introduce yourself as a tutor for this course and briefly mention the learning path and structure based on the course plan. Even if the student's first message is generic, respond by acknowledging the course and start teaching.\n\n`;
-
-			systemPrompt += `CRITICAL INSTRUCTION: DO NOT ask the student about their educational level, background, prior knowledge, or learning objectives. This information has ALREADY been provided below. Use it directly.\n\n`;
-
+					
+			// Construct system prompt
+			let systemPrompt = `You are a highly experienced educator, instructional designer, and tutor. You specialize in creating clear, engaging, and progressive step-by-step lessons for any topic and any academic level. You combine best practices in pedagogy (e.g., scaffolding, active recall, formative feedback) with adaptive teaching strategies. Your role is to guide the learner through a structured learning path. You guide the learner one concept at a time, combining effective teaching strategies, personalized communication style, and the most suitable reasoning method, in a way that is tailored to their needs, level, and learning goals.`;
+			systemPrompt += `You are an educational tutor specializing in ${courseDetails.title}.\n\n`;
+			
+			// Add directive to acknowledge context in first response
+			systemPrompt += `IMPORTANT INSTRUCTIONS: This is a learning session for the course "${courseDetails.title}". In your FIRST response, introduce yourself as a tutor for this course and briefly mention the learning path and structure based on the course plan. Even if the student's first message is generic (like "hello"), you should respond by acknowledging the course and learning objectives described below.\n\n`;
+			
+			// Important note about not asking for information already provided
+			systemPrompt += `CRITICAL INSTRUCTION: DO NOT ask the student about their educational level, background, prior knowledge, or learning objectives. This information has ALREADY been provided below and you must use it directly without asking the student to repeat it. Your first message should immediately begin teaching based on these details without asking any preliminary questions.\n\n`;
+			
+			// Add explicit first message format
+			systemPrompt += `Begin your first message by saying: "Welcome to ${courseDetails.title}. We'll be learning about ${courseDetails.title} at the ${courseDetails.level} level." Then immediately provide a brief overview of the learning path and start with the first concept. Do not ask what they want to learn or what their background is.\n\n`;
+			
+			// Add title and course structure
 			systemPrompt += `COURSE: ${courseDetails.title}\n`;
-
+			
+			// Add course plan/structure from chapters
 			if (courseDetails.chapters && courseDetails.chapters.length > 0) {
 				systemPrompt += `\nCOURSE PLAN & STRUCTURE:\n`;
-
 				courseDetails.chapters.forEach((chapter, chIdx) => {
-					systemPrompt += `  Chapter ${chIdx + 1}: ${chapter.title} [chapter_id=${chapter.id}]\n`;
-
+					systemPrompt += `  Chapter ${chIdx + 1}: ${chapter.title}\n`;
 					if (chapter.sections && chapter.sections.length > 0) {
 						chapter.sections.forEach((section, secIdx) => {
-							systemPrompt += `    - Section ${secIdx + 1}: ${section.title} [section_id=${section.id}] [status=${section.status}]\n`;
+							systemPrompt += `    - Section ${secIdx + 1}: ${section.title}\n`;
 						});
 					}
 				});
-
-				systemPrompt += `\nYour teaching must follow this course structure. Use chapter_id and section_id exactly as provided.\n`;
+				systemPrompt += `\nYour teaching should follow this course structure. Guide the student through each chapter and section progressively. Use the chapter and section titles as your roadmap for lesson planning.\n`;
 			}
-
+			
+			// Add learning objectives
 			if (courseDetails.objectives) {
-				systemPrompt += `\nLEARNING OBJECTIVES:\n`;
-
-				const objectives = courseDetails.objectives
-					.split('\n')
-					.filter((o) => o.trim());
-
+				systemPrompt += `\nLEARNING OBJECTIVES: The student should be able to:\n`;
+				const objectives = courseDetails.objectives.split('\n').filter(o => o.trim());
 				objectives.forEach((obj) => {
 					systemPrompt += `- ${obj.trim()}\n`;
 				});
 			}
-
+			
+			// Add education level with stronger emphasis
 			if (courseDetails.level) {
 				systemPrompt += `\nEDUCATION LEVEL: ${courseDetails.level}\n`;
-
+				
+				// Adjust language and complexity based on level
 				if (courseDetails.level === 'primary') {
-					systemPrompt += `Use simple language and concrete examples.\n`;
+					systemPrompt += `Use simple language and explanations appropriate for young learners. Keep concepts concrete and use lots of examples.\n`;
 				} else if (courseDetails.level === 'middle') {
-					systemPrompt += `Use moderately complex explanations with clear examples.\n`;
+					systemPrompt += `Use moderately complex explanations with clear examples. Build on foundational knowledge gradually.\n`;
 				} else if (courseDetails.level === 'high') {
-					systemPrompt += `Use detailed explanations appropriate for high school students.\n`;
+					systemPrompt += `Use more detailed explanations and challenging concepts appropriate for high school students. Encourage deeper analytical thinking.\n`;
 				} else if (courseDetails.level === 'university') {
-					systemPrompt += `Use advanced concepts and academic language appropriate for university level.\n`;
+					systemPrompt += `Use advanced concepts and academic language appropriate for university-level education. Encourage rigorous critical thinking.\n`;
 				}
+				
+				// Add explicit note about education level
+				systemPrompt += `NOTE: The student is at the ${courseDetails.level} education level. Do not ask them about their level.\n`;
 			}
-
+			
+			// Add language preference
 			if (courseDetails.language) {
 				systemPrompt += `\nPREFERRED LANGUAGE: ${courseDetails.language}\n`;
 				systemPrompt += `Please respond primarily in ${courseDetails.language} unless the student asks otherwise.\n`;
 			}
-
+			
+			// Add course category if available
 			if (courseDetails.category) {
 				systemPrompt += `\nCOURSE CATEGORY: ${courseDetails.category}\n`;
 			}
-
+			
+			// Check for files and mention them
 			if (courseDetails.files && courseDetails.files.length > 0) {
-				systemPrompt += `\nCOURSE MATERIALS:\n`;
-
+				systemPrompt += `\nCOURSE MATERIALS: The student has access to ${courseDetails.files.length} file(s) as course materials:\n`;
+				
+				// List the files
 				for (const file of courseDetails.files) {
 					systemPrompt += `- ${file.name} (${file.type || 'unknown type'})\n`;
 				}
-
-				systemPrompt += `Use these materials whenever relevant.\n`;
+				
+				// Add a note about using the content of these materials
+				systemPrompt += `\nWhen answering questions, you should reference and use the content from these materials whenever relevant. If the student asks about content from these materials, prioritize information from them in your answers.\n`;
 			}
-
-			systemPrompt += `\nYour goal is to help the student achieve the learning objectives by providing clear explanations, examples, analogies, and guided practice. Follow the course structure and build understanding progressively.\n\n`;
-
-			systemPrompt += `FINAL REMINDER: Stay focused on the course "${courseDetails.title}". If the student says only "hello", start teaching the current section directly.\n`;
-
-			const progressTrackingPrompt = await buildCourseProgressTrackingPrompt(token, courseId);
-
-			if (progressTrackingPrompt) {
-				systemPrompt += `\n\n${progressTrackingPrompt}\n`;
-			}
-
-			const SECTION_TRACKING_INSTRUCTION = `
 			
-			SECTION COMPLETION TRACKING — CRITICAL INSTRUCTIONS:
-			You must track which sections of the course plan the student has completed during this conversation.
+			// Add general instruction
+			systemPrompt += `\nYour goal is to help the student achieve all the learning objectives by providing clear explanations, examples, analogies, and guided practice appropriate for their level. Follow the course structure and build understanding progressively. Be engaging, supportive, and patient throughout the learning process.\n\n`;
 			
-			When you finish teaching a section (the student has understood it and you have covered its content), 
-			append this EXACT hidden marker at the very END of your response (after all your text):
+			// Add reminder to stay focused on the topic
+			systemPrompt += `FINAL REMINDER: DO NOT ask the student about information they've already provided such as their educational level, background, or learning goals. Instead, directly begin helping them progress through the course. Always keep your responses relevant to the course (${courseDetails.title}) and learning objectives described above. Your role is to provide structured guidance on the course material following the course plan. If the student says only "hello" or provides a very brief message, jump straight into teaching the first chapter/section - don't waste time with preliminary questions.`;
 			
-			<!--PROGRESS:{"completed":["SECTION_ID_HERE"]}-->
-			
-			Rules:
-			- Replace SECTION_ID_HERE with the actual section id from the course plan
-			- Only mark a section complete when you have FINISHED teaching it, not when you start
-			- You can mark multiple sections at once: {"completed":["id1","id2"]}
-			- This marker must be the LAST thing in your response, after all text
-			- Never show this marker in visible text — it must stay as an HTML comment
-			- If you have not finished any section in this response, omit the marker entirely
-			
-			The course sections and their IDs are listed in the COURSE PLAN above. Use the exact IDs.
-			`;
-
+			// Add the static prompt template
 			systemPrompt += promptData.prompt;
 
 			console.log('Generated course system prompt:', systemPrompt);
-
 			return systemPrompt;
 		} catch (error) {
 			console.error('Error generating course system prompt:', error);
 			return null;
 		}
-	};
+	}
 
 	const initNewChat = async () => {
 		if ($page.url.searchParams.get('models')) {
@@ -1374,6 +1446,65 @@
 			messagesContainerElement.scrollTop = messagesContainerElement.scrollHeight;
 		}
 	};
+
+	// ─────────────────────────────────────────────────────────────────────────────
+	// Course Progress Tracking Handler
+	// Called after AI response is received to extract and apply progress signals
+	// ─────────────────────────────────────────────────────────────────────────────
+	const handleCourseProgressTracking = async (
+		responseContent: string,
+		courseIdProp: string
+	) => {
+		if (!responseContent || !courseIdProp || $isDemo) {
+			return;
+		}
+
+		try {
+			const token = localStorage.getItem('token');
+			if (!token) return;
+
+			console.log('[Chat] Processing progress signals from AI response');
+
+			// Apply progress signals and get results
+			const result = await applyCourseProgressSignalsFromContent({
+				token,
+				courseId: courseIdProp,
+				content: responseContent
+			});
+
+			if (result.applied.length > 0 || result.heuristic.length > 0) {
+				console.log('[Chat] Progress updated:', {
+					extracted: result.extracted.length,
+					heuristic: result.heuristic.length,
+					applied: result.applied.length,
+					skipped: result.skipped.length
+				});
+
+				// Dispatch event to notify parent components about progress update
+				if (typeof window !== 'undefined') {
+					window.dispatchEvent(
+						new CustomEvent('courseProgressUpdated', {
+							detail: {
+								courseId: courseIdProp,
+								applied: result.applied,
+								heuristic: result.heuristic
+							}
+						})
+					);
+				}
+			}
+		} catch (e) {
+			console.warn('[Chat] Error processing course progress:', e);
+		}
+	};
+	const stripCourseProgressSignals = (content: string) => {
+		if (!content) return '';
+		return content
+			.replace(/<COURSE_PROGRESS>[\s\S]*?<\/COURSE_PROGRESS>/g, '')
+			.replace(/\n{3,}/g, '\n\n')
+			.trim();
+	};
+
 	const chatCompletedHandler = async (chatId, modelId, responseMessageId, messages) => {
 		if ($isDemo) {
 			return;
@@ -1419,18 +1550,30 @@
 
 		await tick();
 
-		if ($chatId == chatId) {
-			if (!$temporaryChatEnabled) {
-				chat = await updateChatById(localStorage.token, chatId, {
-					models: selectedModels,
-					messages: messages,
-					history: history,
-					params: params,
-					files: chatFiles
-				});
+		const responseMessage = messages.find((m) => m.id === responseMessageId);
+		const token = localStorage.getItem('token') || '';
+		const effectiveCourseId =
+			courseIdProp || (token ? await resolveCourseIdForChat(token, chatId) : '');
 
-				currentChatPage.set(1);
-				await chats.set(await getChatList(localStorage.token, $currentChatPage));
+		if (responseMessage && responseMessage.content) {
+			const rawContent = responseMessage.content;
+
+			// 1) Apply progress from RAW content (tags still present)
+			if (effectiveCourseId) {
+				await handleCourseProgressTracking(rawContent, effectiveCourseId);
+			}
+
+			// 2) Clean tags for UI + history + messages payload
+			const cleanedContent = stripCourseProgressSignals(rawContent);
+			responseMessage.content = cleanedContent;
+
+			if (history.messages[responseMessage.id]) {
+				history.messages[responseMessage.id].content = cleanedContent;
+			}
+
+			const msgIdx = messages.findIndex((m) => m.id === responseMessage.id);
+			if (msgIdx !== -1) {
+				messages[msgIdx].content = cleanedContent;
 			}
 		}
 	};
@@ -1724,50 +1867,8 @@
 
 		history.messages[message.id] = message;
 
-		if (message.done || done) {
-		
+		if (done) {
 			message.done = true;
-
-			const courseIdForProgress = getActiveCourseId();
-			await syncSectionProgress(message.content);
-
-			if (courseIdForProgress) {
-				try {
-					const progressResult = await applyCourseProgressSignalsFromContent({
-						token: localStorage.token,
-						courseId: courseIdForProgress,
-						content: message.content
-					});
-
-					if (progressResult.cleanedContent !== message.content) {
-						message.content = progressResult.cleanedContent;
-						history.messages[message.id] = message;
-					}
-
-					console.log('Course progress detection:', {
-						extracted: progressResult.extracted,
-						heuristic: progressResult.heuristic,
-						applied: progressResult.applied,
-						skipped: progressResult.skipped
-					});
-
-					if (progressResult.applied.length > 0) {
-						if (typeof window !== 'undefined' && window.openTutorEvents) {
-							window.openTutorEvents.dispatchEvent(
-								new CustomEvent('courseProgressUpdated', {
-									detail: {
-										courseId: courseIdForProgress,
-										updates: progressResult.applied,
-										timestamp: Date.now()
-									}
-								})
-							);
-						}
-					}
-				} catch (err) {
-					console.error('Course progress tracking failed:', err);
-				}
-			}
 
 			if ($settings.responseAutoCopy) {
 				copyToClipboard(message.content);
@@ -1778,23 +1879,28 @@
 				document.getElementById(`speak-button-${message.id}`)?.click();
 			}
 
+			// Emit chat event for TTS
 			let lastMessageContentPart =
-				getMessageContentParts(
-					message.content,
-					$config?.audio?.tts?.split_on ?? 'punctuation'
-				)?.at(-1) ?? '';
-
+				getMessageContentParts(message.content, $config?.audio?.tts?.split_on ?? 'punctuation')?.at(
+					-1
+				) ?? '';
 			if (lastMessageContentPart) {
 				eventTarget.dispatchEvent(
 					new CustomEvent('chat', {
-						detail: {
-							id: message.id,
-							content: lastMessageContentPart
-						}
+						detail: { id: message.id, content: lastMessageContentPart }
 					})
 				);
 			}
 
+			history.messages[message.id] = message;
+			await chatCompletedHandler(
+				chatId,
+				message.model,
+				message.id,
+				createMessagesList(history, message.id)
+			);
+
+			// chatCompletedHandler cleans the content via history reference
 			eventTarget.dispatchEvent(
 				new CustomEvent('chat:finish', {
 					detail: {
@@ -1804,27 +1910,7 @@
 				})
 			);
 
-			// Emit the full AI message so learn/+page.svelte can detect
-			// section-completion signals for progress tracking.
-			if (typeof window !== 'undefined' && window.openTutorEvents) {
-				window.openTutorEvents.dispatchEvent(
-					new CustomEvent('aiMessage', {
-						detail: {
-							id: message.id,
-							content: message.content
-						}
-					})
-				);
-			}
-
 			history.messages[message.id] = message;
-
-			await chatCompletedHandler(
-				chatId,
-				message.model,
-				message.id,
-				createMessagesList(history, message.id)
-			);
 		}
 
 		console.log(data);
@@ -2403,19 +2489,40 @@
 						: ''
 				}`;
 
+		// ─────────────────────────────────────────────────────────────────────
+		// Inject course progress tracking instructions if in course context
+		// ─────────────────────────────────────────────────────────────────────
+		let finalSystemContent = baseSystemContent;
+		if (courseIdProp) {
+			try {
+				const token = localStorage.getItem('token');
+				if (token) {
+					const courseProgressPrompt = await buildCourseProgressTrackingPrompt(token, courseIdProp);
+					if (courseProgressPrompt) {
+						finalSystemContent = `${baseSystemContent}\n\n${courseProgressPrompt}`;
+						console.log('[Chat] Injected course progress tracking instructions');
+					}
+				}
+			} catch (e) {
+				console.warn('[Chat] Failed to build course progress prompt:', e);
+			}
+		}
+
+		const mergedSystemPrompt = [combinedSystemPrompt, finalSystemContent]
+			.filter((v) => !!v && v.trim() !== '')
+			.join('\n\n');
+
 		let messages = [
 			{
 				role: 'system',
-				// If we have system messages from support context, prioritize them
-				content: combinedSystemPrompt || baseSystemContent
+				content: mergedSystemPrompt
 			},
-			// Only include non-system messages in the conversation
 			...createMessagesList(_history, responseMessageId)
-				.filter(message => message.role !== 'system')
+				.filter((message) => message.role !== 'system')
 				.map((message) => ({
-				...message,
-				content: removeDetails(message.content, ['reasoning', 'code_interpreter'])
-			}))
+					...message,
+					content: removeDetails(message.content, ['reasoning', 'code_interpreter'])
+				}))
 		].filter((message) => message && message.content && message.content.trim() !== '');
 
 		// Log info about system context
@@ -2786,7 +2893,6 @@
 					if (pendingCourseData) {
 						const courseData = JSON.parse(pendingCourseData);
 						courseId = courseData?.id || null;
-						activeCourseId = courseId || activeCourseId;
 						
 						// Try to get course title to use as chat title
 						if (courseId) {
@@ -2823,11 +2929,6 @@
 				_chatId = chat.id;
 				await chatId.set(_chatId);
 
-				if (courseId) {
-					activeCourseId = courseId;
-					localStorage.setItem(`course-chat-${_chatId}`, courseId);
-				}
-
 				await chats.set(await getChatList(localStorage.token, $currentChatPage));
 				currentChatPage.set(1);
 
@@ -2847,16 +2948,7 @@
 					localStorage.removeItem('pendingCourseData');
 				}
 
-				if (courseId) {
-					// Stay on classrooms/learn URL — never redirect course chats to /student/c/
-					window.history.replaceState(
-						history.state,
-						'',
-						`/student/classrooms/${courseId}/learn`
-					);
-				} else {
-					window.history.replaceState(history.state, '', `/student/c/${_chatId}`);
-				}
+				window.history.replaceState(history.state, '', `/student/c/${_chatId}`);
 				
 				// Dispatch a global event for chat creation that other components can listen for
 				if (typeof window !== 'undefined' && window.openTutorEvents) {
@@ -2865,10 +2957,9 @@
 						new CustomEvent('chatCreated', { 
 							detail: { 
 								chatId: _chatId,
-								courseId: courseId || null,
 								timestamp: Date.now(),
 								success: true
-							}
+							} 
 						})
 					);
 				}
@@ -2934,69 +3025,6 @@
 			chat: $user?.permissions?.chat,
 			features: $user?.permissions?.features
 		});
-	}
-
-	function extractCompletedSections(content: string): string[] {
-		if (!content) return [];
-		const match = content.match(/<!--PROGRESS:(.*?)-->/s);
-		if (!match) return [];
-		try {
-			const data = JSON.parse(match[1]);
-			return Array.isArray(data.completed) ? data.completed : [];
-		} catch {
-			return [];
-		}
-	}
-	
-	/**
-	 * Given a list of completed section IDs, find their chapter IDs from the
-	 * course plan stored in localStorage (set by the learn page).
-	 */
-	function getChapterForSection(
-		sectionId: string,
-		chapters: Array<{ id: string; sections: Array<{ id: string }> }>
-	): string | null {
-		for (const ch of chapters) {
-			if (ch.sections.some((s) => s.id === sectionId)) return ch.id;
-		}
-		return null;
-	}
-	
-	/**
-	 * Call the progress API for each newly completed section.
-	 * courseId and chapters come from pendingCourseData stored in localStorage.
-	 */
-	async function syncSectionProgress(content: string) {
-		const completedIds = extractCompletedSections(content);
-		if (completedIds.length === 0) return;
-	
-		let courseId: string | null = null;
-		let chapters: Array<{ id: string; title: string; sections: Array<{ id: string; title: string }> }> = [];
-	
-		try {
-			const raw = localStorage.getItem('activeCourseData');
-			if (raw) {
-				const parsed = JSON.parse(raw);
-				courseId = parsed.id;
-				chapters = parsed.chapters ?? [];
-			}
-		} catch {
-			return;
-		}
-	
-		if (!courseId || chapters.length === 0) return;
-	
-		const token = localStorage.getItem('token') ?? '';
-	
-		for (const sectionId of completedIds) {
-			const chapterId = getChapterForSection(sectionId, chapters);
-			if (!chapterId) continue;
-			try {
-				await updateSectionProgress(token, courseId, chapterId, sectionId, 'completed');
-			} catch (e) {
-				console.warn('Failed to update section progress:', e);
-			}
-		}
 	}
 </script>
 
