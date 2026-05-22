@@ -207,3 +207,287 @@
 		</div>
 	{/if}
 </div>
+
+
+<!-- ════════════════════════════════ STYLES ══════════════════════════════════ -->
+
+<style>
+	/* ── Layout ── */
+	.file-manager {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	/* ── Drop zone ── */
+	.drop-zone {
+		border: 2px dashed #d1d5db;
+		border-radius: 0.75rem;
+		padding: 2rem 1.5rem;
+		cursor: pointer;
+		text-align: center;
+		transition: border-color 0.2s, background-color 0.2s;
+		background-color: transparent;
+	}
+
+	:global(.dark) .drop-zone {
+		border-color: #4b5563;
+	}
+
+	.drop-zone:hover,
+	.drop-zone.dragging {
+		border-color: #3b82f6;
+		background-color: #eff6ff;
+	}
+
+	:global(.dark) .drop-zone:hover,
+	:global(.dark) .drop-zone.dragging {
+		background-color: rgba(59, 130, 246, 0.08);
+	}
+
+	.drop-zone__inner {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	/* Upload icon */
+	.upload-icon {
+		width: 3rem;
+		height: 3rem;
+		color: #3b82f6;
+		margin-bottom: 0.25rem;
+		transition: transform 0.2s;
+	}
+
+	.upload-icon svg {
+		width: 100%;
+		height: 100%;
+	}
+
+	.upload-icon.bounce {
+		animation: bounceUp 0.5s ease infinite alternate;
+	}
+
+	@keyframes bounceUp {
+		from { transform: translateY(0); }
+		to   { transform: translateY(-6px); }
+	}
+
+	.drop-zone__primary {
+		font-size: 0.875rem;
+		color: #374151;
+	}
+
+	:global(.dark) .drop-zone__primary { color: #d1d5db; }
+
+	.link-text {
+		color: #3b82f6;
+		font-weight: 600;
+		text-decoration: underline;
+		text-underline-offset: 2px;
+	}
+
+	.drop-zone__sub {
+		font-size: 0.75rem;
+		color: #9ca3af;
+	}
+
+	/* ── Error banner ── */
+	.error-banner {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.625rem 0.875rem;
+		background-color: #fef2f2;
+		border: 1px solid #fecaca;
+		border-radius: 0.5rem;
+		font-size: 0.8125rem;
+		color: #b91c1c;
+	}
+
+	:global(.dark) .error-banner {
+		background-color: rgba(239, 68, 68, 0.1);
+		border-color: rgba(239, 68, 68, 0.3);
+		color: #fca5a5;
+	}
+
+	.error-icon {
+		width: 1rem;
+		height: 1rem;
+		flex-shrink: 0;
+	}
+
+	.error-banner span {
+		flex: 1;
+	}
+
+	.error-close {
+		background: none;
+		border: none;
+		cursor: pointer;
+		color: inherit;
+		opacity: 0.7;
+		padding: 0 0.25rem;
+		font-size: 0.875rem;
+		line-height: 1;
+	}
+
+	.error-close:hover { opacity: 1; }
+
+	/* ── File list ── */
+	.file-list {
+		background-color: #f9fafb;
+		border: 1px solid #e5e7eb;
+		border-radius: 0.75rem;
+		overflow: hidden;
+	}
+
+	:global(.dark) .file-list {
+		background-color: rgba(55, 65, 81, 0.4);
+		border-color: #374151;
+	}
+
+	.file-list__header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 0.625rem 1rem;
+		border-bottom: 1px solid #e5e7eb;
+	}
+
+	:global(.dark) .file-list__header { border-color: #374151; }
+
+	.file-list__count {
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: #374151;
+	}
+
+	:global(.dark) .file-list__count { color: #d1d5db; }
+
+	.btn-clear {
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: #ef4444;
+		background: none;
+		border: none;
+		cursor: pointer;
+		padding: 0.25rem 0.5rem;
+		border-radius: 0.375rem;
+		transition: background-color 0.15s;
+	}
+
+	.btn-clear:hover {
+		background-color: #fee2e2;
+	}
+
+	:global(.dark) .btn-clear:hover { background-color: rgba(239, 68, 68, 0.15); }
+
+	/* ── File items ── */
+	.file-list__items {
+		list-style: none;
+		margin: 0;
+		padding: 0.375rem 0;
+	}
+
+	.file-item {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.5rem 1rem;
+		transition: background-color 0.15s;
+	}
+
+	.file-item:hover { background-color: #f3f4f6; }
+
+	:global(.dark) .file-item:hover { background-color: rgba(255, 255, 255, 0.05); }
+
+	/* Coloured badge by type */
+	.file-item__badge {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: 0.5rem;
+		flex-shrink: 0;
+	}
+
+	.file-item__badge svg {
+		width: 1.25rem;
+		height: 1.25rem;
+	}
+
+	.file-item--pdf   .file-item__badge { background-color: #fee2e2; color: #dc2626; }
+	.file-item--doc   .file-item__badge { background-color: #dbeafe; color: #2563eb; }
+	.file-item--ppt   .file-item__badge { background-color: #ffedd5; color: #ea580c; }
+	.file-item--video .file-item__badge { background-color: #f3e8ff; color: #9333ea; }
+	.file-item--other .file-item__badge { background-color: #f3f4f6; color: #6b7280; }
+
+	:global(.dark) .file-item--pdf   .file-item__badge { background-color: rgba(220,38,38,.15);  color: #fca5a5; }
+	:global(.dark) .file-item--doc   .file-item__badge { background-color: rgba(37,99,235,.15);  color: #93c5fd; }
+	:global(.dark) .file-item--ppt   .file-item__badge { background-color: rgba(234,88,12,.15);  color: #fdba74; }
+	:global(.dark) .file-item--video .file-item__badge { background-color: rgba(147,51,234,.15); color: #d8b4fe; }
+	:global(.dark) .file-item--other .file-item__badge { background-color: rgba(107,114,128,.15); color: #9ca3af; }
+
+	.file-item__info {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		min-width: 0;
+	}
+
+	.file-item__name {
+		font-size: 0.8125rem;
+		font-weight: 500;
+		color: #111827;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	:global(.dark) .file-item__name { color: #f3f4f6; }
+
+	.file-item__meta {
+		font-size: 0.6875rem;
+		color: #9ca3af;
+		margin-top: 0.1rem;
+	}
+
+	/* Remove button */
+	.file-item__remove {
+		width: 1.75rem;
+		height: 1.75rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: none;
+		border: none;
+		cursor: pointer;
+		color: #9ca3af;
+		border-radius: 50%;
+		flex-shrink: 0;
+		transition: background-color 0.15s, color 0.15s;
+		padding: 0;
+	}
+
+	.file-item__remove svg {
+		width: 1rem;
+		height: 1rem;
+	}
+
+	.file-item__remove:hover {
+		background-color: #fee2e2;
+		color: #dc2626;
+	}
+
+	:global(.dark) .file-item__remove:hover {
+		background-color: rgba(220, 38, 38, 0.15);
+		color: #fca5a5;
+	}
+
+	/* ── Utility ── */
+	.hidden { display: none; }
+</style>
