@@ -23,7 +23,7 @@ from open_tutorai.models.database import Quiz, QuizQuestion, QuizSubmission, Cou
 log = logging.getLogger(__name__)
 log.setLevel("INFO")
 
-router = APIRouter(prefix="/quizzes", tags=["Quizzes"])
+router = APIRouter(tags=["Quizzes"])
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def get_db():
