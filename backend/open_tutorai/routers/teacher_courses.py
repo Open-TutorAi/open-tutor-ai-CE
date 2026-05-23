@@ -30,7 +30,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 COURSE_PLAN_SYSTEM_PROMPT = """You are an expert instructional designer. Given course details, generate a structured course plan WITH pedagogical objectives.
 Return ONLY a valid JSON object with this exact format, no extra text:
 {
-  "objectives": "À la fin de ce cours, l'étudiant sera capable de:\n\n1. ...\n2. ...\n3. ...",
+  "objectives": "By the end of this course, the student will be able to:\n\n1. ...\n2. ...\n3. ...",
   "chapters": [
     {
       "id": "ch1",
@@ -45,7 +45,7 @@ Return ONLY a valid JSON object with this exact format, no extra text:
 }
 Rules:
 - Generate 5-7 well-written pedagogical objectives (numbered list format)
-- Create 3‑7 chapters, each with 2‑4 sections
+- Create 3-7 chapters, each with 2-4 sections
 - Use the course language
 - Output ONLY the JSON object, nothing else."""
 
