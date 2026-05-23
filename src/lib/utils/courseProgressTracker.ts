@@ -296,18 +296,24 @@ interface PlanIndex {
 		chapterTitle: string;
 	}>;
 	currentStatusMap: Map<string, CourseSectionStatus>;
+	chaptersOrdered: Array<{ chapterId: string; sections: string[] }>;
 }
 
 async function buildPlanIndex(token: string, courseId: string): Promise<PlanIndex> {
 	const index: PlanIndex = {
 		bySectionId: new Map(),
 		bySectionTitle: [],
-		currentStatusMap: new Map()
+		currentStatusMap: new Map(),
+		chaptersOrdered: []
 	};
 	try {
 		const course = await getCourseById(token, courseId);
 		for (const chapter of course.chapters ?? []) {
+			const sectionIds: string[] = [];
+
 			for (const section of chapter.sections ?? []) {
+				sectionIds.push(section.id);
+
 				const key = `${chapter.id}:${section.id}`;
 				index.bySectionId.set(section.id, {
 					chapterId: chapter.id,
@@ -322,6 +328,11 @@ async function buildPlanIndex(token: string, courseId: string): Promise<PlanInde
 				});
 				index.currentStatusMap.set(key, section.status);
 			}
+
+			index.chaptersOrdered.push({
+				chapterId: chapter.id,
+				sections: sectionIds
+			});
 		}
 	} catch (e) {
 		console.warn('[CourseProgress] Could not load plan for heuristic detection:', e);
@@ -439,6 +450,44 @@ function detectHeuristicSignals(content: string, planIndex: PlanIndex): CoursePr
 
 	return results;
 }
+function detectOrdinalSignals(content: string, planIndex: PlanIndex): CourseProgressSignal[] {
+	if (!content || planIndex.chaptersOrdered.length === 0) return [];
+
+	const out: CourseProgressSignal[] = [];
+	const seen = new Set<string>();
+
+	// ex: "terminé la section 3 du chapitre 2"
+	const regex =
+		/(termin[ée]|fini|completed|finished)[^.!?\n]{0,120}?(section|partie)\s*(\d+)[^.!?\n]{0,120}?(chapitre|chapter)\s*(\d+)/gi;
+
+	let m: RegExpExecArray | null;
+	while ((m = regex.exec(content)) !== null) {
+		const sectionNum = Number(m[3]);
+		const chapterNum = Number(m[5]);
+
+		if (!Number.isFinite(sectionNum) || !Number.isFinite(chapterNum)) continue;
+		if (chapterNum < 1 || sectionNum < 1) continue;
+
+		const ch = planIndex.chaptersOrdered[chapterNum - 1];
+		if (!ch) continue;
+
+		const secId = ch.sections[sectionNum - 1];
+		if (!secId) continue;
+
+		const key = `${ch.chapterId}:${secId}:completed`;
+		if (seen.has(key)) continue;
+		seen.add(key);
+
+		out.push({
+			chapter_id: ch.chapterId,
+			section_id: secId,
+			status: 'completed',
+			reason: 'heuristic:ordinal-completion'
+		});
+	}
+
+	return out;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // applyCourseProgressSignalsFromContent  ← called from Chat.svelte
@@ -467,11 +516,64 @@ export async function applyCourseProgressSignalsFromContent(args: {
 		return { cleanedContent, extracted: updates, heuristic: [], applied, skipped: updates };
 	}
 
-	// Step 2: build plan index for heuristic fallback
+	// Step 2: build plan index for heuristic fallback AND for number-to-ID mapping
 	const planIndex = await buildPlanIndex(token, courseId);
 
+	// NEW: Map numeric chapter/section indices to actual IDs
+	const mappedUpdates = updates.map(update => {
+		const chapterId = update.chapter_id;
+		const sectionId = update.section_id;
+		
+		// Check if chapter_id looks like a number (1, 2, 3)
+		const chapterNum = parseInt(chapterId, 10);
+		const sectionNum = parseInt(sectionId, 10);
+		
+		if (!isNaN(chapterNum) && !isNaN(sectionNum)) {
+			// Try to find matching chapter/section by index
+			const chapterIndex = chapterNum - 1; // 1-based to 0-based
+			const sectionIndex = sectionNum - 1;
+			
+			const matchingItem = planIndex.bySectionTitle.find((item: any, idx: number) => {
+				// Find by position in the flat list (approximate)
+				let currentChapterIdx = 0;
+				let currentSectionIdx = 0;
+				let prevChapterId = '';
+				
+				for (let i = 0; i < planIndex.bySectionTitle.length; i++) {
+					const current = planIndex.bySectionTitle[i];
+					if (current.chapterId !== prevChapterId) {
+						currentChapterIdx++;
+						currentSectionIdx = 0;
+						prevChapterId = current.chapterId;
+					} else {
+						currentSectionIdx++;
+					}
+					
+					if (currentChapterIdx === chapterNum && currentSectionIdx === sectionNum) {
+						return true;
+					}
+				}
+				return false;
+			});
+			
+			if (matchingItem) {
+				console.log(`[CourseProgress] Mapped numeric ${chapterNum}.${sectionNum} → ${matchingItem.chapterId}:${matchingItem.sectionId}`);
+				return {
+					...update,
+					chapter_id: matchingItem.chapterId,
+					section_id: matchingItem.sectionId
+				};
+			}
+		}
+		
+		return update;
+	});
+
 	// Step 3: heuristic detection from text when no explicit markers found
-	const heuristic = updates.length === 0 ? detectHeuristicSignals(content, planIndex) : [];
+	const heuristic =
+		updates.length === 0
+			? [...detectHeuristicSignals(content, planIndex), ...detectOrdinalSignals(content, planIndex)]
+			: [];
 
 	// Step 4: merge, AI markers win over heuristic on conflict
 	const rank = (s: CourseSectionStatus) => (s === 'completed' ? 2 : s === 'in-progress' ? 1 : 0);
@@ -484,10 +586,36 @@ export async function applyCourseProgressSignalsFromContent(args: {
 	}
 
 	for (const s of heuristic) addToMerged(s);
-	for (const s of updates) addToMerged(s); // AI markers override heuristic
+	for (const s of mappedUpdates) addToMerged(s); // AI markers override heuristic
 
-	console.log(`[CourseProgress] courseId=${courseId} extracted=${updates.length} heuristic=${heuristic.length} toApply=${merged.size}`);
+	console.log(`[CourseProgress] courseId=${courseId} extracted=${updates.length} mapped=${mappedUpdates.length} heuristic=${heuristic.length} toApply=${merged.size}`);
 
+	// Auto-complete previous chapters when learner is already in a later chapter
+	let maxAdvancedChapterIdx = -1;
+	for (const u of merged.values()) {
+		const idx = planIndex.chaptersOrdered.findIndex((c) => c.chapterId === u.chapter_id);
+		if (idx > maxAdvancedChapterIdx && (u.status === 'in-progress' || u.status === 'completed')) {
+			maxAdvancedChapterIdx = idx;
+		}
+	}
+
+	if (maxAdvancedChapterIdx > 0) {
+		for (let i = 0; i < maxAdvancedChapterIdx; i++) {
+			const ch = planIndex.chaptersOrdered[i];
+			for (const secId of ch.sections) {
+				const key = `${ch.chapterId}:${secId}`;
+				const current = planIndex.currentStatusMap.get(key);
+				if (current !== 'completed') {
+					merged.set(key, {
+						chapter_id: ch.chapterId,
+						section_id: secId,
+						status: 'completed',
+						reason: 'auto-complete-previous-chapters'
+					});
+				}
+			}
+		}
+	}
 	// Step 5: apply each update via backend API
 	for (const update of merged.values()) {
 		if (update.status === 'not-started') {
@@ -515,6 +643,13 @@ export async function applyCourseProgressSignalsFromContent(args: {
 			await updateSectionProgress(token, courseId, update.chapter_id, update.section_id, update.status);
 			console.log(`[CourseProgress] ✅ Applied: ${key} → ${update.status}`);
 			applied.push(update);
+			
+			// NEW: Dispatch event to refresh UI immediately
+			if (typeof window !== 'undefined') {
+				window.dispatchEvent(new CustomEvent('sectionProgressUpdated', { 
+					detail: { courseId, chapterId: update.chapter_id, sectionId: update.section_id, status: update.status }
+				}));
+			}
 		} catch (e) {
 			console.error(`[CourseProgress] ❌ Failed to apply: ${key} → ${update.status}`, e);
 			skipped.push(update);
