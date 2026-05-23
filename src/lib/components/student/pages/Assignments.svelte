@@ -154,6 +154,16 @@
 		currentQuestionIndex = 0;
 	}
 
+	// Auto-join if quiz code is passed in URL query param
+	onMount(async () => {
+		const params = new URLSearchParams(window.location.search);
+		const codeParam = params.get('code');
+		if (codeParam && codeParam.length === 6) {
+			quizCode = codeParam.toUpperCase();
+			await joinQuiz();
+		}
+	});
+
 	// Clean up timer interval on destroy
 	onDestroy(() => {
 		if (timerInterval) clearInterval(timerInterval);
@@ -338,8 +348,9 @@
 						</button>
 					{/if}
 				</div>
-			</div>
 			{/if}
+
+			</div>
 
 		{:else if state === 'completed'}
 			<!-- ── SCREEN 3: COMPLETION & SCORE DISPLAY ── -->

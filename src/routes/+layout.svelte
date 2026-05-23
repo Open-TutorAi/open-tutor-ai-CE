@@ -40,7 +40,7 @@
 	import 'tippy.js/dist/tippy.css';
 
 	import { TUTOR_BASE_URL, TUTOR_FRONT_URL } from '$lib/constants';
-	import i18n, { initI18n, getLanguages } from '$lib/i18n';
+	import i18n, { initI18n, getLanguages, isLoading } from '$lib/i18n';
 	import { bestMatchingLanguage } from '$lib/utils';
 	import { getAllTags, getChatList } from '$lib/apis/chats';
 	import NotificationToast from '$lib/components/NotificationToast.svelte';
@@ -578,18 +578,27 @@
 	<link rel="stylesheet" type="text/css" href="/themes/rosepine-dawn.css" /> -->
 </svelte:head>
 
-{#if loaded}
-	{#if $isApp}
-		<div class="flex flex-row h-screen">
-			<AppSidebar />
+{#if !$isLoading}
+	{#if loaded}
+		{#if $isApp}
+			<div class="flex flex-row h-screen">
+				<AppSidebar />
 
-			<div class="w-full flex-1 max-w-[calc(100%-4.5rem)]">
-				<slot />
+				<div class="w-full flex-1 max-w-[calc(100%-4.5rem)]">
+					<slot />
+				</div>
 			</div>
-		</div>
-	{:else}
-		<slot />
+		{:else}
+			<slot />
+		{/if}
 	{/if}
+{:else}
+	<div class="flex items-center justify-center h-screen bg-white dark:bg-gray-950">
+		<div class="text-center">
+			<div class="inline-block w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+			<div class="mt-4 text-sm font-medium text-gray-500 dark:text-gray-400">Loading...</div>
+		</div>
+	</div>
 {/if}
 
 <Toaster

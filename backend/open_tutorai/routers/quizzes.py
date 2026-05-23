@@ -90,7 +90,40 @@ async def list_teacher_quizzes(
     db=Depends(get_db),
 ):
     quizzes = db.query(Quiz).filter(Quiz.teacher_id == user.id).all()
-    return [_quiz_to_dict(q) for q in quizzes]
+    results = []
+    for q in quizzes:
+        qd = _quiz_to_dict(q)
+        participants_count = db.query(func.count(QuizSubmission.id)).filter(
+            QuizSubmission.quiz_id == q.id
+        ).scalar() or 0
+        qd["participants_count"] = participants_count
+        results.append(qd)
+    return results
+
+
+# 0b. GET /student/dashboard - list quizzes submitted by the student
+@router.get("/student/dashboard")
+async def get_student_quiz_dashboard(
+    user=Depends(get_verified_user),
+    db=Depends(get_db),
+):
+    results = (
+        db.query(QuizSubmission, Quiz)
+        .join(Quiz, QuizSubmission.quiz_id == Quiz.id)
+        .filter(QuizSubmission.student_id == user.id)
+        .order_by(QuizSubmission.submitted_at.desc())
+        .all()
+    )
+    return [
+        {
+            "quiz_id": q.id,
+            "title": q.title,
+            "total_questions": q.total_questions,
+            "score": sub.score,
+            "submitted_at": sub.submitted_at.isoformat() if sub.submitted_at else ""
+        }
+        for sub, q in results
+    ]
 
 
 # 1. POST /generate - teacher configures and generates quiz draft via LLM

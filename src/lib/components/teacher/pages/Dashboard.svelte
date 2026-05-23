@@ -1,10 +1,12 @@
 <script lang="ts">
     import { getContext, onMount, onDestroy } from 'svelte';
+    import { derived } from 'svelte/store';
     import { goto } from '$app/navigation';
     import { fly, fade } from 'svelte/transition';
     import { user } from '$lib/stores';
 
-    const i18n = getContext('i18n');
+    const i18n: any = getContext('i18n');
+    const _ = derived(i18n, ($i18n: any) => (key: string, options?: any) => $i18n.t(key, options));
 
     // ── TYPES ─────────────────────────────────────────────────────
     interface Course {
@@ -28,6 +30,10 @@
     let newCourseId = '';
     let copiedId = '';
     let quizzesCount = 0;
+
+    // Quiz state
+    let teacherQuizzes: any[] = [];
+    let isLoadingQuizzes = true;
 
     // Delete state
     let deletingCourseId = '';
@@ -156,15 +162,23 @@
 
     async function fetchQuizzesCount() {
         const token = localStorage.getItem('token') ?? '';
+        isLoadingQuizzes = true;
         try {
             const res = await fetch('/api/v1/quizzes/teacher', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.ok) {
                 const data = await res.json();
+                teacherQuizzes = data;
                 quizzesCount = data.filter((q: any) => q.status === 'published').length;
+            } else {
+                teacherQuizzes = [];
             }
-        } catch {}
+        } catch {
+            teacherQuizzes = [];
+        } finally {
+            isLoadingQuizzes = false;
+        }
     }
 
     // ── FETCH COURSES ──────────────────────────────────────────────
@@ -450,6 +464,138 @@
                                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                             </svg>
                         </button>
+                    </div>
+                </div>
+            {/each}
+        </div>
+    {/if}
+
+    <!-- ── QUIZZES SECTION HEADER ───────────────────────────────────── -->
+    <div class="section-head" style="margin-top: 2.5rem;">
+        <h2 class="section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+            </svg>
+            {$_('dashboard.my_quizzes')}
+        </h2>
+        <button class="btn-refresh" on:click={fetchQuizzesCount} title={$i18n.t('Actualiser')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="15" height="15">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- ── LOADING ────────────────────────────────────────────── -->
+    {#if isLoadingQuizzes}
+        <div class="loading-grid">
+            {#each [1,2] as _}
+                <div class="skeleton-card">
+                    <div class="skel skel-title"></div>
+                    <div class="skel skel-sub"></div>
+                    <div class="skel skel-code"></div>
+                    <div class="skel skel-footer"></div>
+                </div>
+            {/each}
+        </div>
+
+    <!-- ── EMPTY ──────────────────────────────────────────────── -->
+    {:else if teacherQuizzes.length === 0}
+        <div class="empty-state" in:fly={{ y: 10, duration: 250 }}>
+            <div class="empty-icon" style="background: rgba(126,34,206,.15); color: #7e22ce;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="32" height="32">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                </svg>
+            </div>
+            <p class="empty-title">{$i18n.t('Aucun quiz pour l\'instant')}</p>
+            <p class="empty-sub">{$i18n.t('Générez votre premier quiz avec l\'IA pour commencer')}</p>
+            <button class="btn-create" on:click={() => goto('/teacher/assignments')}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="15" height="15">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                </svg>
+                {$i18n.t('Créer un quiz')}
+            </button>
+        </div>
+
+    <!-- ── QUIZZES GRID ───────────────────────────────────────── -->
+    {:else}
+        <div class="courses-grid">
+            {#each teacherQuizzes as quiz (quiz.id)}
+                <div class="course-card" in:fly={{ y: 12, duration: 250 }}>
+                    <!-- Status tag -->
+                    <div class="cc-header">
+                        <div class="cc-title-wrap">
+                            <h3 class="cc-title">{quiz.title}</h3>
+                            <p class="cc-meta">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="12" height="12">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                {timeAgo(quiz.created_at, now)}
+                            </p>
+                        </div>
+                        <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400 self-start">
+                            {quiz.status === 'published' ? $i18n.t('Publié') : $i18n.t('Brouillon')}
+                        </span>
+                    </div>
+
+                    <!-- Details tags -->
+                    <div class="cc-tags">
+                        <span class="ctag ctag-gray">
+                            {quiz.total_questions} {quiz.total_questions > 1 ? $i18n.t('questions') : $i18n.t('question')}
+                        </span>
+                        {#if quiz.time_limit}
+                            <span class="ctag ctag-blue">
+                                ⏱️ {quiz.time_limit} {$i18n.t('minutes')}
+                            </span>
+                        {/if}
+                    </div>
+
+                    <!-- Sharing code block (if published) -->
+                    {#if quiz.status === 'published' && quiz.quiz_code}
+                        <div class="cc-code-block" style="border-left-color: #7e22ce;">
+                            <div class="cc-code-inner">
+                                <div>
+                                    <p class="cc-code-label">{$i18n.t('Code de partage')}</p>
+                                    <p class="cc-code-value" style="color: #7e22ce;">{quiz.quiz_code}</p>
+                                </div>
+                                <button
+                                    class="cc-copy-btn {copiedId === quiz.quiz_code ? 'copied' : ''}"
+                                    on:click={() => copyCode(quiz.quiz_code)}
+                                    title={$i18n.t('Copier le code')}
+                                >
+                                    {#if copiedId === quiz.quiz_code}
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="15" height="15">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                    {:else}
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="15" height="15">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                        </svg>
+                                    {/if}
+                                    {copiedId === quiz.quiz_code ? $i18n.t('Copié !') : $i18n.t('Copier')}
+                                </button>
+                            </div>
+                        </div>
+                    {/if}
+
+                    <!-- Student participation row -->
+                    <div class="cc-students-row" style="margin-top: auto;">
+                        <div class="cc-students-info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            <span class="cc-students-count">{quiz.participants_count ?? 0}</span>
+                            <span class="cc-students-label">
+                                {(quiz.participants_count ?? 0) <= 1
+                                    ? $i18n.t('étudiant a participé')
+                                    : $i18n.t('étudiants ont participé')}
+                            </span>
+                        </div>
                     </div>
                 </div>
             {/each}
