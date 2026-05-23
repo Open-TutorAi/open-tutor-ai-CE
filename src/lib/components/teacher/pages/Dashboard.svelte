@@ -27,6 +27,7 @@
     let fetchError = '';
     let newCourseId = '';
     let copiedId = '';
+    let quizzesCount = 0;
 
     // Delete state
     let deletingCourseId = '';
@@ -153,6 +154,19 @@
         }));
     }
 
+    async function fetchQuizzesCount() {
+        const token = localStorage.getItem('token') ?? '';
+        try {
+            const res = await fetch('/api/v1/quizzes/teacher', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                quizzesCount = data.filter((q: any) => q.status === 'published').length;
+            }
+        } catch {}
+    }
+
     // ── FETCH COURSES ──────────────────────────────────────────────
     async function fetchCourses() {
         isLoading = true;
@@ -187,6 +201,7 @@
         const params = new URLSearchParams(window.location.search);
         newCourseId = params.get('newCourse') ?? '';
         fetchCourses();
+        fetchQuizzesCount();
         if (newCourseId) {
             setTimeout(() => { newCourseId = ''; }, 5000);
         }
@@ -258,6 +273,19 @@
             <div class="stat-body">
                 <span class="stat-label">{$i18n.t('Étudiants inscrits')}</span>
                 <span class="stat-value">{isLoading ? '—' : totalStudents}</span>
+            </div>
+        </div>
+
+        <div class="stat-card cursor-pointer hover:scale-[1.01] active:scale-95 transition-all" on:click={() => goto('/teacher/assignments')}>
+            <div class="stat-icon stat-purple">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="18" height="18">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                </svg>
+            </div>
+            <div class="stat-body">
+                <span class="stat-label">{$i18n.t('Évaluations active(s)')}</span>
+                <span class="stat-value">{isLoading ? '—' : quizzesCount}</span>
             </div>
         </div>
     </div>
@@ -543,7 +571,7 @@
 }
 :global(.dark) .new-banner { background: #052e16; border-color: #166534; color: #86efac; }
 
-.stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.75rem; }
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1.75rem; }
 .stat-card {
     background: white; border: 1px solid #e5e8f4; border-radius: 1rem;
     padding: 1.25rem 1.5rem; display: flex; align-items: center; gap: 1rem;
@@ -553,8 +581,10 @@
 .stat-icon { width: 44px; height: 44px; border-radius: .75rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .stat-blue  { background: #eff6ff; color: #2563eb; }
 .stat-green { background: #f0fdf4; color: #16a34a; }
+.stat-purple { background: #f3e8ff; color: #7e22ce; }
 :global(.dark) .stat-blue  { background: rgba(37,99,235,.15); }
 :global(.dark) .stat-green { background: rgba(22,163,74,.15); }
+:global(.dark) .stat-purple { background: rgba(126,34,206,.15); }
 .stat-body { display: flex; flex-direction: column; gap: .2rem; }
 .stat-label { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: #94a3b8; }
 .stat-value { font-size: 1.75rem; font-weight: 800; color: #0f172a; line-height: 1; }
