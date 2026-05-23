@@ -245,6 +245,7 @@
 				</div>
 
 				<!-- Focused Single Question Card -->
+			{#if quizData.questions[currentQuestionIndex]}
 				{@const q = quizData.questions[currentQuestionIndex]}
 				<div in:fly={{ x: 12, duration: 250 }} class="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-[32px] p-6 md:p-8 shadow-sm space-y-6">
 					
@@ -338,6 +339,7 @@
 					{/if}
 				</div>
 			</div>
+			{/if}
 
 		{:else if state === 'completed'}
 			<!-- ── SCREEN 3: COMPLETION & SCORE DISPLAY ── -->
