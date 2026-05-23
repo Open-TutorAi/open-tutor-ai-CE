@@ -57,6 +57,11 @@
 	let selectedModel = '';
 	let customTitle = '';
 	let generating = false;
+	// Generation params — defaults align with the backend (DEFAULT_CARD_COUNT=8,
+	// no language/difficulty hint).
+	let cardCount = 8;
+	let languageHint = '';
+	let difficultyHint: '' | 'beginner' | 'intermediate' | 'advanced' = '';
 
 	// ── study state ───────────────────────────────────────────
 	type CardState = Flashcard & { idx: number; flipped: boolean };
@@ -176,7 +181,16 @@
 
 		generating = true;
 		try {
-			const newSet = await generateFlashcards(token, messages, selectedModel, title, source_label, support_id);
+			const newSet = await generateFlashcards(token, {
+				messages,
+				model: selectedModel,
+				title,
+				source_label,
+				support_id,
+				card_count: cardCount,
+				language: languageHint.trim() || undefined,
+				difficulty: difficultyHint || undefined
+			});
 			sets = [newSet, ...sets];
 			toast.success(`"${newSet.title}" — ${newSet.card_count} ${$i18n.t('cards')}`);
 			openSet(newSet);
@@ -586,6 +600,59 @@
 						{#if !$models.length}
 							<p class="text-xs text-amber-600 dark:text-amber-400 mt-1.5">{$i18n.t('No models available. Check that Ollama is running and has at least one model pulled.')}</p>
 						{/if}
+					</div>
+
+					<!-- Section: generation params -->
+					<div class="pt-2">
+						<p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">{$i18n.t('Generation')}</p>
+
+						<!-- Card count -->
+						<div class="mb-4">
+							<div class="flex items-center justify-between mb-1.5">
+								<label for="fc-count" class="block text-sm font-medium text-gray-700 dark:text-gray-300">{$i18n.t('Number of cards')}</label>
+								<span class="text-sm tabular-nums text-gray-700 dark:text-gray-200 font-medium">{cardCount}</span>
+							</div>
+							<input
+								id="fc-count"
+								type="range"
+								min="3"
+								max="10"
+								step="1"
+								bind:value={cardCount}
+								class="w-full accent-blue-600"
+							/>
+							<div class="flex justify-between text-[10px] text-gray-400 dark:text-gray-500 px-0.5 mt-0.5 tabular-nums">
+								<span>3</span><span>10</span>
+							</div>
+						</div>
+
+						<!-- Language + difficulty side by side -->
+						<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+							<div>
+								<label for="fc-language" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{$i18n.t('Language')}</label>
+								<input
+									id="fc-language"
+									type="text"
+									bind:value={languageHint}
+									maxlength="50"
+									placeholder={$i18n.t('Match the source language')}
+									class="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+								/>
+							</div>
+							<div>
+								<label for="fc-difficulty" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{$i18n.t('Difficulty')}</label>
+								<select
+									id="fc-difficulty"
+									bind:value={difficultyHint}
+									class="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+								>
+									<option value="">{$i18n.t('Auto')}</option>
+									<option value="beginner">{$i18n.t('Beginner')}</option>
+									<option value="intermediate">{$i18n.t('Intermediate')}</option>
+									<option value="advanced">{$i18n.t('Advanced')}</option>
+								</select>
+							</div>
+						</div>
 					</div>
 
 					<!-- Section: source -->

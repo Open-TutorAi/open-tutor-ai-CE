@@ -36,17 +36,24 @@ async function apiFetch<T>(url: string, token: string, options: RequestInit = {}
 	return res.json();
 }
 
+export interface GenerateFlashcardsParams {
+	messages: { role: string; content: string }[];
+	model: string;
+	title: string;
+	source_label?: string;
+	support_id?: string;
+	card_count?: number;
+	language?: string;
+	difficulty?: 'beginner' | 'intermediate' | 'advanced';
+}
+
 export const generateFlashcards = (
 	token: string,
-	messages: { role: string; content: string }[],
-	model: string,
-	title: string,
-	source_label?: string,
-	support_id?: string
+	params: GenerateFlashcardsParams
 ): Promise<FlashcardSet> =>
 	apiFetch(`${TUTOR_API_BASE_URL}/flashcards/generate`, token, {
 		method: 'POST',
-		body: JSON.stringify({ messages, model, title, source_label, support_id })
+		body: JSON.stringify(params)
 	});
 
 export const getFlashcardSets = (token: string): Promise<FlashcardSet[]> =>
