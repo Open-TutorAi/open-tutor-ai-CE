@@ -4,6 +4,7 @@ import logging
 import os
 import random
 import string
+import traceback
 from datetime import datetime
 from typing import Optional, List
 
@@ -15,7 +16,7 @@ from sqlalchemy.orm import sessionmaker
 
 from open_webui.internal.db import engine
 from open_tutorai.utils.auth import get_verified_user
-from open_tutorai.models.database import Quiz, QuizQuestion, QuizSubmission, Course
+from open_tutorai.models.database import Quiz, QuizQuestion, QuizSubmission, Course, CoursePlan
 
 # ---------------------------------------------------------------
 # Logging & Session Setup
@@ -100,56 +101,161 @@ async def generate_quiz(
     user=Depends(get_verified_user),
     db=Depends(get_db),
 ):
-    # Verify course if provided
+    # ── Step 1: Verify course ownership and extract course context (RAG) ──────────
+    course_context = ""
+    course_meta = ""
+
     if body.course_id:
-        course = db.query(Course).filter(Course.id == body.course_id, Course.teacher_id == user.id).first()
+        course = db.query(Course).filter(
+            Course.id == body.course_id, Course.teacher_id == user.id
+        ).first()
         if not course:
             raise HTTPException(status_code=404, detail="Cours introuvable")
 
-    # Select LLM with safety fallback
+        # Build a structured metadata string from the Course record
+        course_meta_parts = [
+            f"Course Title: {course.title}",
+            f"Level: {course.level}",
+            f"Language: {course.language}",
+        ]
+        if course.category:
+            course_meta_parts.append(f"Category: {course.category}")
+        if course.objectives:
+            course_meta_parts.append(f"Learning Objectives:\n{course.objectives}")
+        course_meta = "\n".join(course_meta_parts)
+
+        # Fetch the CoursePlan and flatten chapters + sections into a readable outline
+        course_plan = (
+            db.query(CoursePlan)
+            .filter(CoursePlan.course_id == body.course_id)
+            .order_by(CoursePlan.generated_at.desc())
+            .first()
+        )
+
+        if course_plan and course_plan.plan_json:
+            plan = course_plan.plan_json
+            outline_lines = ["Course Outline (Chapters & Sections):"]
+            for ch_idx, ch in enumerate(plan.get("chapters", []), start=1):
+                ch_title = ch.get("title", f"Chapter {ch_idx}")
+                outline_lines.append(f"  Chapter {ch_idx}: {ch_title}")
+                for sec_idx, sec in enumerate(ch.get("sections", []), start=1):
+                    sec_title = sec.get("title", f"Section {sec_idx}")
+                    outline_lines.append(f"    {ch_idx}.{sec_idx} {sec_title}")
+            course_context = "\n".join(outline_lines)
+            log.info(
+                f"Course context built: {len(plan.get('chapters', []))} chapters, "
+                f"context length={len(course_context)} chars"
+            )
+        else:
+            log.warning(
+                f"No CoursePlan found for course {body.course_id}. "
+                "Falling back to topic-only prompt."
+            )
+    else:
+        log.info("No course_id provided — generating quiz from topic prompt only.")
+
+    # ── Step 2: Select LLM with safety fallback ───────────────────────────────────
     model_to_use = body.model
+    available_ids = []
+    auth_header = request.headers.get("authorization", "")
+    port = int(os.environ.get("PORT", "8080"))
+
     try:
-        from open_webui.models.models import Models
-        all_models = Models.get_all_models()
-        available_ids = [getattr(m, "id", str(m)) for m in all_models] if all_models else []
-    except Exception:
-        available_ids = []
+        with httpx.Client(timeout=10) as client:
+            res = client.get(
+                f"http://localhost:{port}/api/models",
+                headers={"Authorization": auth_header}
+            )
+            if res.ok:
+                models_data = res.json().get("data", [])
+                available_ids = [m.get("id") for m in models_data if m.get("id")]
+                log.info(f"Available models from API: {available_ids}")
+    except Exception as e:
+        log.error(f"Failed to fetch models from API: {e}")
+
+    if not available_ids:
+        try:
+            from open_webui.models.models import Models
+            all_models = Models.get_all_models()
+            available_ids = [getattr(m, "id", str(m)) for m in all_models] if all_models else []
+            log.info(f"Available models from Models class: {available_ids}")
+        except Exception as e:
+            log.error(f"Failed to fetch models from Models class: {e}")
 
     if available_ids:
         if not model_to_use or model_to_use not in available_ids:
-            # Fallback to the first available model if gpt-4o-mini is not loaded
             model_to_use = available_ids[0]
+            log.info(f"Model fallback triggered. Using: {model_to_use}")
+
+    if not model_to_use:
+        raise HTTPException(
+            status_code=503,
+            detail="Aucun modèle LLM disponible. Veuillez vérifier que l'assistant IA est bien démarré."
+        )
 
     log.info(f"Generating quiz using model: {model_to_use}")
 
-    # Build Assessment Generation System Prompt
-    system_prompt = f"""You are an expert assessment designer.
+    # ── Step 3: Build context-aware system prompt ─────────────────────────────────
+    # When a course is linked, bind its full outline into the prompt so the LLM
+    # CANNOT generate questions outside of the actual course content.
+    if course_context:
+        system_prompt = f"""You are a strict expert examiner creating an assessment for a specific course.
+Your ONLY source of truth for generating questions is the [COURSE CONTEXT] below.
+Do NOT create general or hallucinated questions outside of this course content.
+All questions MUST be directly derived from the course chapters, sections, and learning objectives listed.
+
+[COURSE METADATA]
+{course_meta}
+
+[COURSE CONTEXT]
+{course_context}
+
+[TEACHER TOPIC FOCUS]
+"{body.topic}"
+
+Generate exactly {body.total_questions} questions that test knowledge from the course above.
+Question types to use: {body.question_types}.
+Return ONLY a valid JSON array of question objects — no markdown fences, no wrapper object, no extra text.
+
+Each object in the array must follow this exact schema:
+{{
+  "question_type": "QCM" or "True/False" or "Short Answer",
+  "question_text": "The question text (must be directly tied to a chapter/section from the course)",
+  "options": ["Option A", "Option B", "Option C", "Option D"] (only for QCM, otherwise an empty array []),
+  "correct_answer": "The correct answer (for QCM: must match one option EXACTLY. For True/False: EXACTLY 'Vrai' or 'Faux'. For Short Answer: short and precise)"
+}}
+Output ONLY the JSON array."""
+    else:
+        # No course context — fall back to topic-only prompt
+        system_prompt = f"""You are an expert assessment designer.
 Generate a quiz containing exactly {body.total_questions} questions about the topic: "{body.topic}".
 The questions must cover the following question types: {body.question_types}.
-Return ONLY a valid JSON array of question objects. Do not wrap in a parent object. Do not include markdown code blocks or text outside the JSON.
+Return ONLY a valid JSON array of question objects. Do not include markdown code blocks or text outside the JSON.
 
 Each object in the array must follow this exact schema:
 {{
   "question_type": "QCM" or "True/False" or "Short Answer",
   "question_text": "The text of the question",
   "options": ["Option A", "Option B", "Option C", "Option D"] (only for QCM, otherwise an empty array []),
-  "correct_answer": "The correct answer (for QCM, must match one of the options EXACTLY. For True/False, must be EXACTLY 'Vrai' or 'Faux'. For Short Answer, keep it short and precise)"
+  "correct_answer": "The correct answer (for QCM: must match one option EXACTLY. For True/False: EXACTLY 'Vrai' or 'Faux'. For Short Answer: short and precise)"
 }}
-Ensure the correct_answer matches the options exactly for QCM. If True/False, use 'Vrai' or 'Faux'.
 Output ONLY the JSON array."""
 
-    auth_header = request.headers.get("authorization", "")
-    port = int(os.environ.get("PORT", "8080"))
+    user_message = (
+        f"Generate {body.total_questions} quiz questions on: '{body.topic}'."
+        + (f" Focus on the course chapters and sections listed in the course context." if course_context else "")
+    )
 
     payload = {
         "model": model_to_use,
         "messages": [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"Generate a quiz of {body.total_questions} questions on '{body.topic}' now."}
+            {"role": "user", "content": user_message}
         ],
         "stream": False,
     }
 
+    r = None
     try:
         async with httpx.AsyncClient(timeout=300) as client:
             r = await client.post(
@@ -160,14 +266,29 @@ Output ONLY the JSON array."""
                     "Content-Type": "application/json",
                 },
             )
-        r.raise_for_status()
+            log.info(f"LLM response status: {r.status_code}")
+            r.raise_for_status()
+    except httpx.HTTPStatusError as e:
+        error_body = r.text if r else ""
+        log.error(f"LLM HTTP Status Error {e.response.status_code}: {error_body}")
+        raise HTTPException(
+            status_code=502,
+            detail=f"Le modèle LLM a retourné une erreur {e.response.status_code}: {error_body[:300]}"
+        )
     except Exception as e:
-        log.error(f"LLM call failed for quiz generation: {e}")
+        error_body = r.text if (r and hasattr(r, 'text')) else ""
+        log.error(f"LLM call failed for quiz generation: {e}. Body: {error_body}")
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"LLM backend error: {str(e)}")
 
+    # Parse LLM response - keep content in outer scope so except can log it
+    content = ""
     try:
-        content = r.json()["choices"][0]["message"]["content"].strip()
-        
+        raw_json = r.json()
+        log.info(f"LLM raw response keys: {list(raw_json.keys())}")
+        content = raw_json["choices"][0]["message"]["content"].strip()
+        log.info(f"LLM content preview (first 200 chars): {content[:200]}")
+
         # Strip markdown code fences if model wrapped the JSON
         if content.startswith("```json"):
             content = content[7:]
@@ -179,46 +300,58 @@ Output ONLY the JSON array."""
 
         content = content.strip()
         questions_data = json.loads(content)
-        
+
         if not isinstance(questions_data, list):
-            raise ValueError("LLM did not return a JSON array")
+            raise ValueError(f"LLM did not return a JSON array, got: {type(questions_data).__name__}")
+
+        log.info(f"Parsed {len(questions_data)} questions from LLM response")
+    except HTTPException:
+        raise
     except Exception as e:
-        log.error(f"Failed to parse LLM response for quiz: {e}. Content: {content[:500]}")
-        raise HTTPException(status_code=500, detail="L'assistant IA a renvoyé des données invalides. Veuillez réessayer.")
+        log.error(f"Failed to parse LLM response for quiz: {e}. Content (first 500): {content[:500]}")
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"L'assistant IA a renvoyé des données invalides: {str(e)[:200]}. Veuillez réessayer."
+        )
 
     # Save Quiz as "draft"
-    quiz_id = str(uuid.uuid4())
-    quiz = Quiz(
-        id=quiz_id,
-        teacher_id=user.id,
-        course_id=body.course_id,
-        title=body.title,
-        time_limit=body.time_limit,
-        total_questions=len(questions_data),
-        limit_date=body.limit_date,
-        model_used=model_to_use,
-        status="draft",
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
-    )
-    db.add(quiz)
-
-    # Save Questions
-    for idx, q_data in enumerate(questions_data):
-        question = QuizQuestion(
-            id=str(uuid.uuid4()),
-            quiz_id=quiz_id,
-            question_type=q_data.get("question_type", "QCM"),
-            question_text=q_data.get("question_text", ""),
-            options=q_data.get("options", []),
-            correct_answer=str(q_data.get("correct_answer", "")),
+    try:
+        quiz_id = str(uuid.uuid4())
+        quiz = Quiz(
+            id=quiz_id,
+            teacher_id=user.id,
+            course_id=body.course_id,
+            title=body.title,
+            time_limit=body.time_limit,
+            total_questions=len(questions_data),
+            limit_date=body.limit_date,
+            model_used=model_to_use,
+            status="draft",
         )
-        db.add(question)
+        db.add(quiz)
 
-    db.commit()
-    db.refresh(quiz)
+        # Save Questions
+        for idx, q_data in enumerate(questions_data):
+            question = QuizQuestion(
+                id=str(uuid.uuid4()),
+                quiz_id=quiz_id,
+                question_type=q_data.get("question_type", "QCM"),
+                question_text=q_data.get("question_text", ""),
+                options=q_data.get("options", []),
+                correct_answer=str(q_data.get("correct_answer", "")),
+            )
+            db.add(question)
 
-    log.info(f"Quiz draft {quiz_id} created by teacher {user.id}")
+        db.commit()
+        db.refresh(quiz)
+        log.info(f"Quiz draft {quiz_id} created by teacher {user.id}")
+    except Exception as e:
+        db.rollback()
+        log.error(f"Database error saving quiz draft: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Erreur de base de données: {str(e)[:200]}")
+
     return _quiz_to_dict(quiz)
 
 
