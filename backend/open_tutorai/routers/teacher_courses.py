@@ -47,7 +47,7 @@ Rules:
 - Generate 5-7 well-written pedagogical objectives (numbered list format)
 - Create 3-7 chapters, each with 2-4 sections
 - Output ONLY the JSON object, nothing else
-- IMPORTANT: The JSON output must respect the course language
+- IMPORTANT: ALL The JSON output must respect the course language
 """
 
 # ---------------------------------------------------------------
