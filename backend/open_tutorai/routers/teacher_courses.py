@@ -122,6 +122,7 @@ class PlanResponse(BaseModel):
     course_id: str
     plan: dict
 
+
 class PlanWithObjectives(BaseModel):
     course_id: str
     plan: dict
@@ -417,7 +418,7 @@ async def generate_course_full(
 
         plan = {"chapters": data.get("chapters", [])}
         ai_objectives = data.get("objectives", objectives)
-        
+
     except Exception as e:
         log.error(f"Failed to parse LLM response: {e}")
         course.status = "error"
@@ -641,7 +642,6 @@ async def generate_course_plan(
         log.error(f"LLM call error: {e}")
         raise HTTPException(status_code=502, detail="Could not reach LLM")
 
-
     try:
         content = r.json()["choices"][0]["message"]["content"].strip()
         # Strip markdown code fences
@@ -654,9 +654,7 @@ async def generate_course_plan(
 
         data = json.loads(content.strip())
 
-        plan = {
-            "chapters": data.get("chapters", [])
-        }
+        plan = {"chapters": data.get("chapters", [])}
         ai_objectives = data.get("objectives", body.objectives)  # NEW
 
         if "chapters" not in data:
@@ -680,12 +678,7 @@ async def generate_course_plan(
     db.commit()
     db.refresh(new_plan)
     log.info(f"Plan généré pour le cours {course_id} avec le modèle {body.model}")
-    return PlanWithObjectives(
-        course_id=course_id,
-        plan=plan,
-        objectives=ai_objectives
-    )
-
+    return PlanWithObjectives(course_id=course_id, plan=plan, objectives=ai_objectives)
 
 
 # ---------------------------------------------------------------
