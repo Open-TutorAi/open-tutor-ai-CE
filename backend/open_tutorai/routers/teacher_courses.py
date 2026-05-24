@@ -46,8 +46,9 @@ Return ONLY a valid JSON object with this exact format, no extra text:
 Rules:
 - Generate 5-7 well-written pedagogical objectives (numbered list format)
 - Create 3-7 chapters, each with 2-4 sections
-- Use the course language
-- Output ONLY the JSON object, nothing else."""
+- Output ONLY the JSON object, nothing else
+- IMPORTANT: The JSON output must respect the course language
+"""
 
 # ---------------------------------------------------------------
 # Pydantic Models (mirroring SupportCreateRequest / SupportResponse)
