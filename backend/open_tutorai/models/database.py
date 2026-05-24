@@ -178,8 +178,10 @@ class CourseEnrollment(Base):
     student_id = Column(String, nullable=False, index=True)
     enrolled_at = Column(DateTime, nullable=False, server_default=func.now())
     status = Column(String, nullable=False, default="active")
-    
-    chat_id = Column(String, nullable=True)  # NEW: chat ID for the student's course conversation
+
+    chat_id = Column(
+        String, nullable=True
+    )  # NEW: chat ID for the student's course conversation
 
     course = relationship("Course", backref="enrollments")
 
@@ -201,9 +203,7 @@ class CourseProgress(Base):
 
     __tablename__ = f"{PREFIX}course_progress"
 
-    id = Column(
-        String, primary_key=True, index=True, default=lambda: str(uuid.uuid4())
-    )
+    id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     enrollment_id = Column(
         String,
         ForeignKey(f"{PREFIX}course_enrollment.id", ondelete="CASCADE"),

@@ -127,6 +127,7 @@ def _get_teacher_name(teacher_id: str) -> str:
     teacher_name = "Professeur"
     try:
         from open_webui.models.users import Users
+
         teacher = Users.get_user_by_id(teacher_id)
         if teacher:
             teacher_name = getattr(teacher, "name", None) or getattr(
@@ -235,7 +236,9 @@ async def enroll_in_course(
 
     course = db.query(Course).filter(Course.id == course_id).first()
     if not course:
-        raise HTTPException(status_code=404, detail="Code invalide ou cours introuvable")
+        raise HTTPException(
+            status_code=404, detail="Code invalide ou cours introuvable"
+        )
 
     existing = (
         db.query(CourseEnrollment)

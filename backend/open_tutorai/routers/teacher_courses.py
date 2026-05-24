@@ -46,8 +46,9 @@ Return ONLY a valid JSON object with this exact format, no extra text:
 Rules:
 - Generate 5-7 well-written pedagogical objectives (numbered list format)
 - Create 3-7 chapters, each with 2-4 sections
-- Use the course language
-- Output ONLY the JSON object, nothing else."""
+- Output ONLY the JSON object, nothing else
+- IMPORTANT: ALL The JSON output must respect the course language
+"""
 
 # ---------------------------------------------------------------
 # Pydantic Models (mirroring SupportCreateRequest / SupportResponse)
@@ -120,6 +121,7 @@ class PlanRequest(BaseModel):
 class PlanResponse(BaseModel):
     course_id: str
     plan: dict
+
 
 class PlanWithObjectives(BaseModel):
     course_id: str
@@ -416,7 +418,7 @@ async def generate_course_full(
 
         plan = {"chapters": data.get("chapters", [])}
         ai_objectives = data.get("objectives", objectives)
-        
+
     except Exception as e:
         log.error(f"Failed to parse LLM response: {e}")
         course.status = "error"
@@ -640,7 +642,6 @@ async def generate_course_plan(
         log.error(f"LLM call error: {e}")
         raise HTTPException(status_code=502, detail="Could not reach LLM")
 
-
     try:
         content = r.json()["choices"][0]["message"]["content"].strip()
         # Strip markdown code fences
@@ -653,9 +654,7 @@ async def generate_course_plan(
 
         data = json.loads(content.strip())
 
-        plan = {
-            "chapters": data.get("chapters", [])
-        }
+        plan = {"chapters": data.get("chapters", [])}
         ai_objectives = data.get("objectives", body.objectives)  # NEW
 
         if "chapters" not in data:
@@ -679,12 +678,7 @@ async def generate_course_plan(
     db.commit()
     db.refresh(new_plan)
     log.info(f"Plan généré pour le cours {course_id} avec le modèle {body.model}")
-    return PlanWithObjectives(
-        course_id=course_id,
-        plan=plan,
-        objectives=ai_objectives
-    )
-
+    return PlanWithObjectives(course_id=course_id, plan=plan, objectives=ai_objectives)
 
 
 # ---------------------------------------------------------------
