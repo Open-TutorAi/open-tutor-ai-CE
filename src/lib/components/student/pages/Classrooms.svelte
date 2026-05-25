@@ -22,6 +22,7 @@
         category: string | null;
         level: string;
         teacher_name: string;
+        teacher_profile_image_url?: string;
         enrolled_at: string;
         status: string; 
     }
@@ -54,6 +55,22 @@
             'university':     '#ef4444',
         };
         return map[level] ?? '#94a3b8';
+    }
+
+    function normalizeAvatarPath(url?: string | null) {
+        if (!url || url.trim() === '') return null;
+        const clean = url.split('?')[0].trim();
+        if (
+            clean.startsWith('http://') ||
+            clean.startsWith('https://') ||
+            clean.startsWith('/static/') ||
+            clean.startsWith('/uploads/') ||
+            clean.startsWith('/api/')
+        ) {
+            return clean;
+        }
+        if (clean.startsWith('/')) return clean;
+        return `/uploads/avatars/${clean}`;
     }
 
     function levelLabel(level: string): string {
@@ -203,7 +220,18 @@
         }
     }
 
-    onMount(fetchCourses);
+    onMount(() => {
+        fetchCourses();
+
+        const handleAvatarUpdate = () => {
+            fetchCourses();
+        };
+        window.addEventListener('avatar-updated', handleAvatarUpdate as EventListener);
+
+        return () => {
+            window.removeEventListener('avatar-updated', handleAvatarUpdate as EventListener);
+        };
+    });
 </script>
 
 <!-- ===================== TEMPLATE ===================== -->
@@ -328,7 +356,15 @@
                     <!-- Teacher -->
                     <div class="cc-teacher">
                         <div class="teacher-avatar">
-                            {course.teacher_name?.charAt(0)?.toUpperCase() ?? 'P'}
+                            {#if course.teacher_profile_image_url && normalizeAvatarPath(course.teacher_profile_image_url)}
+                                <img 
+                                    src={normalizeAvatarPath(course.teacher_profile_image_url)} 
+                                    alt={course.teacher_name}
+                                    class="teacher-avatar-img"
+                                />
+                            {:else}
+                                {course.teacher_name?.charAt(0)?.toUpperCase() ?? 'P'}
+                            {/if}
                         </div>
                         <span class="teacher-name">{course.teacher_name ?? $i18n.t('Professeur')}</span>
                     </div>
@@ -694,6 +730,14 @@
         color: #3b5bdb; font-size: .75rem; font-weight: 800;
         display: flex; align-items: center; justify-content: center;
         flex-shrink: 0;
+        overflow: hidden;
+    }
+    .teacher-avatar-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+        display: block;
     }
     :global(.dark) .teacher-avatar { background: rgba(59,91,219,.2); color: #93c5fd; }
     .teacher-name { font-size: .82rem; font-weight: 500; color: #475569; }

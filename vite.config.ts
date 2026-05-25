@@ -47,32 +47,32 @@ export default defineConfig({
 		host: true,
 		port: 5173,
 		strictPort: true,
-		watch: {
-			usePolling: true
-		},
+		watch: { usePolling: true },
 		proxy: {
 			'/api': {
-				target: 'http://open-tutor-backend:8080',
-				target: 'http://localhost:8080',
+				target: 'http://localhost:8080',   // ← une seule ligne target
 				changeOrigin: true,
 				secure: false,
 				configure: (proxy, _options) => {
-					proxy.on('error', (err, _req, _res) => {
-						console.log('proxy error', err);
-					});
-					proxy.on('proxyReq', (proxyReq, req, _res) => {
-						console.log('Sending Request to the Target:', req.method, req.url);
-					});
-					proxy.on('proxyRes', (proxyRes, req, _res) => {
-						console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
-					});
+					proxy.on('error', (err, _req, _res) => console.log('proxy error', err));
+					proxy.on('proxyReq', (proxyReq, req, _res) =>
+						console.log('Sending Request to the Target:', req.method, req.url)
+					);
+					proxy.on('proxyRes', (proxyRes, req, _res) =>
+						console.log('Received Response from the Target:', proxyRes.statusCode, req.url)
+					);
 				},
 			},
 			'/ws': {
-				target: 'ws://open-tutor-backend:8080',
-				target: 'http://localhost:8080',
+				target: 'ws://localhost:8080',     // ← une seule ligne target
 				ws: true,
 				changeOrigin: true,
+			},
+			// ✅ Ajout du proxy pour les fichiers statiques
+			'/static': {
+				target: 'http://localhost:8080',
+				changeOrigin: true,
+				secure: false,
 			}
 		}
 	},

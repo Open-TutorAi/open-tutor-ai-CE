@@ -1,103 +1,118 @@
-<!-- Navbar.svelte -->
 <script lang="ts">
-	import { createEventDispatcher, onMount, getContext } from 'svelte';
-	const i18n = getContext('i18n');
-	import { goto } from '$app/navigation';
-	import { user } from '$lib/stores';
-	import i18next from 'i18next';
+    import { createEventDispatcher, onMount, getContext } from 'svelte';
+    const i18n = getContext('i18n');
+    import { user, theme } from '$lib/stores';
+    import i18next from 'i18next';
 
-	// Props
-	export let username: string = '';
-	export let toggleSidebar: () => void;
-	export let isDarkMode: boolean = false;
+    export let username: string = '';
+    export let toggleSidebar: () => void;
+    export let isDarkMode: boolean = false;
 
-	// State
-	let searchQuery: string = '';
-	let notificationCount: number = 0;
-	let isSearchFocused: boolean = false;
-	let showNotifications: boolean = false;
-	let showMobileMenu: boolean = false;
-	let showLanguageMenu: boolean = false;
-	let currentLanguage: string = 'fr-FR';
-	let showUserDropdown: boolean = false;
+    let searchQuery: string = '';
+    let notificationCount: number = 0;
+    let isSearchFocused: boolean = false;
+    let showNotifications: boolean = false;
+    let showMobileMenu: boolean = false;
+    let showLanguageMenu: boolean = false;
+    let currentLanguage: string = 'fr-FR';
+    let showUserDropdown: boolean = false;
+    let currentTheme: 'light' | 'dark' | 'system' = 'system';
+	$: userName = $user?.name || 'User';
+	$: userEmail = $user?.email || '';
+	$: displayName = $user?.name || username || 'Professor';
+    
+	let avatarRefreshKey = 0;
+	let userAvatar = '/static/student-avatar.png';
 
-	function toggleUserDropdown() {
-		showUserDropdown = !showUserDropdown;
+	const isBrowser = typeof window !== 'undefined';
+
+	$: userAvatar = `${normalizeAvatarPath(
+	$user?.profile_image_url || (isBrowser ? localStorage.getItem('profile_avatar') : null)
+	)}?t=${avatarRefreshKey}`;
+
+	function normalizeAvatarPath(url?: string | null) {
+	if (!url || url.trim() === '') return '/static/student-avatar.png';
+
+	const clean = url.split('?')[0].trim();
+
+	if (
+		clean.startsWith('http://') ||
+		clean.startsWith('https://') ||
+		clean.startsWith('/static/') ||
+		clean.startsWith('/uploads/') ||
+		clean.startsWith('/api/')
+	) {
+		return clean;
 	}
 
-	function toggleLanguageMenu() {
-		showLanguageMenu = !showLanguageMenu;
+	if (clean.startsWith('/')) return clean;
+
+	return `/uploads/avatars/${clean}`;
 	}
 
-	function changeLanguage(lang: string) {
-		// Properly change language and trigger the event
-		i18next.changeLanguage(lang);
-		currentLanguage = lang;
-		showLanguageMenu = false;
-	}
+    function toggleUserDropdown() { showUserDropdown = !showUserDropdown; }
+    function toggleLanguageMenu() { showLanguageMenu = !showLanguageMenu; }
+    function changeLanguage(lang: string) { i18next.changeLanguage(lang); currentLanguage = lang; showLanguageMenu = false; }
+    const dispatch = createEventDispatcher();
+    function toggleDarkMode() { isDarkMode = !isDarkMode; dispatch('darkModeToggle', { isDarkMode }); }
+    function handleSearch(e: KeyboardEvent) { if (e.key === 'Enter') dispatch('search', { query: searchQuery }); }
+    function toggleNotificationPanel() { showNotifications = !showNotifications; }
+    function toggleMobileMenu() { showMobileMenu = !showMobileMenu; }
 
-	const dispatch = createEventDispatcher();
+    let notificationRef: HTMLDivElement;
+    let mobileMenuRef: HTMLDivElement;
 
-	function toggleDarkMode() {
-		isDarkMode = !isDarkMode;
-		dispatch('darkModeToggle', { isDarkMode });
-	}
+    async function hydrateProfileFromServer() {
+        try {
+            const res = await fetch('/api/v1/settings/profile');
+            if (!res.ok) return;
+            const p = await res.json();
+            const fullName = `${p.firstName || ''} ${p.lastName || ''}`.trim();
+            const avatar = p.avatar || '/static/student-avatar.png';
+            user.update(u => ({ ...u, name: fullName || u?.name, email: p.email || u?.email, profile_image_url: avatar, _avatar_ts: Date.now() }));
+            localStorage.setItem('profile_avatar', avatar);
+            avatarRefreshKey = Date.now();
+        } catch (e) { console.error(e); }
+    }
 
-	function handleSearch(e: KeyboardEvent) {
-		if (e.key === 'Enter') {
-			dispatch('search', { query: searchQuery });
-		}
-	}
+    onMount(() => {
+        hydrateProfileFromServer();
 
-	function toggleNotificationPanel() {
-		showNotifications = !showNotifications;
-	}
+        const handleClickOutside = (event: MouseEvent) => {
+            if (notificationRef && !notificationRef.contains(event.target as Node) && showNotifications) showNotifications = false;
+            if (mobileMenuRef && !mobileMenuRef.contains(event.target as Node) && showMobileMenu) showMobileMenu = false;
+            const userDropdownRef = document.getElementById('user-dropdown-container');
+            if (userDropdownRef && !userDropdownRef.contains(event.target as Node) && showUserDropdown) showUserDropdown = false;
+            const langDropdownRef = document.getElementById('language-dropdown-container');
+            if (langDropdownRef && !langDropdownRef.contains(event.target as Node) && showLanguageMenu) showLanguageMenu = false;
+        };
 
-	function toggleMobileMenu() {
-		showMobileMenu = !showMobileMenu;
-	}
+        const handleAvatarUpdate = (event: CustomEvent) => {
+            const newUrl = event.detail.url;
+            user.update(u => ({ ...u, profile_image_url: newUrl, _avatar_ts: Date.now() }));
+            avatarRefreshKey = Date.now();
+            localStorage.setItem('profile_avatar', newUrl);
+        };
+        window.addEventListener('avatar-updated', handleAvatarUpdate as EventListener);
 
-	let notificationRef: HTMLDivElement;
-	let mobileMenuRef: HTMLDivElement;
+        currentLanguage = i18next.language || 'fr-FR';
+        currentTheme = $theme || (localStorage.getItem('theme') as any) || 'system';
+        const handleLanguageChange = (lng: string) => { currentLanguage = lng; };
+        i18next.on('languageChanged', handleLanguageChange);
+        const unsubscribeTheme = theme.subscribe((newTheme) => { if (newTheme) currentTheme = newTheme; });
 
-	onMount(() => {
-		const handleClickOutside = (event: MouseEvent) => {
-			if (notificationRef && !notificationRef.contains(event.target as Node) && showNotifications) {
-				showNotifications = false;
-			}
-			if (mobileMenuRef && !mobileMenuRef.contains(event.target as Node) && showMobileMenu) {
-				showMobileMenu = false;
-			}
-			const userDropdownRef = document.getElementById('user-dropdown-container');
-			if (userDropdownRef && !userDropdownRef.contains(event.target as Node) && showUserDropdown) {
-				showUserDropdown = false;
-			}
-			const langDropdownRef = document.getElementById('language-dropdown-container');
-			if (langDropdownRef && !langDropdownRef.contains(event.target as Node) && showLanguageMenu) {
-				showLanguageMenu = false;
-			}
-		};
-
-		// Initialize language on mount
-		currentLanguage = i18next.language || 'fr-FR';
-
-		// Listen for language changes from other components
-		const handleLanguageChange = (lng: string) => {
-			currentLanguage = lng;
-		};
-		i18next.on('languageChanged', handleLanguageChange);
-
-		document.addEventListener('click', handleClickOutside);
-		return () => {
-			document.removeEventListener('click', handleClickOutside);
-			i18next.off('languageChanged', handleLanguageChange);
-		};
-	});
+        document.addEventListener('click', handleClickOutside);
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+            i18next.off('languageChanged', handleLanguageChange);
+            unsubscribeTheme();
+            window.removeEventListener('avatar-updated', handleAvatarUpdate as EventListener);
+        };
+    });
 </script>
 
 <header class={`navbar-root ${isDarkMode ? 'navbar-dark' : 'navbar-light'}`}>
 
-	<!-- Left: toggle + greeting -->
 	<div class="flex items-center">
 		<button
 			class={`btn-mobile-toggle md:hidden ${isDarkMode ? 'icon-dark' : 'icon-light'}`}
@@ -112,7 +127,7 @@
 		<div class="ml-4">
 			<h1 class={`navbar-title ${isDarkMode ? 'text-dark' : 'text-light'}`}>
 				<span class="hidden sm:inline inline-flex items-center gap-2">
-					{username ? $i18n.t('Hello Professor') + ' ' + username : $i18n.t('Hello Professor')}
+					{displayName ? $i18n.t('Hello Professor') + ' ' + displayName : $i18n.t('Hello Professor')}
 					<span class="animate-wave" aria-hidden="true">👋</span>
 				</span>
 			</h1>
@@ -122,10 +137,8 @@
 		</div>
 	</div>
 
-	<!-- Desktop nav -->
 	<div class="hidden md:flex items-center gap-4">
 
-		<!-- Search -->
 		<div class={`search-wrapper ${isSearchFocused ? 'search-focused' : 'search-idle'}`}>
 			<div class={`search-inner ${isDarkMode ? 'search-dark' : 'search-light'} ${isSearchFocused ? 'search-ring' : ''}`}>
 				<svg xmlns="http://www.w3.org/2000/svg" class="search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -155,7 +168,6 @@
 			</div>
 		</div>
 
-		<!-- Notifications -->
 		<div class="relative" bind:this={notificationRef}>
 			<button
 				class={`btn-icon ${isDarkMode ? 'btn-icon-dark' : 'btn-icon-light'}`}
@@ -192,11 +204,11 @@
 			{/if}
 		</div>
 
-		<!-- Dark mode toggle -->
 		<button
 			class={`btn-icon ${isDarkMode ? 'btn-icon-dark' : 'btn-icon-light'}`}
 			on:click={toggleDarkMode}
 			aria-label={isDarkMode ? $i18n.t('Switch to light mode') : $i18n.t('Switch to dark mode')}
+			title={isDarkMode ? $i18n.t('Switch to light mode') : $i18n.t('Switch to dark mode')}
 		>
 			{#if isDarkMode}
 				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -209,7 +221,6 @@
 			{/if}
 		</button>
 
-		<!-- Language selector -->
 		<div class="relative" id="language-dropdown-container">
 			<button
 				class={`btn-icon ${isDarkMode ? 'btn-icon-dark' : 'btn-icon-light'}`}
@@ -253,7 +264,6 @@
 			{/if}
 		</div>
 
-		<!-- Help -->
 		<button
 			class={`btn-icon ${isDarkMode ? 'btn-icon-dark' : 'btn-icon-light'}`}
 			aria-label={$i18n.t('Help and information')}
@@ -263,7 +273,6 @@
 			</svg>
 		</button>
 
-		<!-- User avatar dropdown -->
 		<div class="relative" id="user-dropdown-container">
 			<button
 				class={`avatar-btn ${isDarkMode ? 'avatar-dark' : 'avatar-light'}`}
@@ -271,14 +280,14 @@
 				aria-expanded={showUserDropdown}
 				on:click={toggleUserDropdown}
 			>
-				<img src="/static/student-avatar.png" alt="User" class="avatar-img" />
+				<img src={userAvatar} alt="User" class="avatar-img" />
 			</button>
 
 			{#if showUserDropdown}
 				<div class={`dropdown-panel ${isDarkMode ? 'dropdown-dark' : 'dropdown-light'}`}>
-					<div class={`dropdown-header ${isDarkMode ? 'dropdown-divider-dark' : 'dropdown-divider-light'}`}>
-						<p class={`dropdown-title ${isDarkMode ? 'text-dark' : 'text-light'}`}>{$user.name}</p>
-						<p class={`dropdown-email ${isDarkMode ? 'subtext-dark' : 'subtext-light'}`}>{$user.email}</p>
+					<div class={`dropdown-header ${isDarkMode ? 'dropdown-divider-dark' : 'dropdown-divider-light'}`} style="flex-direction: column; align-items: flex-start; gap: 4px;">
+						<p class={`dropdown-title ${isDarkMode ? 'text-dark' : 'text-light'}`}>{userName}</p>
+						<p class={`dropdown-email ${isDarkMode ? 'subtext-dark' : 'subtext-light'}`}>{userEmail}</p>
 					</div>
 					<div class="py-1">
 						<a href="/teacher/settings" class={`dropdown-item ${isDarkMode ? 'dropdown-item-dark' : 'dropdown-item-light'}`}>
@@ -311,10 +320,8 @@
 		</div>
 	</div>
 
-	<!-- Mobile actions -->
 	<div class="flex items-center gap-3 md:hidden">
 
-		<!-- Notification mobile -->
 		<div class="relative">
 			<button
 				class={`btn-icon ${isDarkMode ? 'btn-icon-dark' : 'btn-icon-light'}`}
@@ -330,11 +337,11 @@
 			</button>
 		</div>
 
-		<!-- Dark mode mobile -->
 		<button
 			class={`btn-icon ${isDarkMode ? 'btn-icon-dark' : 'btn-icon-light'}`}
 			on:click={toggleDarkMode}
 			aria-label={isDarkMode ? $i18n.t('Switch to light mode') : $i18n.t('Switch to dark mode')}
+			title={isDarkMode ? $i18n.t('Switch to light mode') : $i18n.t('Switch to dark mode')}
 		>
 			{#if isDarkMode}
 				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -347,21 +354,20 @@
 			{/if}
 		</button>
 
-		<!-- Avatar mobile -->
 		<div class="relative" bind:this={mobileMenuRef}>
 			<button
 				class={`avatar-btn ${isDarkMode ? 'avatar-dark' : 'avatar-light'}`}
 				on:click={toggleMobileMenu}
 				aria-label={$i18n.t('User menu')}
 			>
-				<img src="/static/student-avatar.png" alt="User" class="avatar-img" />
+				<img src={userAvatar} alt="User" class="avatar-img" />
 			</button>
 
 			{#if showMobileMenu}
 				<div class={`dropdown-panel dropdown-mobile ${isDarkMode ? 'dropdown-dark' : 'dropdown-light'}`}>
-					<div class={`dropdown-header ${isDarkMode ? 'dropdown-divider-dark' : 'dropdown-divider-light'}`}>
-						<p class={`dropdown-title ${isDarkMode ? 'text-dark' : 'text-light'}`}>{$user.name}</p>
-						<p class={`dropdown-email ${isDarkMode ? 'subtext-dark' : 'subtext-light'}`}>{$user.email}</p>
+					<div class={`dropdown-header ${isDarkMode ? 'dropdown-divider-dark' : 'dropdown-divider-light'}`} style="flex-direction: column; align-items: flex-start; gap: 4px;">
+						<p class={`dropdown-title ${isDarkMode ? 'text-dark' : 'text-light'}`}>{userName}</p>
+						<p class={`dropdown-email ${isDarkMode ? 'subtext-dark' : 'subtext-light'}`}>{userEmail}</p>
 					</div>
 					<div class="py-1">
 						<a href="/student/settings" class={`dropdown-item ${isDarkMode ? 'dropdown-item-dark' : 'dropdown-item-light'}`}>
@@ -401,7 +407,6 @@
 	</div>
 
 </header>
-
 <style>
 	/* ─── Animations ─────────────────────────────────────────── */
 	@keyframes slideDown {

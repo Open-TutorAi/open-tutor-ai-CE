@@ -24,6 +24,7 @@
         category: string | null;
         level: string;
         teacher_name: string;
+        teacher_profile_image_url?: string;
         enrolled_at: string;
         status: string;
     }
@@ -64,6 +65,22 @@
             'university':     '#ef4444',
         };
         return map[level] ?? '#94a3b8';
+    }
+
+    function normalizeAvatarPath(url?: string | null) {
+        if (!url || url.trim() === '') return null;
+        const clean = url.split('?')[0].trim();
+        if (
+            clean.startsWith('http://') ||
+            clean.startsWith('https://') ||
+            clean.startsWith('/static/') ||
+            clean.startsWith('/uploads/') ||
+            clean.startsWith('/api/')
+        ) {
+            return clean;
+        }
+        if (clean.startsWith('/')) return clean;
+        return `/uploads/avatars/${clean}`;
     }
 
     function levelLabel(level: string): string {
@@ -305,6 +322,11 @@
                 }
             }) as EventListener);
 
+            const handleAvatarUpdate = () => {
+                fetchCourses();
+            };
+            window.addEventListener('avatar-updated', handleAvatarUpdate as EventListener);
+
             chatIdSubscription = storeChatId.subscribe((newChatId) => {
                 if (newChatId && newChatId !== 'local' && pendingSupportId) {
                     updateSupportWithChatId(pendingSupportId, newChatId);
@@ -345,6 +367,7 @@
         if (browser) {
             if (chatIdSubscription) chatIdSubscription();
             if (urlCheckInterval) clearInterval(urlCheckInterval);
+            window.removeEventListener('avatar-updated', (() => fetchCourses()) as EventListener);
         }
     });
 
@@ -620,7 +643,15 @@
 
                             <div class="cc-teacher-dash">
                                 <div class="teacher-avatar-dash">
-                                    {course.teacher_name?.charAt(0)?.toUpperCase() ?? 'P'}
+                                    {#if course.teacher_profile_image_url && normalizeAvatarPath(course.teacher_profile_image_url)}
+                                        <img 
+                                            src={normalizeAvatarPath(course.teacher_profile_image_url)} 
+                                            alt={course.teacher_name}
+                                            class="teacher-avatar-img"
+                                        />
+                                    {:else}
+                                        {course.teacher_name?.charAt(0)?.toUpperCase() ?? 'P'}
+                                    {/if}
                                 </div>
                                 <span class="teacher-name-dash">{course.teacher_name ?? $i18n.t('Professeur')}</span>
                             </div>
@@ -1130,6 +1161,10 @@
         background: linear-gradient(135deg, #dbe4ff, #bac8ff);
         color: #3b5bdb; font-size: .7rem; font-weight: 800;
         display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        overflow: hidden;
+    }
+    .teacher-avatar-img {
+        width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
     }
     :global(.dark) .teacher-avatar-dash { background: rgba(59,91,219,.2); color: #93c5fd; }
     .teacher-name-dash {

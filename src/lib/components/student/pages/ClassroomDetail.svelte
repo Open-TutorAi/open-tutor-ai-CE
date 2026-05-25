@@ -43,6 +43,7 @@
         category: string | null;
         level: string;
         teacher_name: string;
+        teacher_profile_image_url?: string;
         objectives: string;
         welcome_message?: string;
         files: CourseFile[];
@@ -57,6 +58,22 @@
     let estEnChargement = true;
     let erreurChargement = '';
     let chapitresDeveloppes = new Set<string>();
+
+    function normalizeAvatarPath(url?: string | null) {
+        if (!url || url.trim() === '') return null;
+        const clean = url.split('?')[0].trim();
+        if (
+            clean.startsWith('http://') ||
+            clean.startsWith('https://') ||
+            clean.startsWith('/static/') ||
+            clean.startsWith('/uploads/') ||
+            clean.startsWith('/api/')
+        ) {
+            return clean;
+        }
+        if (clean.startsWith('/')) return clean;
+        return `/uploads/avatars/${clean}`;
+    }
 
     async function chargerDetailsCours() {
         estEnChargement = true;
@@ -88,11 +105,20 @@
             }
         };
 
+        // Listen for teacher avatar updates and refresh course data
+        const handleAvatarUpdate = () => {
+            if (cours) {
+                chargerDetailsCours();
+            }
+        };
+
         if (typeof window !== 'undefined') {
             window.addEventListener('courseProgressUpdated', handleProgressUpdate as EventListener);
+            window.addEventListener('avatar-updated', handleAvatarUpdate as EventListener);
 
             return () => {
                 window.removeEventListener('courseProgressUpdated', handleProgressUpdate as EventListener);
+                window.removeEventListener('avatar-updated', handleAvatarUpdate as EventListener);
             };
         }
     });
@@ -231,7 +257,15 @@
                 <div class="en-tete-hero">
                     <div class="info-prof">
                         <div class="avatar">
-                            {cours.teacher_name?.slice(0, 2).toUpperCase() ?? 'PR'}
+                            {#if cours.teacher_profile_image_url && normalizeAvatarPath(cours.teacher_profile_image_url)}
+                                <img 
+                                    src={normalizeAvatarPath(cours.teacher_profile_image_url)} 
+                                    alt={cours.teacher_name}
+                                    class="avatar-img"
+                                />
+                            {:else}
+                                {cours.teacher_name?.slice(0, 2).toUpperCase() ?? 'PR'}
+                            {/if}
                         </div>
                         <span class="nom-prof">Pr. {cours.teacher_name}</span>
                     </div>
@@ -502,6 +536,10 @@
         background: linear-gradient(135deg, #3b82f6, #1d4ed8);
         border-radius: 50%; display: flex; justify-content: center;
         align-items: center; font-size: 0.85rem; font-weight: 700; color: white;
+        overflow: hidden; flex-shrink: 0;
+    }
+    .avatar-img {
+        width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
     }
     .nom-prof { font-size: 0.9rem; font-weight: 600; color: #475569; }
     .badges { display: flex; gap: 0.5rem; }
