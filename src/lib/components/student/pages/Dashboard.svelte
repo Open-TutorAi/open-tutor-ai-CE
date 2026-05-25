@@ -738,7 +738,7 @@
 							<!-- NEW badge -->
 							{#if course.id === newlyJoinedId}
 								<div class="new-badge-dash" in:fly={{ x: 12, duration: 280 }}>
-									✨ {$_('Nouveau')}
+									{$_('Nouveau')}
 								</div>
 							{/if}
 

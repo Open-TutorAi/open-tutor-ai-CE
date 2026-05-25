@@ -1,10 +1,6 @@
 """
-Student courses API — /api/v1/student/courses/
-Endpoints:
-  GET    /student/courses/              → liste des cours rejoints
-  POST   /student/courses/enroll        → rejoindre un cours via code (course_id)
-  GET    /student/courses/{id}          → détail d'un cours
-  DELETE /student/courses/{id}          → se désinscrire d'un cours
+student_courses.py — UPDATED with progress tracking
+Replace: backend/open_tutorai/routers/student_courses.py
 """
 
 import logging
@@ -22,6 +18,7 @@ from open_tutorai.models.database import (
     CourseEnrollment,
     CoursePlan,
     CourseFile,
+    CourseProgress,
 )
 
 log = logging.getLogger(__name__)
@@ -49,6 +46,16 @@ class EnrollRequest(BaseModel):
     course_id: str
 
 
+class SectionProgressUpdate(BaseModel):
+    chapter_id: str
+    section_id: str
+    status: str = "completed"  # 'not-started' | 'in-progress' | 'completed'
+
+
+class ChatIdUpdate(BaseModel):
+    chat_id: str
+
+
 class EnrolledCourseResponse(BaseModel):
     id: str
     title: str
@@ -58,6 +65,8 @@ class EnrolledCourseResponse(BaseModel):
     teacher_name: str
     enrolled_at: str
     status: str
+    progress_percentage: float = 0.0
+    chat_id: Optional[str] = None
 
 
 class SectionDetail(BaseModel):
@@ -92,6 +101,23 @@ class CourseDetailResponse(BaseModel):
     chapters: List[ChapterDetail] = []
     enrolled_at: str
     status: str
+    progress_percentage: float = 0.0
+    chat_id: Optional[str] = None
+
+
+class SectionProgressResponse(BaseModel):
+    chapter_id: str
+    section_id: str
+    status: str
+    completed_at: Optional[str] = None
+
+
+class ProgressSummaryResponse(BaseModel):
+    total_sections: int
+    completed_sections: int
+    progress_percentage: float
+    sections: List[SectionProgressResponse]
+    chat_id: Optional[str] = None
 
 
 # ── Internal helpers ──────────────────────────────────────────────────────────
@@ -112,9 +138,45 @@ def _get_teacher_name(teacher_id: str) -> str:
     return teacher_name
 
 
+def _calculate_progress(enrollment: CourseEnrollment, plan_json: dict, db) -> float:
+    """Calculate progress percentage for an enrollment."""
+    if not plan_json:
+        return 0.0
+
+    total_sections = sum(
+        len(ch.get("sections", [])) for ch in plan_json.get("chapters", [])
+    )
+    if total_sections == 0:
+        return 0.0
+
+    completed = (
+        db.query(CourseProgress)
+        .filter(
+            CourseProgress.enrollment_id == enrollment.id,
+            CourseProgress.status == "completed",
+        )
+        .count()
+    )
+    return round((completed / total_sections) * 100, 1)
+
+
+def _get_section_statuses(enrollment_id: str, db) -> dict:
+    """Return dict of section_id -> status for an enrollment."""
+    progress_rows = (
+        db.query(CourseProgress)
+        .filter(CourseProgress.enrollment_id == enrollment_id)
+        .all()
+    )
+    return {row.section_id: row.status for row in progress_rows}
+
+
 def _build_enrolled_response(
-    course: Course, enrollment: CourseEnrollment, db
+    course: Course, enrollment: CourseEnrollment, db, plan_json: dict = None
 ) -> EnrolledCourseResponse:
+    progress_pct = 0.0
+    if plan_json:
+        progress_pct = _calculate_progress(enrollment, plan_json, db)
+
     return EnrolledCourseResponse(
         id=course.id,
         title=course.title,
@@ -126,6 +188,8 @@ def _build_enrolled_response(
             enrollment.enrolled_at.isoformat() if enrollment.enrolled_at else ""
         ),
         status=(enrollment.status if hasattr(enrollment, "status") else "active"),
+        progress_percentage=progress_pct,
+        chat_id=getattr(enrollment, "chat_id", None),
     )
 
 
@@ -137,7 +201,6 @@ async def list_enrolled_courses(
     user=Depends(get_verified_user),
     db=Depends(get_db),
 ):
-    """Return all courses the authenticated student has enrolled in."""
     enrollments = (
         db.query(CourseEnrollment)
         .filter(CourseEnrollment.student_id == user.id)
@@ -150,7 +213,12 @@ async def list_enrolled_courses(
         course = db.query(Course).filter(Course.id == enr.course_id).first()
         if not course:
             continue
-        result.append(_build_enrolled_response(course, enr, db))
+
+        course_plan = (
+            db.query(CoursePlan).filter(CoursePlan.course_id == course.id).first()
+        )
+        plan_json = course_plan.plan_json if course_plan else None
+        result.append(_build_enrolled_response(course, enr, db, plan_json))
 
     return result
 
@@ -164,18 +232,12 @@ async def enroll_in_course(
     user=Depends(get_verified_user),
     db=Depends(get_db),
 ):
-    """
-    Enroll the authenticated student in a course using its ID.
-    Returns 404 if the course does not exist.
-    Returns 409 if the student is already enrolled.
-    """
     course_id = body.course_id.strip()
 
     course = db.query(Course).filter(Course.id == course_id).first()
     if not course:
         raise HTTPException(
-            status_code=404,
-            detail="Code invalide ou cours introuvable",
+            status_code=404, detail="Code invalide ou cours introuvable"
         )
 
     existing = (
@@ -212,10 +274,6 @@ async def get_course_detail(
     user=Depends(get_verified_user),
     db=Depends(get_db),
 ):
-    """
-    Return full detail of a course the student is enrolled in.
-    Includes: course info + chapters + sections + files.
-    """
     enrollment = (
         db.query(CourseEnrollment)
         .filter(
@@ -233,18 +291,22 @@ async def get_course_detail(
     if not course:
         raise HTTPException(status_code=404, detail="Cours introuvable")
 
-    # Chapitres + sections
+    # Get section statuses for this enrollment
+    section_statuses = _get_section_statuses(enrollment.id, db)
+
+    # Build chapters with real progress status
     chapters_data: List[ChapterDetail] = []
     course_plan = db.query(CoursePlan).filter(CoursePlan.course_id == course_id).first()
+    plan_json = None
 
     if course_plan and course_plan.plan_json:
-        plan = course_plan.plan_json
-        for ch in plan.get("chapters", []):
+        plan_json = course_plan.plan_json
+        for ch in plan_json.get("chapters", []):
             sections = [
                 SectionDetail(
                     id=s.get("id", ""),
                     title=s.get("title", ""),
-                    status="not-started",
+                    status=section_statuses.get(s.get("id", ""), "not-started"),
                 )
                 for s in ch.get("sections", [])
             ]
@@ -256,7 +318,7 @@ async def get_course_detail(
                 )
             )
 
-    # Fichiers
+    # Files
     db_files = db.query(CourseFile).filter(CourseFile.course_id == course_id).all()
     files_data = [
         CourseFileDetail(
@@ -267,6 +329,8 @@ async def get_course_detail(
         )
         for f in db_files
     ]
+
+    progress_pct = _calculate_progress(enrollment, plan_json or {}, db)
 
     return CourseDetailResponse(
         id=course.id,
@@ -283,10 +347,12 @@ async def get_course_detail(
             enrollment.enrolled_at.isoformat() if enrollment.enrolled_at else ""
         ),
         status=enrollment.status or "active",
+        progress_percentage=progress_pct,
+        chat_id=getattr(enrollment, "chat_id", None),
     )
 
 
-# ── ROUTE 4: DELETE /{course_id} — Se désinscrire d'un cours ─────────────────
+# ── ROUTE 4: DELETE /{course_id} — Se désinscrire ────────────────────────────
 
 
 @router.delete("/{course_id}", status_code=204)
@@ -295,9 +361,147 @@ async def unenroll_from_course(
     user=Depends(get_verified_user),
     db=Depends(get_db),
 ):
+    enrollment = (
+        db.query(CourseEnrollment)
+        .filter(
+            CourseEnrollment.course_id == course_id,
+            CourseEnrollment.student_id == user.id,
+        )
+        .first()
+    )
+    if not enrollment:
+        raise HTTPException(status_code=404, detail="Inscription introuvable")
+
+    # Delete progress records first
+    db.query(CourseProgress).filter(
+        CourseProgress.enrollment_id == enrollment.id
+    ).delete(synchronize_session=False)
+
+    db.delete(enrollment)
+    db.commit()
+    log.info("Student %s unenrolled from course %s", user.id, course_id)
+
+
+# ── ROUTE 5: GET /{course_id}/progress — Résumé du progrès ───────────────────
+
+
+@router.get("/{course_id}/progress", response_model=ProgressSummaryResponse)
+async def get_course_progress(
+    course_id: str,
+    user=Depends(get_verified_user),
+    db=Depends(get_db),
+):
+    enrollment = (
+        db.query(CourseEnrollment)
+        .filter(
+            CourseEnrollment.course_id == course_id,
+            CourseEnrollment.student_id == user.id,
+        )
+        .first()
+    )
+    if not enrollment:
+        raise HTTPException(status_code=404, detail="Inscription introuvable")
+
+    course_plan = db.query(CoursePlan).filter(CoursePlan.course_id == course_id).first()
+    plan_json = course_plan.plan_json if course_plan else {}
+
+    total_sections = sum(
+        len(ch.get("sections", [])) for ch in plan_json.get("chapters", [])
+    )
+
+    progress_rows = (
+        db.query(CourseProgress)
+        .filter(CourseProgress.enrollment_id == enrollment.id)
+        .all()
+    )
+
+    completed = sum(1 for r in progress_rows if r.status == "completed")
+    pct = round((completed / total_sections) * 100, 1) if total_sections > 0 else 0.0
+
+    return ProgressSummaryResponse(
+        total_sections=total_sections,
+        completed_sections=completed,
+        progress_percentage=pct,
+        sections=[
+            SectionProgressResponse(
+                chapter_id=r.chapter_id,
+                section_id=r.section_id,
+                status=r.status,
+                completed_at=r.completed_at.isoformat() if r.completed_at else None,
+            )
+            for r in progress_rows
+        ],
+        chat_id=getattr(enrollment, "chat_id", None),
+    )
+
+
+# ── ROUTE 6: PUT /{course_id}/progress — Mettre à jour le progrès ─────────────
+
+
+@router.put("/{course_id}/progress", response_model=ProgressSummaryResponse)
+async def update_section_progress(
+    course_id: str,
+    body: SectionProgressUpdate,
+    user=Depends(get_verified_user),
+    db=Depends(get_db),
+):
+    enrollment = (
+        db.query(CourseEnrollment)
+        .filter(
+            CourseEnrollment.course_id == course_id,
+            CourseEnrollment.student_id == user.id,
+        )
+        .first()
+    )
+    if not enrollment:
+        raise HTTPException(status_code=404, detail="Inscription introuvable")
+
+    # Upsert progress record
+    existing = (
+        db.query(CourseProgress)
+        .filter(
+            CourseProgress.enrollment_id == enrollment.id,
+            CourseProgress.chapter_id == body.chapter_id,
+            CourseProgress.section_id == body.section_id,
+        )
+        .first()
+    )
+
+    if existing:
+        existing.status = body.status
+        if body.status == "completed" and not existing.completed_at:
+            existing.completed_at = datetime.utcnow()
+    else:
+        new_progress = CourseProgress(
+            enrollment_id=enrollment.id,
+            course_id=course_id,
+            student_id=user.id,
+            chapter_id=body.chapter_id,
+            section_id=body.section_id,
+            status=body.status,
+            completed_at=datetime.utcnow() if body.status == "completed" else None,
+        )
+        db.add(new_progress)
+
+    db.commit()
+
+    # Return updated summary
+    return await get_course_progress(course_id, user, db)
+
+
+# ── ROUTE 7: PUT /{course_id}/chat — Sauvegarder le chat_id ──────────────────
+
+
+@router.put("/{course_id}/chat", status_code=200)
+async def save_course_chat_id(
+    course_id: str,
+    body: ChatIdUpdate,
+    user=Depends(get_verified_user),
+    db=Depends(get_db),
+):
     """
-    Unenroll the authenticated student from a course.
-    Returns 404 if enrollment not found.
+    Store the AI chat session ID in the enrollment so the student
+    can resume the same conversation next time.
     """
     enrollment = (
         db.query(CourseEnrollment)
@@ -310,6 +514,7 @@ async def unenroll_from_course(
     if not enrollment:
         raise HTTPException(status_code=404, detail="Inscription introuvable")
 
-    db.delete(enrollment)
+    enrollment.chat_id = body.chat_id
     db.commit()
-    log.info("Student %s unenrolled from course %s", user.id, course_id)
+    log.info("Saved chat_id %s for enrollment of course %s", body.chat_id, course_id)
+    return {"status": "ok", "chat_id": body.chat_id}

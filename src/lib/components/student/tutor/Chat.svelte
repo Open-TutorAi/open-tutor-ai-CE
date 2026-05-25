@@ -1,3 +1,5 @@
+
+
 <!-- chat page -->
 
 <script lang="ts">
@@ -85,6 +87,11 @@
 	import { getTools } from '$lib/apis/tools';
 	import { getSupportById } from '$lib/apis/supports';
 	import { getCourseById } from '$lib/apis/courses';
+	import {
+		resolveCourseIdForChat,
+		applyCourseProgressSignalsFromContent,
+		buildCourseProgressTrackingPrompt
+	} from '$lib/utils/courseProgressTracker';
 
 	import Banner from '$lib/components/common/Banner.svelte';
 	import MessageInput from '$lib/components/chat/MessageInput.svelte';
@@ -109,6 +116,7 @@
 	}
 
 	export let chatIdProp = '';
+	export let courseIdProp = '';
 
 	let loading = false;
 
@@ -1438,6 +1446,65 @@
 			messagesContainerElement.scrollTop = messagesContainerElement.scrollHeight;
 		}
 	};
+
+	// ─────────────────────────────────────────────────────────────────────────────
+	// Course Progress Tracking Handler
+	// Called after AI response is received to extract and apply progress signals
+	// ─────────────────────────────────────────────────────────────────────────────
+	const handleCourseProgressTracking = async (
+		responseContent: string,
+		courseIdProp: string
+	) => {
+		if (!responseContent || !courseIdProp || $isDemo) {
+			return;
+		}
+
+		try {
+			const token = localStorage.getItem('token');
+			if (!token) return;
+
+			console.log('[Chat] Processing progress signals from AI response');
+
+			// Apply progress signals and get results
+			const result = await applyCourseProgressSignalsFromContent({
+				token,
+				courseId: courseIdProp,
+				content: responseContent
+			});
+
+			if (result.applied.length > 0 || result.heuristic.length > 0) {
+				console.log('[Chat] Progress updated:', {
+					extracted: result.extracted.length,
+					heuristic: result.heuristic.length,
+					applied: result.applied.length,
+					skipped: result.skipped.length
+				});
+
+				// Dispatch event to notify parent components about progress update
+				if (typeof window !== 'undefined') {
+					window.dispatchEvent(
+						new CustomEvent('courseProgressUpdated', {
+							detail: {
+								courseId: courseIdProp,
+								applied: result.applied,
+								heuristic: result.heuristic
+							}
+						})
+					);
+				}
+			}
+		} catch (e) {
+			console.warn('[Chat] Error processing course progress:', e);
+		}
+	};
+	const stripCourseProgressSignals = (content: string) => {
+		if (!content) return '';
+		return content
+			.replace(/<COURSE_PROGRESS>[\s\S]*?<\/COURSE_PROGRESS>/g, '')
+			.replace(/\n{3,}/g, '\n\n')
+			.trim();
+	};
+
 	const chatCompletedHandler = async (chatId, modelId, responseMessageId, messages) => {
 		if ($isDemo) {
 			return;
@@ -1483,18 +1550,30 @@
 
 		await tick();
 
-		if ($chatId == chatId) {
-			if (!$temporaryChatEnabled) {
-				chat = await updateChatById(localStorage.token, chatId, {
-					models: selectedModels,
-					messages: messages,
-					history: history,
-					params: params,
-					files: chatFiles
-				});
+		const responseMessage = messages.find((m) => m.id === responseMessageId);
+		const token = localStorage.getItem('token') || '';
+		const effectiveCourseId =
+			courseIdProp || (token ? await resolveCourseIdForChat(token, chatId) : '');
 
-				currentChatPage.set(1);
-				await chats.set(await getChatList(localStorage.token, $currentChatPage));
+		if (responseMessage && responseMessage.content) {
+			const rawContent = responseMessage.content;
+
+			// 1) Apply progress from RAW content (tags still present)
+			if (effectiveCourseId) {
+				await handleCourseProgressTracking(rawContent, effectiveCourseId);
+			}
+
+			// 2) Clean tags for UI + history + messages payload
+			const cleanedContent = stripCourseProgressSignals(rawContent);
+			responseMessage.content = cleanedContent;
+
+			if (history.messages[responseMessage.id]) {
+				history.messages[responseMessage.id].content = cleanedContent;
+			}
+
+			const msgIdx = messages.findIndex((m) => m.id === responseMessage.id);
+			if (msgIdx !== -1) {
+				messages[msgIdx].content = cleanedContent;
 			}
 		}
 	};
@@ -1812,6 +1891,16 @@
 					})
 				);
 			}
+
+			history.messages[message.id] = message;
+			await chatCompletedHandler(
+				chatId,
+				message.model,
+				message.id,
+				createMessagesList(history, message.id)
+			);
+
+			// chatCompletedHandler cleans the content via history reference
 			eventTarget.dispatchEvent(
 				new CustomEvent('chat:finish', {
 					detail: {
@@ -1822,12 +1911,6 @@
 			);
 
 			history.messages[message.id] = message;
-			await chatCompletedHandler(
-				chatId,
-				message.model,
-				message.id,
-				createMessagesList(history, message.id)
-			);
 		}
 
 		console.log(data);
@@ -2406,19 +2489,40 @@
 						: ''
 				}`;
 
+		// ─────────────────────────────────────────────────────────────────────
+		// Inject course progress tracking instructions if in course context
+		// ─────────────────────────────────────────────────────────────────────
+		let finalSystemContent = baseSystemContent;
+		if (courseIdProp) {
+			try {
+				const token = localStorage.getItem('token');
+				if (token) {
+					const courseProgressPrompt = await buildCourseProgressTrackingPrompt(token, courseIdProp);
+					if (courseProgressPrompt) {
+						finalSystemContent = `${baseSystemContent}\n\n${courseProgressPrompt}`;
+						console.log('[Chat] Injected course progress tracking instructions');
+					}
+				}
+			} catch (e) {
+				console.warn('[Chat] Failed to build course progress prompt:', e);
+			}
+		}
+
+		const mergedSystemPrompt = [combinedSystemPrompt, finalSystemContent]
+			.filter((v) => !!v && v.trim() !== '')
+			.join('\n\n');
+
 		let messages = [
 			{
 				role: 'system',
-				// If we have system messages from support context, prioritize them
-				content: combinedSystemPrompt || baseSystemContent
+				content: mergedSystemPrompt
 			},
-			// Only include non-system messages in the conversation
 			...createMessagesList(_history, responseMessageId)
-				.filter(message => message.role !== 'system')
+				.filter((message) => message.role !== 'system')
 				.map((message) => ({
-				...message,
-				content: removeDetails(message.content, ['reasoning', 'code_interpreter'])
-			}))
+					...message,
+					content: removeDetails(message.content, ['reasoning', 'code_interpreter'])
+				}))
 		].filter((message) => message && message.content && message.content.trim() !== '');
 
 		// Log info about system context

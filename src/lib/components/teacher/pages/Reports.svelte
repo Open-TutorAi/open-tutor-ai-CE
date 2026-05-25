@@ -148,21 +148,7 @@
 				{$i18n.t('Analyze student performance and intervene at the right time.')}
 			</p>
 		</div>
-		<div class="flex gap-3">
-			<button
-				on:click={handleGlobalReport}
-				class="px-4 py-2 bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-bold flex items-center gap-2 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
-			>
-				<span>↗</span>
-				{$i18n.t('Global Report')}
-			</button>
-			<button
-				on:click={handleNewAnalysis}
-				class="px-6 py-2 bg-[#3B82F6] dark:bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-blue-600 dark:hover:bg-indigo-500 transition-all shadow-lg shadow-blue-100 dark:shadow-none"
-			>
-				+ {$i18n.t('New analysis')}
-			</button>
-		</div>
+
 	</div>
 
 	<div
@@ -208,7 +194,7 @@
 	</div>
 
 	<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-		{#each [{ label: 'Completion Rate', value: '78.4%', icon: '↗' }, { label: 'ENROLLED STUDENTS', value: '120', trend: '↗ +12%', icon: '' }, { label: 'Quiz Feedback', value: '14.2/20', icon: '🔄' }] as stat}
+		{#each [{ label: 'Completion Rate', value: '78.4%', icon: '↗' }, { label: 'ENROLLED STUDENTS', value: '120', trend: '↗ +12%', icon: '' }] as stat}
 			<div
 				class="bg-white dark:bg-[#111827] p-6 rounded-[28px] border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between transition-all"
 			>
@@ -223,7 +209,7 @@
 						<span class="text-green-500 text-xs font-bold mt-1 inline-block">{stat.trend}</span>
 					{/if}
 				</div>
-				<div class="text-2xl opacity-20 dark:opacity-40 font-bold dark:text-white">{stat.icon}</div>
+				
 			</div>
 		{/each}
 	</div>

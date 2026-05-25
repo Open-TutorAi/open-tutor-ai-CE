@@ -599,14 +599,15 @@
                             goto('/teacher/courses?view=plan', {
                                 state: {
                                     courseData: {
-                                        course_id:  generatedCourseData.course_id,
-                                        title:      generatedCourseData.course.title,
-                                        language:   generatedCourseData.course.language,
-                                        category:   generatedCourseData.course.category,
-                                        level:      generatedCourseData.course.level,
+                                        course_id: generatedCourseData.course_id,
+                                        title: generatedCourseData.course.title,
+                                        language: generatedCourseData.course.language,
+                                        category: generatedCourseData.course.category,
+                                        level: generatedCourseData.course.level,
                                         objectives: generatedCourseData.course.objectives,
-                                        files:      uploadedFiles,
-                                        plan:       generatedCourseData.plan, 
+                                        aiObjectives: generatedCourseData.objectives,
+                                        files: uploadedFiles,
+                                        plan: generatedCourseData.plan,
                                     }
                                 }
                             });

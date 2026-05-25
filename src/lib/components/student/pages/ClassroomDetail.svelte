@@ -1,13 +1,22 @@
+<!-- 
+  ClassroomDetail.svelte — UPDATED
+  Replace: src/lib/components/student/pages/ClassroomDetail.svelte
+  
+  Changes:
+  - Shows real taux de progression (progress bar)
+  - "Commencer l'apprentissage" resumes existing chat if one exists
+  - Section statuses reflect real DB state (✓ completed, → in-progress)
+-->
 <script lang="ts">
     import { getContext, onMount } from 'svelte';
     import { goto } from '$app/navigation';
     import { fade, slide } from 'svelte/transition';
+    import { getCourseById } from '$lib/apis/courses';
 
     export let courseId: string;
 
     const i18n = getContext('i18n');
 
-    // ── TYPES ──────────────────────────────────────────────
     interface Section {
         id: string;
         title: string;
@@ -40,94 +49,154 @@
         chapters: Chapter[];
         enrolled_at: string;
         status: string;
+        progress_percentage: number;
+        chat_id: string | null;
     }
 
-    // ── ÉTATS ──────────────────────────────────────────────
     let cours: CourseDetail | null = null;
     let estEnChargement = true;
     let erreurChargement = '';
     let chapitresDeveloppes = new Set<string>();
 
-    // ── CHARGEMENT DES DONNÉES ─────────────────────────────
     async function chargerDetailsCours() {
         estEnChargement = true;
         erreurChargement = '';
         try {
             const token = localStorage.getItem('token') ?? '';
-            const reponse = await fetch(`/api/v1/student/courses/${courseId}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (!reponse.ok) {
-                const err = await reponse.json().catch(() => ({}));
-                throw new Error(err.detail ?? `Erreur ${reponse.status}`);
-            }
-            cours = await reponse.json();
+            cours = await getCourseById(token, courseId);
 
-            // Développer le premier chapitre par défaut
             if (cours?.chapters?.length) {
                 chapitresDeveloppes.add(cours.chapters[0].id);
                 chapitresDeveloppes = new Set(chapitresDeveloppes);
             }
         } catch (e: any) {
-            erreurChargement = e?.message ?? 'Erreur lors du chargement';
+            erreurChargement = e?.message ?? e ?? 'Erreur lors du chargement';
         } finally {
             estEnChargement = false;
         }
     }
 
-    onMount(chargerDetailsCours);
+    onMount(() => {
+        chargerDetailsCours();
 
-    // ── FONCTIONS UTILITAIRES ──────────────────────────────
+        // Listen for course progress updates and refresh data
+        const handleProgressUpdate = (event: CustomEvent) => {
+            const { courseId: updatedCourseId } = event.detail;
+            if (updatedCourseId === courseId) {
+                console.log('[ClassroomDetail] Course progress updated, refreshing data...');
+                chargerDetailsCours();
+            }
+        };
+
+        if (typeof window !== 'undefined') {
+            window.addEventListener('courseProgressUpdated', handleProgressUpdate as EventListener);
+
+            return () => {
+                window.removeEventListener('courseProgressUpdated', handleProgressUpdate as EventListener);
+            };
+        }
+    });
+
+    // ── Progress helpers ───────────────────────────────────────────────────
+    $: progressPct = cours?.progress_percentage ?? 0;
+    $: progressColor = progressPct >= 100
+        ? '#10b981'
+        : progressPct >= 50
+        ? '#3b82f6'
+        : '#f59e0b';
+    $: progressLabel = progressPct >= 100
+        ? $i18n.t('Terminé')
+        : progressPct > 0
+        ? `${progressPct}% ${$i18n.t('complété')}`
+        : $i18n.t('Pas encore commencé');
+
+    // ── Section status helpers ─────────────────────────────────────────────
+    function statusIcon(status: string): string {
+        switch (status) {
+            case 'completed':   return '✓';
+            case 'in-progress': return '→';
+            default:            return '○';
+        }
+    }
+    function statusColor(status: string): string {
+        switch (status) {
+            case 'completed':   return '#10b981';
+            case 'in-progress': return '#f59e0b';
+            default:            return '#94a3b8';
+        }
+    }
+
+    // ── Misc helpers ───────────────────────────────────────────────────────
     function formaterTaille(kb: number): string {
         if (!kb) return '';
-        if (kb >= 1024) return `${(kb / 1024).toFixed(1)} MB`;
-        return `${kb} KB`;
-    }
-
-    function retourArriere() {
-        goto('/student/classrooms');
-    }
-
-    function demarrerApprentissage() {
-        goto(`/student/classrooms/${courseId}/learn`);
+        return kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${kb} KB`;
     }
 
     function basculerChapitre(id: string) {
-        if (chapitresDeveloppes.has(id)) {
-            chapitresDeveloppes.delete(id);
-        } else {
-            chapitresDeveloppes.add(id);
-        }
+        chapitresDeveloppes.has(id)
+            ? chapitresDeveloppes.delete(id)
+            : chapitresDeveloppes.add(id);
         chapitresDeveloppes = new Set(chapitresDeveloppes);
     }
 
-    function obtenirCouleurStatut(statut: string): string {
-        switch (statut) {
-            case 'completed': return '#10b981';
-            case 'in-progress': return '#f59e0b';
-            default: return '#94a3b8';
-        }
-    }
+    // ── Start / Resume learning ────────────────────────────────────────────
+	async function demarrerApprentissage() {
+		if (!cours) return;
 
-    function obtenirTexteStatut(statut: string): string {
-        switch (statut) {
-            case 'completed': return $i18n.t('Terminé');
-            case 'in-progress': return $i18n.t('En cours');
-            default: return $i18n.t('Non commencé');
-        }
-    }
+		// Refresh course data to get the latest chat_id from the backend
+		// This ensures we don't use stale data if a chat was previously saved
+		try {
+			const token = localStorage.getItem('token') ?? '';
+			const coursLatest = await getCourseById(token, courseId);
+			
+			if (coursLatest.chat_id) {
+				// Existing chat session - resume it
+				localStorage.setItem(
+					'resumeCourseChat',
+					JSON.stringify({ courseId: coursLatest.id, chatId: coursLatest.chat_id })
+				);
+				localStorage.removeItem('pendingCourseData');
+			} else {
+				// New chat session - create one
+				localStorage.removeItem('resumeCourseChat');
+				localStorage.setItem(
+					'pendingCourseData',
+					JSON.stringify({ id: coursLatest.id, type: 'course' })
+				);
+			}
+		} catch (e) {
+			console.error('Failed to refresh course data:', e);
+			// Fallback to current course data if refresh fails
+			if (cours.chat_id) {
+				localStorage.setItem(
+					'resumeCourseChat',
+					JSON.stringify({ courseId: cours.id, chatId: cours.chat_id })
+				);
+				localStorage.removeItem('pendingCourseData');
+			} else {
+				localStorage.removeItem('resumeCourseChat');
+				localStorage.setItem(
+					'pendingCourseData',
+					JSON.stringify({ id: cours.id, type: 'course' })
+				);
+			}
+		}
 
-    // ── VARIABLES RÉACTIVES ────────────────────────────────
+		goto(`/student/classrooms/${courseId}/learn`);
+	}
+
     $: listeObjectifs = cours?.objectives
         ? cours.objectives.split('\n').filter(l => l.trim())
         : [];
 
     $: nombreTotalSections = cours?.chapters?.reduce(
-        (acc, chap) => acc + (chap.sections?.length ?? 0), 0
+        (acc, ch) => acc + (ch.sections?.length ?? 0), 0
+    ) ?? 0;
+
+    $: sectionsCompletees = cours?.chapters?.reduce(
+        (acc, ch) => acc + ch.sections.filter(s => s.status === 'completed').length, 0
     ) ?? 0;
 </script>
-
-<!-- ════════════════════════════════════════════════════════ -->
 
 <svelte:head>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -150,16 +219,14 @@
 
 {:else if cours}
     <div class="page-conteneur" in:fade={{ duration: 300 }}>
-        
-        <!-- BOUTON RETOUR -->
-        <button class="btn-retour" on:click={retourArriere}>
+
+        <button class="btn-retour" on:click={() => goto('/student/classrooms')}>
             ← {$i18n.t('Retour aux cours')}
         </button>
 
-        <!-- GRILLE BENTO -->
         <div class="grille-bento">
-            
-            <!-- 1. CARTE HERO (Gauche) -->
+
+            <!-- 1. HERO CARD -->
             <div class="carte carte-hero col-8">
                 <div class="en-tete-hero">
                     <div class="info-prof">
@@ -177,12 +244,32 @@
                 </div>
 
                 <h1 class="titre-cours">{cours.title}</h1>
-                
+
                 <p class="texte-bienvenue">
                     {cours.welcome_message || $i18n.t('Bienvenue dans ce cours ! Préparez-vous à apprendre et à explorer de nouveaux concepts.')}
                 </p>
 
-                <!-- STATISTIQUES -->
+                <!-- ── PROGRESS BAR ── -->
+                <div class="progress-section">
+                    <div class="progress-header">
+                        <span class="progress-label-text">{$i18n.t('Progression')}</span>
+                        <span class="progress-pct-badge" style="color:{progressColor}">
+                            {progressLabel}
+                        </span>
+                    </div>
+                    <div class="progress-track">
+                        <div
+                            class="progress-fill"
+                            style="width:{progressPct}%; background:{progressColor};"
+                        ></div>
+                    </div>
+                    <div class="progress-detail">
+                        {sectionsCompletees} / {nombreTotalSections}
+                        {$i18n.t('sections complétées')}
+                    </div>
+                </div>
+
+                <!-- STATS ROW -->
                 <div class="statistiques">
                     <div class="stat-item">
                         <span class="stat-nombre">{cours.chapters?.length ?? 0}</span>
@@ -201,7 +288,7 @@
                 </div>
             </div>
 
-            <!-- 2. CARTE DISCUSSION (Droite) -->
+            <!-- 2. DISCUSSION CARD -->
             <div class="carte carte-discussion col-4 centre-contenu">
                 <h2 class="titre-carte">{$i18n.t('Discussion de classe')}</h2>
                 <hr class="separateur" />
@@ -213,11 +300,11 @@
                 </button>
             </div>
 
-            <!-- 3. CARTE RESSOURCES (Gauche) -->
+            <!-- 3. RESOURCES CARD -->
             <div class="carte col-6">
                 <h2 class="titre-carte">{$i18n.t('Ressources du cours')}</h2>
                 <hr class="separateur" />
-                
+
                 {#if cours.files && cours.files.length > 0}
                     <div class="liste-ressources">
                         {#each cours.files as fichier}
@@ -239,15 +326,15 @@
                 {/if}
             </div>
 
-            <!-- 4. CARTE OBJECTIFS (Droite) -->
+            <!-- 4. OBJECTIVES CARD -->
             <div class="carte col-6">
-                <h2 class="titre-carte">{$i18n.t('Objectifs d\'apprentissage')}</h2>
+                <h2 class="titre-carte">{$i18n.t("Objectifs d'apprentissage")}</h2>
                 <hr class="separateur" />
-                
+
                 {#if listeObjectifs.length > 0}
-                    <p class="texte-carte mb-4">{$i18n.t('À la fin de ce cours, vous serez capable de :')}</p>
+                    <p class="texte-carte mb-4">{$i18n.t("À la fin de ce cours, vous serez capable de :")}</p>
                     <ol class="liste-objectifs">
-                        {#each listeObjectifs as objectif, i}
+                        {#each listeObjectifs as objectif}
                             <li>{objectif}</li>
                         {/each}
                     </ol>
@@ -256,28 +343,45 @@
                 {/if}
             </div>
 
-            <!-- 5. CARTE CHAPITRES (Pleine largeur) -->
+            <!-- 5. CHAPTERS CARD (full width) -->
             <div class="carte col-12">
-                <h2 class="titre-carte">{$i18n.t('Plan de cour')}</h2>
+                <h2 class="titre-carte">{$i18n.t('Plan de cours')}</h2>
                 <hr class="separateur" />
-                
+
                 {#if cours.chapters && cours.chapters.length > 0}
                     <div class="liste-chapitres">
                         {#each cours.chapters as chapitre, indice (chapitre.id)}
+                            {@const chCompleted = chapitre.sections.filter(s => s.status === 'completed').length}
+                            {@const chTotal = chapitre.sections.length}
+                            {@const chPct = chTotal > 0 ? Math.round((chCompleted / chTotal) * 100) : 0}
+
                             <div class="bloc-chapitre">
-                                <!-- En-tête du chapitre (clicable) -->
-                                <button 
+                                <button
                                     class="en-tete-chapitre"
                                     class:developpe={chapitresDeveloppes.has(chapitre.id)}
                                     on:click={() => basculerChapitre(chapitre.id)}
                                 >
                                     <div class="numero-chapitre">{indice + 1}</div>
-                                    <span class="titre-chapitre">{chapitre.title}</span>
+                                    <div class="ch-title-group">
+                                        <span class="titre-chapitre">{chapitre.title}</span>
+                                        <!-- mini progress per chapter -->
+                                        {#if chTotal > 0}
+                                            <div class="ch-mini-progress">
+                                                <div class="ch-mini-track">
+                                                    <div
+                                                        class="ch-mini-fill"
+                                                        style="width:{chPct}%; background:{chPct === 100 ? '#10b981' : '#3b82f6'};"
+                                                    ></div>
+                                                </div>
+                                                <span class="ch-mini-label">{chCompleted}/{chTotal}</span>
+                                            </div>
+                                        {/if}
+                                    </div>
                                     <span class="nombre-sections">
-                                        {chapitre.sections?.length ?? 0} {$i18n.t('sections')}
+                                        {chTotal} {$i18n.t('sections')}
                                     </span>
-                                    <svg 
-                                        class="fleche" 
+                                    <svg
+                                        class="fleche"
                                         class:tournee={chapitresDeveloppes.has(chapitre.id)}
                                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                         width="18" height="18"
@@ -286,21 +390,30 @@
                                     </svg>
                                 </button>
 
-                                <!-- Sections du chapitre -->
                                 {#if chapitresDeveloppes.has(chapitre.id)}
                                     <div class="contenu-chapitre" transition:slide={{ duration: 250 }}>
                                         {#if chapitre.sections && chapitre.sections.length > 0}
                                             <div class="liste-sections">
-                                                {#each chapitre.sections as section, idx (section.id)}
+                                                {#each chapitre.sections as section (section.id)}
                                                     <div class="item-section">
-                                                        <div class="point-section" style="background: {obtenirCouleurStatut(section.status)};"></div>
-                                                        <span class="titre-section">{section.title}</span>
-                                                        <span 
-                                                            class="statut-section"
-                                                            style="color: {obtenirCouleurStatut(section.status)};"
+                                                        <span
+                                                            class="status-icon"
+                                                            style="color:{statusColor(section.status)};"
+                                                            title={section.status}
                                                         >
-                                                            {obtenirTexteStatut(section.status)}
+                                                            {statusIcon(section.status)}
                                                         </span>
+                                                        <span class="titre-section">{section.title}</span>
+                                                        {#if section.status !== 'not-started'}
+                                                            <span
+                                                                class="statut-section"
+                                                                style="color:{statusColor(section.status)};"
+                                                            >
+                                                                {section.status === 'completed'
+                                                                    ? $i18n.t('Terminé')
+                                                                    : $i18n.t('En cours')}
+                                                            </span>
+                                                        {/if}
                                                     </div>
                                                 {/each}
                                             </div>
@@ -319,10 +432,14 @@
 
         </div>
 
-        <!-- BARRE D'ACTION -->
+        <!-- ACTION BAR -->
         <div class="barre-action">
             <button class="btn-primaire btn-grand" on:click={demarrerApprentissage}>
-                {$i18n.t('Commencer l\'apprentissage')}
+                {#if cours.chat_id && progressPct > 0}
+                    {$i18n.t('Reprendre le cours')}
+                {:else}
+                    {$i18n.t("Commencer l'apprentissage")}
+                {/if}
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                 </svg>
@@ -333,506 +450,201 @@
 {/if}
 
 <style>
-    /* ══════════════════════════════════════════════════════
-       STYLES GLOBAUX - DESIGN PROPRE ET MODERNE
-       ══════════════════════════════════════════════════════ */
-    
-    :global(body) {
-        background-color: #f8fafc;
-        margin: 0;
-        padding: 0;
-    }
+    :global(body) { background-color: #f8fafc; margin: 0; padding: 0; }
 
     .page-conteneur {
         font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 2rem;
-        color: #334155;
+        max-width: 1200px; margin: 0 auto; padding: 2rem; color: #334155;
     }
+    .flex-centre { display: flex; justify-content: center; align-items: center; min-height: 60vh; }
 
-    .flex-centre {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 60vh;
-    }
-
-    /* ── BOUTON RETOUR ─────────────────────────────────── */
     .btn-retour {
-        background: transparent;
-        border: none;
-        color: #64748b;
-        font-family: inherit;
-        font-weight: 600;
-        font-size: 0.9rem;
-        cursor: pointer;
-        padding: 0.5rem 0;
-        margin-bottom: 1.5rem;
-        transition: color 0.2s;
+        background: transparent; border: none; color: #64748b;
+        font-family: inherit; font-weight: 600; font-size: 0.9rem;
+        cursor: pointer; padding: 0.5rem 0; margin-bottom: 1.5rem; transition: color 0.2s;
     }
-    .btn-retour:hover {
-        color: #3b82f6;
-    }
+    .btn-retour:hover { color: #3b82f6; }
 
-    /* ── SYSTÈME DE GRILLE BENTO ───────────────────────── */
     .grille-bento {
-        display: grid;
-        grid-template-columns: repeat(12, 1fr);
-        gap: 1.5rem;
-        margin-bottom: 2rem;
+        display: grid; grid-template-columns: repeat(12, 1fr);
+        gap: 1.5rem; margin-bottom: 2rem;
     }
-
     .col-4 { grid-column: span 4; }
     .col-6 { grid-column: span 6; }
     .col-8 { grid-column: span 8; }
     .col-12 { grid-column: span 12; }
-
     @media (max-width: 1024px) {
         .col-4, .col-6, .col-8 { grid-column: span 12; }
     }
 
-    /* ── CARTES ────────────────────────────────────────── */
     .carte {
-        background: #ffffff;
-        border-radius: 16px;
-        padding: 1.75rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-        border: 1px solid #e2e8f0;
-        display: flex;
-        flex-direction: column;
+        background: #ffffff; border-radius: 16px; padding: 1.75rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,.04); border: 1px solid #e2e8f0;
+        display: flex; flex-direction: column;
     }
-
     .carte-hero {
         background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
         border: 1px solid #dbeafe;
     }
-
     .carte-discussion {
         background: linear-gradient(135deg, #fefce8 0%, #fef9c3 100%);
         border: 1px solid #fde68a;
     }
+    .centre-contenu { align-items: center; justify-content: center; text-align: center; }
 
-    .centre-contenu {
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-    }
-
-    /* ── EN-TÊTE HERO ──────────────────────────────────── */
     .en-tete-hero {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.25rem;
-        flex-wrap: wrap;
-        gap: 0.75rem;
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;
     }
-
-    .info-prof {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
+    .info-prof { display: flex; align-items: center; gap: 0.75rem; }
     .avatar {
-        width: 40px;
-        height: 40px;
+        width: 40px; height: 40px;
         background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-        border-radius: 50%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-size: 0.85rem;
-        font-weight: 700;
-        color: white;
+        border-radius: 50%; display: flex; justify-content: center;
+        align-items: center; font-size: 0.85rem; font-weight: 700; color: white;
     }
-
-    .nom-prof {
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: #475569;
-    }
-
-    .badges {
-        display: flex;
-        gap: 0.5rem;
-    }
-
+    .nom-prof { font-size: 0.9rem; font-weight: 600; color: #475569; }
+    .badges { display: flex; gap: 0.5rem; }
     .etiquette-categorie {
-        background: #dbeafe;
-        color: #1e40af;
-        padding: 0.3rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 700;
+        background: #dbeafe; color: #1e40af;
+        padding: 0.3rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
     }
-
     .etiquette-langue {
-        background: #f1f5f9;
-        color: #64748b;
-        padding: 0.3rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 600;
+        background: #f1f5f9; color: #64748b;
+        padding: 0.3rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
     }
+    .titre-cours { font-size: 1.75rem; font-weight: 800; color: #1e293b; margin: 0 0 0.75rem 0; line-height: 1.2; }
+    .texte-bienvenue { font-size: 0.95rem; line-height: 1.6; color: #475569; margin: 0 0 1.25rem 0; }
 
-    .titre-cours {
-        font-size: 1.75rem;
-        font-weight: 800;
-        color: #1e293b;
-        margin: 0 0 0.75rem 0;
-        line-height: 1.2;
+    /* ── PROGRESS BAR ── */
+    .progress-section {
+        background: rgba(255,255,255,0.7); border-radius: 12px;
+        padding: 1rem 1.25rem; margin-bottom: 1.25rem;
+        border: 1px solid rgba(219,234,254,0.6);
     }
-
-    .texte-bienvenue {
-        font-size: 0.95rem;
-        line-height: 1.6;
-        color: #475569;
-        margin: 0 0 1.5rem 0;
+    .progress-header {
+        display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;
     }
+    .progress-label-text { font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+    .progress-pct-badge { font-size: 0.875rem; font-weight: 800; }
+    .progress-track {
+        width: 100%; height: 10px; background: #e2e8f0;
+        border-radius: 9999px; overflow: hidden; margin-bottom: 0.4rem;
+    }
+    .progress-fill {
+        height: 100%; border-radius: 9999px;
+        transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+    }
+    .progress-detail { font-size: 0.75rem; color: #94a3b8; }
 
-    /* ── STATISTIQUES ──────────────────────────────────── */
     .statistiques {
-        display: flex;
-        align-items: center;
-        gap: 1.5rem;
-        padding-top: 1.25rem;
-        border-top: 1px solid #dbeafe;
+        display: flex; align-items: center; gap: 1.5rem;
+        padding-top: 1.25rem; border-top: 1px solid #dbeafe;
     }
+    .stat-item { display: flex; flex-direction: column; align-items: center; }
+    .stat-nombre { font-size: 1.5rem; font-weight: 800; color: #1e40af; }
+    .stat-libelle { font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; }
+    .stat-separateur { width: 1px; height: 40px; background: #dbeafe; }
 
-    .stat-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .stat-nombre {
-        font-size: 1.5rem;
-        font-weight: 800;
-        color: #1e40af;
-    }
-
-    .stat-libelle {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
-    }
-
-    .stat-separateur {
-        width: 1px;
-        height: 40px;
-        background: #dbeafe;
-    }
-
-    /* ── CARTES STANDARD ───────────────────────────────── */
-    .titre-carte {
-        font-size: 1.05rem;
-        font-weight: 700;
-        color: #334155;
-        text-align: center;
-        margin: 0 0 1rem 0;
-    }
-
-    .separateur {
-        border: none;
-        border-top: 1px solid #e2e8f0;
-        width: 60%;
-        margin: 0 auto 1.25rem auto;
-    }
-
-    .texte-carte {
-        font-size: 0.9rem;
-        line-height: 1.6;
-        color: #475569;
-    }
-
+    .titre-carte { font-size: 1.05rem; font-weight: 700; color: #334155; text-align: center; margin: 0 0 1rem 0; }
+    .separateur { border: none; border-top: 1px solid #e2e8f0; width: 60%; margin: 0 auto 1.25rem auto; }
+    .texte-carte { font-size: 0.9rem; line-height: 1.6; color: #475569; }
     .texte-centre { text-align: center; }
     .texte-muet { color: #94a3b8; font-size: 0.9rem; }
     .mt-auto { margin-top: auto; }
     .mb-4 { margin-bottom: 1rem; }
     .p-4 { padding: 1rem; }
 
-    /* ── BOUTONS ───────────────────────────────────────── */
     .btn-outline {
-        background: transparent;
-        border: 2px solid #cbd5e1;
-        color: #475569;
-        padding: 0.6rem 1.5rem;
-        border-radius: 10px;
-        font-weight: 700;
-        font-size: 0.85rem;
-        font-family: inherit;
-        cursor: pointer;
-        transition: all 0.2s;
+        background: transparent; border: 2px solid #cbd5e1; color: #475569;
+        padding: 0.6rem 1.5rem; border-radius: 10px;
+        font-weight: 700; font-size: 0.85rem; font-family: inherit; cursor: pointer; transition: all 0.2s;
     }
-    .btn-outline:hover {
-        border-color: #f59e0b;
-        color: #d97706;
-        background: #fffbeb;
+    .btn-outline:hover { border-color: #f59e0b; color: #d97706; background: #fffbeb; }
+
+    .liste-ressources { display: flex; flex-direction: column; gap: 0.75rem; }
+    .item-ressource {
+        display: flex; align-items: center; gap: 1rem; padding: 0.875rem;
+        background: #f8fafc; border-radius: 10px; transition: background 0.2s;
     }
+    .item-ressource:hover { background: #eff6ff; }
+    .icone-ressource { color: #3b82f6; }
+    .info-ressource { flex: 1; }
+    .nom-ressource { font-size: 0.875rem; font-weight: 600; color: #334155; margin: 0 0 0.15rem 0; }
+    .meta-ressource { font-size: 0.75rem; color: #94a3b8; margin: 0; }
+
+    .liste-objectifs { margin: 0; padding: 0 0 0 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    .liste-objectifs li { font-size: 0.9rem; color: #475569; line-height: 1.5; }
+
+    .liste-chapitres { display: flex; flex-direction: column; gap: 0.75rem; }
+    .bloc-chapitre { border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; transition: border-color 0.2s; }
+    .bloc-chapitre:hover { border-color: #93c5fd; }
+
+    .en-tete-chapitre {
+        display: flex; align-items: center; gap: 1rem; width: 100%;
+        padding: 1rem 1.25rem; background: #f8fafc; border: none;
+        cursor: pointer; text-align: left; font-family: inherit; transition: background 0.2s;
+    }
+    .en-tete-chapitre:hover, .en-tete-chapitre.developpe { background: #eff6ff; }
+
+    .numero-chapitre {
+        width: 32px; height: 32px;
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        color: white; border-radius: 8px; display: flex;
+        justify-content: center; align-items: center;
+        font-size: 0.85rem; font-weight: 700; flex-shrink: 0;
+    }
+
+    .ch-title-group { flex: 1; display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
+    .titre-chapitre { font-size: 0.95rem; font-weight: 600; color: #1e293b; }
+
+    /* per-chapter mini progress */
+    .ch-mini-progress { display: flex; align-items: center; gap: 0.5rem; }
+    .ch-mini-track { flex: 1; height: 4px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; max-width: 120px; }
+    .ch-mini-fill { height: 100%; border-radius: 9999px; transition: width 0.5s ease; }
+    .ch-mini-label { font-size: 0.7rem; color: #94a3b8; white-space: nowrap; }
+
+    .nombre-sections {
+        font-size: 0.75rem; font-weight: 600; color: #94a3b8;
+        background: #f1f5f9; padding: 0.25rem 0.6rem; border-radius: 12px; white-space: nowrap;
+    }
+    .fleche { color: #94a3b8; transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); flex-shrink: 0; }
+    .fleche.tournee { transform: rotate(90deg); color: #3b82f6; }
+
+    .contenu-chapitre { background: #ffffff; border-top: 1px solid #e2e8f0; }
+    .liste-sections { padding: 0.75rem 1rem 0.75rem 2.5rem; display: flex; flex-direction: column; gap: 0.4rem; }
+    .item-section {
+        display: flex; align-items: center; gap: 0.75rem;
+        padding: 0.55rem 0.875rem; border-radius: 8px; transition: background 0.2s;
+    }
+    .item-section:hover { background: #f8fafc; }
+
+    .status-icon { font-size: 0.9rem; font-weight: 700; width: 18px; text-align: center; flex-shrink: 0; }
+    .titre-section { flex: 1; font-size: 0.875rem; color: #475569; font-weight: 500; }
+    .statut-section { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; }
+
+    .barre-action { display: flex; justify-content: center; padding-top: 0.5rem; }
 
     .btn-primaire {
         background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-        color: white;
-        border: none;
-        padding: 0.75rem 1.75rem;
-        border-radius: 12px;
-        font-weight: 700;
-        font-size: 0.95rem;
-        font-family: inherit;
-        cursor: pointer;
-        box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+        color: white; border: none; padding: 0.75rem 1.75rem; border-radius: 12px;
+        font-weight: 700; font-size: 0.95rem; font-family: inherit; cursor: pointer;
+        box-shadow: 0 4px 14px rgba(59,130,246,.35);
         transition: transform 0.2s, box-shadow 0.2s;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
+        display: inline-flex; align-items: center; gap: 0.5rem;
     }
-    .btn-primaire:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45);
-    }
+    .btn-primaire:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(59,130,246,.45); }
+    .btn-grand { padding: 1rem 2.5rem; font-size: 1.05rem; }
 
-    .btn-grand {
-        padding: 1rem 2.5rem;
-        font-size: 1.05rem;
-    }
+    .boite-erreur { background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; padding: 2rem; text-align: center; }
+    .chargeur { width: 44px; height: 44px; border: 4px solid #e2e8f0; border-top: 4px solid #3b82f6; border-radius: 50%; animation: tourner 0.8s linear infinite; }
+    @keyframes tourner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    .boite-erreur {
-        background: #fef2f2;
-        border: 1px solid #fecaca;
-        border-radius: 12px;
-        padding: 2rem;
-        text-align: center;
-    }
-
-    /* ── RESSOURCES ────────────────────────────────────── */
-    .liste-ressources {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-
-    .item-ressource {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        padding: 0.875rem;
-        background: #f8fafc;
-        border-radius: 10px;
-        transition: background 0.2s;
-    }
-    .item-ressource:hover {
-        background: #eff6ff;
-    }
-
-    .icone-ressource {
-        color: #3b82f6;
-    }
-
-    .info-ressource {
-        flex: 1;
-    }
-
-    .nom-ressource {
-        font-size: 0.875rem;
-        font-weight: 600;
-        color: #334155;
-        margin: 0 0 0.15rem 0;
-    }
-
-    .meta-ressource {
-        font-size: 0.75rem;
-        color: #94a3b8;
-        margin: 0;
-    }
-
-    /* ── OBJECTIFS ─────────────────────────────────────── */
-    .liste-objectifs {
-        margin: 0;
-        padding: 0 0 0 1.25rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-
-    .liste-objectifs li {
-        font-size: 0.9rem;
-        color: #475569;
-        line-height: 1.5;
-    }
-
-    /* ── CHAPITRES ─────────────────────────────────────── */
-    .liste-chapitres {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-
-    .bloc-chapitre {
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        overflow: hidden;
-        transition: border-color 0.2s, box-shadow 0.2s;
-    }
-
-    .bloc-chapitre:hover {
-        border-color: #93c5fd;
-    }
-
-    .en-tete-chapitre {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        width: 100%;
-        padding: 1rem 1.25rem;
-        background: #f8fafc;
-        border: none;
-        cursor: pointer;
-        text-align: left;
-        font-family: inherit;
-        transition: background 0.2s;
-    }
-
-    .en-tete-chapitre:hover,
-    .en-tete-chapitre.developpe {
-        background: #eff6ff;
-    }
-
-    .numero-chapitre {
-        width: 32px;
-        height: 32px;
-        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-        color: white;
-        border-radius: 8px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-size: 0.85rem;
-        font-weight: 700;
-        flex-shrink: 0;
-    }
-
-    .titre-chapitre {
-        flex: 1;
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: #1e293b;
-    }
-
-    .nombre-sections {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: #94a3b8;
-        background: #f1f5f9;
-        padding: 0.25rem 0.6rem;
-        border-radius: 12px;
-    }
-
-    .fleche {
-        color: #94a3b8;
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        flex-shrink: 0;
-    }
-
-    .fleche.tournee {
-        transform: rotate(90deg);
-        color: #3b82f6;
-    }
-
-    /* ── SECTIONS ──────────────────────────────────────── */
-    .contenu-chapitre {
-        background: #ffffff;
-        border-top: 1px solid #e2e8f0;
-    }
-
-    .liste-sections {
-        padding: 0.75rem 1rem 0.75rem 2.5rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .item-section {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 0.625rem 0.875rem;
-        border-radius: 8px;
-        transition: background 0.2s;
-    }
-
-    .item-section:hover {
-        background: #f8fafc;
-    }
-
-    .point-section {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        flex-shrink: 0;
-    }
-
-    .titre-section {
-        flex: 1;
-        font-size: 0.875rem;
-        color: #475569;
-        font-weight: 500;
-    }
-
-    .statut-section {
-        font-size: 0.7rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.02em;
-    }
-
-    /* ── BARRE D'ACTION ────────────────────────────────── */
-    .barre-action {
-        display: flex;
-        justify-content: center;
-        padding-top: 0.5rem;
-    }
-
-    /* ── CHARGEUR ──────────────────────────────────────── */
-    .chargeur {
-        width: 44px;
-        height: 44px;
-        border: 4px solid #e2e8f0;
-        border-top: 4px solid #3b82f6;
-        border-radius: 50%;
-        animation: tourner 0.8s linear infinite;
-    }
-
-    @keyframes tourner {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-
-    /* ── RESPONSIVE ────────────────────────────────────── */
     @media (max-width: 640px) {
-        .page-conteneur {
-            padding: 1rem;
-        }
-        
-        .titre-cours {
-            font-size: 1.35rem;
-        }
-        
-        .statistiques {
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-        
-        .stat-separateur {
-            display: none;
-        }
-        
-        .en-tete-hero {
-            flex-direction: column;
-            align-items: flex-start;
-        }
+        .page-conteneur { padding: 1rem; }
+        .titre-cours { font-size: 1.35rem; }
+        .statistiques { flex-wrap: wrap; gap: 1rem; }
+        .stat-separateur { display: none; }
+        .en-tete-hero { flex-direction: column; align-items: flex-start; }
     }
 </style>

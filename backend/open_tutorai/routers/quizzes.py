@@ -215,10 +215,9 @@ async def generate_quiz(
         except Exception as e:
             log.error(f"Failed to fetch models from Models class: {e}")
 
-    if available_ids:
-        if not model_to_use or model_to_use not in available_ids:
-            model_to_use = available_ids[0]
-            log.info(f"Model fallback triggered. Using: {model_to_use}")
+    if not model_to_use and available_ids:
+        model_to_use = available_ids[0]
+        log.info(f"No model specified. Fallback to: {model_to_use}")
 
     if not model_to_use:
         raise HTTPException(
@@ -288,31 +287,68 @@ Output ONLY the JSON array."""
         "stream": False,
     }
 
+    # Prepare fallback candidate models
+    candidate_models = [model_to_use]
+    
+    # 1. Stripped version (e.g. "qwen2.5-coder:7b" -> "qwen2.5-coder")
+    if model_to_use and ":" in model_to_use:
+        stripped = model_to_use.split(":")[0]
+        if stripped not in candidate_models:
+            candidate_models.append(stripped)
+            
+    # 2. Add other available models
+    for m in available_ids:
+        if m not in candidate_models:
+            candidate_models.append(m)
+            
+    # 3. Add typical local Ollama default model tags
+    for d in ["qwen2.5-coder", "llama3", "llama2", "mistral"]:
+        if d not in candidate_models:
+            candidate_models.append(d)
+
     r = None
-    try:
-        async with httpx.AsyncClient(timeout=300) as client:
-            r = await client.post(
-                f"http://localhost:{port}/api/chat/completions",
-                json=payload,
-                headers={
-                    "Authorization": auth_header,
-                    "Content-Type": "application/json",
-                },
-            )
-            log.info(f"LLM response status: {r.status_code}")
-            r.raise_for_status()
-    except httpx.HTTPStatusError as e:
-        error_body = r.text if r else ""
-        log.error(f"LLM HTTP Status Error {e.response.status_code}: {error_body}")
+    last_error_msg = ""
+    success = False
+
+    for attempt_model in candidate_models:
+        log.info(f"Attempting quiz generation with model: {attempt_model}")
+        payload["model"] = attempt_model
+        try:
+            async with httpx.AsyncClient(timeout=300) as client:
+                r = await client.post(
+                    f"http://localhost:{port}/api/chat/completions",
+                    json=payload,
+                    headers={
+                        "Authorization": auth_header,
+                        "Content-Type": "application/json",
+                    },
+                )
+                log.info(f"LLM response status for {attempt_model}: {r.status_code}")
+                r.raise_for_status()
+                model_to_use = attempt_model
+                success = True
+                break
+        except httpx.HTTPStatusError as e:
+            error_body = r.text if r else ""
+            log.error(f"LLM HTTP Status Error {e.response.status_code} for model {attempt_model}: {error_body}")
+            last_error_msg = f"HTTP {e.response.status_code}: {error_body}"
+            if e.response.status_code == 400 or "model not found" in error_body.lower():
+                log.warning(f"Model {attempt_model} not found or failed. Trying next candidate...")
+                continue
+            else:
+                log.warning(f"HTTP error {e.response.status_code} on model {attempt_model}. Trying next candidate...")
+                continue
+        except Exception as e:
+            log.error(f"LLM call failed for model {attempt_model}: {e}")
+            last_error_msg = str(e)
+            log.warning(f"Connection error on model {attempt_model}. Trying next candidate...")
+            continue
+
+    if not success:
         raise HTTPException(
             status_code=502,
-            detail=f"Le modèle LLM a retourné une erreur {e.response.status_code}: {error_body[:300]}"
+            detail=f"Le modèle LLM a retourné une erreur. Tous les modèles candidats ont échoué. Dernière erreur: {last_error_msg[:300]}"
         )
-    except Exception as e:
-        error_body = r.text if (r and hasattr(r, 'text')) else ""
-        log.error(f"LLM call failed for quiz generation: {e}. Body: {error_body}")
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"LLM backend error: {str(e)}")
 
     # Parse LLM response - keep content in outer scope so except can log it
     content = ""

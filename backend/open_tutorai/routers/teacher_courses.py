@@ -27,9 +27,10 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # ---------------------------------------------------------------
 # System Prompt for course plan generation
 # ---------------------------------------------------------------
-COURSE_PLAN_SYSTEM_PROMPT = """You are an expert instructional designer. Given course details, generate a structured course plan.
+COURSE_PLAN_SYSTEM_PROMPT = """You are an expert instructional designer. Given course details, generate a structured course plan WITH pedagogical objectives.
 Return ONLY a valid JSON object with this exact format, no extra text:
 {
+  "objectives": "By the end of this course, the student will be able to:\n\n1. ...\n2. ...\n3. ...",
   "chapters": [
     {
       "id": "ch1",
@@ -43,11 +44,11 @@ Return ONLY a valid JSON object with this exact format, no extra text:
   ]
 }
 Rules:
-- Create 3‑7 chapters.
-- Each chapter 2‑4 sections.
-- Use the course language.
-- Cover the objectives comprehensively.
-- Output ONLY the JSON object, nothing else."""
+- Generate 5-7 well-written pedagogical objectives (numbered list format)
+- Create 3-7 chapters, each with 2-4 sections
+- Output ONLY the JSON object, nothing else
+- IMPORTANT: ALL The JSON output must respect the course language
+"""
 
 # ---------------------------------------------------------------
 # Pydantic Models (mirroring SupportCreateRequest / SupportResponse)
@@ -120,6 +121,12 @@ class PlanRequest(BaseModel):
 class PlanResponse(BaseModel):
     course_id: str
     plan: dict
+
+
+class PlanWithObjectives(BaseModel):
+    course_id: str
+    plan: dict
+    objectives: str
 
 
 class PlanGenerationRequest(BaseModel):
@@ -411,8 +418,9 @@ async def generate_course_full(
 
         content = content.strip()
         plan = json.loads(content)
+        data = json.loads(content.strip())
 
-        if "chapters" not in plan:
+        if "chapters" not in data:
             raise ValueError("missing 'chapters' key in plan")
     except json.JSONDecodeError as je:
         log.error(f"JSON parsing error: {je}. Raw content: {content[:500]}")
@@ -421,6 +429,10 @@ async def generate_course_full(
         raise HTTPException(
             status_code=500, detail="LLM returned invalid JSON structure"
         )
+
+        plan = {"chapters": data.get("chapters", [])}
+        ai_objectives = data.get("objectives", objectives)
+
     except Exception as e:
         log.error(f"Failed to parse LLM response: {e}")
         course.status = "error"
@@ -440,6 +452,7 @@ async def generate_course_full(
     db.add(course_plan)
 
     course.status = "plan_generated"
+    course.objectives = ai_objectives
     course.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(course)
@@ -450,6 +463,7 @@ async def generate_course_full(
         "course_id": course_id,
         "course": _to_response(course),
         "plan": plan,
+        "objectives": ai_objectives,
         "files_count": len(files),
     }
 
@@ -586,7 +600,7 @@ async def delete_course(
 # ---------------------------------------------------------------
 # 6. POST /teacher/courses/{course_id}/generate-plan – Génération du plan
 # ---------------------------------------------------------------
-@router.post("/{course_id}/generate-plan", response_model=PlanResponse)
+@router.post("/{course_id}/generate-plan", response_model=PlanWithObjectives)
 async def generate_course_plan(
     course_id: str,
     request: Request,
@@ -649,6 +663,7 @@ async def generate_course_plan(
         content = r.json()["choices"][0]["message"]["content"].strip()
         
         # Strip markdown code fences if model wrapped the JSON
+        # Strip markdown code fences
         if content.startswith("```json"):
             content = content[7:]
         elif content.startswith("```"):
@@ -667,11 +682,19 @@ async def generate_course_plan(
         raise HTTPException(
             status_code=500, detail="LLM returned invalid JSON structure"
         )
+        if content.endswith("```"):
+            content = content[:-3]
+
+        data = json.loads(content.strip())
+
+        plan = {"chapters": data.get("chapters", [])}
+        ai_objectives = data.get("objectives", body.objectives)  # NEW
+
+        if "chapters" not in data:
+            raise ValueError("missing 'chapters' key")
     except Exception as e:
         log.error(f"Failed to parse LLM response: {e}")
-        raise HTTPException(
-            status_code=500, detail="Could not parse plan from LLM response"
-        )
+        raise HTTPException(status_code=500, detail="Could not parse response")
 
     plan_id = str(uuid.uuid4())
     new_plan = CoursePlan(
@@ -683,11 +706,12 @@ async def generate_course_plan(
     db.add(new_plan)
     course.status = "plan_generated"
     course.model_used = body.model
+    course.objectives = ai_objectives
     course.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(new_plan)
     log.info(f"Plan généré pour le cours {course_id} avec le modèle {body.model}")
-    return PlanResponse(course_id=course_id, plan=plan)
+    return PlanWithObjectives(course_id=course_id, plan=plan, objectives=ai_objectives)
 
 
 # ---------------------------------------------------------------

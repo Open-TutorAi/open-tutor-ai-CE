@@ -1,6 +1,7 @@
 <!-- Student Layout -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
+	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { get, writable, derived } from 'svelte/store';
@@ -14,7 +15,61 @@
 	import { generateDemoData } from '$lib/utils/mockData';
 	import { toast } from 'svelte-sonner';
 
+// ─────────────────────────────────────────────────────────────
+// Active Page Logic + Course Context Management (UPDATED)
+// ─────────────────────────────────────────────────────────────
 	const activePage = writable('dashboard');
+
+	$: {
+		const path = $page.url.pathname;
+		const hasActiveCourse = typeof window !== 'undefined' && 
+							!!localStorage.getItem('activeCourseData');
+
+		console.log('Current Path:', path);                    // ← Debug
+		console.log('Has Active Course:', hasActiveCourse);    // ← Debug
+
+		if (path.startsWith('/student/classrooms')) {
+			activePage.set('classrooms');
+		} 
+		else if (path.includes('/c/') || path.includes('/chat')) {
+			// هنا المشكل كان
+			activePage.set(hasActiveCourse ? 'classrooms' : 'support');
+		} 
+		else if (path.includes('support') || path.startsWith('/student/supports')) {
+			activePage.set('support');
+		} 
+		else if (path.startsWith('/student/assignments')) {
+			activePage.set('assignments');
+		} 
+		else if (path.startsWith('/student/messages')) {
+			activePage.set('messages');
+		} 
+		else if (path.startsWith('/student/settings') || path.startsWith('/student/profile')) {
+			activePage.set('settings');
+		} 
+		else {
+			activePage.set('dashboard');
+		}
+
+		console.log('Active Page Set To:', get(activePage)); // ← Debug
+	}
+
+	// Cleanup when leaving course context
+	$: {
+		const path = $page.url.pathname;
+		if (typeof window !== 'undefined') {
+			const isInCourseContext = 
+				path.startsWith('/student/classrooms') ||
+				path.includes('/c/') ||
+				path.includes('/chat');
+
+			if (!isInCourseContext) {
+				localStorage.removeItem('activeCourseData');
+				localStorage.removeItem('pendingCourseData');
+				localStorage.removeItem('resumeCourseChat');
+			}
+		}
+	}
 	let isSidebarOpen = true;
 	let username = '';
 
@@ -27,6 +82,7 @@
 	let windowWidth: number;
 	let isMobile: boolean = false;
 	let loading = true;
+	let handleResize: () => void;
 
 	// Derive isDarkMode from theme store
 	const isDarkMode = derived(theme, ($theme) => {
@@ -61,7 +117,14 @@
 				originalUserData.set(null);
 			}
 			demoData.set({
-				dashboard: null,
+				dashboard: {
+					progress: 0,
+					coursesCompleted: 0,
+					currentStreak: 0,
+					weeklyGoal: { completed: 0, target: 5 },
+					totalLearningHours: 0,
+					achievements: 0
+				},
 				chats: [],
 				supports: [],
 				assignments: [],
@@ -125,7 +188,7 @@
 		document.documentElement.classList.toggle('dark', isDark);
 
 		// Handle resize events for responsive design
-		const handleResize = () => {
+		handleResize = () => {
 			windowWidth = window.innerWidth;
 			isMobile = windowWidth < 768;
 
@@ -138,10 +201,12 @@
 
 		window.addEventListener('resize', handleResize);
 		handleResize();
+	});
 
-		return () => {
+	onDestroy(() => {
+		if (browser && handleResize) {
 			window.removeEventListener('resize', handleResize);
-		};
+		}
 	});
 </script>
 

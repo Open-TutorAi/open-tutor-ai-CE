@@ -17,14 +17,15 @@
 
     // ── PROPS ─────────────────────────────────────────────────────
     export let courseData: {
-        course_id:  string;
-        title:      string;
-        language:   string;
-        category:   string;
-        level:      string;
-        objectives: string;
-        files:      File[];
-        plan?:      { chapters: Chapter[] };
+        course_id: string;
+        title: string;
+        language: string;
+        category: string;
+        level: string;
+        objectives: string;         
+        aiObjectives?: string;       
+        files: File[];
+        plan?: { chapters: Chapter[] };
     };
 
     // ── TYPES ─────────────────────────────────────────────────────
@@ -48,7 +49,7 @@
         })),
     }));
 
-    let editableObjectives = courseData.objectives ?? '';
+    let editableObjectives = courseData.aiObjectives ?? courseData.objectives ?? '';
 
     let newChapterTitle = '';
     let editingChapterId: string | null = null;
@@ -410,11 +411,18 @@
                     </div>
                     <div>
                         <div class="card-title">{$i18n.t('Objectifs pédagogiques')}</div>
-                        <div class="card-sub">{$i18n.t('Ce que les étudiants apprendront')}</div>
+                        <div class="card-sub">{$i18n.t('Générés par l\'IA - modifiables')}</div>
                     </div>
                 </div>
-                <textarea bind:value={editableObjectives} class="obj-ta" rows="11"
-                    placeholder={$i18n.t("À la fin de ce cours, l'étudiant sera capable de...")}></textarea>
+
+                <div class="ai-badge">AI-Generated</div>
+
+                <textarea
+                    bind:value={editableObjectives}
+                    class="obj-ta"
+                    rows="11"
+                    placeholder={$i18n.t("À la fin de ce cours, l'étudiant sera capable de...")}
+                ></textarea>
             </div>
 
             <div class="card">
@@ -797,4 +805,22 @@
 
 @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
 @keyframes slideUp { from { transform:translateY(20px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+
+.ai-badge {
+    margin: 0 1.75rem 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #7c3aed;
+    background: #f3e8ff;
+    border: 1px solid #e9d5ff;
+    border-radius: 9999px;
+    padding: 0.2rem 0.65rem;
+}
+:global(.dark) .ai-badge {
+    color: #c4b5fd;
+    background: #2e1065;
+    border-color: #6d28d9;
+}
 </style>
