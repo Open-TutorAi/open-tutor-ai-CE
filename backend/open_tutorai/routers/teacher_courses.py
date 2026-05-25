@@ -4,7 +4,7 @@ import logging
 import os
 from datetime import datetime
 from typing import Optional, List
-
+from open_tutorai.models.database import CourseEnrollment
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Form
 from pydantic import BaseModel, Field
@@ -392,12 +392,16 @@ async def generate_course_full(
         log.error(f"LLM call timed out after 300 seconds: {e}")
         course.status = "error"
         db.commit()
-        raise HTTPException(status_code=500, detail="LLM generation timed out (exceeded 5 minutes)")
+        raise HTTPException(
+            status_code=500, detail="LLM generation timed out (exceeded 5 minutes)"
+        )
     except httpx.HTTPStatusError as e:
         log.error(f"LLM call failed: {e.response.status_code} {e.response.text}")
         course.status = "error"
         db.commit()
-        raise HTTPException(status_code=500, detail=f"LLM returned error: {e.response.status_code}")
+        raise HTTPException(
+            status_code=500, detail=f"LLM returned error: {e.response.status_code}"
+        )
     except Exception as e:
         log.error(f"LLM call error: {e}")
         course.status = "error"
@@ -559,7 +563,6 @@ async def delete_course(
     - Plans du cours (CoursePlan)
     - Le cours lui-même
     """
-    from open_tutorai.models.database import CourseEnrollment
 
     course = _get_course_or_404(db, course_id, user.id)
 
@@ -651,19 +654,22 @@ async def generate_course_plan(
         r.raise_for_status()
     except httpx.TimeoutException as e:
         log.error(f"LLM call timed out after 300 seconds: {e}")
-        raise HTTPException(status_code=500, detail="LLM generation timed out (exceeded 5 minutes)")
+        raise HTTPException(
+            status_code=500, detail="LLM generation timed out (exceeded 5 minutes)"
+        )
     except httpx.HTTPStatusError as e:
         log.error(f"LLM call failed: {e.response.status_code} {e.response.text}")
-        raise HTTPException(status_code=500, detail=f"LLM returned error: {e.response.status_code}")
+        raise HTTPException(
+            status_code=500, detail=f"LLM returned error: {e.response.status_code}"
+        )
     except Exception as e:
         log.error(f"LLM call error: {e}")
         raise HTTPException(status_code=500, detail="Failed to reach LLM backend")
 
     try:
         content = r.json()["choices"][0]["message"]["content"].strip()
-        
+
         # Strip markdown code fences if model wrapped the JSON
-        # Strip markdown code fences
         if content.startswith("```json"):
             content = content[7:]
         elif content.startswith("```"):
@@ -674,24 +680,16 @@ async def generate_course_plan(
 
         content = content.strip()
         plan = json.loads(content)
-        
+
         if "chapters" not in plan:
             raise ValueError("missing 'chapters' key in plan")
+
+        ai_objectives = plan.get("objectives", body.objectives)
     except json.JSONDecodeError as je:
         log.error(f"JSON parsing error: {je}. Raw content: {content[:500]}")
         raise HTTPException(
             status_code=500, detail="LLM returned invalid JSON structure"
         )
-        if content.endswith("```"):
-            content = content[:-3]
-
-        data = json.loads(content.strip())
-
-        plan = {"chapters": data.get("chapters", [])}
-        ai_objectives = data.get("objectives", body.objectives)  # NEW
-
-        if "chapters" not in data:
-            raise ValueError("missing 'chapters' key")
     except Exception as e:
         log.error(f"Failed to parse LLM response: {e}")
         raise HTTPException(status_code=500, detail="Could not parse response")
@@ -820,7 +818,7 @@ async def get_students_count(
     course_id: str, user=Depends(get_verified_user), db=Depends(get_db)
 ):
     _get_course_or_404(db, course_id, user.id)
-    from open_tutorai.models.database import CourseEnrollment
+    # pyrefly: ignore [missing-import]
 
     count = (
         db.query(CourseEnrollment)
