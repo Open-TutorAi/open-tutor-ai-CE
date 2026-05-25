@@ -7,7 +7,8 @@ import string
 import traceback
 from datetime import datetime
 from typing import Optional, List
-
+from open_webui.models.models import Models
+from open_webui.models.users import Users
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
@@ -16,7 +17,13 @@ from sqlalchemy.orm import sessionmaker
 
 from open_webui.internal.db import engine
 from open_tutorai.utils.auth import get_verified_user
-from open_tutorai.models.database import Quiz, QuizQuestion, QuizSubmission, Course, CoursePlan
+from open_tutorai.models.database import (
+    Quiz,
+    QuizQuestion,
+    QuizSubmission,
+    Course,
+    CoursePlan,
+)
 
 # ---------------------------------------------------------------
 # Logging & Session Setup
@@ -27,12 +34,14 @@ log.setLevel("INFO")
 router = APIRouter(tags=["Quizzes"])
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
 
 # ---------------------------------------------------------------
 # Pydantic Schemas
@@ -47,8 +56,10 @@ class QuizGenerateRequest(BaseModel):
     limit_date: Optional[str] = None
     course_id: Optional[str] = None
 
+
 class QuizSubmitRequest(BaseModel):
     answers: dict  # mapping question_id -> student_answer
+
 
 # ---------------------------------------------------------------
 # Helper function to dictify Quiz
@@ -56,13 +67,15 @@ class QuizSubmitRequest(BaseModel):
 def _quiz_to_dict(quiz: Quiz) -> dict:
     questions_list = []
     for q in quiz.questions:
-        questions_list.append({
-            "id": q.id,
-            "question_type": q.question_type,
-            "question_text": q.question_text,
-            "options": q.options,
-            "correct_answer": q.correct_answer
-        })
+        questions_list.append(
+            {
+                "id": q.id,
+                "question_type": q.question_type,
+                "question_text": q.question_text,
+                "options": q.options,
+                "correct_answer": q.correct_answer,
+            }
+        )
     return {
         "id": quiz.id,
         "teacher_id": quiz.teacher_id,
@@ -76,12 +89,14 @@ def _quiz_to_dict(quiz: Quiz) -> dict:
         "status": quiz.status,
         "created_at": quiz.created_at.isoformat() if quiz.created_at else "",
         "updated_at": quiz.updated_at.isoformat() if quiz.updated_at else None,
-        "questions": questions_list
+        "questions": questions_list,
     }
+
 
 # ---------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------
+
 
 # 0. GET /teacher - list all quizzes created by teacher
 @router.get("/teacher")
@@ -93,9 +108,12 @@ async def list_teacher_quizzes(
     results = []
     for q in quizzes:
         qd = _quiz_to_dict(q)
-        participants_count = db.query(func.count(QuizSubmission.id)).filter(
-            QuizSubmission.quiz_id == q.id
-        ).scalar() or 0
+        participants_count = (
+            db.query(func.count(QuizSubmission.id))
+            .filter(QuizSubmission.quiz_id == q.id)
+            .scalar()
+            or 0
+        )
         qd["participants_count"] = participants_count
         results.append(qd)
     return results
@@ -120,7 +138,7 @@ async def get_student_quiz_dashboard(
             "title": q.title,
             "total_questions": q.total_questions,
             "score": sub.score,
-            "submitted_at": sub.submitted_at.isoformat() if sub.submitted_at else ""
+            "submitted_at": sub.submitted_at.isoformat() if sub.submitted_at else "",
         }
         for sub, q in results
     ]
@@ -139,9 +157,11 @@ async def generate_quiz(
     course_meta = ""
 
     if body.course_id:
-        course = db.query(Course).filter(
-            Course.id == body.course_id, Course.teacher_id == user.id
-        ).first()
+        course = (
+            db.query(Course)
+            .filter(Course.id == body.course_id, Course.teacher_id == user.id)
+            .first()
+        )
         if not course:
             raise HTTPException(status_code=404, detail="Cours introuvable")
 
@@ -197,20 +217,23 @@ async def generate_quiz(
         with httpx.Client(timeout=10) as client:
             res = client.get(
                 f"http://localhost:{port}/api/models",
-                headers={"Authorization": auth_header}
+                headers={"Authorization": auth_header},
             )
             if res.ok:
                 models_data = res.json().get("data", [])
-                available_ids = [m.get("id") for m in models_data if m.get("id")]
+                available_ids = (
+                    [getattr(m, "id", str(m)) for m in models_data] if models_data else []
+                )
                 log.info(f"Available models from API: {available_ids}")
     except Exception as e:
         log.error(f"Failed to fetch models from API: {e}")
 
     if not available_ids:
         try:
-            from open_webui.models.models import Models
             all_models = Models.get_all_models()
-            available_ids = [getattr(m, "id", str(m)) for m in all_models] if all_models else []
+            available_ids = (
+                [getattr(m, "id", str(m)) for m in all_models] if all_models else []
+            )
             log.info(f"Available models from Models class: {available_ids}")
         except Exception as e:
             log.error(f"Failed to fetch models from Models class: {e}")
@@ -222,7 +245,7 @@ async def generate_quiz(
     if not model_to_use:
         raise HTTPException(
             status_code=503,
-            detail="Aucun modèle LLM disponible. Veuillez vérifier que l'assistant IA est bien démarré."
+            detail="Aucun modèle LLM disponible. Veuillez vérifier que l'assistant IA est bien démarré.",
         )
 
     log.info(f"Generating quiz using model: {model_to_use}")
@@ -275,32 +298,36 @@ Output ONLY the JSON array."""
 
     user_message = (
         f"Generate {body.total_questions} quiz questions on: '{body.topic}'."
-        + (f" Focus on the course chapters and sections listed in the course context." if course_context else "")
+        + (
+            f" Focus on the course chapters and sections listed in the course context."
+            if course_context
+            else ""
+        )
     )
 
     payload = {
         "model": model_to_use,
         "messages": [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
+            {"role": "user", "content": user_message},
         ],
         "stream": False,
     }
 
     # Prepare fallback candidate models
     candidate_models = [model_to_use]
-    
+
     # 1. Stripped version (e.g. "qwen2.5-coder:7b" -> "qwen2.5-coder")
     if model_to_use and ":" in model_to_use:
         stripped = model_to_use.split(":")[0]
         if stripped not in candidate_models:
             candidate_models.append(stripped)
-            
+
     # 2. Add other available models
     for m in available_ids:
         if m not in candidate_models:
             candidate_models.append(m)
-            
+
     # 3. Add typical local Ollama default model tags
     for d in ["qwen2.5-coder", "llama3", "llama2", "mistral"]:
         if d not in candidate_models:
@@ -330,24 +357,43 @@ Output ONLY the JSON array."""
                 break
         except httpx.HTTPStatusError as e:
             error_body = r.text if r else ""
-            log.error(f"LLM HTTP Status Error {e.response.status_code} for model {attempt_model}: {error_body}")
+            log.error(
+                f"LLM HTTP Status Error {e.response.status_code} for model {attempt_model}: {error_body}"
+            )
             last_error_msg = f"HTTP {e.response.status_code}: {error_body}"
             if e.response.status_code == 400 or "model not found" in error_body.lower():
-                log.warning(f"Model {attempt_model} not found or failed. Trying next candidate...")
+                log.warning(
+                    f"Model {attempt_model} not found or failed. Trying next candidate..."
+                )
                 continue
             else:
-                log.warning(f"HTTP error {e.response.status_code} on model {attempt_model}. Trying next candidate...")
+                log.warning(
+                    f"HTTP error {e.response.status_code} on model {attempt_model}. Trying next candidate..."
+                )
+                continue
+            last_error_msg = f"HTTP {e.response.status_code}: {error_body}"
+            if e.response.status_code == 400 or "model not found" in error_body.lower():
+                log.warning(
+                    f"Model {attempt_model} not found or failed. Trying next candidate..."
+                )
+                continue
+            else:
+                log.warning(
+                    f"HTTP error {e.response.status_code} on model {attempt_model}. Trying next candidate..."
+                )
                 continue
         except Exception as e:
             log.error(f"LLM call failed for model {attempt_model}: {e}")
             last_error_msg = str(e)
-            log.warning(f"Connection error on model {attempt_model}. Trying next candidate...")
+            log.warning(
+                f"Connection error on model {attempt_model}. Trying next candidate..."
+            )
             continue
 
     if not success:
         raise HTTPException(
             status_code=502,
-            detail=f"Le modèle LLM a retourné une erreur. Tous les modèles candidats ont échoué. Dernière erreur: {last_error_msg[:300]}"
+            detail=f"Le modèle LLM a retourné une erreur. Tous les modèles candidats ont échoué. Dernière erreur: {last_error_msg[:300]}",
         )
 
     # Parse LLM response - keep content in outer scope so except can log it
@@ -371,17 +417,21 @@ Output ONLY the JSON array."""
         questions_data = json.loads(content)
 
         if not isinstance(questions_data, list):
-            raise ValueError(f"LLM did not return a JSON array, got: {type(questions_data).__name__}")
+            raise ValueError(
+                f"LLM did not return a JSON array, got: {type(questions_data).__name__}"
+            )
 
         log.info(f"Parsed {len(questions_data)} questions from LLM response")
     except HTTPException:
         raise
     except Exception as e:
-        log.error(f"Failed to parse LLM response for quiz: {e}. Content (first 500): {content[:500]}")
+        log.error(
+            f"Failed to parse LLM response for quiz: {e}. Content (first 500): {content[:500]}"
+        )
         traceback.print_exc()
         raise HTTPException(
             status_code=500,
-            detail=f"L'assistant IA a renvoyé des données invalides: {str(e)[:200]}. Veuillez réessayer."
+            detail=f"L'assistant IA a renvoyé des données invalides: {str(e)[:200]}. Veuillez réessayer.",
         )
 
     # Save Quiz as "draft"
@@ -419,7 +469,9 @@ Output ONLY the JSON array."""
         db.rollback()
         log.error(f"Database error saving quiz draft: {e}")
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Erreur de base de données: {str(e)[:200]}")
+        raise HTTPException(
+            status_code=500, detail=f"Erreur de base de données: {str(e)[:200]}"
+        )
 
     return _quiz_to_dict(quiz)
 
@@ -433,13 +485,15 @@ async def publish_quiz(
 ):
     quiz = db.query(Quiz).filter(Quiz.id == id, Quiz.teacher_id == user.id).first()
     if not quiz:
-        raise HTTPException(status_code=404, detail="Quiz introuvable ou accès non autorisé")
+        raise HTTPException(
+            status_code=404, detail="Quiz introuvable ou accès non autorisé"
+        )
 
     if quiz.status == "published":
         return {
             "status": "success",
             "quiz_code": quiz.quiz_code,
-            "quiz": _quiz_to_dict(quiz)
+            "quiz": _quiz_to_dict(quiz),
         }
 
     # Generate a unique 6-character uppercase alphanumeric code
@@ -452,7 +506,10 @@ async def publish_quiz(
             break
 
     if not quiz_code:
-        raise HTTPException(status_code=500, detail="Impossible de générer un code unique. Veuillez réessayer.")
+        raise HTTPException(
+            status_code=500,
+            detail="Impossible de générer un code unique. Veuillez réessayer.",
+        )
 
     quiz.quiz_code = quiz_code
     quiz.status = "published"
@@ -461,11 +518,7 @@ async def publish_quiz(
     db.refresh(quiz)
 
     log.info(f"Quiz {id} published with code {quiz_code} by teacher {user.id}")
-    return {
-        "status": "success",
-        "quiz_code": quiz_code,
-        "quiz": _quiz_to_dict(quiz)
-    }
+    return {"status": "success", "quiz_code": quiz_code, "quiz": _quiz_to_dict(quiz)}
 
 
 # 3. GET /join/{code} - Student retrieves quiz questions (excludes correct answers)
@@ -477,20 +530,26 @@ async def join_quiz(
 ):
     quiz = db.query(Quiz).filter(func.upper(Quiz.quiz_code) == code.upper()).first()
     if not quiz:
-        raise HTTPException(status_code=404, detail="Code de quiz invalide ou quiz introuvable")
+        raise HTTPException(
+            status_code=404, detail="Code de quiz invalide ou quiz introuvable"
+        )
 
     if quiz.status != "published":
-        raise HTTPException(status_code=400, detail="Ce quiz n'est pas encore publié par l'enseignant")
+        raise HTTPException(
+            status_code=400, detail="Ce quiz n'est pas encore publié par l'enseignant"
+        )
 
     # Exclude correct_answer from the payload!
     questions_payload = []
     for q in quiz.questions:
-        questions_payload.append({
-            "id": q.id,
-            "question_type": q.question_type,
-            "question_text": q.question_text,
-            "options": q.options,
-        })
+        questions_payload.append(
+            {
+                "id": q.id,
+                "question_type": q.question_type,
+                "question_text": q.question_text,
+                "options": q.options,
+            }
+        )
 
     return {
         "id": quiz.id,
@@ -498,7 +557,7 @@ async def join_quiz(
         "time_limit": quiz.time_limit,
         "total_questions": quiz.total_questions,
         "limit_date": quiz.limit_date,
-        "questions": questions_payload
+        "questions": questions_payload,
     }
 
 
@@ -524,7 +583,7 @@ async def submit_quiz(
     for q in quiz.questions:
         student_ans = str(body.answers.get(q.id, "")).strip().lower()
         correct_ans = str(q.correct_answer).strip().lower()
-        
+
         # Soft comparison for True/False translations
         if q.question_type == "True/False":
             true_vals = ["vrai", "true", "yes", "oui"]
@@ -542,7 +601,7 @@ async def submit_quiz(
         student_id=user.id,
         answers=body.answers,
         score=score,
-        submitted_at=datetime.utcnow()
+        submitted_at=datetime.utcnow(),
     )
     db.add(submission)
     db.commit()
@@ -553,7 +612,7 @@ async def submit_quiz(
         "submission_id": submission.id,
         "score": score,
         "total": total,
-        "submitted_at": submission.submitted_at.isoformat()
+        "submitted_at": submission.submitted_at.isoformat(),
     }
 
 
@@ -566,7 +625,9 @@ async def get_teacher_analytics(
 ):
     quiz = db.query(Quiz).filter(Quiz.id == id, Quiz.teacher_id == user.id).first()
     if not quiz:
-        raise HTTPException(status_code=404, detail="Quiz introuvable ou accès non autorisé")
+        raise HTTPException(
+            status_code=404, detail="Quiz introuvable ou accès non autorisé"
+        )
 
     submissions = quiz.submissions
     total_participants = len(submissions)
@@ -580,7 +641,7 @@ async def get_teacher_analytics(
             "high_score": 0.0,
             "low_score": 0.0,
             "submissions": [],
-            "distribution": {}
+            "distribution": {},
         }
 
     scores = [s.score for s in submissions]
@@ -598,19 +659,22 @@ async def get_teacher_analytics(
     for s in submissions:
         student_name = "Étudiant anonyme"
         try:
-            from open_webui.models.users import Users
             student = Users.get_user_by_id(s.student_id)
             if student:
-                student_name = getattr(student, "name", None) or getattr(student, "email", "Étudiant anonyme")
+                student_name = getattr(student, "name", None) or getattr(
+                    student, "email", "Étudiant anonyme"
+                )
         except Exception:
             pass
 
-        submissions_formatted.append({
-            "id": s.id,
-            "student_name": student_name,
-            "score": s.score,
-            "submitted_at": s.submitted_at.isoformat() if s.submitted_at else ""
-        })
+        submissions_formatted.append(
+            {
+                "id": s.id,
+                "student_name": student_name,
+                "score": s.score,
+                "submitted_at": s.submitted_at.isoformat() if s.submitted_at else "",
+            }
+        )
 
     return {
         "quiz_title": quiz.title,
@@ -620,5 +684,5 @@ async def get_teacher_analytics(
         "high_score": high_score,
         "low_score": low_score,
         "submissions": submissions_formatted,
-        "distribution": distribution
+        "distribution": distribution,
     }
