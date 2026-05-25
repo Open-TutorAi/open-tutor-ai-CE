@@ -222,7 +222,9 @@ async def generate_quiz(
             if res.ok:
                 models_data = res.json().get("data", [])
                 available_ids = (
-                    [getattr(m, "id", str(m)) for m in models_data] if models_data else []
+                    [getattr(m, "id", str(m)) for m in models_data]
+                    if models_data
+                    else []
                 )
                 log.info(f"Available models from API: {available_ids}")
     except Exception as e:

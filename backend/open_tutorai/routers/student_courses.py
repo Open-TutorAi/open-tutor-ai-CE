@@ -203,7 +203,10 @@ async def list_enrolled_courses(
 ):
     enrollments = (
         db.query(CourseEnrollment)
-        .filter(CourseEnrollment.student_id == user.id)
+        .filter(
+            CourseEnrollment.student_id == user.id,
+            CourseEnrollment.is_hidden == False,
+        )
         .order_by(CourseEnrollment.enrolled_at.desc())
         .all()
     )
@@ -279,6 +282,7 @@ async def get_course_detail(
         .filter(
             CourseEnrollment.course_id == course_id,
             CourseEnrollment.student_id == user.id,
+            CourseEnrollment.is_hidden == False,
         )
         .first()
     )
@@ -366,6 +370,7 @@ async def unenroll_from_course(
         .filter(
             CourseEnrollment.course_id == course_id,
             CourseEnrollment.student_id == user.id,
+            CourseEnrollment.is_hidden == False,
         )
         .first()
     )
@@ -396,6 +401,7 @@ async def get_course_progress(
         .filter(
             CourseEnrollment.course_id == course_id,
             CourseEnrollment.student_id == user.id,
+            CourseEnrollment.is_hidden == False,
         )
         .first()
     )
@@ -450,6 +456,7 @@ async def update_section_progress(
         .filter(
             CourseEnrollment.course_id == course_id,
             CourseEnrollment.student_id == user.id,
+            CourseEnrollment.is_hidden == False,
         )
         .first()
     )
@@ -508,6 +515,7 @@ async def save_course_chat_id(
         .filter(
             CourseEnrollment.course_id == course_id,
             CourseEnrollment.student_id == user.id,
+            CourseEnrollment.is_hidden == False,
         )
         .first()
     )

@@ -17,6 +17,26 @@
 				localStorage.theme === 'dark' ||
 				(!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
 			applyTheme();
+
+			// Parse query params for active student chat
+			const params = new URLSearchParams(window.location.search);
+			const studentName = params.get('student');
+			const chatId = params.get('chatId');
+			if (studentName) {
+				const exists = channels.some((ch) => ch.id === (chatId || studentName));
+				if (!exists) {
+					channels = [
+						{
+							id: chatId || studentName,
+							name: studentName,
+							lastMsg: `Direct conversation with ${studentName}`,
+							unread: 0
+						},
+						...channels
+					];
+				}
+				activeChannelId = chatId || studentName;
+			}
 		}
 		// Jib l-messages mnin t-7el l-page
 		fetchDiscussions();

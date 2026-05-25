@@ -182,6 +182,7 @@ class CourseEnrollment(Base):
     chat_id = Column(
         String, nullable=True
     )  # NEW: chat ID for the student's course conversation
+    is_hidden = Column(Boolean, default=False, nullable=False)
 
     course = relationship("Course", backref="enrollments")
 
@@ -205,14 +206,19 @@ class Quiz(Base):
     id = Column(String, primary_key=True, index=True)
     teacher_id = Column(String, index=True, nullable=False)
     course_id = Column(
-        String, ForeignKey(f"{PREFIX}course.id", ondelete="CASCADE"), nullable=True, index=True
+        String,
+        ForeignKey(f"{PREFIX}course.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
     )
     title = Column(String, nullable=False)
     time_limit = Column(Integer, nullable=True)  # in minutes
     total_questions = Column(Integer, nullable=False, default=0)
     limit_date = Column(String, nullable=True)
     model_used = Column(String, nullable=True)
-    quiz_code = Column(String, unique=True, index=True, nullable=True)  # 6-char uppercase code
+    quiz_code = Column(
+        String, unique=True, index=True, nullable=True
+    )  # 6-char uppercase code
     status = Column(String, nullable=False, default="draft")  # draft, published
     created_at = Column(DateTime, nullable=False, server_default=func.now())
     updated_at = Column(DateTime, nullable=True, onupdate=func.now())
@@ -232,14 +238,21 @@ class QuizQuestion(Base):
 
     id = Column(String, primary_key=True, index=True)
     quiz_id = Column(
-        String, ForeignKey(f"{PREFIX}quiz.id", ondelete="CASCADE"), nullable=False, index=True
+        String,
+        ForeignKey(f"{PREFIX}quiz.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
-    question_type = Column(String, nullable=False)  # "QCM", "True/False", "Short Answer"
+    question_type = Column(
+        String, nullable=False
+    )  # "QCM", "True/False", "Short Answer"
     question_text = Column(Text, nullable=False)
     options = Column(JSONField, nullable=True)  # choices for QCM as array
     correct_answer = Column(String, nullable=False)
 
-    quiz = relationship("Quiz", backref=backref("questions", cascade="all, delete-orphan"))
+    quiz = relationship(
+        "Quiz", backref=backref("questions", cascade="all, delete-orphan")
+    )
 
     def __repr__(self):
         return f"<QuizQuestion(id={self.id}, quiz_id={self.quiz_id}, question_type={self.question_type})>"
@@ -254,14 +267,19 @@ class QuizSubmission(Base):
 
     id = Column(String, primary_key=True, index=True)
     quiz_id = Column(
-        String, ForeignKey(f"{PREFIX}quiz.id", ondelete="CASCADE"), nullable=False, index=True
+        String,
+        ForeignKey(f"{PREFIX}quiz.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     student_id = Column(String, index=True, nullable=False)
     answers = Column(JSONField, nullable=False)  # JSON payload of student responses
     score = Column(Integer, nullable=False)  # graded score
     submitted_at = Column(DateTime, nullable=False, server_default=func.now())
 
-    quiz = relationship("Quiz", backref=backref("submissions", cascade="all, delete-orphan"))
+    quiz = relationship(
+        "Quiz", backref=backref("submissions", cascade="all, delete-orphan")
+    )
 
     def __repr__(self):
         return f"<QuizSubmission(id={self.id}, quiz_id={self.quiz_id}, student_id={self.student_id}, score={self.score})>"
