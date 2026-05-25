@@ -409,8 +409,8 @@
 								</div>
 								<input
 									type="range"
-									min="3"
-									max="15"
+									min="5"
+									max="20"
 									bind:value={totalQuestions}
 									class="w-full accent-indigo-600 dark:accent-indigo-500"
 								/>
