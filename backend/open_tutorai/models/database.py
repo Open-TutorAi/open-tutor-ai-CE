@@ -245,6 +245,25 @@ class CourseProgress(Base):
         )
 
 
+class UserPreference(Base):
+    """
+    Table for storing user preferences like language and theme.
+    Each user can have their own language and theme preference.
+    """
+
+    __tablename__ = f"{PREFIX}user_preference"
+
+    id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, unique=True, index=True, nullable=False)
+    language = Column(String, nullable=False, default="en-US")
+    theme = Column(String, nullable=False, default="system")  # 'light', 'dark', 'system'
+    created_at = Column(DateTime, nullable=False, server_default=func.now())
+    updated_at = Column(DateTime, nullable=True, onupdate=func.now())
+
+    def __repr__(self):
+        return f"<UserPreference(user_id={self.user_id}, language={self.language}, theme={self.theme})>"
+
+
 def init_database():
     """
     Initialize the database tables for OpenTutorAI.
