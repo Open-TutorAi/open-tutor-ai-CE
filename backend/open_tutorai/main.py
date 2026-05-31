@@ -10,7 +10,13 @@ from open_webui.models.users import Users
 from open_tutorai.config import AppConfig
 from open_tutorai.models.database import init_database
 from open_tutorai.routers import student_courses
-from open_tutorai.routers import response_feedbacks, auths, supports, teacher_courses, settings
+from open_tutorai.routers import (
+    response_feedbacks,
+    auths,
+    supports,
+    teacher_courses,
+    settings,
+)
 
 
 from open_tutorai.env import (
