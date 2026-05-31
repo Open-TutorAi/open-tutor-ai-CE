@@ -312,3 +312,6 @@ cypress/screenshots
 
 # webui backend
 backend/backend
+
+# static files
+backend/static
