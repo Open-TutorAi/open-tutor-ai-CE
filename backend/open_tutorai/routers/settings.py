@@ -40,8 +40,8 @@ def get_session_local():
         db.close()
 
 
-
 # --- Pydantic Models ---
+
 
 class ProfileUpdateRequest(BaseModel):
     firstName: str
@@ -76,6 +76,7 @@ class UserPreferencesResponse(BaseModel):
 
 # --- Helper Functions ---
 
+
 def get_user_full_name(name: str) -> tuple[str, str]:
     parts = (name or "").strip().split(maxsplit=1)
     if len(parts) == 2:
@@ -96,6 +97,7 @@ def get_user_preferences(db: Session, user_id: str) -> UserPreference:
 
 
 # --- Endpoints ---
+
 
 @router.get("/profile", response_model=UserProfileResponse)
 async def get_profile(user=Depends(get_current_user)):
@@ -146,7 +148,9 @@ async def update_profile(
 
         updated_user = Users.update_user_by_id(user.id, update_payload)
         if not updated_user:
-            raise HTTPException(500, detail=ERROR_MESSAGES.DEFAULT("Failed to update profile"))
+            raise HTTPException(
+                500, detail=ERROR_MESSAGES.DEFAULT("Failed to update profile")
+            )
 
         return {
             "id": updated_user.id,
@@ -174,9 +178,9 @@ async def change_password(
         # Get password hash from auth table (where passwords are stored)
         result = db.execute(
             text("SELECT password FROM auth WHERE email = :email"),
-            {"email": user.email}
+            {"email": user.email},
         ).first()
-        
+
         if not result or not result[0]:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -199,11 +203,11 @@ async def change_password(
             )
 
         hashed_password = get_password_hash(request.newPassword)
-        
+
         # Update password in auth table
         db.execute(
             text("UPDATE auth SET password = :password WHERE email = :email"),
-            {"password": hashed_password, "email": user.email}
+            {"password": hashed_password, "email": user.email},
         )
         db.commit()
 
@@ -290,6 +294,7 @@ async def upload_avatar(
         file_path.write_bytes(content)
 
         import time
+
         avatar_url = f"/api/v1/settings/avatar/{filename}?t={int(time.time())}"
 
         Users.update_user_by_id(user.id, {"profile_image_url": avatar_url})

@@ -256,7 +256,9 @@ class UserPreference(Base):
     id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String, unique=True, index=True, nullable=False)
     language = Column(String, nullable=False, default="en-US")
-    theme = Column(String, nullable=False, default="system")  # 'light', 'dark', 'system'
+    theme = Column(
+        String, nullable=False, default="system"
+    )  # 'light', 'dark', 'system'
     created_at = Column(DateTime, nullable=False, server_default=func.now())
     updated_at = Column(DateTime, nullable=True, onupdate=func.now())
 
