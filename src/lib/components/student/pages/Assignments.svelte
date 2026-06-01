@@ -29,7 +29,8 @@
 		const token = localStorage.getItem('token') ?? '';
 		let joinedCodes: string[] = [];
 		try {
-			joinedCodes = JSON.parse(localStorage.getItem('joined_quiz_codes') || '[]');
+			const userId = $user?.id || 'anonymous';
+			joinedCodes = JSON.parse(localStorage.getItem(`joined_quiz_codes_${userId}`) || '[]');
 		} catch (e) {}
 		const codesParam = joinedCodes.join(',');
 
@@ -197,12 +198,13 @@
 			if (newAssignment.quiz_code) {
 				let joinedCodes: string[] = [];
 				try {
-					joinedCodes = JSON.parse(localStorage.getItem('joined_quiz_codes') || '[]');
+					const userId = $user?.id || 'anonymous';
+					joinedCodes = JSON.parse(localStorage.getItem(`joined_quiz_codes_${userId}`) || '[]');
+					if (!joinedCodes.includes(newAssignment.quiz_code)) {
+						joinedCodes.push(newAssignment.quiz_code);
+						localStorage.setItem(`joined_quiz_codes_${userId}`, JSON.stringify(joinedCodes));
+					}
 				} catch (e) {}
-				if (!joinedCodes.includes(newAssignment.quiz_code)) {
-					joinedCodes.push(newAssignment.quiz_code);
-					localStorage.setItem('joined_quiz_codes', JSON.stringify(joinedCodes));
-				}
 			}
 
 			await fetchAssignments();

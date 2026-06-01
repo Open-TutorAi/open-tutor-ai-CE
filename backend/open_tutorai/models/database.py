@@ -335,6 +335,35 @@ class CourseProgress(Base):
         )
 
 
+class StudentQuizAccess(Base):
+    """
+    Table for tracking which students have unlocked which quizzes.
+    """
+
+    __tablename__ = f"{PREFIX}student_quiz_access"
+
+    id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
+    student_id = Column(String, nullable=False, index=True)
+    quiz_id = Column(
+        String,
+        ForeignKey(f"{PREFIX}quiz.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    unlocked_at = Column(DateTime, nullable=False, server_default=func.now())
+
+    quiz = relationship("Quiz", backref=backref("student_accesses", cascade="all, delete-orphan"))
+
+    __table_args__ = (
+        UniqueConstraint(
+            "student_id", "quiz_id", name=f"uq_{PREFIX}student_quiz_access"
+        ),
+    )
+
+    def __repr__(self):
+        return f"<StudentQuizAccess(student_id={self.student_id}, quiz_id={self.quiz_id})>"
+
+
 class UserPreference(Base):
     """
     Table for storing user preferences like language and theme.
