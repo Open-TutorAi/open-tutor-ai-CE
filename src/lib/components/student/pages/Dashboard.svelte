@@ -78,32 +78,6 @@
 		};
 		return map[level] ?? '#94a3b8';
 	}
-    function normalizeAvatarPath(url?: string | null) {
-        if (!url || url.trim() === '') return null;
-        const clean = url.split('?')[0].trim();
-        if (
-            clean.startsWith('http://') ||
-            clean.startsWith('https://') ||
-            clean.startsWith('/static/') ||
-            clean.startsWith('/uploads/') ||
-            clean.startsWith('/api/')
-        ) {
-            return clean;
-        }
-        if (clean.startsWith('/')) return clean;
-        return `/uploads/avatars/${clean}`;
-    }
-
-    function levelLabel(level: string): string {
-        const map: Record<string, string> = {
-            'primary-school': $i18n.t('Primaire'),
-            'middle-school':  $i18n.t('Collège'),
-            'high-school':    $i18n.t('Lycée'),
-            'university':     $i18n.t('Université'),
-        };
-        return map[level] ?? level;
-    }
-
 	function normalizeAvatarPath(url?: string | null) {
 		if (!url || url.trim() === '') return null;
 		const clean = url.split('?')[0].trim();
@@ -392,16 +366,6 @@
 			if (localStorage.getItem('pendingSupportData')) {
 				localStorage.removeItem('pendingSupportData');
 			}
-            const handleAvatarUpdate = () => {
-                fetchCourses();
-            };
-            window.addEventListener('avatar-updated', handleAvatarUpdate as EventListener);
-
-            chatIdSubscription = storeChatId.subscribe((newChatId) => {
-                if (newChatId && newChatId !== 'local' && pendingSupportId) {
-                    updateSupportWithChatId(pendingSupportId, newChatId);
-                }
-            });
 
 			const keysToRemove: string[] = [];
 			for (let i = 0; i < localStorage.length; i++) {
@@ -428,13 +392,6 @@
 					} finally {
 						isLoadingSupports = false;
 					}
-    onDestroy(() => {
-        if (browser) {
-            if (chatIdSubscription) chatIdSubscription();
-            if (urlCheckInterval) clearInterval(urlCheckInterval);
-            window.removeEventListener('avatar-updated', (() => fetchCourses()) as EventListener);
-        }
-    });
 
 					await fetchCourses();
 					await fetchQuizzes();
@@ -925,20 +882,6 @@
 					>
 						<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
 					</svg>
-                            <div class="cc-teacher-dash">
-                                <div class="teacher-avatar-dash">
-                                    {#if course.teacher_profile_image_url && normalizeAvatarPath(course.teacher_profile_image_url)}
-                                        <img 
-                                            src={normalizeAvatarPath(course.teacher_profile_image_url)} 
-                                            alt={course.teacher_name}
-                                            class="teacher-avatar-img"
-                                        />
-                                    {:else}
-                                        {course.teacher_name?.charAt(0)?.toUpperCase() ?? 'P'}
-                                    {/if}
-                                </div>
-                                <span class="teacher-name-dash">{course.teacher_name ?? $i18n.t('Professeur')}</span>
-                            </div>
 
 					<p class="text-sm font-medium text-gray-600 dark:text-gray-400 m-0">
 						{$_('No supports found')}
