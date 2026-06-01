@@ -1,4 +1,5 @@
 import os
+
 os.environ["SUPPRESS_WEBUI_BANNER"] = "true"
 import open_tutorai.patches
 from fastapi import FastAPI
@@ -32,7 +33,8 @@ VERSION = "1.0.0"
 TUTORAI_BUILD_HASH = os.getenv("TUTORAI_BUILD_HASH", "dev-build")
 os.environ["SUPPRESS_WEBUI_BANNER"] = "true"
 
-print(rf"""
+print(
+    rf"""
  ██████╗ ██████╗ ███████╗███╗   ██╗    ████████╗██╗   ██╗████████╗ ██████╗ ██████╗    █████╗ ██╗
 ██╔═══██╗██╔══██╗██╔════╝████╗  ██║    ╚══██╔══╝██║   ██║╚══██╔══╝██╔═══██╗██╔══██╗  ██╔══██╗██║
 ██║   ██║██████╔╝█████╗  ██╔██╗ ██║       ██║   ██║   ██║   ██║   ██║   ██║██████╔╝  ███████║██║
@@ -42,7 +44,8 @@ print(rf"""
 v{VERSION} - empowering education through open-source AI tutoring.
 {f"Commit: {TUTORAI_BUILD_HASH}" if TUTORAI_BUILD_HASH != "dev-build" else ""}
 https://github.com/Open-TutorAi/open-tutor-ai-CE
-""")
+"""
+)
 
 
 # Create main FastAPI app
@@ -101,7 +104,9 @@ app.include_router(
 )
 app.include_router(student_courses.router, prefix="/api/v1", tags=["student-courses"])
 app.include_router(quizzes_router, prefix="/api/v1/quizzes", tags=["quizzes"])
-app.include_router(student_assignments_router, prefix="/api/v1", tags=["student-assignments"])
+app.include_router(
+    student_assignments_router, prefix="/api/v1", tags=["student-assignments"]
+)
 app.include_router(settings.router, prefix="/api/v1", tags=["settings"])
 
 
