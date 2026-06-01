@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { getContext, onMount, onDestroy } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import { fade, fly } from 'svelte/transition';
 	import { isDemo, demoData, user } from '$lib/stores';
 	import { toast } from 'svelte-sonner';
@@ -12,7 +14,61 @@
 	let state: 'dashboard' | 'code_entry' | 'taking' | 'completed' = 'dashboard';
 
 	// 1. Dashboard / Assignments list state
-	$: assignments = $isDemo ? $demoData.assignments : [];
+	let assignments: any[] = [];
+	let selectedSubject: string = $i18n.t('All Subjects');
+	let selectedStatus: string = $i18n.t('All Status');
+
+	// Reactive filtered assignments based on selected filters
+	$: filteredAssignments = assignments.filter(a => {
+	  const subjectMatch = selectedSubject === $i18n.t('All Subjects') || a.course === selectedSubject;
+	  const statusMatch = selectedStatus === $i18n.t('All Status') || a.status === selectedStatus.toLowerCase();
+	  return subjectMatch && statusMatch;
+	});
+
+	async function fetchAssignments() {
+		const token = localStorage.getItem('token') ?? '';
+		let joinedCodes: string[] = [];
+		try {
+			joinedCodes = JSON.parse(localStorage.getItem('joined_quiz_codes') || '[]');
+		} catch (e) {}
+		const codesParam = joinedCodes.join(',');
+
+		try {
+			const res = await fetch(`/api/v1/student/assignments?codes=${codesParam}`, {
+				headers: { Authorization: `Bearer ${token}` }
+			});
+			if (res.ok) {
+				assignments = await res.json();
+			} else {
+				const err = await res.json().catch(() => ({}));
+				toast.error(err.detail || $i18n.t('Failed to load assignments'));
+			}
+		} catch (e: any) {
+			toast.error(e.message || $i18n.t('Network error while loading assignments'));
+		}
+	}
+
+	onMount(async () => {
+		await fetchAssignments();
+	});
+
+	let lastJoinedCode = '';
+	let lastTakenCode = '';
+	$: if ($page && $page.url) {
+		const codeParam = $page.url.searchParams.get('code');
+		if (codeParam && codeParam.length === 6 && codeParam !== lastJoinedCode) {
+			lastJoinedCode = codeParam;
+			quizCode = codeParam.toUpperCase();
+			joinQuiz();
+		}
+
+		const takeParam = $page.url.searchParams.get('take');
+		if (takeParam && takeParam.length === 6 && takeParam !== lastTakenCode) {
+			lastTakenCode = takeParam;
+			startQuizTakingFlow(takeParam.toUpperCase());
+		}
+	}
+
 	$: upcomingDeadlines = assignments.filter(a => ['pending', 'in-progress', 'overdue'].includes(a.status)).length;
 	$: username = $user?.name ? $user.name.split(' ')[0] : 'Student';
 
@@ -40,11 +96,49 @@
 		}
 	}
 	
-	function handleSubmit(assignment: any) {
-		if ($isDemo) {
-			toast.info($i18n.t('Submissions are disabled in demo mode'));
+	async function handleSubmit(assignment: any) {
+		if (assignment.quiz_code) {
+			await startQuizTakingFlow(assignment.quiz_code);
 		} else {
-			toast.info($i18n.t('Submission functionality coming soon'));
+			if ($isDemo) {
+				toast.info($i18n.t('Submissions are disabled in demo mode'));
+			} else {
+				toast.info($i18n.t('Submission functionality coming soon'));
+			}
+		}
+	}
+
+	async function startQuizTakingFlow(code: string) {
+		isJoining = true;
+		joinError = '';
+
+		try {
+			const token = localStorage.getItem('token') ?? '';
+			const res = await fetch(`/api/v1/quizzes/join/${code}`, {
+				headers: { Authorization: `Bearer ${token}` }
+			});
+
+			if (!res.ok) {
+				const err = await res.json().catch(() => ({}));
+				throw new Error(err.detail ?? $i18n.t('Code de quiz invalide ou expiré'));
+			}
+
+			quizData = await res.json();
+			state = 'taking';
+			startTime = Date.now();
+			currentQuestionIndex = 0;
+			answers = {};
+
+			// Setup timer if time limit exists
+			if (quizData.time_limit) {
+				timeLeftSeconds = quizData.time_limit * 60;
+				startTimer();
+			}
+		} catch (e: any) {
+			joinError = e.message;
+			toast.error(joinError);
+		} finally {
+			isJoining = false;
 		}
 	}
 
@@ -58,6 +152,7 @@
 	let currentQuestionIndex: number = 0;
 	let answers: Record<string, string> = {}; // { question_id: selected_answer }
 	let isSubmitting: boolean = false;
+	let startTime: number = 0;
 
 	// Timer variables
 	let timeLeftSeconds: number = 0;
@@ -83,25 +178,39 @@
 
 		try {
 			const token = localStorage.getItem('token') ?? '';
-			const res = await fetch(`/api/v1/quizzes/join/${quizCode}`, {
-				headers: { Authorization: `Bearer ${token}` }
+			const res = await fetch(`/api/v1/student/assignments/join-by-code`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${token}`
+				},
+				body: JSON.stringify({ code: quizCode })
 			});
 
 			if (!res.ok) {
 				const err = await res.json().catch(() => ({}));
-				throw new Error(err.detail ?? $i18n.t('Code invalide ou quiz introuvable'));
+				throw new Error(err.detail ?? $i18n.t('Code de quiz invalide ou expiré'));
 			}
 
-			quizData = await res.json();
-			state = 'taking';
-			currentQuestionIndex = 0;
-			answers = {};
-
-			// Setup timer if time limit exists
-			if (quizData.time_limit) {
-				timeLeftSeconds = quizData.time_limit * 60;
-				startTimer();
+			const newAssignment = await res.json();
+			
+			if (newAssignment.quiz_code) {
+				let joinedCodes: string[] = [];
+				try {
+					joinedCodes = JSON.parse(localStorage.getItem('joined_quiz_codes') || '[]');
+				} catch (e) {}
+				if (!joinedCodes.includes(newAssignment.quiz_code)) {
+					joinedCodes.push(newAssignment.quiz_code);
+					localStorage.setItem('joined_quiz_codes', JSON.stringify(joinedCodes));
+				}
 			}
+
+			await fetchAssignments();
+			toast.success($i18n.t('Évaluation rejointe avec succès !'));
+			
+			// Transition back to dashboard so the card is rendered
+			state = 'dashboard';
+			goto('/student/assignments', { replaceState: true });
 		} catch (e: any) {
 			joinError = e.message;
 		} finally {
@@ -155,6 +264,17 @@
 		isSubmitting = true;
 		if (timerInterval) clearInterval(timerInterval);
 
+		let timeSpentMinutes = 1;
+		if (startTime > 0) {
+			const elapsedSeconds = (Date.now() - startTime) / 1000;
+			timeSpentMinutes = Math.max(1, Math.ceil(elapsedSeconds / 60));
+		}
+		if (quizData && quizData.time_limit) {
+			const calculatedMinutes = Math.max(1, Math.ceil(((quizData.time_limit * 60) - timeLeftSeconds) / 60));
+			timeSpentMinutes = Math.min(quizData.time_limit, calculatedMinutes);
+		}
+		answers['__time_spent__'] = String(timeSpentMinutes);
+
 		try {
 			const token = localStorage.getItem('token') ?? '';
 			const res = await fetch(`/api/v1/quizzes/submit/${quizData.id}`, {
@@ -187,23 +307,32 @@
 	}
 
 	// Reset to take another quiz
-	function resetQuiz() {
+	async function resetQuiz() {
 		state = 'dashboard';
 		quizCode = '';
 		quizData = null;
 		scoreResult = null;
 		currentQuestionIndex = 0;
+		goto('/student/assignments', { replaceState: true });
+		await fetchAssignments();
 	}
 
-	// Auto-join if quiz code is passed in URL query param
-	onMount(async () => {
-		const params = new URLSearchParams(window.location.search);
-		const codeParam = params.get('code');
-		if (codeParam && codeParam.length === 6) {
-			quizCode = codeParam.toUpperCase();
-			await joinQuiz();
+	function formatDate(dateStr: string) {
+		if (!dateStr) return '';
+		try {
+			const d = new Date(dateStr);
+			const day = d.getDate();
+			const months = [
+				'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+				'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+			];
+			const month = months[d.getMonth()];
+			const year = d.getFullYear();
+			return `${day} ${month} ${year}`;
+		} catch (e) {
+			return dateStr;
 		}
-	});
+	}
 
 	// Clean up timer interval on destroy
 	onDestroy(() => {
@@ -231,10 +360,11 @@
 			
 			<div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
 				<div class="relative flex-1 md:flex-none">
-					<select class="w-full appearance-none bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 py-2 pl-4 pr-10 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-sm transition-shadow hover:shadow">
+					<select bind:value={selectedSubject} class="w-full appearance-none bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 py-2 pl-4 pr-10 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-sm transition-shadow hover:shadow">
 						<option>{$i18n.t('All Subjects')}</option>
-						<option>{$i18n.t('Mathematics')}</option>
-						<option>{$i18n.t('Science')}</option>
+						{#each Array.from(new Set(assignments.map(a => a.course))) as subj}
+							<option>{subj}</option>
+						{/each}
 					</select>
 					<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
 						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -242,7 +372,7 @@
 				</div>
 
 				<div class="relative flex-1 md:flex-none">
-					<select class="w-full appearance-none bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 py-2 pl-4 pr-10 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-sm transition-shadow hover:shadow">
+					<select bind:value={selectedStatus} class="w-full appearance-none bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 py-2 pl-4 pr-10 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-sm transition-shadow hover:shadow">
 						<option>{$i18n.t('All Status')}</option>
 						<option>{$i18n.t('Pending')}</option>
 						<option>{$i18n.t('Completed')}</option>
@@ -266,10 +396,10 @@
 		</div>
 
 		<!-- Grid -->
-		{#if assignments.length > 0}
+		{#if filteredAssignments.length > 0}
 			<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-10">
-				{#each assignments as assignment (assignment.id)}
-					<div class="bg-white dark:bg-gray-800 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col h-[260px] relative border border-gray-100 dark:border-gray-700 transition-transform hover:-translate-y-1 duration-300">
+				{#each filteredAssignments as assignment (assignment.id)}
+					<div class="bg-white dark:bg-gray-800 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col min-h-[300px] pb-5 relative border border-gray-100 dark:border-gray-700 transition-transform hover:-translate-y-1 duration-300">
 						<!-- Top colored bar -->
 						<div class="h-3 w-full {getTopBorderColor(assignment.status)}"></div>
 						
@@ -284,36 +414,72 @@
 								</span>
 							</div>
 
-							<!-- Title & Description -->
+							<!-- Title -->
 							<h3 class="text-slate-700 dark:text-gray-100 font-semibold text-[15px] mb-2 line-clamp-1">
 								{assignment.title}
 							</h3>
-							<p class="text-gray-500 dark:text-gray-400 text-[13px] leading-relaxed line-clamp-3 mb-4 flex-1">
-								{assignment.description}
-							</p>
+							
+							{#if !assignment.score && assignment.score !== 0}
+								<!-- Pending / Uncompleted state -->
+								<p class="text-gray-500 dark:text-gray-400 text-[13px] leading-relaxed line-clamp-3 mb-4 flex-1">
+									{assignment.description}
+								</p>
 
-							<!-- Footer separator -->
-							<div class="w-full h-px bg-gray-100 dark:bg-gray-700 mt-auto mb-4"></div>
+								<!-- Footer separator -->
+								<div class="w-full h-px bg-gray-100 dark:bg-gray-700 mt-auto mb-4"></div>
 
-							<!-- Footer -->
-							<div class="flex justify-between items-center mt-auto">
-								<span class="text-gray-400 dark:text-gray-500 text-xs">
-									{#if assignment.status === 'completed'}
-										{$i18n.t('Completed')}: {assignment.due}
-									{:else if assignment.status === 'overdue'}
-										{$i18n.t('Due')}: {assignment.due} ({$i18n.t('Late')})
-									{:else}
-										{$i18n.t('Due')}: {assignment.due}
-									{/if}
-								</span>
-								
+								<!-- Due Date Footer -->
+								<div class="flex justify-between items-center mt-auto">
+									<span class="text-gray-400 dark:text-gray-500 text-xs">
+										{#if assignment.status === 'overdue'}
+											{$i18n.t('Due')}: {assignment.due} ({$i18n.t('Late')})
+										{:else}
+											{$i18n.t('Due')}: {assignment.due}
+										{/if}
+									</span>
+								</div>
+
+								<!-- Action Button -->
 								<button 
-									on:click={() => handleSubmit(assignment)}
-									class="px-4 py-2 rounded-lg text-xs font-medium transition-all {getButtonProps(assignment.status).class}"
+									on:click={async () => {
+										await goto(`/student/assignments?take=${assignment.quiz_code}`);
+										await startQuizTakingFlow(assignment.quiz_code);
+									}}
+									class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl py-3 text-center transition-colors mt-4"
 								>
-									{$i18n.t(getButtonProps(assignment.status).text)}
+									{$i18n.t('Start Quiz')}
 								</button>
-							</div>
+							{:else}
+								<!-- Completed state statistics -->
+								<div class="bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 rounded-xl p-4 mt-2 space-y-2 flex-1">
+									<div class="grid grid-cols-2 gap-3 text-xs text-slate-600 dark:text-slate-350">
+										<div class="flex flex-col">
+											<span class="text-[9px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-black">Score</span>
+											<span class="font-extrabold text-[13px] text-emerald-600 dark:text-emerald-400 mt-0.5">
+												Score: {assignment.score}/{assignment.total}
+											</span>
+										</div>
+										<div class="flex flex-col">
+											<span class="text-[9px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-black">Temps passé</span>
+											<span class="font-semibold text-slate-700 dark:text-slate-200 mt-0.5">
+												Temps passé: {assignment.time_spent || '1'} min
+											</span>
+										</div>
+										<div class="flex flex-col col-span-2 border-t border-slate-100 dark:border-slate-800 pt-2">
+											<span class="text-[9px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-black">Date d'accès</span>
+											<span class="font-semibold text-slate-700 dark:text-slate-200 mt-0.5">
+												Fait le: {formatDate(assignment.submitted_at)}
+											</span>
+										</div>
+										<div class="flex flex-col col-span-2">
+											<span class="text-[9px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-black">Limite</span>
+											<span class="font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
+												Dernier délai: {assignment.due || 'Pas de date limite'}
+											</span>
+										</div>
+									</div>
+								</div>
+							{/if}
 						</div>
 					</div>
 				{/each}

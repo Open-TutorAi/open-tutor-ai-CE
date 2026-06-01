@@ -23,6 +23,7 @@ from open_tutorai.models.database import (
     QuizSubmission,
     Course,
     CoursePlan,
+    CourseEnrollment,
 )
 
 # ---------------------------------------------------------------
@@ -578,6 +579,18 @@ async def submit_quiz(
     if quiz.status != "published":
         raise HTTPException(status_code=400, detail="Ce quiz n'est pas actif")
 
+    # Prevent multiple submissions by the same student for the same quiz
+    existing_submission = (
+        db.query(QuizSubmission)
+        .filter(
+            QuizSubmission.quiz_id == id,
+            QuizSubmission.student_id == user.id,
+        )
+        .first()
+    )
+    if existing_submission:
+        raise HTTPException(status_code=400, detail="Vous avez déjà soumis ce quiz.")
+
     score = 0
     total = len(quiz.questions)
 
@@ -688,3 +701,172 @@ async def get_teacher_analytics(
         "submissions": submissions_formatted,
         "distribution": distribution,
     }
+
+
+# ---------------------------------------------------------------
+# Student Assignments Router
+# ---------------------------------------------------------------
+class JoinByCodeRequest(BaseModel):
+    code: str
+
+
+student_assignments_router = APIRouter(
+    prefix="/student/assignments", tags=["Student Assignments"]
+)
+
+
+@student_assignments_router.post("/join-by-code")
+async def join_assignment_by_code(
+    body: JoinByCodeRequest,
+    user=Depends(get_verified_user),
+    db=Depends(get_db),
+):
+    code = body.code.strip().upper()
+    quiz = db.query(Quiz).filter(func.upper(Quiz.quiz_code) == code).first()
+    if not quiz:
+        raise HTTPException(
+            status_code=404, detail="Code de quiz invalide ou quiz introuvable"
+        )
+    if quiz.status != "published":
+        raise HTTPException(
+            status_code=400, detail="Ce quiz n'est pas encore publié par l'enseignant"
+        )
+
+    course_title = "Quiz"
+    if quiz.course_id:
+        course = db.query(Course).filter(Course.id == quiz.course_id).first()
+        if course:
+            course_title = course.title
+
+    # Check if student already submitted a response
+    submission = (
+        db.query(QuizSubmission)
+        .filter(QuizSubmission.quiz_id == quiz.id, QuizSubmission.student_id == user.id)
+        .first()
+    )
+    status = "completed" if submission else "pending"
+
+    return {
+        "id": quiz.id,
+        "course": course_title,
+        "points": quiz.total_questions * 10,
+        "title": quiz.title,
+        "description": f"Quiz d'évaluation - {quiz.total_questions} questions.",
+        "status": status,
+        "due": quiz.limit_date if quiz.limit_date else "Pas de date limite",
+        "quiz_code": quiz.quiz_code,
+    }
+
+
+@student_assignments_router.get("")
+async def list_student_assignments(
+    codes: Optional[str] = None,
+    user=Depends(get_verified_user),
+    db=Depends(get_db),
+):
+    # 1. Fetch enrolled course IDs
+    enrollments = (
+        db.query(CourseEnrollment).filter(CourseEnrollment.student_id == user.id).all()
+    )
+    course_ids = [e.course_id for e in enrollments]
+
+    # 2. Fetch quizzes associated with enrolled courses
+    quizzes = (
+        db.query(Quiz)
+        .filter(Quiz.course_id.in_(course_ids), Quiz.status == "published")
+        .all()
+        if course_ids
+        else []
+    )
+
+    # 3. Handle additional standalone quiz codes from the query parameter
+    standalone_codes = []
+    if codes:
+        standalone_codes = [c.strip().upper() for c in codes.split(",") if c.strip()]
+
+    if standalone_codes:
+        standalone_quizzes = (
+            db.query(Quiz)
+            .filter(
+                func.upper(Quiz.quiz_code).in_(standalone_codes),
+                Quiz.status == "published",
+            )
+            .all()
+        )
+        # Merge, avoiding duplicates
+        existing_quiz_ids = {q.id for q in quizzes}
+        for sq in standalone_quizzes:
+            if sq.id not in existing_quiz_ids:
+                quizzes.append(sq)
+
+    # 4. Map each quiz to assignment format
+    assignments_list = []
+    for quiz in quizzes:
+        course_title = "Quiz"
+        if quiz.course_id:
+            course_obj = db.query(Course).filter(Course.id == quiz.course_id).first()
+            if course_obj:
+                course_title = course_obj.title
+
+        # Query submission for this student
+        submission = (
+            db.query(QuizSubmission)
+            .filter(
+                QuizSubmission.quiz_id == quiz.id, QuizSubmission.student_id == user.id
+            )
+            .first()
+        )
+
+        status = "completed" if submission else "pending"
+        # Optional: Check if deadline has passed to set overdue
+        if status == "pending" and quiz.limit_date:
+            try:
+                # Expect limit_date in format YYYY-MM-DD
+                limit_dt = datetime.strptime(quiz.limit_date, "%Y-%m-%d")
+                if datetime.utcnow().date() > limit_dt.date():
+                    status = "overdue"
+            except Exception:
+                try:
+                    limit_dt = datetime.fromisoformat(
+                        quiz.limit_date.replace("Z", "+00:00")
+                    )
+                    if datetime.utcnow() > limit_dt:
+                        status = "overdue"
+                except Exception:
+                    pass
+
+        # Extract score, submitted_at, time_spent
+        score = None
+        total = quiz.total_questions
+        submitted_at = None
+        time_spent = None
+
+        if submission:
+            score = submission.score
+            submitted_at = (
+                submission.submitted_at.isoformat() if submission.submitted_at else None
+            )
+            # Retrieve time_spent from answers under __time_spent__ key
+            if isinstance(submission.answers, dict):
+                time_spent = submission.answers.get("__time_spent__")
+
+        assignments_list.append(
+            {
+                "id": quiz.id,
+                "course": course_title,
+                "points": quiz.total_questions * 10,
+                "title": quiz.title,
+                "description": f"Quiz d'évaluation - {quiz.total_questions} questions.",
+                "status": status,
+                "due": quiz.limit_date if quiz.limit_date else "Pas de date limite",
+                "quiz_code": quiz.quiz_code,
+                # Completed details
+                "score": score,
+                "total": total,
+                "submitted_at": submitted_at,
+                "time_spent": time_spent,
+                "limit_date": quiz.limit_date,
+            }
+        )
+
+    return assignments_list

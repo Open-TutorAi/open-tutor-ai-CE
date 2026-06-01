@@ -6,7 +6,6 @@ Replace: backend/open_tutorai/routers/student_courses.py
 import logging
 from datetime import datetime
 from typing import Optional, List
-
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import sessionmaker
@@ -63,6 +62,7 @@ class EnrolledCourseResponse(BaseModel):
     category: Optional[str] = None
     level: str
     teacher_name: str
+    teacher_profile_image_url: Optional[str] = None
     enrolled_at: str
     status: str
     progress_percentage: float = 0.0
@@ -95,6 +95,7 @@ class CourseDetailResponse(BaseModel):
     category: Optional[str] = None
     level: str
     teacher_name: str
+    teacher_profile_image_url: Optional[str] = None
     objectives: Optional[str] = None
     welcome_message: Optional[str] = None
     files: List[CourseFileDetail] = []
@@ -138,6 +139,24 @@ def _get_teacher_name(teacher_id: str) -> str:
     return teacher_name
 
 
+def _get_teacher_info(teacher_id: str) -> tuple:
+    """Get teacher name and profile image URL."""
+    teacher_name = "Professeur"
+    teacher_image = None
+    try:
+        from open_webui.models.users import Users
+
+        teacher = Users.get_user_by_id(teacher_id)
+        if teacher:
+            teacher_name = getattr(teacher, "name", None) or getattr(
+                teacher, "email", "Professeur"
+            )
+            teacher_image = getattr(teacher, "profile_image_url", None)
+    except Exception:
+        pass
+    return teacher_name, teacher_image
+
+
 def _calculate_progress(enrollment: CourseEnrollment, plan_json: dict, db) -> float:
     """Calculate progress percentage for an enrollment."""
     if not plan_json:
@@ -177,13 +196,16 @@ def _build_enrolled_response(
     if plan_json:
         progress_pct = _calculate_progress(enrollment, plan_json, db)
 
+    teacher_name, teacher_image = _get_teacher_info(course.teacher_id)
+
     return EnrolledCourseResponse(
         id=course.id,
         title=course.title,
         language=course.language,
         category=course.category,
         level=course.level,
-        teacher_name=_get_teacher_name(course.teacher_id),
+        teacher_name=teacher_name,
+        teacher_profile_image_url=teacher_image,
         enrolled_at=(
             enrollment.enrolled_at.isoformat() if enrollment.enrolled_at else ""
         ),
@@ -336,13 +358,16 @@ async def get_course_detail(
 
     progress_pct = _calculate_progress(enrollment, plan_json or {}, db)
 
+    teacher_name, teacher_image = _get_teacher_info(course.teacher_id)
+
     return CourseDetailResponse(
         id=course.id,
         title=course.title,
         language=course.language,
         category=course.category,
         level=course.level,
-        teacher_name=_get_teacher_name(course.teacher_id),
+        teacher_name=teacher_name,
+        teacher_profile_image_url=teacher_image,
         objectives=course.objectives,
         welcome_message=None,
         files=files_data,

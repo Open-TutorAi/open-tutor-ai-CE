@@ -22,23 +22,80 @@
         firstName: 'Abdelaziz',
         lastName: 'Boukdous',
         email: $user?.email || 'professeur@example.com',
-        avatar: $user?.avatar || '/static/student-avatar.png'
+        avatar: $user?.profile_image_url || '/static/student-avatar.png'
     };
 
     let isUploading = false;
+    let isSavingProfile = false;
+    let isSavingPassword = false;
 
     // --- Preferences ---
     let currentTheme: 'light' | 'dark' | 'system' = $theme || 'system';
+    let isSavingPreferences = false;
 
     // --- Security ---
     let oldPassword = '';
     let newPassword = '';
     let confirmPassword = '';
 
+
+
+
+    let showOldPassword = false;
+    let showNewPassword = false;
+    let showConfirmPassword = false;
+
     // --- Tab navigation ---
     let activeTab: 'profile' | 'security' | 'preferences' = 'profile';
 
-    onMount(() => {
+    let avatarKey = 0;
+
+    // --- Load profile and preferences on mount ---
+    onMount(async () => {
+        try {
+            // Load profile
+            const profileRes = await fetch('/api/v1/settings/profile', {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (profileRes.ok) {
+                const profileData = await profileRes.json();
+                const avatarUrl = profileData.avatar 
+                    ? (profileData.avatar.startsWith('http') || profileData.avatar.startsWith('/static') 
+                        ? profileData.avatar 
+                        : `/${profileData.avatar}`)
+                    : ($user?.profile_image_url || null);
+                profile = {
+                    firstName: profileData.firstName || '',
+                    lastName: profileData.lastName || '',
+                    email: profileData.email || profile.email,
+                    avatar: profileData.avatar || $user?.profile_image_url || '/static/student-avatar.png'
+                };
+                // Sync user store with loaded profile data
+                user.update(u => ({
+                    ...(u ?? {}),
+                    name: `${profileData.firstName || ''} ${profileData.lastName || ''}`.trim(),
+                    email: profileData.email || u?.email || '',
+                    profile_image_url: profileData.avatar || u?.profile_image_url || '/static/student-avatar.png',
+                    _avatar_ts: Date.now()
+                }));
+                console.log('Profile loaded and synced to user store');
+            }
+
+            // Load preferences
+            const prefsRes = await fetch('/api/v1/settings/preferences', {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (prefsRes.ok) {
+                const prefsData = await prefsRes.json();
+                language = prefsData.language || 'en-US';
+                currentTheme = prefsData.theme || 'system';
+            }
+        } catch (err) {
+            console.error('Error loading settings:', err);
+        }
+
         // Listen for language changes from navbar or any other source
         const handleLanguageChange = (lng: string) => {
             language = lng;
@@ -52,32 +109,153 @@
     });
 
     // --- Actions ---
-    function handleAvatarChange(e: Event) {
+    async function handleAvatarChange(e) {
         const file = (e.target as HTMLInputElement).files?.[0];
-        if (file) {
-            isUploading = true;
-            setTimeout(() => {
-                profile.avatar = URL.createObjectURL(file);
-                isUploading = false;
-            }, 800);
+        if (!file) return;
+
+        console.log('📁 File selected:', file.name, file.size, file.type);
+        isUploading = true;
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            console.log('📤 Uploading to /api/v1/settings/avatar...');
+            const response = await fetch('/api/v1/settings/avatar', { 
+                method: 'POST', 
+                body: formData 
+            });
+
+            console.log('📥 Response status:', response.status);
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ API Response:', JSON.stringify(data, null, 2));
+
+                // الـ API ممكن كيرجع avatar_url أو avatar أو url
+                const newAvatarUrl = data.avatar_url || data.avatar || data.url || null;
+                console.log('🖼️ New avatar URL:', newAvatarUrl);
+
+                if (!newAvatarUrl) {
+                    console.error('❌ API رجع بيانات بدون avatar URL!');
+                    alert('ال API ما رجعش رابط الصورة');
+                    isUploading = false;
+                    return;
+                }
+
+                // Update profile state
+                profile.avatar = newAvatarUrl;
+                avatarKey = Date.now();
+
+                // Update user store
+                user.update(u => ({ 
+                    ...(u ?? {}), 
+                    profile_image_url: newAvatarUrl, 
+                    _avatar_ts: Date.now() 
+                }));
+
+                // Save to localStorage
+                localStorage.setItem('profile_avatar', newAvatarUrl);
+
+
+                // Dispatch event for navbar
+                window.dispatchEvent(new CustomEvent('avatar-updated', { 
+                    detail: { url: newAvatarUrl } 
+                }));
+
+                console.log('🎉 Avatar updated successfully!');
+            } else {
+                const errorText = await response.text();
+                console.error('❌ Upload failed:', response.status, errorText);
+                alert('Erreur lors du téléchargement: ' + errorText);
+            }
+        } catch (err) {
+            console.error('💥 Upload error:', err);
+            alert('Erreur: ' + err.message);
+        } finally {
+            isUploading = false;
         }
     }
 
-    function saveProfile() {
-        const fullName = `${profile.firstName} ${profile.lastName}`.trim();
-        // TODO: API call with fullName, email, avatar
-        console.log('Saved profile:', { fullName, email: profile.email });
-        alert($i18n.t('Profil mis à jour'));
+    async function saveProfile() {
+        isSavingProfile = true;
+        try {
+            const response = await fetch('/api/v1/settings/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    firstName: profile.firstName,
+                    lastName: profile.lastName,
+                    email: profile.email,
+                    avatar: profile.avatar
+                })
+            });
+
+            if (response.ok) {
+                const fullName = `${profile.firstName} ${profile.lastName}`.trim();
+
+                user.update(u => ({
+                    ...(u ?? {}),
+                    name: fullName,
+                    email: profile.email,
+                    profile_image_url: profile.avatar,
+                    _avatar_ts: Date.now()
+                }));
+
+                localStorage.setItem('profile_avatar', profile.avatar);
+
+                window.dispatchEvent(new CustomEvent('avatar-updated', {
+                    detail: { url: profile.avatar }
+                }));
+
+                alert($i18n.t('Profil mis à jour avec succès'));
+            } else {
+                const error = await response.json();
+                alert(error.detail || $i18n.t('Erreur lors de la mise à jour du profil'));
+            }
+        } catch (err) {
+            console.error('Error saving profile:', err);
+            alert($i18n.t('Erreur lors de la mise à jour du profil'));
+        } finally {
+            isSavingProfile = false;
+        }
     }
 
-    function changePassword() {
+    async function changePassword() {
         if (newPassword !== confirmPassword) {
             alert($i18n.t('Les mots de passe ne correspondent pas'));
             return;
         }
-        // TODO: API call
-        alert($i18n.t('Mot de passe modifié'));
-        oldPassword = newPassword = confirmPassword = '';
+
+        if (newPassword.length < 8) {
+            alert($i18n.t('Le mot de passe doit contenir au moins 8 caractères'));
+            return;
+        }
+
+        isSavingPassword = true;
+        try {
+            const response = await fetch('/api/v1/settings/password', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    oldPassword: oldPassword,
+                    newPassword: newPassword
+                })
+            });
+
+            if (response.ok) {
+                alert($i18n.t('Mot de passe modifié'));
+                oldPassword = newPassword = confirmPassword = '';
+            } else {
+                const error = await response.json();
+                alert(error.detail || $i18n.t('Erreur lors du changement du mot de passe'));
+            }
+        } catch (err) {
+            console.error('Error changing password:', err);
+            alert($i18n.t('Erreur lors du changement du mot de passe'));
+        } finally {
+            isSavingPassword = false;
+        }
     }
 
     function applyTheme(newTheme: 'light' | 'dark' | 'system') {
@@ -86,10 +264,33 @@
         localStorage.setItem('theme', newTheme);
     }
 
-    function savePreferences() {
-        // Language change (will emit 'languageChanged' event)
-        i18next.changeLanguage(language);
-        alert($i18n.t('Préférences enregistrées'));
+    async function savePreferences() {
+        isSavingPreferences = true;
+        try {
+            // Save preferences to backend
+            const response = await fetch('/api/v1/settings/preferences', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    language: language,
+                    theme: currentTheme
+                })
+            });
+
+            if (response.ok) {
+                // Change language in i18next
+                await i18next.changeLanguage(language);
+                alert($i18n.t('Préférences enregistrées'));
+            } else {
+                const error = await response.json();
+                alert(error.detail || $i18n.t('Erreur lors de l\'enregistrement des préférences'));
+            }
+        } catch (err) {
+            console.error('Error saving preferences:', err);
+            alert($i18n.t('Erreur lors de l\'enregistrement des préférences'));
+        } finally {
+            isSavingPreferences = false;
+        }
     }
 
     // --- Tab configuration ---
@@ -110,6 +311,7 @@
             icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>`
         }
     ];
+
 </script>
 
 <div class="settings-page">
@@ -121,7 +323,9 @@
             <!-- Profile card -->
             <div class="profile-hero">
                 <div class="avatar-wrapper">
-                    <img src={profile.avatar} alt="Avatar" class="avatar" />
+                    {#key avatarKey}
+                        <img src={profile.avatar} alt="Avatar" class="avatar" />
+                    {/key}
                     <label class="avatar-upload" title={$i18n.t('Changer la photo')}>
                         {#if isUploading}
                             <span class="spin-ring"></span>
@@ -218,11 +422,15 @@
                         </div>
                     </div>
                     <div class="panel-footer">
-                        <button class="btn-save" on:click={saveProfile}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                            {$i18n.t('Enregistrer les modifications')}
+                        <button class="btn-save" on:click={saveProfile} disabled={isSavingProfile}>
+                            {#if isSavingProfile}
+                                <span class="spin-ring-small"></span>
+                            {:else}
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            {/if}
+                            {isSavingProfile ? $i18n.t('Enregistrement...') : $i18n.t('Enregistrer les modifications')}
                         </button>
                     </div>
                 </div>
@@ -256,7 +464,25 @@
                                 </svg>
                                 {$i18n.t('Ancien mot de passe')}
                             </label>
-                            <input type="password" bind:value={oldPassword} class="field" placeholder="••••••••" />
+                            <div class="password-wrapper">
+                                {#if showOldPassword}
+                                    <input type="text" bind:value={oldPassword} class="field" placeholder="••••••••" />
+                                {:else}
+                                    <input type="password" bind:value={oldPassword} class="field" placeholder="••••••••" />
+                                {/if}
+                                <button type="button" class="toggle-password" on:click={() => (showOldPassword = !showOldPassword)}>
+                                    {#if showOldPassword}
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="18" height="18">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                        </svg>
+                                    {:else}
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="18" height="18">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+                                        </svg>
+                                    {/if}
+                                </button>
+                            </div>
                         </div>
                         <div class="input-group">
                             <label class="input-label">
@@ -265,7 +491,25 @@
                                 </svg>
                                 {$i18n.t('Nouveau mot de passe')}
                             </label>
-                            <input type="password" bind:value={newPassword} class="field" placeholder="••••••••" />
+                            <div class="password-wrapper">
+                                {#if showNewPassword}
+                                    <input type="text" bind:value={newPassword} class="field" placeholder="••••••••" />
+                                {:else}
+                                    <input type="password" bind:value={newPassword} class="field" placeholder="••••••••" />
+                                {/if}
+                                <button type="button" class="toggle-password" on:click={() => (showNewPassword = !showNewPassword)}>
+                                    {#if showNewPassword}
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="18" height="18">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                        </svg>
+                                    {:else}
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="18" height="18">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+                                        </svg>
+                                    {/if}
+                                </button>
+                            </div>
                         </div>
                         <div class="input-group">
                             <label class="input-label">
@@ -274,15 +518,37 @@
                                 </svg>
                                 {$i18n.t('Confirmer le mot de passe')}
                             </label>
-                            <input type="password" bind:value={confirmPassword} class="field" placeholder="••••••••" />
+                            <div class="password-wrapper">
+                                {#if showConfirmPassword}
+                                    <input type="text" bind:value={confirmPassword} class="field" placeholder="••••••••" />
+                                {:else}
+                                    <input type="password" bind:value={confirmPassword} class="field" placeholder="••••••••" />
+                                {/if}
+                                <button type="button" class="toggle-password" on:click={() => (showConfirmPassword = !showConfirmPassword)}>
+                                    {#if showConfirmPassword}
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="18" height="18">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                        </svg>
+                                    {:else}
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="18" height="18">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+                                        </svg>
+                                    {/if}
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="panel-footer">
-                        <button class="btn-save purple-btn" on:click={changePassword}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                            </svg>
-                            {$i18n.t('Mettre à jour le mot de passe')}
+                        <button class="btn-save purple-btn" on:click={changePassword} disabled={isSavingPassword}>
+                            {#if isSavingPassword}
+                                <span class="spin-ring-small"></span>
+                            {:else}
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                </svg>
+                            {/if}
+                            {isSavingPassword ? $i18n.t('Mise à jour...') : $i18n.t('Mettre à jour le mot de passe')}
                         </button>
                     </div>
                 </div>
@@ -473,6 +739,16 @@
         border-top-color: #2563eb;
         border-radius: 50%;
         animation: spin 0.8s linear infinite;
+    }
+
+    .spin-ring-small {
+        width: 12px;
+        height: 12px;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        display: inline-block;
     }
 
     .hero-name {
@@ -708,6 +984,14 @@
         transform: translateY(-1px);
         box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45);
     }
+    .btn-save:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+    .btn-save:disabled:hover {
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+    }
     .btn-save.purple-btn {
         background: linear-gradient(145deg, #7c3aed, #6d28d9);
         box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35);
@@ -942,6 +1226,48 @@
         background: #3b82f6;
     }
 
+    /* --- Password wrapper & toggle --- */
+    .password-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .password-wrapper .field {
+        padding-right: 2.8rem;  /* laisse la place pour le bouton */
+    }
+
+    .toggle-password {
+        position: absolute;
+        right: 0.6rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #94a3b8;
+        padding: 0.35rem;
+        border-radius: 0.4rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.15s, background 0.15s;
+        line-height: 1;
+    }
+
+    .toggle-password:hover {
+        color: #2563eb;
+        background: #eef2ff;
+    }
+
+    :global(.dark) .toggle-password {
+        color: #64748b;
+    }
+
+    :global(.dark) .toggle-password:hover {
+        color: #93c5fd;
+        background: #1e3a8a;
+    }
     /* Responsive */
     @media (max-width: 768px) {
         .settings-page {

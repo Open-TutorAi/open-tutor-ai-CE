@@ -30,6 +30,7 @@
 		category: string | null;
 		level: string;
 		teacher_name: string;
+		teacher_profile_image_url?: string;
 		enrolled_at: string;
 		status: string;
 	}
@@ -78,6 +79,22 @@
 		return map[level] ?? '#94a3b8';
 	}
 
+	function normalizeAvatarPath(url?: string | null) {
+		if (!url || url.trim() === '') return null;
+		const clean = url.split('?')[0].trim();
+		if (
+			clean.startsWith('http://') ||
+			clean.startsWith('https://') ||
+			clean.startsWith('/static/') ||
+			clean.startsWith('/uploads/') ||
+			clean.startsWith('/api/')
+		) {
+			return clean;
+		}
+		if (clean.startsWith('/')) return clean;
+		return `/uploads/avatars/${clean}`;
+	}
+
 	function levelLabel(level: string): string {
 		const map: Record<string, string> = {
 			'primary-school': $_('Primaire'),
@@ -120,13 +137,25 @@
 		isLoadingQuizzes = true;
 		try {
 			const token = localStorage.getItem('token') ?? '';
-			const res = await fetch('/api/v1/quizzes/student/dashboard', {
+			let joinedCodes: string[] = [];
+			try {
+				joinedCodes = JSON.parse(localStorage.getItem('joined_quiz_codes') || '[]');
+			} catch (e) {}
+			const codesParam = joinedCodes.join(',');
+
+			const res = await fetch(`/api/v1/student/assignments?codes=${codesParam}`, {
 				headers: { Authorization: `Bearer ${token}` }
 			});
-			if (!res.ok) throw new Error(`Erreur ${res.status}`);
-			userQuizzes = await res.json();
-		} catch (e) {
-			console.error('Error fetching quizzes:', e);
+			if (res.ok) {
+				const allAssignments = await res.json();
+				userQuizzes = allAssignments.filter((a: any) => a.score !== undefined && a.score !== null);
+			} else {
+				const err = await res.json().catch(() => ({}));
+				console.error(err.detail || 'Failed to load quizzes');
+				userQuizzes = [];
+			}
+		} catch (e: any) {
+			console.error('Network error while loading quizzes:', e);
 			userQuizzes = [];
 		} finally {
 			isLoadingQuizzes = false;
@@ -196,7 +225,6 @@
 				const err = await res.json().catch(() => ({}));
 				throw new Error(err.detail ?? $_('Code de quiz invalide ou expiré'));
 			}
-			// Code is valid! Redirect to assignments page
 			showJoinQuizModal = false;
 			goto(`/student/assignments?code=${code}`);
 		} catch (e: any) {
@@ -386,6 +414,11 @@
 				}
 			}) as EventListener);
 
+			const handleAvatarUpdate = () => {
+				fetchCourses();
+			};
+			window.addEventListener('avatar-updated', handleAvatarUpdate as EventListener);
+
 			chatIdSubscription = storeChatId.subscribe((newChatId) => {
 				if (newChatId && newChatId !== 'local' && pendingSupportId) {
 					updateSupportWithChatId(pendingSupportId, newChatId);
@@ -426,6 +459,7 @@
 		if (browser) {
 			if (chatIdSubscription) chatIdSubscription();
 			if (urlCheckInterval) clearInterval(urlCheckInterval);
+			window.removeEventListener('avatar-updated', (() => fetchCourses()) as EventListener);
 		}
 	});
 
@@ -548,40 +582,18 @@
 		goto(`/student/support/${support.id}`);
 	}
 </script>
-
 <!-- ═══════════════════════════════════════════════════════ -->
 <!-- TEMPLATE                                               -->
 <!-- ═══════════════════════════════════════════════════════ -->
 <div class="flex flex-col gap-8">
-	<!-- ── HEADER BUTTONS ── -->
-	<div class="flex justify-end">
+<div class="flex justify-end mb-4">
 		<div class="flex gap-3">
-			<button
-				class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-full transition shadow-sm"
-				on:click={openJoinQuizModal}
-			>
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16">
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2.5"
-						d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-					/>
-				</svg>
-				{$_('dashboard.join_quiz')}
-			</button>
-
 			<button
 				class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-full transition shadow-sm"
 				on:click={openJoinModal}
 			>
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16">
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2.5"
-						d="M12 4v16m8-8H4"
-					/>
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
 				</svg>
 				{$_('Rejoindre un cours')}
 			</button>
@@ -590,26 +602,14 @@
 				class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full transition"
 				on:click={toggleSupportPopup}
 			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="h-5 w-5"
-					viewBox="0 0 20 20"
-					fill="currentColor"
-				>
-					<path
-						fill-rule="evenodd"
-						d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-						clip-rule="evenodd"
-					/>
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+					<path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
 				</svg>
 				{$_('Support')}
 			</button>
 		</div>
 	</div>
 
-	<!-- ══════════════════════════════════════════════ -->
-	<!-- SECTION : MES COURS                           -->
-	<!-- ══════════════════════════════════════════════ -->
 	<div class="flex flex-col gap-4">
 		<div class="flex items-center justify-between">
 			<div class="flex items-center gap-3">
@@ -641,188 +641,198 @@
 			</button>
 		</div>
 
-		{#if isLoadingCourses}
-			<div class="flex justify-center items-center py-8">
-				<div
-					class="animate-spin w-7 h-7 border-4 border-blue-500 border-t-transparent rounded-full"
-				></div>
-				<span class="ml-3 text-gray-500 dark:text-gray-400 text-sm"
-					>{$_('Chargement des cours...')}</span
-				>
-			</div>
-		{:else if userCourses.length === 0}
-			<div class="empty-section">
-				<svg
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					width="32"
-					height="32"
-					class="text-indigo-300"
-				>
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="1.5"
-						d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-					/>
-				</svg>
-				<p class="text-sm font-medium text-gray-600 dark:text-gray-400">
-					{$_("Aucun cours pour l'instant")}
-				</p>
-				<p class="text-xs text-gray-400 dark:text-gray-500">
-					{$_('Rejoignez un cours avec un code')}
-				</p>
-				<button class="btn-join-inline" on:click={openJoinModal}>
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14">
+		<div
+			class="w-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm relative"
+		>
+			{#if isLoadingCourses}
+				<div class="flex justify-center items-center py-8">
+					<div
+						class="animate-spin w-7 h-7 border-4 border-blue-500 border-t-transparent rounded-full"
+					></div>
+					<span class="ml-3 text-gray-500 dark:text-gray-400 text-sm"
+						>{$_('Chargement des cours...')}</span
+					>
+				</div>
+			{:else if userCourses.length === 0}
+				<div class="empty-section border-0 p-0 bg-transparent dark:bg-transparent">
+					<svg
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						width="32"
+						height="32"
+						class="text-indigo-300"
+					>
 						<path
 							stroke-linecap="round"
 							stroke-linejoin="round"
-							stroke-width="2.5"
-							d="M12 4v16m8-8H4"
+							stroke-width="1.5"
+							d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
 						/>
 					</svg>
-					{$_('Rejoindre un cours')}
-				</button>
-			</div>
-		{:else}
-			<div class="relative">
-				{#if currentCoursePage > 0}
-					<button
-						class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 sm:-translate-x-6 p-2 rounded-full bg-white dark:bg-gray-700 shadow-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 z-10 transition-all"
-						on:click={prevCoursePage}
-					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							class="h-5 w-5"
-							viewBox="0 0 20 20"
-							fill="currentColor"
-						>
+					<p class="text-sm font-medium text-gray-600 dark:text-gray-400">
+						{$_("Aucun cours pour l'instant")}
+					</p>
+					<p class="text-xs text-gray-400 dark:text-gray-500">
+						{$_('Rejoignez un cours avec un code')}
+					</p>
+					<button class="btn-join-inline" on:click={openJoinModal}>
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14">
 							<path
-								fill-rule="evenodd"
-								d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-								clip-rule="evenodd"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2.5"
+								d="M12 4v16m8-8H4"
 							/>
 						</svg>
+						{$_('Rejoindre un cours')}
 					</button>
-				{/if}
-				{#if currentCoursePage < totalCoursePages - 1}
-					<button
-						class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 sm:translate-x-6 p-2 rounded-full bg-white dark:bg-gray-700 shadow-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 z-10 transition-all"
-						on:click={nextCoursePage}
-					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							class="h-5 w-5"
-							viewBox="0 0 20 20"
-							fill="currentColor"
+				</div>
+			{:else}
+				<div class="relative">
+					{#if currentCoursePage > 0}
+						<button
+							class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 sm:-translate-x-6 p-2 rounded-full bg-white dark:bg-gray-700 shadow-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 z-10 transition-all"
+							on:click={prevCoursePage}
 						>
-							<path
-								fill-rule="evenodd"
-								d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-								clip-rule="evenodd"
-							/>
-						</svg>
-					</button>
-				{/if}
-
-				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-					{#each currentCourses as course (course.id)}
-						<div
-							class="course-card-dash"
-							class:card-slide-enter-from-right={courseAnimDir === 'right'}
-							class:card-slide-enter-from-left={courseAnimDir === 'left'}
-							class:new-highlight-dash={course.id === newlyJoinedId}
-							in:fly={{ y: 10, duration: 220, easing: cubicOut }}
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="h-5 w-5"
+								viewBox="0 0 20 20"
+								fill="currentColor"
+							>
+								<path
+									fill-rule="evenodd"
+									d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+									clip-rule="evenodd"
+								/>
+							</svg>
+						</button>
+					{/if}
+					{#if currentCoursePage < totalCoursePages - 1}
+						<button
+							class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 sm:translate-x-6 p-2 rounded-full bg-white dark:bg-gray-700 shadow-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 z-10 transition-all"
+							on:click={nextCoursePage}
 						>
-							<!-- NEW badge -->
-							{#if course.id === newlyJoinedId}
-								<div class="new-badge-dash" in:fly={{ x: 12, duration: 280 }}>
-									{$_('Nouveau')}
-								</div>
-							{/if}
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="h-5 w-5"
+								viewBox="0 0 20 20"
+								fill="currentColor"
+							>
+								<path
+									fill-rule="evenodd"
+									d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+									clip-rule="evenodd"
+								/>
+							</svg>
+						</button>
+					{/if}
 
-							<!-- TOP ROW: level + lang + DELETE BUTTON -->
-							<div class="cc-top-dash">
-								<div class="cc-top-left-dash">
-									<div
-										class="cc-level-tag-dash"
-										style="color:{levelColor(course.level)};background:{levelColor(
-											course.level
-										)}18;border-color:{levelColor(course.level)}33;"
-									>
-										<span class="level-dot-dash" style="background:{levelColor(course.level)};"
-										></span>
-										{levelLabel(course.level)}
+					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+						{#each currentCourses as course (course.id)}
+							<div
+								class="course-card-dash"
+								class:card-slide-enter-from-right={courseAnimDir === 'right'}
+								class:card-slide-enter-from-left={courseAnimDir === 'left'}
+								class:new-highlight-dash={course.id === newlyJoinedId}
+								in:fly={{ y: 10, duration: 220, easing: cubicOut }}
+							>
+								{#if course.id === newlyJoinedId}
+									<div class="new-badge-dash" in:fly={{ x: 12, duration: 280 }}>
+										✨ {$_('Nouveau')}
 									</div>
-									<span class="cc-lang-dash">{langFlag(course.language)}</span>
+								{/if}
+
+								<div class="cc-top-dash">
+									<div class="cc-top-left-dash">
+										<div
+											class="cc-level-tag-dash"
+											style="color:{levelColor(course.level)};background:{levelColor(
+												course.level
+											)}18;border-color:{levelColor(course.level)}33;"
+										>
+											<span class="level-dot-dash" style="background:{levelColor(course.level)};"
+											></span>
+											{levelLabel(course.level)}
+										</div>
+										<span class="cc-lang-dash">{langFlag(course.language)}</span>
+									</div>
+
+									<button
+										class="btn-delete-dash"
+										on:click|stopPropagation={() => openDeleteModal(course.id)}
+										title={$_('Quitter le cours')}
+										aria-label={$_('Quitter le cours')}
+									>
+										<svg
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											width="14"
+											height="14"
+										>
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+											/>
+										</svg>
+									</button>
 								</div>
 
-								<!-- ✅ BOUTON SUPPRIMER -->
+								<h3
+									class="cc-title-dash cursor-pointer"
+									on:click={() => goto(`/student/classrooms/${course.id}`)}
+									on:keypress={(e) => e.key === 'Enter' && goto(`/student/classrooms/${course.id}`)}
+									tabindex="0"
+									role="button"
+								>
+									{course.title}
+								</h3>
+
+								{#if course.category}
+									<span class="cc-cat-dash">{course.category}</span>
+								{/if}
+
+								<div class="cc-teacher-dash">
+									<div class="teacher-avatar-dash">
+										{#if course.teacher_profile_image_url && normalizeAvatarPath(course.teacher_profile_image_url)}
+											<img 
+												src={normalizeAvatarPath(course.teacher_profile_image_url)} 
+												alt={course.teacher_name}
+												class="teacher-avatar-img"
+											/>
+										{:else}
+											{course.teacher_name?.charAt(0)?.toUpperCase() ?? 'P'}
+										{/if}
+									</div>
+									<span class="teacher-name-dash">{course.teacher_name ?? $_('Professeur')}</span>
+								</div>
+
 								<button
-									class="btn-delete-dash"
-									on:click|stopPropagation={() => openDeleteModal(course.id)}
-									title={$_('Quitter le cours')}
-									aria-label={$_('Quitter le cours')}
+									class="btn-start-dash"
+									on:click={() => goto(`/student/classrooms/${course.id}`)}
 								>
 									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14">
 										<path
 											stroke-linecap="round"
 											stroke-linejoin="round"
-											stroke-width="2"
-											d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+											stroke-width="2.5"
+											d="M5 3l14 9-14 9V3z"
 										/>
 									</svg>
+									{$_('Démarrer')}
 								</button>
 							</div>
-
-							<!-- TITLE (cliquable pour ouvrir le cours) -->
-							<h3
-								class="cc-title-dash cursor-pointer"
-								on:click={() => goto(`/student/classrooms/${course.id}`)}
-								on:keypress={(e) => e.key === 'Enter' && goto(`/student/classrooms/${course.id}`)}
-								tabindex="0"
-								role="button"
-							>
-								{course.title}
-							</h3>
-
-							{#if course.category}
-								<span class="cc-cat-dash">{course.category}</span>
-							{/if}
-
-							<div class="cc-teacher-dash">
-								<div class="teacher-avatar-dash">
-									{course.teacher_name?.charAt(0)?.toUpperCase() ?? 'P'}
-								</div>
-								<span class="teacher-name-dash">{course.teacher_name ?? $_('Professeur')}</span>
-							</div>
-
-							<!-- START BUTTON -->
-							<button
-								class="btn-start-dash"
-								on:click={() => goto(`/student/classrooms/${course.id}`)}
-							>
-								<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14">
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2.5"
-										d="M5 3l14 9-14 9V3z"
-									/>
-								</svg>
-								{$_('Démarrer')}
-							</button>
-						</div>
-					{/each}
+						{/each}
+					</div>
 				</div>
-			</div>
-		{/if}
+			{/if}
+		</div>
 	</div>
 
-	<!-- ══════════════════════════════════════════════ -->
-	<!-- SECTION : MES SUPPORTS                        -->
-	<!-- ══════════════════════════════════════════════ -->
 	<div class="flex flex-col gap-4">
 		<div class="flex items-center gap-3">
 			<div class="section-icon">
@@ -843,107 +853,119 @@
 			</div>
 		</div>
 
-		{#if isLoadingSupports}
-			<div class="flex justify-center items-center py-8">
-				<div
-					class="animate-spin w-7 h-7 border-4 border-indigo-500 border-t-transparent rounded-full"
-				></div>
-				<span class="ml-3 text-gray-500 dark:text-gray-400 text-sm"
-					>{$_('Loading your supports...')}</span
-				>
-			</div>
-		{:else if displaySupports.length === 0}
-			<div class="empty-section">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="32"
-					height="32"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="1.5"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					class="text-indigo-300"
-				>
-					<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-				</svg>
-				<p class="text-sm font-medium text-gray-600 dark:text-gray-400">
-					{$_('No supports found')}
-				</p>
-				<p class="text-xs text-gray-400 dark:text-gray-500">
-					{$_('Create a support to get personalized learning assistance')}
-				</p>
-			</div>
-		{:else}
-			<div class="relative">
-				{#if currentPage > 0}
-					<button
-						class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 sm:-translate-x-6 p-2 rounded-full bg-white dark:bg-gray-700 shadow-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 z-10 transition-all"
-						on:click={previousPage}
+		<div
+			class="w-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm relative"
+		>
+			{#if isLoadingSupports}
+				<div class="flex justify-center items-center py-8">
+					<div
+						class="animate-spin w-7 h-7 border-4 border-indigo-500 border-t-transparent rounded-full"
+					></div>
+					<span class="ml-3 text-gray-500 dark:text-gray-400 text-sm"
+						>{$_('Loading your supports...')}</span
 					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							class="h-5 w-5"
-							viewBox="0 0 20 20"
-							fill="currentColor"
-						>
-							<path
-								fill-rule="evenodd"
-								d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-								clip-rule="evenodd"
-							/>
-						</svg>
-					</button>
-				{/if}
-				{#if currentPage < totalPages - 1}
-					<button
-						class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 sm:translate-x-6 p-2 rounded-full bg-white dark:bg-gray-700 shadow-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 z-10 transition-all"
-						on:click={nextPage}
-					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							class="h-5 w-5"
-							viewBox="0 0 20 20"
-							fill="currentColor"
-						>
-							<path
-								fill-rule="evenodd"
-								d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-								clip-rule="evenodd"
-							/>
-						</svg>
-					</button>
-				{/if}
-
-				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 card-container">
-					{#each currentSupports as support, index (support.id)}
-						<div
-							class="cursor-pointer card-item h-full"
-							class:card-slide-enter-from-right={animationDirection === 'right'}
-							class:card-slide-enter-from-left={animationDirection === 'left'}
-							on:click={() => handleCardClick(support)}
-							on:keypress={(e) => e.key === 'Enter' && handleCardClick(support)}
-							tabindex="0"
-							role="button"
-							style="animation-delay: {index * 0.05}s"
-						>
-							<CourseCard
-								title={support.title}
-								subject={support.subject || 'mathematics'}
-								progress={0}
-								href="#"
-							/>
-						</div>
-					{/each}
 				</div>
-			</div>
-		{/if}
+			{:else if displaySupports.length === 0}
+				<div
+					class="empty-section border-0 p-0 bg-transparent dark:bg-transparent flex flex-col items-center justify-center text-center gap-3"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="32"
+						height="32"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						class="text-indigo-300"
+					>
+						<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+					</svg>
+
+					<p class="text-sm font-medium text-gray-600 dark:text-gray-400 m-0">
+						{$_('No supports found')}
+					</p>
+
+					<p class="text-xs text-gray-400 dark:text-gray-500 m-0">
+						{$_('Create a support to get personalized learning assistance')}
+					</p>
+
+					<button
+						class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 rounded-full transition shadow-sm mt-2"
+						on:click={toggleSupportPopup}
+					>
+						+ Créer un support
+					</button>
+				</div>
+			{:else}
+				<div class="relative">
+					{#if currentPage > 0}
+						<button
+							class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 sm:-translate-x-6 p-2 rounded-full bg-white dark:bg-gray-700 shadow-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 z-10 transition-all"
+							on:click={previousPage}
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="h-5 w-5"
+								viewBox="0 0 20 20"
+								fill="currentColor"
+							>
+								<path
+									fill-rule="evenodd"
+									d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+									clip-rule="evenodd"
+								/>
+							</svg>
+						</button>
+					{/if}
+					{#if currentPage < totalPages - 1}
+						<button
+							class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 sm:translate-x-6 p-2 rounded-full bg-white dark:bg-gray-700 shadow-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 z-10 transition-all"
+							on:click={nextPage}
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="h-5 w-5"
+								viewBox="0 0 20 20"
+								fill="currentColor"
+							>
+								<path
+									fill-rule="evenodd"
+									d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+									clip-rule="evenodd"
+								/>
+							</svg>
+						</button>
+					{/if}
+
+					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 card-container">
+						{#each currentSupports as support, index (support.id)}
+							<div
+								class="cursor-pointer card-item h-full"
+								class:card-slide-enter-from-right={animationDirection === 'right'}
+								class:card-slide-enter-from-left={animationDirection === 'left'}
+								on:click={() => handleCardClick(support)}
+								on:keypress={(e) => e.key === 'Enter' && handleCardClick(support)}
+								tabindex="0"
+								role="button"
+								style="animation-delay: {index * 0.05}s"
+							>
+								<CourseCard
+									title={support.title}
+									subject={support.subject || 'mathematics'}
+									progress={0}
+									href="#"
+								/>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
+		</div>
 	</div>
 
-	<!-- ══════════════════════════════════════════════ -->
-	<!-- SECTION : MES QUIZZES (MY QUIZZES)             -->
-	<!-- ══════════════════════════════════════════════ -->
 	<div class="flex flex-col gap-4">
 		<div class="flex items-center gap-3">
 			<div class="section-icon text-purple-600 dark:text-purple-400">
@@ -964,500 +986,101 @@
 			</div>
 		</div>
 
-		{#if isLoadingQuizzes}
-			<div class="flex justify-center items-center py-8">
-				<div
-					class="animate-spin w-7 h-7 border-4 border-purple-500 border-t-transparent rounded-full"
-				></div>
-				<span class="ml-3 text-gray-500 dark:text-gray-400 text-sm"
-					>{$_('Chargement des quiz...')}</span
-				>
-			</div>
-		{:else if userQuizzes.length === 0}
-			<div class="empty-section">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="32"
-					height="32"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="1.5"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					class="text-purple-300"
-				>
-					<path
-						d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-					/>
-				</svg>
-				<p class="text-sm font-medium text-gray-600 dark:text-gray-400">
-					{$_('Aucun quiz soumis pour le moment')}
-				</p>
-				<p class="text-xs text-gray-400 dark:text-gray-500">
-					{$_('Rejoignez une évaluation avec un code fourni par votre enseignant')}
-				</p>
-			</div>
-		{:else}
-			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-				{#each userQuizzes as quiz (quiz.quiz_id)}
+		<div
+			class="w-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm relative"
+		>
+			{#if isLoadingQuizzes}
+				<div class="flex justify-center items-center py-8">
 					<div
-						class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between h-full"
+						class="animate-spin w-7 h-7 border-4 border-purple-500 border-t-transparent rounded-full"
+					></div>
+					<span class="ml-3 text-gray-500 dark:text-gray-400 text-sm"
+						>{$_('Chargement des quiz...')}</span
 					>
-						<div>
-							<div class="flex items-center justify-between gap-2 mb-3">
-								<span
-									class="text-[10px] font-semibold tracking-wider text-gray-400 dark:text-gray-500 uppercase"
-								>
-									{new Date(quiz.submitted_at).toLocaleDateString(undefined, {
-										day: 'numeric',
-										month: 'short',
-										year: 'numeric'
-									})}
-								</span>
-								<!-- Status badge -->
-								<span
-									class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400"
-								>
-									{$_('Complété')}
-								</span>
-							</div>
-
-							<h3 class="text-base font-bold text-gray-800 dark:text-gray-100 mb-2 line-clamp-2">
-								{quiz.title}
-							</h3>
-
-							<p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-								{quiz.total_questions}
-								{quiz.total_questions > 1 ? $_('questions') : $_('question')}
-							</p>
-						</div>
-
-						<div
-							class="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700"
-						>
-							<span class="text-xs text-gray-400 dark:text-gray-500 font-medium">{$_('Score')}</span
-							>
-							<span class="text-lg font-extrabold text-blue-600 dark:text-blue-400">
-								{quiz.score} / {quiz.total_questions}
-							</span>
-						</div>
-					</div>
-				{/each}
-			</div>
-		{/if}
-	</div>
-</div>
-
-<!-- ══════════════════════════════════════════════════════ -->
-<!-- MODAL : REJOINDRE UN QUIZ                            -->
-<!-- ══════════════════════════════════════════════════════ -->
-{#if showJoinQuizModal}
-	<div
-		class="modal-overlay"
-		role="button"
-		tabindex="0"
-		on:click={closeJoinQuizModal}
-		on:keydown={(e) => e.key === 'Escape' && closeJoinQuizModal()}
-		in:fade={{ duration: 200 }}
-		out:fade={{ duration: 150 }}
-	>
-		<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-		<!-- svelte-ignore a11y-click-events-have-key-events -->
-		<div
-			class="modal-card"
-			role="dialog"
-			aria-modal="true"
-			aria-label={$_('join quiz')}
-			on:click|stopPropagation
-			on:keydown|stopPropagation
-			in:fly={{ y: 20, duration: 300, easing: cubicOut }}
-		>
-			<button class="modal-close" on:click={closeJoinQuizModal} aria-label={$_('Fermer')}>
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="18" height="18">
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M6 18L18 6M6 6l12 12"
-					/>
-				</svg>
-			</button>
-
-			<div class="modal-body">
-				<div class="modal-logo-wrap text-purple-600">📝</div>
-				<h2 class="modal-title">{$_('dashboard.join_quiz')}</h2>
-				<p class="modal-subtitle">
-					{$_('Entrez le code de quiz à 6 caractères fourni par votre professeur')}
-				</p>
-
-				<div class="input-group">
-					<label for="dashQuizCodeInput" class="input-label">
-						{$_('Code du quiz')}
-					</label>
-					<input
-						id="dashQuizCodeInput"
-						type="text"
-						bind:value={joinQuizCode}
-						placeholder={$_('ex: ABCDEF')}
-						class="code-input {joinQuizError ? 'input-error' : ''}"
-						disabled={isJoiningQuiz}
-						on:keydown={(e) => e.key === 'Enter' && handleJoinQuiz()}
-						autocomplete="off"
-						spellcheck="false"
-						maxlength="6"
-						style="text-transform: uppercase;"
-					/>
-					{#if joinQuizError}
-						<p class="input-err-msg" in:fly={{ y: -4, duration: 150 }}>
-							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="13" height="13">
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2"
-									d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
-								/>
-							</svg>
-							{joinQuizError}
-						</p>
-					{/if}
 				</div>
-
-				<p class="modal-hint">{$_('Pas de code ? Demandez à votre professeur')}</p>
-
-				<button
-					class="btn-join-confirm"
-					style="background: linear-gradient(145deg, #7e22ce, #6b21a8);"
-					on:click={handleJoinQuiz}
-					disabled={isJoiningQuiz || !joinQuizCode.trim()}
-				>
-					{#if isJoiningQuiz}
-						<svg class="spin-icon" viewBox="0 0 50 50" width="16" height="16">
-							<circle
-								cx="25"
-								cy="25"
-								r="20"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="5"
-								stroke-dasharray="80 40"
-							/>
-						</svg>
-						{$_('Validation...')}
-					{:else}
-						{$_('Valider')}
-					{/if}
-				</button>
-			</div>
-		</div>
-	</div>
-{/if}
-
-<!-- ══════════════════════════════════════════════════════ -->
-<!-- MODAL : REJOINDRE UN COURS                            -->
-<!-- ══════════════════════════════════════════════════════ -->
-{#if showJoinModal}
-	<div
-		class="modal-overlay"
-		role="button"
-		tabindex="0"
-		on:click={closeJoinModal}
-		on:keydown={(e) => e.key === 'Escape' && closeJoinModal()}
-		in:fade={{ duration: 200 }}
-		out:fade={{ duration: 150 }}
-	>
-		<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-		<!-- svelte-ignore a11y-click-events-have-key-events -->
-		<div
-			class="modal-card"
-			role="dialog"
-			aria-modal="true"
-			aria-label={$_('Rejoindre un cours')}
-			on:click|stopPropagation
-			on:keydown|stopPropagation
-			in:fly={{ y: 20, duration: 300, easing: cubicOut }}
-		>
-			<button class="modal-close" on:click={closeJoinModal} aria-label={$_('Fermer')}>
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="18" height="18">
-					<path
+			{:else if userQuizzes.length === 0}
+				<div class="empty-section border-0 p-0 bg-transparent dark:bg-transparent">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="32"
+						height="32"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
 						stroke-linecap="round"
 						stroke-linejoin="round"
-						stroke-width="2"
-						d="M6 18L18 6M6 6l12 12"
-					/>
-				</svg>
-			</button>
-
-			{#if !joinSuccess}
-				<div class="modal-body">
-					<div class="modal-logo-wrap">
-						<img src="{TUTOR_FRONT_URL}/static/favicon.png" alt="OT AI" class="modal-logo-img" />
-					</div>
-					<h2 class="modal-title">{$_('Rejoindre un cours')}</h2>
-					<p class="modal-subtitle">{$_('Entrez le code fourni par votre professeur')}</p>
-
-					<div class="input-group">
-						<label for="dashCourseCodeInput" class="input-label">
-							{$_('Code du cours')}
-						</label>
-						<input
-							id="dashCourseCodeInput"
-							type="text"
-							bind:value={joinCourseCode}
-							placeholder={$_('ex: a1b2c3d4-...')}
-							class="code-input {joinError ? 'input-error' : ''}"
-							disabled={isJoining}
-							on:keydown={(e) => e.key === 'Enter' && joinCourse()}
-							autocomplete="off"
-							spellcheck="false"
-						/>
-						{#if joinError}
-							<p class="input-err-msg" in:fly={{ y: -4, duration: 150 }}>
-								<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="13" height="13">
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
-									/>
-								</svg>
-								{joinError}
-							</p>
-						{/if}
-					</div>
-
-					<p class="modal-hint">
-						{$_('Pas de code ? Demandez à votre professeur ou à votre institution')}
-					</p>
-
-					<button
-						class="btn-join-confirm"
-						on:click={joinCourse}
-						disabled={isJoining || !joinCourseCode.trim()}
+						class="text-purple-300"
 					>
-						{#if isJoining}
-							<svg class="spin-icon" viewBox="0 0 50 50" width="16" height="16">
-								<circle
-									cx="25"
-									cy="25"
-									r="20"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="5"
-									stroke-dasharray="80 40"
-								/>
-							</svg>
-							{$_('Inscription...')}
-						{:else}
-							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16">
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									stroke-width="2.5"
-									d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
-								/>
-							</svg>
-							{$_('Rejoindre le cours')}
-						{/if}
-					</button>
+						<path
+							d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+						/>
+					</svg>
+					<p class="text-sm font-medium text-gray-600 dark:text-gray-400">
+						{$_('Aucun quiz soumis pour le moment')}
+					</p>
+					<p class="text-xs text-gray-400 dark:text-gray-500 flex flex-col items-center gap-3">
+						<span>{$_('Rejoignez une évaluation avec un code fourni par votre enseignant')}</span>
+						<button
+							class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 rounded-full transition shadow-sm"
+							on:click={openJoinQuizModal}>+ Joindre un Quiz</button
+						>
+					</p>
 				</div>
 			{:else}
-				<div class="modal-success" in:fly={{ y: 12, duration: 280, easing: cubicOut }}>
-					<div class="success-icon-wrap">
-						<svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" width="32" height="32">
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2.5"
-								d="M5 13l4 4L19 7"
-							/>
-						</svg>
-					</div>
-					<h2 class="modal-title">{$_('Cours rejoint !')}</h2>
-					<p class="modal-subtitle">{$_('Vous êtes maintenant inscrit au cours.')}</p>
+				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+					{#each userQuizzes as quiz (quiz.quiz_id)}
+						<div
+							class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between h-full"
+						>
+							<div>
+								<div class="flex items-center justify-between gap-2 mb-3">
+									<span
+										class="text-[10px] font-semibold tracking-wider text-gray-400 dark:text-gray-500 uppercase"
+									>
+										{new Date(quiz.submitted_at).toLocaleDateString(undefined, {
+											day: 'numeric',
+											month: 'short',
+											year: 'numeric'
+										})}
+									</span>
+									<span
+										class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400"
+									>
+										{$_('Complété')}
+									</span>
+								</div>
+
+								<h3 class="text-base font-bold text-gray-800 dark:text-gray-100 mb-2 line-clamp-2">
+									{quiz.title}
+								</h3>
+
+								<p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
+									{quiz.total_questions}
+									{quiz.total_questions > 1 ? $_('questions') : $_('question')}
+								</p>
+							</div>
+
+							<div
+								class="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700"
+							>
+								<span class="text-xs text-gray-400 dark:text-gray-500 font-medium"
+									>{$_('Score')}</span
+								>
+								<span class="text-lg font-extrabold text-blue-600 dark:text-blue-400">
+									{quiz.score} / {quiz.total_questions}
+								</span>
+							</div>
+						</div>
+					{/each}
 				</div>
 			{/if}
 		</div>
 	</div>
-{/if}
-
-<!-- ══════════════════════════════════════════════════════ -->
-<!-- MODAL : CONFIRMATION SUPPRESSION / QUITTER COURS      -->
-<!-- ══════════════════════════════════════════════════════ -->
-{#if showDeleteModal}
-	<div
-		class="modal-overlay"
-		role="button"
-		tabindex="0"
-		on:click={closeDeleteModal}
-		on:keydown={(e) => e.key === 'Escape' && closeDeleteModal()}
-		in:fade={{ duration: 200 }}
-		out:fade={{ duration: 150 }}
-	>
-		<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-		<!-- svelte-ignore a11y-click-events-have-key-events -->
-		<div
-			class="modal-card modal-delete"
-			role="dialog"
-			aria-modal="true"
-			on:click|stopPropagation
-			on:keydown|stopPropagation
-			in:fly={{ y: 20, duration: 300, easing: cubicOut }}
-		>
-			<div class="modal-body">
-				<!-- Icon rouge -->
-				<div class="delete-icon-wrap">
-					<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" width="32" height="32">
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-						/>
-					</svg>
-				</div>
-
-				<h2 class="modal-title">{$_('Quitter ce cours ?')}</h2>
-				<p class="modal-subtitle">
-					{$_(
-						"Êtes-vous sûr de vouloir vous désinscrire ? Vous perdrez l'accès à toutes les ressources de ce cours."
-					)}
-				</p>
-
-				{#if deleteError}
-					<p class="input-err-msg" in:fly={{ y: -4, duration: 150 }}>
-						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="13" height="13">
-							<path
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								stroke-width="2"
-								d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
-							/>
-						</svg>
-						{deleteError}
-					</p>
-				{/if}
-
-				<div class="delete-actions">
-					<button class="btn-cancel" on:click={closeDeleteModal} disabled={isDeleting}>
-						{$_('Annuler')}
-					</button>
-					<button class="btn-confirm-delete" on:click={unenrollCourse} disabled={isDeleting}>
-						{#if isDeleting}
-							<svg class="spin-icon" viewBox="0 0 50 50" width="16" height="16">
-								<circle
-									cx="25"
-									cy="25"
-									r="20"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="5"
-									stroke-dasharray="80 40"
-								/>
-							</svg>
-							{$_('Suppression...')}
-						{:else}
-							{$_('Oui, quitter')}
-						{/if}
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
-{/if}
-
-<!-- ══════════════════════════════════════════════════════ -->
-<!-- SUPPORT POPUP                                         -->
-<!-- ══════════════════════════════════════════════════════ -->
-{#if showSupportPopup}
-	<div
-		class="fixed inset-0 backdrop-blur-sm bg-white/30 dark:bg-black/30 flex items-center justify-center z-50"
-		role="dialog"
-		aria-modal="true"
-		in:fade
-	>
-		<div
-			class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 w-11/12 sm:w-full max-w-sm mx-auto relative overflow-y-auto max-h-[90vh] ring-1 ring-gray-200 dark:ring-gray-700"
-			transition:scale={{ duration: 200 }}
-		>
-			<button
-				class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
-				on:click={() => (showSupportPopup = false)}
-			>
-				<span class="text-xl font-light">×</span>
-			</button>
-
-			<div class="flex justify-center mb-4">
-				<img src="/favicon.png" alt="OT Logo" class="w-20 h-20" />
-			</div>
-
-			<h2 class="text-center text-lg font-bold text-gray-900 dark:text-white mb-4">
-				{$_('Create Personalized Tutorials for any Subject or Topic')}
-			</h2>
-
-			<h3 class="text-center text-md font-medium mb-4 text-gray-900 dark:text-white">
-				{$_('Create Your Learning Path')}
-			</h3>
-
-			<div class="space-y-3 mb-6 px-2">
-				<div class="flex items-center gap-3">
-					<div
-						class="flex-shrink-0 bg-[#004AAD] text-white rounded-full w-6 h-6 flex items-center justify-center"
-					>
-						<span class="font-bold text-sm">1</span>
-					</div>
-					<span class="text-sm text-gray-800 dark:text-gray-200"
-						>{$_('Choose your topic and level')}</span
-					>
-				</div>
-				<div class="flex items-center gap-3">
-					<div
-						class="flex-shrink-0 bg-[#004AAD] text-white rounded-full w-6 h-6 flex items-center justify-center"
-					>
-						<span class="font-bold text-sm">2</span>
-					</div>
-					<span class="text-sm text-gray-800 dark:text-gray-200"
-						>{$_('Set your learning objectives')}</span
-					>
-				</div>
-				<div class="flex items-center gap-3">
-					<div
-						class="flex-shrink-0 bg-[#004AAD] text-white rounded-full w-6 h-6 flex items-center justify-center"
-					>
-						<span class="font-bold text-sm">3</span>
-					</div>
-					<span class="text-sm text-gray-800 dark:text-gray-200"
-						>{$_('Enjoy AI-powered personalized learning')}</span
-					>
-				</div>
-			</div>
-
-			<div class="flex justify-center mb-4">
-				<button
-					class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-8 rounded-full font-medium text-sm"
-					on:click={handleCreateSupport}
-				>
-					{$_('Create My support')}
-				</button>
-			</div>
-
-			<div class="flex items-center justify-center gap-2">
-				<input
-					type="checkbox"
-					id="dontShow"
-					bind:checked={dontShowAgain}
-					class="h-3 w-3 text-indigo-600 bg-white dark:bg-gray-700 border-gray-300 rounded focus:ring-indigo-500"
-				/>
-				<label for="dontShow" class="text-xs text-gray-500 dark:text-gray-400">
-					{$_("Don't show me again")}
-				</label>
-			</div>
-		</div>
-	</div>
-{/if}
+</div>
 
 <style>
-	/* ── SECTION HEADER ── */
+/* ── SECTION HEADER ── */
 	.section-icon {
 		width: 40px;
 		height: 40px;
@@ -1721,6 +1344,13 @@
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
+		overflow: hidden;
+	}
+	.teacher-avatar-img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		border-radius: 50%;
 	}
 	:global(.dark) .teacher-avatar-dash {
 		background: rgba(59, 91, 219, 0.2);
