@@ -22,18 +22,18 @@
 	const i18n = getContext<Writable<i18nType>>('i18n');
 	const _ = derived(i18n, ($i18n) => (key: string, options?: any) => $i18n.t(key, options));
 
-	// ── TYPES ──────────────────────────────────────────────
-	interface EnrolledCourse {
-		id: string;
-		title: string;
-		language: string;
-		category: string | null;
-		level: string;
-		teacher_name: string;
-		teacher_profile_image_url?: string;
-		enrolled_at: string;
-		status: string;
-	}
+    // ── TYPES ──────────────────────────────────────────────
+    interface EnrolledCourse {
+        id: string;
+        title: string;
+        language: string;
+        category: string | null;
+        level: string;
+        teacher_name: string;
+        teacher_profile_image_url?: string;
+        enrolled_at: string;
+        status: string;
+    }
 
 	// ── STATE supports ──────────────────────────────────────
 	let userSupports: SupportResponse[] = [];
@@ -78,6 +78,31 @@
 		};
 		return map[level] ?? '#94a3b8';
 	}
+    function normalizeAvatarPath(url?: string | null) {
+        if (!url || url.trim() === '') return null;
+        const clean = url.split('?')[0].trim();
+        if (
+            clean.startsWith('http://') ||
+            clean.startsWith('https://') ||
+            clean.startsWith('/static/') ||
+            clean.startsWith('/uploads/') ||
+            clean.startsWith('/api/')
+        ) {
+            return clean;
+        }
+        if (clean.startsWith('/')) return clean;
+        return `/uploads/avatars/${clean}`;
+    }
+
+    function levelLabel(level: string): string {
+        const map: Record<string, string> = {
+            'primary-school': $i18n.t('Primaire'),
+            'middle-school':  $i18n.t('Collège'),
+            'high-school':    $i18n.t('Lycée'),
+            'university':     $i18n.t('Université'),
+        };
+        return map[level] ?? level;
+    }
 
 	function normalizeAvatarPath(url?: string | null) {
 		if (!url || url.trim() === '') return null;
@@ -367,6 +392,16 @@
 			if (localStorage.getItem('pendingSupportData')) {
 				localStorage.removeItem('pendingSupportData');
 			}
+            const handleAvatarUpdate = () => {
+                fetchCourses();
+            };
+            window.addEventListener('avatar-updated', handleAvatarUpdate as EventListener);
+
+            chatIdSubscription = storeChatId.subscribe((newChatId) => {
+                if (newChatId && newChatId !== 'local' && pendingSupportId) {
+                    updateSupportWithChatId(pendingSupportId, newChatId);
+                }
+            });
 
 			const keysToRemove: string[] = [];
 			for (let i = 0; i < localStorage.length; i++) {
@@ -393,6 +428,13 @@
 					} finally {
 						isLoadingSupports = false;
 					}
+    onDestroy(() => {
+        if (browser) {
+            if (chatIdSubscription) chatIdSubscription();
+            if (urlCheckInterval) clearInterval(urlCheckInterval);
+            window.removeEventListener('avatar-updated', (() => fetchCourses()) as EventListener);
+        }
+    });
 
 					await fetchCourses();
 					await fetchQuizzes();
@@ -883,6 +925,20 @@
 					>
 						<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
 					</svg>
+                            <div class="cc-teacher-dash">
+                                <div class="teacher-avatar-dash">
+                                    {#if course.teacher_profile_image_url && normalizeAvatarPath(course.teacher_profile_image_url)}
+                                        <img 
+                                            src={normalizeAvatarPath(course.teacher_profile_image_url)} 
+                                            alt={course.teacher_name}
+                                            class="teacher-avatar-img"
+                                        />
+                                    {:else}
+                                        {course.teacher_name?.charAt(0)?.toUpperCase() ?? 'P'}
+                                    {/if}
+                                </div>
+                                <span class="teacher-name-dash">{course.teacher_name ?? $i18n.t('Professeur')}</span>
+                            </div>
 
 					<p class="text-sm font-medium text-gray-600 dark:text-gray-400 m-0">
 						{$_('No supports found')}
@@ -1325,48 +1381,24 @@
 		color: #94a3b8;
 	}
 
-	/* TEACHER */
-	.cc-teacher-dash {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		margin-top: auto;
-	}
-	.teacher-avatar-dash {
-		width: 24px;
-		height: 24px;
-		border-radius: 50%;
-		background: linear-gradient(135deg, #dbe4ff, #bac8ff);
-		color: #3b5bdb;
-		font-size: 0.7rem;
-		font-weight: 800;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		flex-shrink: 0;
-		overflow: hidden;
-	}
-	.teacher-avatar-img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-		border-radius: 50%;
-	}
-	:global(.dark) .teacher-avatar-dash {
-		background: rgba(59, 91, 219, 0.2);
-		color: #93c5fd;
-	}
-	.teacher-name-dash {
-		font-size: 0.78rem;
-		font-weight: 500;
-		color: #64748b;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-	:global(.dark) .teacher-name-dash {
-		color: #94a3b8;
-	}
+    /* TEACHER */
+    .cc-teacher-dash { display: flex; align-items: center; gap: .5rem; margin-top: auto; }
+    .teacher-avatar-dash {
+        width: 24px; height: 24px; border-radius: 50%;
+        background: linear-gradient(135deg, #dbe4ff, #bac8ff);
+        color: #3b5bdb; font-size: .7rem; font-weight: 800;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        overflow: hidden;
+    }
+    .teacher-avatar-img {
+        width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
+    }
+    :global(.dark) .teacher-avatar-dash { background: rgba(59,91,219,.2); color: #93c5fd; }
+    .teacher-name-dash {
+        font-size: .78rem; font-weight: 500; color: #64748b;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    :global(.dark) .teacher-name-dash { color: #94a3b8; }
 
 	/* START BTN */
 	.btn-start-dash {
