@@ -4,20 +4,25 @@
 	import { getContext, onMount } from 'svelte';
 	import type { Writable } from 'svelte/store';
 	import type { i18n as i18nType } from 'i18next';
+	import { browser } from '$app/environment';
+	import HideLessonsModal from '$lib/components/teacher/HideLessonsModal.svelte';
 
 	const i18n = getContext<Writable<i18nType>>('i18n');
 
-	let channels = [
-		{ id: 'JAVA-101', name: 'General - Java Course' },
-		{ id: 'WEB-202', name: 'Final Project - Web' },
-		{ id: 'ALGO-303', name: 'Advanced Algorithms' },
-		{ id: 'SQL-404', name: 'SQL Database' },
-		{ id: 'AI-505', name: 'Artificial Intelligence' }
-	];
+	let channels: any[] = [];
+	let students: any[] = [];
+	let completionRate = '0.0%';
+	let enrolledStudentsCount = '0';
+	let isLoading = true;
 
 	let selectedCourse = 'all';
 	let selectedStatus = 'all';
 	let selectedDate = '';
+
+	// Visibility Modal States
+	let showHideModal = false;
+	let selectedStudentId = '';
+	let selectedStudentName = '';
 
 	let statuses = [
 		{ id: 'completed', name: 'Completed' },
@@ -25,70 +30,65 @@
 		{ id: 'failed', name: 'Failed' }
 	];
 
-	let students = [
-		{
-			id: '1',
-			name: 'Lahcen ECHCHARIY',
-			date: '12 Sept 2023',
-			progress: 85,
-			note: '16/20',
-			status: 'Active'
-		},
-		{
-			id: '2',
-			name: 'Abdelhadi Ait Boubker',
-			date: '15 Sept 2023',
-			progress: 42,
-			note: '16/20',
-			status: 'Active'
-		},
-		{
-			id: '3',
-			name: 'Abdelaziz Boukdous',
-			date: '10 Sept 2023',
-			progress: 92,
-			note: '19/20',
-			status: 'Active'
-		},
-		{
-			id: '4',
-			name: 'Mourad Amribd',
-			date: '18 Sept 2023',
-			progress: 15,
-			note: '05/20',
-			status: 'Struggling'
-		},
-		{
-			id: '5',
-			name: 'Hafid Qastali',
-			date: '12 Sept 2023',
-			progress: 68,
-			note: '14/20',
-			status: 'Inactive'
-		}
-	];
-
 	let searchQuery = '';
 	let openMenuId: number | null = null;
+
+	async function fetchCourses() {
+		try {
+			const token = localStorage.getItem('token') ?? '';
+			const res = await fetch('/api/v1/teacher/courses/', {
+				headers: { Authorization: `Bearer ${token}` }
+			});
+			if (res.ok) {
+				const data = await res.json();
+				channels = data.map((c: any) => ({
+					id: c.id,
+					name: c.title
+				}));
+			}
+		} catch (e) {
+			console.error('Error fetching courses:', e);
+		}
+	}
+
+	async function fetchReports() {
+		isLoading = true;
+		try {
+			const token = localStorage.getItem('token') ?? '';
+			let url = `/api/v1/teacher/analytics/reports?course_id=${selectedCourse}&status=${selectedStatus}`;
+			if (selectedDate) {
+				url += `&date=${selectedDate}`;
+			}
+			const res = await fetch(url, {
+				headers: { Authorization: `Bearer ${token}` }
+			});
+			if (res.ok) {
+				const data = await res.json();
+				students = data.students || [];
+				completionRate = data.completion_rate || '0.0%';
+				enrolledStudentsCount = data.enrolled_students || '0';
+			}
+		} catch (e) {
+			console.error('Error fetching reports:', e);
+		} finally {
+			isLoading = false;
+		}
+	}
 
 	$: filteredStudents = students.filter((student) =>
 		student.name.toLowerCase().includes(searchQuery.toLowerCase())
 	);
 
-	$: {
-		applyFilter(selectedCourse, selectedStatus, selectedDate);
+	$: if (browser && (selectedCourse || selectedStatus || selectedDate)) {
+		fetchReports();
 	}
 
-	function applyFilter(course: string, status: string, date: string) {
-		console.log(`Filtre appliqué: Course=${course}, Status=${status}, Date=${date}`);
-	}
-
-	function openMessage(studentName: string) {
-		goto(`/teacher/discussions?student=${encodeURIComponent(studentName)}`);
+	function openMessage(studentName: string, studentId: string) {
+		goto(`/teacher/messages?chatId=${studentId}&student=${encodeURIComponent(studentName)}`);
 	}
 
 	function viewStudentProfile(studentId: string) {
-		goto(`/teacher/students/${studentId}`);
+		goto(`/teacher/reports/student/${studentId}`);
 	}
 
 	function sendReport(studentName: string) {
@@ -104,16 +104,20 @@
 		openMenuId = null;
 	}
 
-	function handleHideLesson(name: string) {
-		console.log('Ikhfa2 dars 3en:', name);
+	function handleHideLesson(student: any) {
+		selectedStudentId = student.id;
+		selectedStudentName = student.name;
+		showHideModal = true;
 		openMenuId = null;
 	}
 
 	let isDarkMode = false;
 
-	onMount(() => {
+	onMount(async () => {
 		isDarkMode = localStorage.getItem('theme') === 'dark';
 		applyTheme();
+		await fetchCourses();
+		await fetchReports();
 	});
 
 	function toggleDarkMode() {
@@ -194,7 +198,7 @@
 	</div>
 
 	<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-		{#each [{ label: 'Completion Rate', value: '78.4%', icon: '↗' }, { label: 'ENROLLED STUDENTS', value: '120', trend: '↗ +12%', icon: '' }] as stat}
+		{#each [{ label: 'Completion Rate', value: completionRate, icon: '↗' }, { label: 'ENROLLED STUDENTS', value: enrolledStudentsCount, trend: '↗ +12%', icon: '' }] as stat}
 			<div
 				class="bg-white dark:bg-[#111827] p-6 rounded-[28px] border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between transition-all"
 			>
@@ -298,7 +302,7 @@
 									class="flex justify-end gap-2 text-slate-400 items-center opacity-40 group-hover:opacity-100 transition-opacity"
 								>
 									<button
-										on:click={() => openMessage(s.name)}
+										on:click={() => openMessage(s.name, s.id)}
 										class="p-2 hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:text-blue-600 rounded-lg transition-all"
 										title="Message"
 									>
@@ -346,6 +350,7 @@
 												class="absolute right-0 mt-2 w-56 bg-white dark:bg-[#1e293b] border border-slate-100 dark:border-slate-800 shadow-xl rounded-2xl z-50 overflow-hidden py-2 ring-1 ring-black/5"
 											>
 												<button
+													on:click|stopPropagation={() => handleHideLesson(s)}
 													class="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3 transition-colors"
 												>
 													<span>👁️‍🗨️</span>
@@ -371,7 +376,7 @@
 		<div
 			class="p-5 bg-slate-50/50 dark:bg-[#030712]/20 flex justify-between items-center text-[11px] font-bold text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-slate-800/50 transition-all"
 		>
-			<span>{$i18n.t('Showing 5 of 120 students')}</span>
+			<span>{$i18n.t('Showing {{count}} students', { count: filteredStudents.length })}</span>
 			<div class="flex gap-2">
 				<button
 					class="px-4 py-2 bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
@@ -389,3 +394,9 @@
 		</div>
 	</div>
 </div>
+
+<HideLessonsModal
+	bind:show={showHideModal}
+	studentId={selectedStudentId}
+	studentName={selectedStudentName}
+/>

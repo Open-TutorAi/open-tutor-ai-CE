@@ -164,7 +164,7 @@
 					<!-- Email Input -->
 					<div class="mb-6">
 						<label for="email" class="block text-gray-700 text-sm md:text-base font-medium mb-2"
-							>Email Address</label
+							>{$i18n.t('Email Address')}</label
 						>
 						<input
 							type="email"

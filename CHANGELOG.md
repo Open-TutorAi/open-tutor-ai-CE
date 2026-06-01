@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),  
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.16] - 2026-05-25
+
+### Fixed
+- 🐞 **Dashboard Infinite Reactive Loop**: Fixed recursive rendering loop in `Dashboard.svelte` by replacing `$_(key, options)` self-reference inside the derived `i18n` store with the direct `$i18n.t` method, resolving browser stack overflow RangeErrors.
+- 🎨 **Dashboard HTML Markup Syntax**: Restored missing `>` tag bracket on card headers inside `Dashboard.svelte`, clearing linter parse errors.
+- 🧩 **Assignments Dashboard Git Alignment**: Resolved structural git merge conflicts inside `Assignments.svelte`. Blended local Quiz Taking engine with the remote Assignments Dashboard list using a robust router state manager, resolving linter block syntax errors.
+- 🛠️ **Vite Proxy Key Sanitization**: Removed validation warnings for duplicate key `target` inside `vite.config.ts` proxy object, securing standard APIs routing and WebSocket (`ws://`) channels.
+- 🗄️ **Database Schema Conflict Markers**: Purged git conflict boundary text from `database.py` while fully retaining both `Quiz` related tables and `CourseProgress` tracking schema.
+
 ## [0.0.1] - 2025-05-12
 
 ### Added

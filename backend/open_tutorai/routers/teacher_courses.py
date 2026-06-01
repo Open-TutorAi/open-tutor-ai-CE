@@ -4,7 +4,7 @@ import logging
 import os
 from datetime import datetime
 from typing import Optional, List
-
+from open_tutorai.models.database import Course, CourseEnrollment
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Form
 from pydantic import BaseModel, Field
@@ -14,6 +14,15 @@ from open_webui.internal.db import engine
 from open_tutorai.utils.auth import get_verified_user
 from open_webui.models.models import Models
 from open_tutorai.models.database import Course, CoursePlan, CourseFile
+from open_tutorai.models.database import (
+    Course,
+    CourseEnrollment,
+    CourseProgress,
+    CoursePlan,
+    Quiz,
+    QuizSubmission,
+)
+from open_webui.models.users import Users
 
 # ---------------------------------------------------------------
 # Logging
@@ -378,7 +387,7 @@ async def generate_course_full(
     }
 
     try:
-        async with httpx.AsyncClient(timeout=120) as client:
+        async with httpx.AsyncClient(timeout=300) as client:
             r = await client.post(
                 f"http://localhost:{port}/api/chat/completions",
                 json=payload,
@@ -388,16 +397,25 @@ async def generate_course_full(
                 },
             )
         r.raise_for_status()
+    except httpx.TimeoutException as e:
+        log.error(f"LLM call timed out after 300 seconds: {e}")
+        course.status = "error"
+        db.commit()
+        raise HTTPException(
+            status_code=500, detail="LLM generation timed out (exceeded 5 minutes)"
+        )
     except httpx.HTTPStatusError as e:
         log.error(f"LLM call failed: {e.response.status_code} {e.response.text}")
         course.status = "error"
         db.commit()
-        raise HTTPException(status_code=502, detail="Failed to generate course plan")
+        raise HTTPException(
+            status_code=500, detail=f"LLM returned error: {e.response.status_code}"
+        )
     except Exception as e:
         log.error(f"LLM call error: {e}")
         course.status = "error"
         db.commit()
-        raise HTTPException(status_code=502, detail="Could not reach LLM")
+        raise HTTPException(status_code=500, detail="Failed to reach LLM backend")
 
     try:
         content = r.json()["choices"][0]["message"]["content"].strip()
@@ -411,6 +429,8 @@ async def generate_course_full(
         if content.endswith("```"):
             content = content[:-3]
 
+        content = content.strip()
+        plan = json.loads(content)
         data = json.loads(content.strip())
 
         if "chapters" not in data:
@@ -419,6 +439,13 @@ async def generate_course_full(
         plan = {"chapters": data.get("chapters", [])}
         ai_objectives = data.get("objectives", objectives)
 
+    except json.JSONDecodeError as je:
+        log.error(f"JSON parsing error: {je}. Raw content: {content[:500]}")
+        course.status = "error"
+        db.commit()
+        raise HTTPException(
+            status_code=500, detail="LLM returned invalid JSON structure"
+        )
     except Exception as e:
         log.error(f"Failed to parse LLM response: {e}")
         course.status = "error"
@@ -426,7 +453,6 @@ async def generate_course_full(
         raise HTTPException(
             status_code=500, detail="Could not parse course plan from LLM response"
         )
-
     # Step 4: Save the generated plan
     plan_id = str(uuid.uuid4())
     course_plan = CoursePlan(
@@ -545,7 +571,6 @@ async def delete_course(
     - Plans du cours (CoursePlan)
     - Le cours lui-même
     """
-    from open_tutorai.models.database import CourseEnrollment
 
     course = _get_course_or_404(db, course_id, user.id)
 
@@ -625,7 +650,7 @@ async def generate_course_plan(
     }
 
     try:
-        async with httpx.AsyncClient(timeout=90) as client:
+        async with httpx.AsyncClient(timeout=300) as client:
             r = await client.post(
                 f"http://localhost:{port}/api/chat/completions",
                 json=payload,
@@ -635,30 +660,44 @@ async def generate_course_plan(
                 },
             )
         r.raise_for_status()
+    except httpx.TimeoutException as e:
+        log.error(f"LLM call timed out after 300 seconds: {e}")
+        raise HTTPException(
+            status_code=500, detail="LLM generation timed out (exceeded 5 minutes)"
+        )
     except httpx.HTTPStatusError as e:
         log.error(f"LLM call failed: {e.response.status_code} {e.response.text}")
-        raise HTTPException(status_code=502, detail="LLM call failed")
+        raise HTTPException(
+            status_code=500, detail=f"LLM returned error: {e.response.status_code}"
+        )
     except Exception as e:
         log.error(f"LLM call error: {e}")
-        raise HTTPException(status_code=502, detail="Could not reach LLM")
+        raise HTTPException(status_code=500, detail="Failed to reach LLM backend")
 
     try:
         content = r.json()["choices"][0]["message"]["content"].strip()
-        # Strip markdown code fences
+
+        # Strip markdown code fences if model wrapped the JSON
         if content.startswith("```json"):
             content = content[7:]
         elif content.startswith("```"):
             content = content[3:]
+
         if content.endswith("```"):
             content = content[:-3]
 
-        data = json.loads(content.strip())
+        content = content.strip()
+        plan = json.loads(content)
 
-        plan = {"chapters": data.get("chapters", [])}
-        ai_objectives = data.get("objectives", body.objectives)  # NEW
+        if "chapters" not in plan:
+            raise ValueError("missing 'chapters' key in plan")
 
-        if "chapters" not in data:
-            raise ValueError("missing 'chapters' key")
+        ai_objectives = plan.get("objectives", body.objectives)
+    except json.JSONDecodeError as je:
+        log.error(f"JSON parsing error: {je}. Raw content: {content[:500]}")
+        raise HTTPException(
+            status_code=500, detail="LLM returned invalid JSON structure"
+        )
     except Exception as e:
         log.error(f"Failed to parse LLM response: {e}")
         raise HTTPException(status_code=500, detail="Could not parse response")
@@ -787,7 +826,7 @@ async def get_students_count(
     course_id: str, user=Depends(get_verified_user), db=Depends(get_db)
 ):
     _get_course_or_404(db, course_id, user.id)
-    from open_tutorai.models.database import CourseEnrollment
+    # pyrefly: ignore [missing-import]
 
     count = (
         db.query(CourseEnrollment)
@@ -795,3 +834,374 @@ async def get_students_count(
         .count()
     )
     return {"count": count}
+
+
+# ── APIROUTER FOR TEACHER ANALYTICS ────────────────────────────
+analytics_router = APIRouter(prefix="/teacher/analytics", tags=["Teacher Analytics"])
+
+
+@analytics_router.get("/reports")
+async def get_teacher_reports(
+    course_id: Optional[str] = None,
+    status: Optional[str] = None,
+    date: Optional[str] = None,
+    user=Depends(get_verified_user),
+    db=Depends(get_db),
+):
+
+    # 1. Get all courses owned by this teacher
+    teacher_courses = db.query(Course).filter(Course.teacher_id == user.id).all()
+    teacher_course_ids = [c.id for c in teacher_courses]
+
+    if not teacher_course_ids:
+        return {
+            "completion_rate": "0.0%",
+            "enrolled_students": "0",
+            "students": [],
+        }
+
+    # 2. Filter courses if specific course_id is provided
+    target_course_ids = teacher_course_ids
+    if course_id and course_id != "all":
+        if course_id in teacher_course_ids:
+            target_course_ids = [course_id]
+        else:
+            return {
+                "completion_rate": "0.0%",
+                "enrolled_students": "0",
+                "students": [],
+            }
+
+    # 3. Fetch all enrollments for target courses
+    enrollments = (
+        db.query(CourseEnrollment)
+        .filter(CourseEnrollment.course_id.in_(target_course_ids))
+        .all()
+    )
+
+    # Filter by date if provided (format YYYY-MM-DD)
+    if date:
+        try:
+            filter_date = datetime.strptime(date, "%Y-%m-%d").date()
+            enrollments = [
+                e
+                for e in enrollments
+                if e.enrolled_at and e.enrolled_at.date() == filter_date
+            ]
+        except Exception as de:
+            log.error(f"Error parsing date filter: {de}")
+
+    students_list = []
+    progress_sum = 0
+    enrolled_student_ids = set()
+
+    for enrollment in enrollments:
+        student_id = enrollment.student_id
+        enrolled_student_ids.add(student_id)
+
+        # Get student user details
+        student_user = Users.get_user_by_id(student_id)
+        student_name = student_user.name if student_user else "Étudiant anonyme"
+
+        # Calculate progress
+        progress_percentage = 0
+        plan_record = (
+            db.query(CoursePlan)
+            .filter(CoursePlan.course_id == enrollment.course_id)
+            .first()
+        )
+        if plan_record and plan_record.plan_json:
+            total_sections = 0
+            plan_data = plan_record.plan_json
+            if isinstance(plan_data, dict) and "chapters" in plan_data:
+                for chap in plan_data["chapters"]:
+                    if isinstance(chap, dict) and "sections" in chap:
+                        total_sections += len(chap["sections"])
+
+            if total_sections > 0:
+                completed_count = (
+                    db.query(CourseProgress)
+                    .filter(
+                        CourseProgress.enrollment_id == enrollment.id,
+                        CourseProgress.status == "completed",
+                    )
+                    .count()
+                )
+                progress_percentage = int((completed_count / total_sections) * 100)
+
+        progress_sum += progress_percentage
+
+        # Last Quiz Grade
+        quizzes = db.query(Quiz).filter(Quiz.course_id == enrollment.course_id).all()
+        quiz_ids = [q.id for q in quizzes]
+
+        grade_str = "-/20"
+        last_score_pct = None
+        if quiz_ids:
+            latest_submission = (
+                db.query(QuizSubmission)
+                .filter(
+                    QuizSubmission.quiz_id.in_(quiz_ids),
+                    QuizSubmission.student_id == student_id,
+                )
+                .order_by(QuizSubmission.submitted_at.desc())
+                .first()
+            )
+            if latest_submission:
+                q_record = (
+                    db.query(Quiz).filter(Quiz.id == latest_submission.quiz_id).first()
+                )
+                total_q = (
+                    q_record.total_questions
+                    if (q_record and q_record.total_questions)
+                    else 20
+                )
+                if total_q > 0:
+                    grade_str = f"{latest_submission.score}/{total_q}"
+                    last_score_pct = latest_submission.score / total_q
+                else:
+                    grade_str = f"{latest_submission.score}/20"
+                    last_score_pct = latest_submission.score / 20
+
+        # Dynamic Status Tag
+        if progress_percentage < 10:
+            student_status = "Inactive"
+        elif last_score_pct is not None and last_score_pct < 0.5:
+            student_status = "Struggling"
+        else:
+            student_status = "Active"
+
+        # Apply status filter
+        if status and status != "all":
+            if status == "completed" and progress_percentage < 100:
+                continue
+            if status == "in_progress" and student_status != "Active":
+                continue
+            if status == "failed" and student_status != "Struggling":
+                continue
+
+        enrollment_date = (
+            enrollment.enrolled_at.strftime("%d %b %Y")
+            if enrollment.enrolled_at
+            else ""
+        )
+
+        students_list.append(
+            {
+                "id": student_id,
+                "name": student_name,
+                "date": enrollment_date,
+                "progress": progress_percentage,
+                "note": grade_str,
+                "status": student_status,
+            }
+        )
+
+    # Calculations for KPIs
+    total_enrollments_count = len(students_list)
+    average_completion_rate = "0.0%"
+    if total_enrollments_count > 0:
+        avg_pct = progress_sum / total_enrollments_count
+        average_completion_rate = f"{avg_pct:.1f}%"
+
+    return {
+        "completion_rate": average_completion_rate,
+        "enrolled_students": str(len(enrolled_student_ids)),
+        "students": students_list,
+    }
+
+
+# ── APIROUTER FOR TEACHER STUDENTS (Visibility / Hide lesson) ──
+students_router = APIRouter(prefix="/teacher/students", tags=["Teacher Students"])
+
+
+class StudentCourseVisibilityResponse(BaseModel):
+    course_id: str
+    title: str
+    is_hidden: bool
+
+
+class HideCoursesRequest(BaseModel):
+    student_id: str
+    hidden_course_ids: List[str]
+
+
+@students_router.get(
+    "/{student_id}/courses", response_model=List[StudentCourseVisibilityResponse]
+)
+async def get_student_courses(
+    student_id: str,
+    user=Depends(get_verified_user),
+    db=Depends(get_db),
+):
+    # Retrieve all courses owned by this teacher where this student is enrolled
+    enrollments = (
+        db.query(CourseEnrollment)
+        .join(Course, CourseEnrollment.course_id == Course.id)
+        .filter(CourseEnrollment.student_id == student_id, Course.teacher_id == user.id)
+        .all()
+    )
+
+    return [
+        StudentCourseVisibilityResponse(
+            course_id=e.course_id,
+            title=e.course.title,
+            is_hidden=getattr(e, "is_hidden", False),
+        )
+        for e in enrollments
+    ]
+
+
+@students_router.post("/hide-courses")
+async def hide_student_courses(
+    body: HideCoursesRequest,
+    user=Depends(get_verified_user),
+    db=Depends(get_db),
+):
+
+    # Fetch all enrollments for this student for courses owned by the current teacher
+    enrollments = (
+        db.query(CourseEnrollment)
+        .join(Course, CourseEnrollment.course_id == Course.id)
+        .filter(
+            CourseEnrollment.student_id == body.student_id,
+            Course.teacher_id == user.id,
+        )
+        .all()
+    )
+
+    # For each enrollment, set is_hidden based on whether the course_id is in hidden_course_ids
+    for e in enrollments:
+        e.is_hidden = e.course_id in body.hidden_course_ids
+
+    db.commit()
+    return {"status": "success", "message": "Course visibility updated successfully"}
+
+
+class StudentCourseDetail(BaseModel):
+    course_id: str
+    title: str
+    progress: float
+    completed_sections: int
+    total_sections: int
+
+
+class StudentQuizGrade(BaseModel):
+    quiz_title: str
+    score: float
+    total_questions: int
+    graded_at: str
+
+
+class StudentProfileResponse(BaseModel):
+    student_id: str
+    name: str
+    email: str
+    enrolled_courses: List[StudentCourseDetail]
+    quiz_grades: List[StudentQuizGrade]
+    study_footprints_count: int
+
+
+@students_router.get("/{student_id}/profile", response_model=StudentProfileResponse)
+async def get_student_profile(
+    student_id: str,
+    user=Depends(get_verified_user),
+    db=Depends(get_db),
+):
+
+    # 1. Fetch user details
+    student = Users.get_user_by_id(student_id)
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    student_name = getattr(student, "name", "Student")
+    student_email = getattr(student, "email", "")
+
+    # 2. Fetch all courses the student is enrolled in that are owned by the current teacher
+    enrollments = (
+        db.query(CourseEnrollment)
+        .join(Course, CourseEnrollment.course_id == Course.id)
+        .filter(CourseEnrollment.student_id == student_id, Course.teacher_id == user.id)
+        .all()
+    )
+
+    enrolled_courses_data = []
+    total_footprints = 0
+
+    for enr in enrollments:
+        course = enr.course
+        course_plan = (
+            db.query(CoursePlan).filter(CoursePlan.course_id == course.id).first()
+        )
+        plan_json = course_plan.plan_json if course_plan else {}
+
+        total_sections = sum(
+            len(ch.get("sections", [])) for ch in plan_json.get("chapters", [])
+        )
+
+        completed_sections = (
+            db.query(CourseProgress)
+            .filter(
+                CourseProgress.enrollment_id == enr.id,
+                CourseProgress.status == "completed",
+            )
+            .count()
+        )
+
+        progress_pct = 0.0
+        if total_sections > 0:
+            progress_pct = round((completed_sections / total_sections) * 100, 1)
+
+        enrolled_courses_data.append(
+            StudentCourseDetail(
+                course_id=course.id,
+                title=course.title,
+                progress=progress_pct,
+                completed_sections=completed_sections,
+                total_sections=total_sections,
+            )
+        )
+
+        # Add study footprints (total progresses logged)
+        progress_count = (
+            db.query(CourseProgress)
+            .filter(CourseProgress.enrollment_id == enr.id)
+            .count()
+        )
+        total_footprints += progress_count
+
+    # 3. Fetch all quiz grades for courses owned by the current teacher
+    quiz_submissions = (
+        db.query(QuizSubmission)
+        .join(Quiz, QuizSubmission.quiz_id == Quiz.id)
+        .join(Course, Quiz.course_id == Course.id)
+        .filter(QuizSubmission.student_id == student_id, Course.teacher_id == user.id)
+        .order_by(QuizSubmission.created_at.desc())
+        .all()
+    )
+
+    quiz_grades_data = []
+    for sub in quiz_submissions:
+        quiz_grades_data.append(
+            StudentQuizGrade(
+                quiz_title=sub.quiz.title if sub.quiz else "Quiz",
+                score=sub.score,
+                total_questions=(
+                    sub.quiz.total_questions
+                    if (sub.quiz and sub.quiz.total_questions)
+                    else 20
+                ),
+                graded_at=(
+                    sub.created_at.strftime("%Y-%m-%d %H:%M") if sub.created_at else ""
+                ),
+            )
+        )
+
+    return StudentProfileResponse(
+        student_id=student_id,
+        name=student_name,
+        email=student_email,
+        enrolled_courses=enrolled_courses_data,
+        quiz_grades=quiz_grades_data,
+        study_footprints_count=total_footprints,
+    )
