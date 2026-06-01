@@ -215,15 +215,18 @@
 	}
 
 	// Add manual blank question in review step
+	let manualQuestionType: string = 'QCM';
+
 	function addManualQuestion() {
+		const isQCM = manualQuestionType === 'QCM';
 		questions = [
 			...questions,
 			{
 				id: 'manual_' + Math.random().toString(36).substr(2, 9),
-				question_type: 'QCM',
+				question_type: manualQuestionType,
 				question_text: $i18n.t('Nouvelle question'),
-				options: [$i18n.t('Option A'), $i18n.t('Option B')],
-				correct_answer: $i18n.t('Option A')
+				options: isQCM ? [$i18n.t('Option A'), $i18n.t('Option B')] : [],
+				correct_answer: isQCM ? $i18n.t('Option A') : ''
 			}
 		];
 	}
@@ -522,7 +525,15 @@
 								{$i18n.t("Vérifiez et modifiez les questions générées par l'IA avant de publier.")}
 							</p>
 						</div>
-						<div class="flex gap-3">
+						<div class="flex items-center gap-3">
+							<select
+								bind:value={manualQuestionType}
+								class="px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800 rounded-xl text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all font-bold"
+							>
+								<option value="QCM">QCM</option>
+								<option value="Short Answer">Short Answer</option>
+								<option value="CODE_SANDBOX">Code Sandbox</option>
+							</select>
 							<button
 								type="button"
 								class="px-5 py-3 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 border border-slate-200/50 dark:border-slate-800 rounded-xl text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-400"
