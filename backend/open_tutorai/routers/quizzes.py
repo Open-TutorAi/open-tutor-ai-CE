@@ -63,6 +63,18 @@ class QuizSubmitRequest(BaseModel):
     answers: dict  # mapping question_id -> student_answer
 
 
+class QuestionSaveItem(BaseModel):
+    id: Optional[str] = None
+    question_type: str
+    question_text: str
+    options: Optional[List[str]] = None
+    correct_answer: str
+
+
+class QuizPublishRequest(BaseModel):
+    questions: Optional[List[QuestionSaveItem]] = None
+
+
 # ---------------------------------------------------------------
 # Helper function to dictify Quiz
 # ---------------------------------------------------------------
@@ -484,6 +496,7 @@ Output ONLY the JSON array."""
 @router.post("/publish/{id}")
 async def publish_quiz(
     id: str,
+    body: Optional[QuizPublishRequest] = None,
     user=Depends(get_verified_user),
     db=Depends(get_db),
 ):
@@ -492,6 +505,23 @@ async def publish_quiz(
         raise HTTPException(
             status_code=404, detail="Quiz introuvable ou accès non autorisé"
         )
+
+    if body and body.questions is not None:
+        # Delete existing questions
+        db.query(QuizQuestion).filter(QuizQuestion.quiz_id == id).delete()
+        # Add the updated/manual questions
+        for q_data in body.questions:
+            q_id = q_data.id if q_data.id and not q_data.id.startswith("manual_") else str(uuid.uuid4())
+            question = QuizQuestion(
+                id=q_id,
+                quiz_id=id,
+                question_type=q_data.question_type,
+                question_text=q_data.question_text,
+                options=q_data.options or [],
+                correct_answer=q_data.correct_answer,
+            )
+            db.add(question)
+        quiz.total_questions = len(body.questions)
 
     if quiz.status == "published":
         return {

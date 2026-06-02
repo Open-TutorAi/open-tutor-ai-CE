@@ -193,7 +193,11 @@
 			const token = localStorage.getItem('token') ?? '';
 			const res = await fetch(`/api/v1/quizzes/publish/${generatedQuizId}`, {
 				method: 'POST',
-				headers: { Authorization: `Bearer ${token}` }
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${token}`
+				},
+				body: JSON.stringify({ questions })
 			});
 
 			if (!res.ok) {
@@ -532,7 +536,7 @@
 							>
 								<option value="QCM">QCM</option>
 								<option value="Short Answer">Short Answer</option>
-								<option value="CODE_SANDBOX">Code Sandbox</option>
+								<option value="True/False">True/False</option>
 							</select>
 							<button
 								type="button"
