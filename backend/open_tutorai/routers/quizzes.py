@@ -24,6 +24,7 @@ from open_tutorai.models.database import (
     Course,
     CoursePlan,
     CourseEnrollment,
+    StudentQuizAccess,
 )
 
 # ---------------------------------------------------------------
@@ -60,6 +61,18 @@ class QuizGenerateRequest(BaseModel):
 
 class QuizSubmitRequest(BaseModel):
     answers: dict  # mapping question_id -> student_answer
+
+
+class QuestionSaveItem(BaseModel):
+    id: Optional[str] = None
+    question_type: str
+    question_text: str
+    options: Optional[List[str]] = None
+    correct_answer: str
+
+
+class QuizPublishRequest(BaseModel):
+    questions: Optional[List[QuestionSaveItem]] = None
 
 
 # ---------------------------------------------------------------
@@ -483,6 +496,7 @@ Output ONLY the JSON array."""
 @router.post("/publish/{id}")
 async def publish_quiz(
     id: str,
+    body: Optional[QuizPublishRequest] = None,
     user=Depends(get_verified_user),
     db=Depends(get_db),
 ):
@@ -491,6 +505,27 @@ async def publish_quiz(
         raise HTTPException(
             status_code=404, detail="Quiz introuvable ou accès non autorisé"
         )
+
+    if body and body.questions is not None:
+        # Delete existing questions
+        db.query(QuizQuestion).filter(QuizQuestion.quiz_id == id).delete()
+        # Add the updated/manual questions
+        for q_data in body.questions:
+            q_id = (
+                q_data.id
+                if q_data.id and not q_data.id.startswith("manual_")
+                else str(uuid.uuid4())
+            )
+            question = QuizQuestion(
+                id=q_id,
+                quiz_id=id,
+                question_type=q_data.question_type,
+                question_text=q_data.question_text,
+                options=q_data.options or [],
+                correct_answer=q_data.correct_answer,
+            )
+            db.add(question)
+        quiz.total_questions = len(body.questions)
 
     if quiz.status == "published":
         return {
@@ -542,6 +577,24 @@ async def join_quiz(
             status_code=400, detail="Ce quiz n'est pas encore publié par l'enseignant"
         )
 
+    # Create or retrieve student quiz access record to unlock the quiz
+    access = (
+        db.query(StudentQuizAccess)
+        .filter(
+            StudentQuizAccess.student_id == user.id,
+            StudentQuizAccess.quiz_id == quiz.id,
+        )
+        .first()
+    )
+    if not access:
+        access = StudentQuizAccess(
+            student_id=user.id,
+            quiz_id=quiz.id,
+            unlocked_at=datetime.utcnow(),
+        )
+        db.add(access)
+        db.commit()
+
     # Exclude correct_answer from the payload!
     questions_payload = []
     for q in quiz.questions:
@@ -578,6 +631,21 @@ async def submit_quiz(
 
     if quiz.status != "published":
         raise HTTPException(status_code=400, detail="Ce quiz n'est pas actif")
+
+    # Verify that the student has unlocked the quiz
+    access = (
+        db.query(StudentQuizAccess)
+        .filter(
+            StudentQuizAccess.student_id == user.id,
+            StudentQuizAccess.quiz_id == id,
+        )
+        .first()
+    )
+    if not access:
+        raise HTTPException(
+            status_code=403,
+            detail="Accès interdit. Vous devez d'abord valider le code d'accès pour ce quiz.",
+        )
 
     # Prevent multiple submissions by the same student for the same quiz
     existing_submission = (
@@ -732,6 +800,24 @@ async def join_assignment_by_code(
             status_code=400, detail="Ce quiz n'est pas encore publié par l'enseignant"
         )
 
+    # Create or retrieve student quiz access record to unlock the quiz
+    access = (
+        db.query(StudentQuizAccess)
+        .filter(
+            StudentQuizAccess.student_id == user.id,
+            StudentQuizAccess.quiz_id == quiz.id,
+        )
+        .first()
+    )
+    if not access:
+        access = StudentQuizAccess(
+            student_id=user.id,
+            quiz_id=quiz.id,
+            unlocked_at=datetime.utcnow(),
+        )
+        db.add(access)
+        db.commit()
+
     course_title = "Quiz"
     if quiz.course_id:
         course = db.query(Course).filter(Course.id == quiz.course_id).first()
@@ -770,10 +856,22 @@ async def list_student_assignments(
     )
     course_ids = [e.course_id for e in enrollments]
 
-    # 2. Fetch quizzes associated with enrolled courses
+    # Fetch unlocked quiz IDs for the current student
+    unlocked_accesses = (
+        db.query(StudentQuizAccess.quiz_id)
+        .filter(StudentQuizAccess.student_id == user.id)
+        .all()
+    )
+    unlocked_quiz_ids = {a.quiz_id for a in unlocked_accesses}
+
+    # 2. Fetch quizzes associated with enrolled courses and unlocked by student
     quizzes = (
         db.query(Quiz)
-        .filter(Quiz.course_id.in_(course_ids), Quiz.status == "published")
+        .filter(
+            Quiz.course_id.in_(course_ids),
+            Quiz.status == "published",
+            Quiz.id.in_(unlocked_quiz_ids),
+        )
         .all()
         if course_ids
         else []
@@ -790,6 +888,7 @@ async def list_student_assignments(
             .filter(
                 func.upper(Quiz.quiz_code).in_(standalone_codes),
                 Quiz.status == "published",
+                Quiz.id.in_(unlocked_quiz_ids),
             )
             .all()
         )
