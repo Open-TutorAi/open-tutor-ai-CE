@@ -511,7 +511,11 @@ async def publish_quiz(
         db.query(QuizQuestion).filter(QuizQuestion.quiz_id == id).delete()
         # Add the updated/manual questions
         for q_data in body.questions:
-            q_id = q_data.id if q_data.id and not q_data.id.startswith("manual_") else str(uuid.uuid4())
+            q_id = (
+                q_data.id
+                if q_data.id and not q_data.id.startswith("manual_")
+                else str(uuid.uuid4())
+            )
             question = QuizQuestion(
                 id=q_id,
                 quiz_id=id,
