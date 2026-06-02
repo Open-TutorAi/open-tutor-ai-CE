@@ -20,7 +20,7 @@ from sqlalchemy import (
     func,
     ARRAY,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from open_webui.internal.db import Base, get_db, JSONField
 
 PREFIX = "opentutorai_"
@@ -182,6 +182,7 @@ class CourseEnrollment(Base):
     chat_id = Column(
         String, nullable=True
     )  # NEW: chat ID for the student's course conversation
+    is_hidden = Column(Boolean, default=False, nullable=False)
 
     course = relationship("Course", backref="enrollments")
 
@@ -193,6 +194,95 @@ class CourseEnrollment(Base):
 
     def __repr__(self):
         return f"<CourseEnrollment(course_id={self.course_id}, student_id={self.student_id})>"
+
+
+class Quiz(Base):
+    """
+    Table for storing teacher-created quizzes.
+    """
+
+    __tablename__ = f"{PREFIX}quiz"
+
+    id = Column(String, primary_key=True, index=True)
+    teacher_id = Column(String, index=True, nullable=False)
+    course_id = Column(
+        String,
+        ForeignKey(f"{PREFIX}course.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+    title = Column(String, nullable=False)
+    time_limit = Column(Integer, nullable=True)  # in minutes
+    total_questions = Column(Integer, nullable=False, default=0)
+    limit_date = Column(String, nullable=True)
+    model_used = Column(String, nullable=True)
+    quiz_code = Column(
+        String, unique=True, index=True, nullable=True
+    )  # 6-char uppercase code
+    status = Column(String, nullable=False, default="draft")  # draft, published
+    created_at = Column(DateTime, nullable=False, server_default=func.now())
+    updated_at = Column(DateTime, nullable=True, onupdate=func.now())
+
+    course = relationship("Course", backref="quizzes")
+
+    def __repr__(self):
+        return f"<Quiz(id={self.id}, title={self.title}, status={self.status})>"
+
+
+class QuizQuestion(Base):
+    """
+    Table for storing questions associated with a quiz.
+    """
+
+    __tablename__ = f"{PREFIX}quiz_question"
+
+    id = Column(String, primary_key=True, index=True)
+    quiz_id = Column(
+        String,
+        ForeignKey(f"{PREFIX}quiz.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    question_type = Column(
+        String, nullable=False
+    )  # "QCM", "True/False", "Short Answer"
+    question_text = Column(Text, nullable=False)
+    options = Column(JSONField, nullable=True)  # choices for QCM as array
+    correct_answer = Column(String, nullable=False)
+
+    quiz = relationship(
+        "Quiz", backref=backref("questions", cascade="all, delete-orphan")
+    )
+
+    def __repr__(self):
+        return f"<QuizQuestion(id={self.id}, quiz_id={self.quiz_id}, question_type={self.question_type})>"
+
+
+class QuizSubmission(Base):
+    """
+    Table for storing student submissions for a quiz.
+    """
+
+    __tablename__ = f"{PREFIX}quiz_submission"
+
+    id = Column(String, primary_key=True, index=True)
+    quiz_id = Column(
+        String,
+        ForeignKey(f"{PREFIX}quiz.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    student_id = Column(String, index=True, nullable=False)
+    answers = Column(JSONField, nullable=False)  # JSON payload of student responses
+    score = Column(Integer, nullable=False)  # graded score
+    submitted_at = Column(DateTime, nullable=False, server_default=func.now())
+
+    quiz = relationship(
+        "Quiz", backref=backref("submissions", cascade="all, delete-orphan")
+    )
+
+    def __repr__(self):
+        return f"<QuizSubmission(id={self.id}, quiz_id={self.quiz_id}, student_id={self.student_id}, score={self.score})>"
 
 
 class CourseProgress(Base):
@@ -242,6 +332,39 @@ class CourseProgress(Base):
         return (
             f"<CourseProgress(enrollment_id={self.enrollment_id}, "
             f"section_id={self.section_id}, status={self.status})>"
+        )
+
+
+class StudentQuizAccess(Base):
+    """
+    Table for tracking which students have unlocked which quizzes.
+    """
+
+    __tablename__ = f"{PREFIX}student_quiz_access"
+
+    id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
+    student_id = Column(String, nullable=False, index=True)
+    quiz_id = Column(
+        String,
+        ForeignKey(f"{PREFIX}quiz.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    unlocked_at = Column(DateTime, nullable=False, server_default=func.now())
+
+    quiz = relationship(
+        "Quiz", backref=backref("student_accesses", cascade="all, delete-orphan")
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "student_id", "quiz_id", name=f"uq_{PREFIX}student_quiz_access"
+        ),
+    )
+
+    def __repr__(self):
+        return (
+            f"<StudentQuizAccess(student_id={self.student_id}, quiz_id={self.quiz_id})>"
         )
 
 

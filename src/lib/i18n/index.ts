@@ -21,12 +21,22 @@ const createI18nStore = (i18n: i18nType) => {
 };
 
 const createIsLoadingStore = (i18n: i18nType) => {
-	const isLoading = writable(false);
+	const isLoading = writable(true);
+
+	i18n.on('initialized', () => {
+		if (i18n.isInitialized && i18n.services.resourceStore && Object.keys(i18n.services.resourceStore.data).length > 0) {
+			isLoading.set(false);
+		}
+	});
 
 	// if loaded resources are empty || {}, set loading to true
 	i18n.on('loaded', (resources) => {
 		// console.log('loaded:', resources);
-		Object.keys(resources).length !== 0 && isLoading.set(false);
+		if (resources && Object.keys(resources).length !== 0) {
+			isLoading.set(false);
+		} else {
+			isLoading.set(true);
+		}
 	});
 
 	// if resources failed loading, set loading to true
@@ -51,6 +61,8 @@ export const initI18n = (defaultLocale: string | undefined) => {
 		.use(LanguageDetector)
 		.init({
 			debug: false,
+			supportedLngs: ['en-US', 'ar-MA', 'fr-FR'],
+			load: 'currentOnly',
 			detection: {
 				order: detectionOrder,
 				caches: ['localStorage'],

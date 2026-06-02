@@ -9,8 +9,12 @@ from open_webui.config import CORS_ALLOW_ORIGIN
 from open_webui.models.users import Users
 from open_tutorai.config import AppConfig
 from open_tutorai.models.database import init_database
-from open_tutorai.routers import student_courses
+from open_tutorai.routers.quizzes import (
+    router as quizzes_router,
+    student_assignments_router,
+)
 from open_tutorai.routers import (
+    student_courses,
     response_feedbacks,
     auths,
     supports,
@@ -26,8 +30,6 @@ from open_tutorai.env import (
 # Version info
 VERSION = "1.0.0"
 TUTORAI_BUILD_HASH = os.getenv("TUTORAI_BUILD_HASH", "dev-build")
-os.environ["SUPPRESS_WEBUI_BANNER"] = "true"
-
 print(
     rf"""
  ██████╗ ██████╗ ███████╗███╗   ██╗    ████████╗██╗   ██╗████████╗ ██████╗ ██████╗    █████╗ ██╗
@@ -88,10 +90,20 @@ async def health_check():
 app.include_router(
     response_feedbacks.router, prefix="/api/v1", tags=["response-feedbacks"]
 )
-app.include_router(auths.router, prefix="/api/v1/auths", tags=["auths"])
+app.include_router(auths.router, prefix="/auths", tags=["auths"])
 app.include_router(supports.router, prefix="/api/v1", tags=["supports"])
 app.include_router(teacher_courses.router, prefix="/api/v1", tags=["teacher-courses"])
+app.include_router(
+    teacher_courses.analytics_router, prefix="/api/v1", tags=["teacher-analytics"]
+)
+app.include_router(
+    teacher_courses.students_router, prefix="/api/v1", tags=["teacher-students"]
+)
 app.include_router(student_courses.router, prefix="/api/v1", tags=["student-courses"])
+app.include_router(quizzes_router, prefix="/api/v1/quizzes", tags=["quizzes"])
+app.include_router(
+    student_assignments_router, prefix="/api/v1", tags=["student-assignments"]
+)
 app.include_router(settings.router, prefix="/api/v1", tags=["settings"])
 
 

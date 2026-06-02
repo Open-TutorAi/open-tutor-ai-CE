@@ -64,6 +64,7 @@ def migrate_enrollment_table(engine):
             "status": "VARCHAR DEFAULT 'active'",
             # ← NEW: store chat_id so student can resume their AI session
             "chat_id": "VARCHAR",
+            "is_hidden": "BOOLEAN DEFAULT FALSE",
         },
     )
 
