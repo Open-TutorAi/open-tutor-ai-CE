@@ -352,7 +352,9 @@ class StudentQuizAccess(Base):
     )
     unlocked_at = Column(DateTime, nullable=False, server_default=func.now())
 
-    quiz = relationship("Quiz", backref=backref("student_accesses", cascade="all, delete-orphan"))
+    quiz = relationship(
+        "Quiz", backref=backref("student_accesses", cascade="all, delete-orphan")
+    )
 
     __table_args__ = (
         UniqueConstraint(
@@ -361,7 +363,9 @@ class StudentQuizAccess(Base):
     )
 
     def __repr__(self):
-        return f"<StudentQuizAccess(student_id={self.student_id}, quiz_id={self.quiz_id})>"
+        return (
+            f"<StudentQuizAccess(student_id={self.student_id}, quiz_id={self.quiz_id})>"
+        )
 
 
 class UserPreference(Base):
