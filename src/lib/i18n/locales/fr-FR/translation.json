@@ -1562,5 +1562,14 @@
 	"Based on what we just covered, what is the most logical next concept I should learn? Briefly introduce it and show me how it connects to this.": "En te basant sur ce que nous venons de couvrir, quel est le concept le plus logique que je devrais apprendre ensuite ? Présente-le brièvement et montre-moi comment il est lié à ce que nous avons vu.",
 	"Explain the current topic using very simple language and basic analogies, as if I am 5 years old.": "Explique le sujet actuel en utilisant un langage très simple et des analogies de base, comme si j'avais 5 ans.",
 	"Explain this concept with more depth, using standard technical terms where appropriate but ensuring the core logic remains clear and accessible.": "Explique ce concept avec plus de profondeur, en utilisant les termes techniques standard appropriés tout en veillant à ce que la logique centrale reste claire et accessible.",
-	"Provide a deep-dive, technical explanation of the current topic, including nuances and complex details.": "Fournis une explication technique approfondie du sujet actuel, incluant les nuances et les détails complexes."
+	"Provide a deep-dive, technical explanation of the current topic, including nuances and complex details.": "Fournis une explication technique approfondie du sujet actuel, incluant les nuances et les détails complexes.",
+	
+	"Welcome tips": "Conseils de bienvenue",
+  "Welcome to OpenTutorAI!": "Bienvenue sur OpenTutorAI !",
+  "Here are some tips to get the most out of your AI tutor:": "Voici quelques conseils pour bien utiliser votre tuteur IA :",
+  "Ask specific questions like \"Explain recursion with an example\"": "Posez des questions précises comme \"Explique la récursion avec un exemple\"",
+  "Ask for a summary: \"Summarize this in 3 points\"": "Demandez un résumé : \"Résume en 3 points\"",
+  "Say \"I did not understand\" to get a simpler explanation": "Dites \"Je n'ai pas compris\" pour une explication plus simple",
+  "Request exercises: \"Give me a practice problem\"": "Demandez des exercices : \"Donne-moi un exercice pratique\"",
+  "Don't show again": "Ne plus afficher"
 }

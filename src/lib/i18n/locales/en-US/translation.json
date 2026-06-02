@@ -1552,5 +1552,15 @@
 	"Based on what we just covered, what is the most logical next concept I should learn? Briefly introduce it and show me how it connects to this.": "",
 	"Explain the current topic using very simple language and basic analogies, as if I am 5 years old.": "",
 	"Explain this concept with more depth, using standard technical terms where appropriate but ensuring the core logic remains clear and accessible.": "",
-	"Provide a deep-dive, technical explanation of the current topic, including nuances and complex details.": ""
+	"Provide a deep-dive, technical explanation of the current topic, including nuances and complex details.": "",
+
+
+"Welcome tips": "Welcome tips",
+  "Welcome to OpenTutorAI!": "Welcome to OpenTutorAI!",
+  "Here are some tips to get the most out of your AI tutor:": "Here are some tips to get the most out of your AI tutor:",
+  "Ask specific questions like \"Explain recursion with an example\"": "Ask specific questions like \"Explain recursion with an example\"",
+  "Ask for a summary: \"Summarize this in 3 points\"": "Ask for a summary: \"Summarize this in 3 points\"",
+  "Say \"I did not understand\" to get a simpler explanation": "Say \"I did not understand\" to get a simpler explanation",
+  "Request exercises: \"Give me a practice problem\"": "Request exercises: \"Give me a practice problem\"",
+  "Don't show again": "Don't show again"
 }
