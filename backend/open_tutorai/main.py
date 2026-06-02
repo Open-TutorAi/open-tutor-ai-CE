@@ -19,7 +19,6 @@ from open_tutorai.routers import (
     auths,
     supports,
     teacher_courses,
-    student_courses,
     settings,
 )
 
@@ -31,8 +30,6 @@ from open_tutorai.env import (
 # Version info
 VERSION = "1.0.0"
 TUTORAI_BUILD_HASH = os.getenv("TUTORAI_BUILD_HASH", "dev-build")
-os.environ["SUPPRESS_WEBUI_BANNER"] = "true"
-
 print(rf"""
  ██████╗ ██████╗ ███████╗███╗   ██╗    ████████╗██╗   ██╗████████╗ ██████╗ ██████╗    █████╗ ██╗
 ██╔═══██╗██╔══██╗██╔════╝████╗  ██║    ╚══██╔══╝██║   ██║╚══██╔══╝██╔═══██╗██╔══██╗  ██╔══██╗██║
