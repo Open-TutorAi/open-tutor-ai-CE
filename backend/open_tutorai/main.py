@@ -1,11 +1,13 @@
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv()
 os.environ["SUPPRESS_WEBUI_BANNER"] = "true"
 import open_tutorai.patches
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from open_webui.main import app as webui_app
-from open_webui.config import CORS_ALLOW_ORIGIN
 from open_webui.models.users import Users
 from open_tutorai.config import AppConfig
 from open_tutorai.models.database import init_database
@@ -20,6 +22,11 @@ from open_tutorai.env import (
 VERSION = "1.0.0"
 TUTORAI_BUILD_HASH = os.getenv("TUTORAI_BUILD_HASH", "dev-build")
 os.environ["SUPPRESS_WEBUI_BANNER"] = "true"
+CORS_ALLOW_ORIGIN = [
+    origin.strip()
+    for origin in os.environ.get("CORS_ALLOW_ORIGIN", "*").replace(",", ";").split(";")
+    if origin.strip()
+]
 
 print(rf"""
  ██████╗ ██████╗ ███████╗███╗   ██╗    ████████╗██╗   ██╗████████╗ ██████╗ ██████╗    █████╗ ██╗
@@ -40,17 +47,18 @@ app = FastAPI(
     version=VERSION,
 )
 
-# Handle wildcard origin with credentials by reflecting request origin
+# Do not combine wildcard origins with credentialed CORS.
 origins = CORS_ALLOW_ORIGIN
 allow_origin_regex = None
+allow_credentials = True
 if "*" in origins:
-    origins = []
-    allow_origin_regex = ".*"
+    origins = ["*"]
+    allow_credentials = False
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_origin_regex=allow_origin_regex,
-    allow_credentials=True,
+    allow_credentials=allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
