@@ -3,10 +3,10 @@
 	import CreateClassModal from '$lib/components/teacher/elements/CreateClassModal.svelte';
 
 	const classes = [
-		{ id: '1', name: 'Math 3A', subject: 'Mathématiques', students: 24 },
-		{ id: '2', name: 'Physique 2B', subject: 'Physique', students: 18 },
-		{ id: '3', name: 'Info 1S', subject: 'Informatique', students: 30 },
-		{ id: '4', name: 'Anglais 4C', subject: 'Anglais', students: 22 }
+		{ id: '1', name: 'Math 3A', subject: 'Mathematics', students: 24 },
+		{ id: '2', name: 'Physics 2B', subject: 'Physics', students: 18 },
+		{ id: '3', name: 'CS 1S', subject: 'Computer Science', students: 30 },
+		{ id: '4', name: 'English 4C', subject: 'English', students: 22 }
 	];
 
 	let showCreateModal = false;
@@ -18,12 +18,13 @@
 
 <div class="flex flex-col gap-6">
 	<div class="flex justify-between items-center">
-		<h1 class="text-2xl font-bold">Mes Classes</h1>
+		<h1 class="text-2xl font-bold">My Classes</h1>
+		
 		<button
 			class="bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-4 rounded-lg"
 			on:click={handleCreateClass}
 		>
-			+ Créer une classe
+			+ Create New Class
 		</button>
 	</div>
 

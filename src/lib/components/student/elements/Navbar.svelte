@@ -1,9 +1,11 @@
 <!-- Navbar.svelte -->
 <script lang="ts">
 	import { createEventDispatcher, onMount, getContext } from 'svelte';
-	const i18n = getContext('i18n');
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import { user } from '$lib/stores';
+
+	const i18n = getContext('i18n');
 
 	// Props
 	export let username: string = '';
@@ -16,18 +18,18 @@
 	let isSearchFocused: boolean = false;
 	let showNotifications: boolean = false;
 	let showMobileMenu: boolean = false;
-
 	let showUserDropdown: boolean = false;
 
-	// Add this function around line 43 with other toggle functions
-	function toggleUserDropdown() {
-		showUserDropdown = !showUserDropdown;
-	}
+	// Détection du rôle à partir de l'URL
+	$: currentRole = $page.url.pathname.split('/')[1] || 'student';
+	$: rolePrefix = currentRole === 'teacher' ? '/teacher' : '/student';
+	$: avatarSrc = currentRole === 'teacher' ? '/static/teacher-avatar.png' : '/static/student-avatar.png';
+	$: welcomeMessage = currentRole === 'teacher' 
+		? $i18n.t('Manage your classes and track student progress') 
+		: $i18n.t("Let's learn something new today!");
 
-	// Event dispatcher
 	const dispatch = createEventDispatcher();
 
-	// Functions
 	function toggleDarkMode() {
 		isDarkMode = !isDarkMode;
 		dispatch('darkModeToggle', { isDarkMode });
@@ -47,20 +49,21 @@
 		showMobileMenu = !showMobileMenu;
 	}
 
-	// Click outside for notifications panel
+	function toggleUserDropdown() {
+		showUserDropdown = !showUserDropdown;
+	}
+
 	let notificationRef: HTMLDivElement;
 	let mobileMenuRef: HTMLDivElement;
 
 	onMount(() => {
 		const handleClickOutside = (event: MouseEvent) => {
-			// Keep your existing code for notification and mobile menu
 			if (notificationRef && !notificationRef.contains(event.target as Node) && showNotifications) {
 				showNotifications = false;
 			}
 			if (mobileMenuRef && !mobileMenuRef.contains(event.target as Node) && showMobileMenu) {
 				showMobileMenu = false;
 			}
-			// Add this new condition for the user dropdown
 			const userDropdownRef = document.getElementById('user-dropdown-container');
 			if (userDropdownRef && !userDropdownRef.contains(event.target as Node) && showUserDropdown) {
 				showUserDropdown = false;
@@ -76,10 +79,10 @@
 </script>
 
 <header
-	class={`${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'} shadow-sm p-4 flex items-center justify-between transition-colors duration-200 ease-in-out  z-[999]`}
+	class={`${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'} shadow-sm p-4 flex items-center justify-between transition-colors duration-200 ease-in-out z-[999]`}
 >
 	<div class="flex items-center">
-		<!-- Mobile menu button - visible on mobile only -->
+		<!-- Mobile menu button -->
 		<button
 			class={`md:hidden mr-3 ${isDarkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'} focus:outline-none focus:ring-2 focus:ring-blue-300 rounded-md`}
 			on:click={toggleSidebar}
@@ -110,7 +113,7 @@
 				</span>
 			</h1>
 			<p class={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} hidden sm:block`}>
-				{$i18n.t("Let's learn something new today!")}
+				{welcomeMessage}
 			</p>
 		</div>
 	</div>
@@ -218,30 +221,6 @@
 							{$i18n.t('Mark all as read')}
 						</button>
 					</div>
-					<!-- <div class="p-2 max-h-64 overflow-y-auto">
-						<div class={`p-2 ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'} rounded-lg`}>
-							<p class={`text-sm font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
-								{$i18n.t('New course available')}
-							</p>
-							<p class={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-								{$i18n.t('React Advanced Patterns')}
-							</p>
-							<p class={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mt-1`}>
-								{$i18n.t('2 hours ago')}
-							</p>
-						</div>
-						<div class={`p-2 ${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'} rounded-lg`}>
-							<p class={`text-sm font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
-								{$i18n.t('Assignment feedback')}
-							</p>
-							<p class={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-								{$i18n.t('Your JavaScript project has been reviewed')}
-							</p>
-							<p class={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'} mt-1`}>
-								{$i18n.t('Yesterday')}
-							</p>
-						</div>
-					</div> -->
 					<div class={`p-2 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
 						<button
 							class={`w-full text-center text-sm ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-500 hover:text-blue-700'}`}
@@ -313,7 +292,7 @@
 			</svg>
 		</button>
 
-		<!-- User Avatar dropdown -->
+		<!-- User Avatar dropdown (Desktop) -->
 		<div class="relative" id="user-dropdown-container">
 			<button
 				class={`h-8 w-8 overflow-hidden rounded-full ${isDarkMode ? 'bg-gray-700' : 'bg-green-100'} flex items-center justify-center ring-2 ring-transparent hover:ring-blue-300 focus:outline-none focus:ring-blue-300 transition-all duration-200`}
@@ -321,7 +300,7 @@
 				aria-expanded={showUserDropdown}
 				on:click={toggleUserDropdown}
 			>
-				<img src="/static/student-avatar.png" alt="User" class="h-full w-full object-cover" />
+				<img src={avatarSrc} alt="User" class="h-full w-full object-cover" />
 			</button>
 			{#if showUserDropdown}
 				<div
@@ -337,7 +316,7 @@
 					</div>
 					<div class="py-1">
 						<a
-							href="/student/settings"
+							href="{rolePrefix}/settings"
 							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
@@ -357,7 +336,7 @@
 							{$i18n.t('My Profile')}
 						</a>
 						<a
-							href="/student/settings"
+							href="{rolePrefix}/settings"
 							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
@@ -383,7 +362,7 @@
 							{$i18n.t('Account Settings')}
 						</a>
 						<a
-							href="#"
+							href="{rolePrefix}/progress"
 							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
@@ -511,10 +490,10 @@
 				on:click={toggleMobileMenu}
 				aria-label="User menu"
 			>
-				<img src="/static/student-avatar.png" alt="User" class="h-full w-full object-cover" />
+				<img src={avatarSrc} alt="User" class="h-full w-full object-cover" />
 			</button>
 
-			<!-- Mobile menu (dropdown style instead of slide-in) -->
+			<!-- Mobile menu (dropdown) -->
 			{#if showMobileMenu}
 				<div
 					class={`absolute right-0 mt-2 w-48 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} rounded-lg shadow-lg z-[200] border`}
@@ -529,7 +508,7 @@
 					</div>
 					<div class="py-1">
 						<a
-							href="/student/settings"
+							href="{rolePrefix}/settings"
 							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
@@ -549,7 +528,7 @@
 							{$i18n.t('My Profile')}
 						</a>
 						<a
-							href="/student/settings"
+							href="{rolePrefix}/settings"
 							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
@@ -575,7 +554,7 @@
 							{$i18n.t('Account Settings')}
 						</a>
 						<a
-							href="#"
+							href="{rolePrefix}/progress"
 							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
@@ -624,8 +603,6 @@
 			{/if}
 		</div>
 	</div>
-
-	<!-- Mobile search drawer - REMOVED -->
 </header>
 
 <style>
