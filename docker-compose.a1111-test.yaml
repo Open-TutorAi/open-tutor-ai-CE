@@ -24,7 +24,7 @@ services:
       - ./test/test_files/image_gen/sd-empty.pt:/empty.pt
 
   open-webui:
-    image: ghcr.io/open-webui/open-webui:main 
+    image: ghcr.io/open-webui/open-webui:main
     environment:
       ENABLE_IMAGE_GENERATION: 'true'
       AUTOMATIC1111_BASE_URL: http://stable-diffusion-webui:7860
