@@ -20,6 +20,137 @@
 	}
 }
 
+@layer components {
+  .qa-pink { 
+  background: linear-gradient(135deg, #F472B6 0%, #EC4899 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(236,72,153,0.3);
+}
+  .qa-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .qa-wrap {
+      background: transparent;
+    }
+  }
+
+  .qa-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 40px;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    line-height: 1.2;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Effet de brillance au survol */
+  .qa-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s;
+  }
+
+  .qa-btn:hover::before {
+    left: 100%;
+  }
+
+  .qa-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.02);
+    box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+  }
+
+  .qa-btn:active {
+    transform: translateY(1px);
+    transition: transform 0.05s;
+  }
+
+  /* Couleurs vives et contrastées */
+  .qa-blue { 
+    background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+  }
+  
+  .qa-purple { 
+    background: linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(139,92,246,0.3);
+  }
+  
+  .qa-teal { 
+    background: linear-gradient(135deg, #2DD4BF 0%, #14B8A6 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(20,184,166,0.3);
+  }
+  
+  .qa-amber { 
+    background: linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%);
+    color: #78350F;
+    box-shadow: 0 2px 8px rgba(245,158,11,0.3);
+  }
+  
+  .qa-coral { 
+    background: linear-gradient(135deg, #FB923C 0%, #F97316 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(249,115,22,0.3);
+  }
+  
+  .qa-green { 
+    background: linear-gradient(135deg, #4ADE80 0%, #22C55E 100%);
+    color: #14532D;
+    box-shadow: 0 2px 8px rgba(34,197,94,0.3);
+  }
+
+  /* Style alternatif avec icônes animées */
+  .qa-btn svg {
+    transition: transform 0.2s ease;
+  }
+
+  .qa-btn:hover svg {
+    transform: scale(1.1) rotate(5deg);
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .qa-wrap {
+      gap: 8px;
+    }
+    
+    .qa-btn {
+      padding: 6px 12px;
+      font-size: 0.75rem;
+    }
+    
+    .qa-btn svg {
+      width: 13px;
+      height: 13px;
+    }
+  }
+}
 @layer base {
 	html,
 	pre {

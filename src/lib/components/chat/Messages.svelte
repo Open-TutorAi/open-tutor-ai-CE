@@ -49,10 +49,16 @@
 
 	export let bottomPadding = false;
 	export let autoScroll;
-
+    export let onQuickPrompt: Function = () => {};
 	let messagesCount = 20;
 	let messagesLoading = false;
-
+ function getOriginalQuestion(history: any, assistantMessageId: string): string {
+    const assistantMsg = history.messages[assistantMessageId];
+    if (!assistantMsg) return '';
+    const parentMsg = history.messages[assistantMsg.parentId];
+    if (!parentMsg) return '';
+    return parentMsg.content ?? '';
+  }
 	const loadMoreMessages = async () => {
 		// scroll slightly down to disable continuous loading
 		const element = document.getElementById('messages-container');
@@ -399,29 +405,112 @@
 					{/if}
 
 					{#each messages as message, messageIdx (message.id)}
-						<Message
-							{chatId}
-							bind:history
-							messageId={message.id}
-							idx={messageIdx}
-							{user}
-							{showPreviousMessage}
-							{showNextMessage}
-							{updateChat}
-							{editMessage}
-							{deleteMessage}
-							{rateMessage}
-							{actionMessage}
-							{saveMessage}
-							{submitMessage}
-							{regenerateResponse}
-							{continueResponse}
-							{mergeResponses}
-							{addMessages}
-							{triggerScroll}
-							{readOnly}
-						/>
-					{/each}
+    <Message
+        {chatId}
+        bind:history
+        messageId={message.id}
+        idx={messageIdx}
+        {user}
+        {showPreviousMessage}
+        {showNextMessage}
+        {updateChat}
+        {editMessage}
+        {deleteMessage}
+        {rateMessage}
+        {actionMessage}
+        {saveMessage}
+        {submitMessage}
+        {regenerateResponse}
+        {continueResponse}
+        {mergeResponses}
+        {addMessages}
+        {triggerScroll}
+        {readOnly}
+    />
+    
+    <!-- Boutons Quick Actions après chaque message assistant -->
+{#if message.role === 'assistant' && message.done === true}
+  <div class="qa-wrap">
+    <!-- ... tes autres boutons ... -->
+<button
+  class="qa-btn qa-blue"
+  on:click={() => submitMessage(message.id, 
+    `Vous êtes un expert en pédagogie. Réexplique ce concept d'une manière simple, avec des mots différents et un exemple concret.`
+  )}
+>
+  📖 Réexpliquer
+</button>
+
+    <button
+  class="qa-btn qa-purple"
+  on:click={() => submitMessage(message.id, 
+    `Vous êtes un expert en vulgarisation. Simplifie ce concept comme si tu parlais à un débutant, avec des mots très simples et un exemple du quotidien.`
+  )}
+>
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <circle cx="10" cy="10" r="7"/>
+    <line x1="21" y1="21" x2="15" y2="15"/>
+    <line x1="13" y1="10" x2="7" y2="10"/>
+  </svg>
+  Simplifier
+</button>
+
+   <button
+  class="qa-btn qa-teal"
+  on:click={() => submitMessage(message.id, 
+    `Vous êtes un expert en exemples concrets. Donne-moi 3 exemples différents (finance, éducation, jeu) avec du code et une explication pour chacun.`
+  )}
+>
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M3 12h1m8-9v1m8 8h1m-15.4-6.4.7.7m12.1-.7-.7.7"/>
+    <path d="M9 16a5 5 0 1 1 6 0 3.5 3.5 0 0 0-1 3 2 2 0 0 1-4 0 3.5 3.5 0 0 0-1-3"/>
+    <line x1="9.7" y1="17" x2="14.3" y2="17"/>
+  </svg>
+  Voir un exemple
+</button>
+
+    <button
+  class="qa-btn qa-amber"
+  on:click={() => submitMessage(message.id, 
+    `Vous êtes un expert en exercices progressifs. Propose-moi un exercice avec 3 niveaux (débutant, intermédiaire, avancé), des indices et une correction.`
+  )}
+>
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M4 20h4L18.5 9.5a2.828 2.828 0 1 0-4-4L4 16v4"/>
+    <path d="M13.5 6.5l4 4"/>
+  </svg>
+  Exercice
+</button>
+
+   <button
+  class="qa-btn qa-coral"
+  on:click={() => submitMessage(message.id, 
+    `Vous êtes un expert en évaluation. Fais-moi un quiz de 5 questions avec feedback après chaque réponse et un score à la fin.`
+  )}
+>
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M8 9h8"/>
+    <path d="M8 13h6"/>
+    <path d="M18 4a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3h-5l-5 3v-3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h12z"/>
+  </svg>
+  Quiz
+</button>
+<button
+  class="qa-btn qa-green"
+  on:click={() => submitMessage(message.id, 
+    `Vous êtes un expert en synthèse. Fais-moi un résumé des points essentiels en 5 points clés avec des émojis et des mots en gras.`
+  )}
+>
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+    <path d="M9 3a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2z"/>
+    <path d="M9 12h6M9 16h6"/>
+  </svg>
+  Résumer
+</button>
+  </div>
+{/if}
+{/each}
 				</div>
 				<div class="pb-12" />
 				{#if bottomPadding}

@@ -1725,51 +1725,72 @@
 			// Append JSON instructions to the personality
 			avatarPersonality = `${avatarPersonality}\n\n${jsonInstructions}`;
 		}
+// Vérifie si l'utilisateur demande une carte mentale
+let isMindMapRequest = false;
+let mindMapInstruction = '';
 
-		let messages = [
-			{
-				role: 'system',
-				content:
-					avatarActive && avatarPersonality
-						? `${avatarPersonality}\n\n${
-								params?.system || $settings.system
-									? `Additional instructions: ${promptTemplate(
-											params?.system ?? $settings?.system ?? '',
-											$user.name,
-											$settings?.userLocation
-												? await getAndUpdateUserLocation(localStorage.token).catch((err) => {
-														console.error(err);
-														return undefined;
-													})
-												: undefined
-										)}`
-									: ''
-							}${
-								(responseMessage?.userContext ?? null)
-									? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
-									: ''
-							}`
-						: `${promptTemplate(
-								params?.system ?? $settings?.system ?? '',
-								$user.name,
-								$settings?.userLocation
-									? await getAndUpdateUserLocation(localStorage.token).catch((err) => {
-											console.error(err);
-											return undefined;
-										})
-									: undefined
-							)}${
-								(responseMessage?.userContext ?? null)
-									? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
-									: ''
-							}`
-			},
-			...createMessagesList(_history, responseMessageId).map((message) => ({
-				...message,
-				content: removeDetails(message.content, ['reasoning', 'code_interpreter'])
-			}))
-		].filter((message) => message && message.content && message.content.trim() !== '');
+if (userMessage.content && (
+    userMessage.content.toLowerCase().includes('carte mentale') ||
+    userMessage.content.toLowerCase().includes('mind map') ||
+    userMessage.content === 'Carte mentale complète' ||
+    userMessage.content === 'Génère une carte mentale'
+  )) {
+  isMindMapRequest = true;
+  // Récupère le contexte de la conversation pour une carte mentale personnalisée
+let conversationContext = '';
+if (isMindMapRequest) {
+  // Récupère les derniers messages de la conversation
+  const lastMessages = createMessagesList(_history, responseMessageId).slice(-4);
+  const relevantContext = lastMessages
+    .filter(m => m.role === 'user' || m.role === 'assistant')
+    .map(m => `${m.role === 'user' ? 'Élève' : 'Professeur'}: ${m.content.substring(0, 300)}`)
+    .join('\n');
+  
+  conversationContext = `\n\nCONTEXTE DE LA CONVERSATION À UTILISER :\n${relevantContext}\n\n`;
+}
+mindMapInstruction = `Tu es un expert en pédagogie. L'utilisateur demande une CARTE MENTALE structurée.
 
+Analyse le sujet de la conversation et génère une carte mentale complète avec EXACTEMENT 5 branches :
+
+# [Titre principal du sujet]
+
+## 🎯 1. CONCEPTS CLÉS
+- [Point fondamental 1]
+- [Point fondamental 2]
+  - [Sous-détail explicatif]
+  - [Sous-détail important]
+
+## 💡 2. EXEMPLES CONCRETS
+- [Exemple 1 tiré de la vie quotidienne]
+- [Exemple 2 illustrant le concept]
+  - [Pourquoi cet exemple est pertinent]
+
+## 📝 3. APPLICATIONS PRATIQUES
+- [Application dans un contexte réel]
+- [Cas d'utilisation typique]
+
+## ⚠️ 4. PIÈGES À ÉVITER
+- [Erreur fréquente 1]
+- [Erreur fréquente 2]
+  - [Conseil pour l'éviter]
+
+## ✅ 5. POINTS CLÉS À RETENIR
+- [Takeaway essentiel 1]
+- [Takeaway essentiel 2]
+- [Takeaway essentiel 3]
+
+RÈGLES STRICTES :
+- Utilise EXACTEMENT ces 5 branches avec leurs émojis (🎯, 💡, 📝, ⚠️, ✅)
+- Chaque branche doit contenir 2-3 sous-points minimum
+- Utilise # pour le titre principal
+- Utilise ## pour chaque branche
+- Utilise - pour les points principaux
+- Utilise 2 espaces pour les sous-détails
+- Base le contenu sur la conversation en cours
+- Sois pédagogique, clair et structuré
+- Ne réponds QUE par la carte mentale, sans introduction ni conclusion`;
+}
+		
 		messages = messages
 			.map((message, idx, arr) => ({
 				role: message.role,
@@ -2340,65 +2361,66 @@
 								</div>
 							</div>
 						{:else}
-							<div class="flex flex-col w-full h-full flex-auto relative">
-								<div
-									class="pb-2.5 flex-1 flex flex-col w-full overflow-auto max-w-full z-10 scrollbar-hidden"
-									id="messages-container"
-									bind:this={messagesContainerElement}
-									on:scroll={(e) => {
-										autoScroll =
-											messagesContainerElement.scrollHeight - messagesContainerElement.scrollTop <=
-											messagesContainerElement.clientHeight + 5;
-									}}
-								>
-									<div class="h-full w-full flex flex-col">
-										<Messages
-											chatId={$chatId}
-											bind:history
-											bind:autoScroll
-											bind:prompt
-											{selectedModels}
-											{atSelectedModel}
-											{sendPrompt}
-											{showMessage}
-											{submitMessage}
-											{continueResponse}
-											{regenerateResponse}
-											{mergeResponses}
-											{chatActionHandler}
-											{addMessages}
-											bottomPadding={files.length > 0}
-										/>
-									</div>
-								</div>
-								<div class="w-full pt-2 bg-[#F5F7F9] dark:bg-gray-900 relative z-20">
-									<MessageInput
-										{history}
-										{selectedModels}
-										bind:files
-										bind:prompt
-										bind:autoScroll
-										bind:selectedToolIds
-										bind:imageGenerationEnabled
-										bind:codeInterpreterEnabled
-										bind:webSearchEnabled
-										bind:atSelectedModel
-										transparentBackground={$settings?.backgroundImageUrl ?? false}
-										{stopResponse}
-										on:submit={async (e) => {
-											if (e.detail || files.length > 0) {
-												await tick();
-												submitPrompt(
-													($settings?.richTextInput ?? true)
-														? e.detail.replaceAll('\n\n', '\n')
-														: e.detail
-												);
-											}
-										}}
-									/>
-								</div>
-							</div>
-						{/if}
+    <div class="flex flex-col w-full h-full flex-auto relative">
+        <div
+            class="pb-2.5 flex-1 flex flex-col w-full overflow-auto max-w-full z-10 scrollbar-hidden"
+            id="messages-container"
+            bind:this={messagesContainerElement}
+            on:scroll={(e) => {
+                autoScroll =
+                    messagesContainerElement.scrollHeight - messagesContainerElement.scrollTop <=
+                    messagesContainerElement.clientHeight + 5;
+            }}
+        >
+            <div class="h-full w-full flex flex-col">
+<Messages
+    chatId={$chatId}
+    bind:history
+    bind:autoScroll
+    bind:prompt
+    {selectedModels}
+    {atSelectedModel}
+    {sendPrompt}
+    {showMessage}
+    {submitMessage}
+    {continueResponse}      ← pas de tiret !
+    {regenerateResponse}
+    {mergeResponses}
+    {chatActionHandler}
+	 onQuickPrompt={(e) => submitPrompt(e.detail)}   
+    {addMessages}
+    bottomPadding={files.length > 0}
+   />
+            </div>
+        </div>
+        <div class="w-full pt-2 bg-[#F5F7F9] dark:bg-gray-900 relative z-20">
+            <MessageInput
+                {history}
+                {selectedModels}
+                bind:files
+                bind:prompt
+                bind:autoScroll
+                bind:selectedToolIds
+                bind:imageGenerationEnabled
+                bind:codeInterpreterEnabled
+                bind:webSearchEnabled
+                bind:atSelectedModel
+                transparentBackground={$settings?.backgroundImageUrl ?? false}
+                {stopResponse}
+                on:submit={async (e) => {
+                    if (e.detail || files.length > 0) {
+                        await tick();
+                        submitPrompt(
+                            ($settings?.richTextInput ?? true)
+                                ? e.detail.replaceAll('\n\n', '\n')
+                                : e.detail
+                        );
+                    }
+                }}
+            />
+        </div>
+    </div>
+{/if}
 					{:else}
 						<div class="overflow-auto w-full h-full flex items-center">
 							<Placeholder
