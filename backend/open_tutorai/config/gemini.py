@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("avatar_backend")
 
 # API Keys
-GEMINI_API_KEY = "AIzaSyAsTdSsCLN15SswJuzrlJWUHSnd10zw0fU"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 # Avatar personalities
 AVATAR_PERSONALITIES = {
@@ -302,6 +302,10 @@ The user's question is: """
     def _call_gemini_api(self, prompt, avatar_type="default"):
         """Call the Gemini API with the given prompt."""
         try:
+            if not GEMINI_API_KEY:
+                logger.error("GEMINI_API_KEY environment variable is not configured")
+                return "Error: Gemini API key is not configured"
+
             url = (
                 f"{self.api_base_url}/{self.model}:generateContent?key={GEMINI_API_KEY}"
             )

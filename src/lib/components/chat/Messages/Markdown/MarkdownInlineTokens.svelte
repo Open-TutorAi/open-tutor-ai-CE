@@ -17,6 +17,25 @@
 	export let id: string;
 	export let tokens: Token[];
 	export let onSourceClick: Function = () => {};
+
+	const getSafeFileIframeSrc = (html: string) => {
+		const parser = new DOMParser();
+		const document = parser.parseFromString(html, 'text/html');
+		const iframe = document.querySelector('iframe');
+		const src = iframe?.getAttribute('src') ?? '';
+		const prefix = `${TUTOR_BASE_URL}/api/v1/files/`;
+
+		if (!src.startsWith(prefix)) {
+			return null;
+		}
+
+		const fileId = src.slice(prefix.length).split('/')[0];
+		if (!/^[a-zA-Z0-9_-]+$/.test(fileId)) {
+			return null;
+		}
+
+		return `${prefix}${fileId}/content`;
+	};
 </script>
 
 {#each tokens as token}
@@ -24,10 +43,11 @@
 		{unescapeHtml(token.text)}
 	{:else if token.type === 'html'}
 		{@const html = DOMPurify.sanitize(token.text)}
+		{@const safeFileIframeSrc = getSafeFileIframeSrc(token.text)}
 		{#if html && html.includes('<video')}
 			{@html html}
-		{:else if token.text.includes(`<iframe src="${TUTOR_BASE_URL}/api/v1/files/`)}
-			{@html `${token.text}`}
+		{:else if safeFileIframeSrc}
+			<iframe src={safeFileIframeSrc} title="File preview" width="100%" frameborder="0"></iframe>
 		{:else if token.text.includes(`<source_id`)}
 			<Source {id} {token} onClick={onSourceClick} />
 		{:else}
@@ -35,11 +55,13 @@
 		{/if}
 	{:else if token.type === 'link'}
 		{#if token.tokens}
-			<a href={token.href} target="_blank" rel="nofollow" title={token.title}>
+			<a href={token.href} target="_blank" rel="nofollow noopener noreferrer" title={token.title}>
 				<svelte:self id={`${id}-a`} tokens={token.tokens} {onSourceClick} />
 			</a>
 		{:else}
-			<a href={token.href} target="_blank" rel="nofollow" title={token.title}>{token.text}</a>
+			<a href={token.href} target="_blank" rel="nofollow noopener noreferrer" title={token.title}>
+				{token.text}
+			</a>
 		{/if}
 	{:else if token.type === 'image'}
 		<Image src={token.href} alt={token.text} />

@@ -30,13 +30,34 @@
 	export let onTaskClick: Function = () => {};
 	export let onSourceClick: Function = () => {};
 
+	const getSafeFileIframeSrc = (html: string) => {
+		const parser = new DOMParser();
+		const document = parser.parseFromString(html, 'text/html');
+		const iframe = document.querySelector('iframe');
+		const src = iframe?.getAttribute('src') ?? '';
+		const prefix = `${TUTOR_BASE_URL}/api/v1/files/`;
+
+		if (!src.startsWith(prefix)) {
+			return null;
+		}
+
+		const fileId = src.slice(prefix.length).split('/')[0];
+		if (!/^[a-zA-Z0-9_-]+$/.test(fileId)) {
+			return null;
+		}
+
+		return `${prefix}${fileId}/content`;
+	};
+
 	const headerComponent = (depth: number) => {
 		return 'h' + depth;
 	};
 
-	const exportTableToCSVHandler = (token, tokenIdx = 0) => {
-		console.log('Exporting table to CSV');
+	const textAlignStyle = (align?: string | null) => {
+		return `text-align: ${align ?? 'left'}`;
+	};
 
+	const exportTableToCSVHandler = (token, tokenIdx = 0) => {
 		// Extract header row text and escape for CSV.
 		const header = token.header.map((headerCell) => `"${headerCell.text.replace(/"/g, '""')}"`);
 
@@ -55,10 +76,6 @@
 
 		// Join the rows using commas (,) as the separator and rows using newline (\n).
 		const csvContent = csvData.map((row) => row.join(',')).join('\n');
-
-		// Log rows and CSV content to ensure everything is correct.
-		console.log(csvData);
-		console.log(csvContent);
 
 		// To handle Unicode characters, you need to prefix the data with a BOM:
 		const bom = '\uFEFF'; // BOM for UTF-8
@@ -116,9 +133,9 @@
 								<th
 									scope="col"
 									class="px-3! py-1.5! cursor-pointer border border-gray-100 dark:border-gray-850"
-									style={token.align[headerIdx] ? '' : `text-align: ${token.align[headerIdx]}`}
+									style={textAlignStyle(token.align[headerIdx])}
 								>
-									<div class="flex flex-col gap-1.5 text-left">
+									<div class="flex flex-col gap-1.5">
 										<div class="shrink-0 break-normal">
 											<MarkdownInlineTokens
 												id={`${id}-${tokenIdx}-header-${headerIdx}`}
@@ -137,7 +154,7 @@
 								{#each row ?? [] as cell, cellIdx}
 									<td
 										class="px-3! py-1.5! text-gray-900 dark:text-white w-max border border-gray-100 dark:border-gray-850"
-										style={token.align[cellIdx] ? '' : `text-align: ${token.align[cellIdx]}`}
+										style={textAlignStyle(token.align[cellIdx])}
 									>
 										<div class="flex flex-col break-normal">
 											<MarkdownInlineTokens
@@ -154,10 +171,13 @@
 				</table>
 			</div>
 
-			<div class=" absolute top-1 right-1.5 z-20 invisible group-hover:visible">
+			<div
+				class=" absolute top-1 right-1.5 z-20 invisible group-hover:visible group-focus-within:visible"
+			>
 				<Tooltip content={$i18n.t('Export to CSV')}>
 					<button
 						class="p-1 rounded-lg bg-transparent transition"
+						aria-label={$i18n.t('Export table to CSV')}
 						on:click={(e) => {
 							e.stopPropagation();
 							exportTableToCSVHandler(token, tokenIdx);
@@ -257,10 +277,11 @@
 		</Collapsible>
 	{:else if token.type === 'html'}
 		{@const html = DOMPurify.sanitize(token.text)}
+		{@const safeFileIframeSrc = getSafeFileIframeSrc(token.text)}
 		{#if html && html.includes('<video')}
 			{@html html}
-		{:else if token.text.includes(`<iframe src="${TUTOR_BASE_URL}/api/v1/files/`)}
-			{@html `${token.text}`}
+		{:else if safeFileIframeSrc}
+			<iframe src={safeFileIframeSrc} title="File preview" width="100%" frameborder="0"></iframe>
 		{:else}
 			{token.text}
 		{/if}

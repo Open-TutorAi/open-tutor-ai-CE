@@ -1,3 +1,5 @@
+import importlib.metadata
+import json
 import os
 import pkgutil
 from pathlib import Path
@@ -61,7 +63,9 @@ try:
         changelog_content = file.read()
 
 except Exception:
-    changelog_content = (pkgutil.get_data("open_tutorai", "CHANGELOG.md") or b"").decode()
+    changelog_content = (
+        pkgutil.get_data("open_tutorai", "CHANGELOG.md") or b""
+    ).decode()
 
 
 # Convert markdown content to HTML
