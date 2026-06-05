@@ -30,6 +30,25 @@
 	export let onTaskClick: Function = () => {};
 	export let onSourceClick: Function = () => {};
 
+	const getSafeFileIframeSrc = (html: string) => {
+		const parser = new DOMParser();
+		const document = parser.parseFromString(html, 'text/html');
+		const iframe = document.querySelector('iframe');
+		const src = iframe?.getAttribute('src') ?? '';
+		const prefix = `${TUTOR_BASE_URL}/api/v1/files/`;
+
+		if (!src.startsWith(prefix)) {
+			return null;
+		}
+
+		const fileId = src.slice(prefix.length).split('/')[0];
+		if (!/^[a-zA-Z0-9_-]+$/.test(fileId)) {
+			return null;
+		}
+
+		return `${prefix}${fileId}/content`;
+	};
+
 	const headerComponent = (depth: number) => {
 		return 'h' + depth;
 	};
@@ -152,7 +171,9 @@
 				</table>
 			</div>
 
-			<div class=" absolute top-1 right-1.5 z-20 invisible group-hover:visible group-focus-within:visible">
+			<div
+				class=" absolute top-1 right-1.5 z-20 invisible group-hover:visible group-focus-within:visible"
+			>
 				<Tooltip content={$i18n.t('Export to CSV')}>
 					<button
 						class="p-1 rounded-lg bg-transparent transition"
@@ -256,10 +277,11 @@
 		</Collapsible>
 	{:else if token.type === 'html'}
 		{@const html = DOMPurify.sanitize(token.text)}
+		{@const safeFileIframeSrc = getSafeFileIframeSrc(token.text)}
 		{#if html && html.includes('<video')}
 			{@html html}
-		{:else if token.text.includes(`<iframe src="${TUTOR_BASE_URL}/api/v1/files/`)}
-			{@html `${token.text}`}
+		{:else if safeFileIframeSrc}
+			<iframe src={safeFileIframeSrc} title="File preview" width="100%" frameborder="0"></iframe>
 		{:else}
 			{token.text}
 		{/if}
