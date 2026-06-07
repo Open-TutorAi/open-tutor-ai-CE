@@ -3,6 +3,8 @@
 	import { v4 as uuidv4 } from 'uuid';
 	import { createPicker, getAuthToken } from '$lib/utils/google-drive-picker';
 
+	import PedagogicalShortcuts from './Shortcuts/PedagogicalShortcuts.svelte';
+
 	import { onMount, tick, getContext, createEventDispatcher, onDestroy } from 'svelte';
 	const dispatch = createEventDispatcher();
 
@@ -83,6 +85,17 @@
 	$: visionCapableModels = [...(atSelectedModel ? [atSelectedModel] : selectedModels)].filter(
 		(model) => $models.find((m) => m.id === model)?.info?.meta?.capabilities?.vision ?? true
 	);
+	
+	
+
+	const handleShortcut = async (event) => {
+		const text = event.detail;
+		prompt = text;
+		await tick();
+		document.getElementById('send-message-button')?.click();
+	};
+
+
 
 	const scrollToBottom = () => {
 		const element = document.getElementById('messages-container');
@@ -652,9 +665,10 @@
 										{/each}
 									</div>
 								{/if}
-
+                                <PedagogicalShortcuts on:submit={handleShortcut} />
 								<div class="flex items-center gap-2 py-2.5 w-full">
 									<div class="flex-1 min-w-0">
+										
 										{#if $settings?.richTextInput ?? true}
 											<div
 												class="scrollbar-hidden text-left bg-transparent dark:text-gray-100 outline-hidden w-full resize-none max-h-80 overflow-y-auto break-words"
