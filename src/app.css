@@ -397,3 +397,45 @@ input[type='number'] {
 :-ms-fullscreen {
 	background-color: rgb(17 24 39);
 }
+
+
+/* Welcome popup - force above all elements */
+.welcome-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 999999 !important;
+    background: rgba(0, 0, 0, 0.6) !important;
+    backdrop-filter: blur(4px) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.welcome-card {
+    background: #1f2937 !important;
+    border-radius: 1rem !important;
+    padding: 1.5rem !important;
+    width: 90% !important;
+    max-width: 22rem !important;
+    position: relative !important;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5) !important;
+    z-index: 999999 !important;
+}
+
+.welcome-close {
+    position: absolute !important;
+    top: 0.75rem !important;
+    right: 1rem !important;
+    color: #9ca3af !important;
+    font-size: 1.25rem !important;
+    background: none !important;
+    border: none !important;
+    cursor: pointer !important;
+}
+
+.welcome-close:hover {
+    color: #e5e7eb !important;
+}
