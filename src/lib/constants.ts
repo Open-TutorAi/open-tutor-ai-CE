@@ -1,6 +1,9 @@
 import { browser, dev } from '$app/environment';
 // import { version } from '../../package.json';
 
+// Vite/CI may inject APP_BUILD_HASH at build time. Declare to avoid TS error when not provided.
+declare const APP_BUILD_HASH: string | undefined;
+
 export const APP_NAME = 'Open TutorAI';
 
 // Backend server for API calls
@@ -10,7 +13,7 @@ export const TUTOR_HOSTNAME = browser ? (dev ? `${location.hostname}:8080` : ``)
 export const TUTOR_FRONT_HOSTNAME = browser ? (dev ? `${location.hostname}:5173` : ``) : '';
 export const TUTOR_FRONT_URL = browser ? (dev ? `http://${TUTOR_FRONT_HOSTNAME}` : ``) : ``;
 
-export const TUTOR_BASE_URL = browser ? (dev ? `http://${TUTOR_HOSTNAME}` : ``) : ``;
+export const TUTOR_BASE_URL = browser ? (dev ? `` : ``) : ``;
 export const TUTOR_API_BASE_URL = `${TUTOR_BASE_URL}/api/v1`;
 
 export const OLLAMA_API_BASE_URL = `${TUTOR_BASE_URL}/ollama`;
@@ -20,7 +23,7 @@ export const IMAGES_API_BASE_URL = `${TUTOR_BASE_URL}/api/v1/images`;
 export const RETRIEVAL_API_BASE_URL = `${TUTOR_BASE_URL}/api/v1/retrieval`;
 
 export const TUTOR_VERSION = "0.0.1";
-export const TUTOR_BUILD_HASH = APP_BUILD_HASH;
+export const TUTOR_BUILD_HASH = APP_BUILD_HASH ?? '';
 export const REQUIRED_OLLAMA_VERSION = '0.1.16';
 
 export const SUPPORTED_FILE_TYPE = [
