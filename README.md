@@ -153,8 +153,9 @@ Edit `.env` file with a text editor. Default values are fine for local developme
 OLLAMA_BASE_URL='http://localhost:11434'
 OPENAI_API_BASE_URL=''
 OPENAI_API_KEY=''
+GEMINI_API_KEY=''
 ENABLE_SIGNUP=true
-WEBUI_SECRET_KEY=mysecretkey
+WEBUI_SECRET_KEY=replace-with-a-random-secret
 SUPPRESS_WEBUI_BANNER=true
 SCARF_NO_ANALYTICS=true
 DO_NOT_TRACK=true
