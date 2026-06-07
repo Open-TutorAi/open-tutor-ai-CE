@@ -1,9 +1,11 @@
 <!-- Student Layout -->
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount,onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { get, writable, derived } from 'svelte/store';
+	import { browser } from '$app/environment';
+
 
 	import Sidebar from '$lib/components/student/elements/Sidebar.svelte';
 	import Navbar from '$lib/components/student/elements/Navbar.svelte';
@@ -24,6 +26,9 @@
 	let windowWidth: number;
 	let isMobile: boolean = false;
 	let loading = true;
+	let activityTracker: any = null;
+	let cleanupResize: (() => void) | null = null;  // ← Stocker la fonction de cleanup
+
 
 	// Derive isDarkMode from theme store
 	const isDarkMode = derived(theme, ($theme) => {
@@ -49,54 +54,72 @@
 		theme.set(newTheme);
 		localStorage.setItem('theme', newTheme);
 	}
+  onMount(async () => {
+	console.log('Student layout mounted');
 
-	onMount(async () => {
-		console.log('Student layout mounted');
-		models.set(
-			await getModels(
-				localStorage.token,
-				$config?.features?.enable_direct_connections && ($settings?.directConnections ?? null)
-			)
-		);
-		// Role protection logic
-		const currentUser = get(user);
-		if (!currentUser) {
-			goto('/auth');
-			return;
+	// 1. Tracker d'engagement (UNIQUEMENT côté client)
+	if (browser) {
+		try {
+			const { ActivityTracker } = await import('$lib/utils/activityTracker');
+			activityTracker = new ActivityTracker();
+			console.log('[Student Layout] Activity tracker initialized');
+		} catch (err) {
+			console.warn('[Student Layout] Activity tracker failed to load:', err);
 		}
-		if (currentUser.role !== 'user') {
-			console.log('User is not a student, redirecting to home');
-			goto(`/${currentUser.role}`);
-			return;
+	}
+
+	// 2. Charger les modèles
+	models.set(
+		await getModels(
+			localStorage.token,
+			($config as any)?.features?.enable_direct_connections && (($settings as any)?.directConnections ?? null)
+		)
+	);
+
+	// 3. Protection rôle
+	const currentUser = get(user);
+	if (!currentUser) {
+		goto('/auth');
+		return;
+	}
+	if (currentUser.role !== 'user') {
+		console.log('User is not a student, redirecting to home');
+		goto(`/${currentUser.role}`);
+		return;
+	}
+	loading = false;
+
+	// 4. Dark mode
+	const currentTheme = get(theme);
+	const isDark =
+		currentTheme === 'dark' ||
+		(currentTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+	document.documentElement.classList.toggle('dark', isDark);
+
+	// 5. Resize handler
+	const handleResize = () => {
+		windowWidth = window.innerWidth;
+		isMobile = windowWidth < 768;
+		if (isMobile && isSidebarOpen) {
+			isSidebarOpen = false;
+		} else if (!isMobile && !isSidebarOpen) {
+			isSidebarOpen = true;
 		}
-		loading = false;
+	};
 
-		// Initialize dark mode based on global theme
-		const currentTheme = get(theme);
-		const isDark =
-			currentTheme === 'dark' ||
-			(currentTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-		document.documentElement.classList.toggle('dark', isDark);
+	window.addEventListener('resize', handleResize);
+	handleResize();
 
-		// Handle resize events for responsive design
-		const handleResize = () => {
-			windowWidth = window.innerWidth;
-			isMobile = windowWidth < 768;
+	// Stocker le cleanup
+	cleanupResize = () => {
+		window.removeEventListener('resize', handleResize);
+	};
+});
 
-			if (isMobile && isSidebarOpen) {
-				isSidebarOpen = false;
-			} else if (!isMobile && !isSidebarOpen) {
-				isSidebarOpen = true;
-			}
-		};
-
-		window.addEventListener('resize', handleResize);
-		handleResize();
-
-		return () => {
-			window.removeEventListener('resize', handleResize);
-		};
-	});
+// Cleanup dans onDestroy (pas dans onMount)
+onDestroy(() => {
+	if (cleanupResize) cleanupResize();
+});
 </script>
 
 <div

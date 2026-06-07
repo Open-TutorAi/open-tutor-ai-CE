@@ -3,6 +3,8 @@
 	import { user } from '$lib/stores';
   import { onMount, getContext } from 'svelte';
 
+  import { activityTracker } from '$lib/utils/activityTracker';
+
 
 	let loading = true;
 	let error = null;
@@ -10,6 +12,8 @@
 
   onMount(async () => {
     try {
+          activityTracker;
+
       loading = true;
       
       if (!$user) {

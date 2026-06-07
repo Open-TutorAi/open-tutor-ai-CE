@@ -7,6 +7,7 @@
 	import { browser } from '$app/environment';
 	import { chatId as storeChatId } from '$lib/stores';
 	import CourseCard from '../elements/CourseCard.svelte';
+    import EngagementChart from '$lib/components/student/elements/EngagementChart.svelte';
 	import { getSupportRequests, type SupportResponse, updateSupportChatId } from '$lib/apis/supports';
 	import { page } from '$app/stores';
 
@@ -255,6 +256,14 @@
 
 <!-- ══════════════════════════════════════════ TEMPLATE ══════════════════════════════════════════ -->
 <div class="flex flex-col gap-6">
+	<!-- Dashboard Header -->
+	<div class="dashboard-header">
+		<h1>{$i18n ? $i18n.t('Dashboard') : 'Dashboard'}</h1>
+		<p class="subtitle">{$i18n ? $i18n.t('Overview of your learning journey') : 'Vue d\'ensemble de votre parcours'}</p>
+	</div>
+
+	<!-- Sprint 2: Engagement Tracking v1.1.0 -->
+	<EngagementChart />
 
 	<!-- ████████████████████████ PERFORMANCE DASHBOARD ████████████████████████ -->
 	<section aria-label={$i18n.t('Student Performance Dashboard')}>
@@ -559,4 +568,21 @@
 
 	@keyframes slideInFromRight { from { transform: translateX(30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 	@keyframes slideInFromLeft  { from { transform: translateX(-30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+		.dashboard-header {
+		margin-bottom: 0.5rem;
+	}
+
+	.dashboard-header h1 {
+		font-size: 1.875rem;
+		font-weight: 700;
+		color: #1a202c;
+		margin: 0;
+	}
+
+	.subtitle {
+		color: #718096;
+		margin-top: 0.25rem;
+		margin-bottom: 0;
+	}
 </style>
