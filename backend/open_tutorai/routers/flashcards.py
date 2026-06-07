@@ -1,25 +1,25 @@
 import json
 import logging
-import os
 import re
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session
+from starlette.requests import Request as StarletteRequest
 
-from open_webui.internal.db import engine
+from open_webui.internal.db import get_session as get_db
 from open_webui.utils.auth import get_verified_user
+from open_webui.utils.chat import generate_chat_completion
+from open_webui.main import app as webui_app
 from open_tutorai.models.database import FlashcardSet, Support
 
 log = logging.getLogger(__name__)
 log.setLevel("INFO")
 
 router = APIRouter()
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 MIN_CARDS = 3
 MAX_CARDS = 10
@@ -101,6 +101,41 @@ class FlashcardSetResponse(BaseModel):
 
 
 # ---------- helpers ----------
+
+
+def _inner_webui_request(request: Request) -> Request:
+    """Returns a Request whose `.app` resolves to the mounted OpenWebUI app.
+
+    `open_webui.utils.chat.generate_chat_completion` reads
+    `request.app.state.MODELS` to dispatch to the right backend (Ollama,
+    OpenAI, …). Our router runs on the outer TutorAI app, whose `state`
+    has no MODELS — so we hand the function a Request bound to the inner
+    app instead. State (metadata, direct, etc.) is preserved through the
+    shared scope dict."""
+    scope = dict(request.scope)
+    scope["app"] = webui_app
+    return StarletteRequest(scope, receive=request.receive)
+
+
+def _content_from_completion(response: Any) -> str:
+    """Extracts the assistant message content from whatever shape
+    `generate_chat_completion` returned. Ollama and OpenAI paths both
+    converge on the OpenAI chat-completion dict shape, but the OpenAI path
+    can wrap it in a Starlette Response — handle both."""
+    if hasattr(response, "body"):
+        # Starlette JSONResponse / Response — unwrap to dict.
+        response = json.loads(response.body)
+    if not isinstance(response, dict):
+        raise ValueError(
+            f"unexpected completion response type: {type(response).__name__}"
+        )
+    choices = response.get("choices")
+    if not isinstance(choices, list) or not choices:
+        raise ValueError("completion response contains no choices")
+    content = choices[0].get("message", {}).get("content")
+    if not isinstance(content, str):
+        raise ValueError("completion response missing message content")
+    return content
 
 
 # Matches an opening triple-backtick fence with an optional language tag, e.g.
@@ -333,6 +368,7 @@ def _normalize_known_indices(known_indices: list[int], card_count: int) -> list[
 async def generate_flashcards(
     request: Request,
     body: FlashcardGenerateRequest,
+    db: Session = Depends(get_db),
     user=Depends(get_verified_user),
 ):
     if not body.messages:
@@ -358,150 +394,129 @@ async def generate_flashcards(
 
     system_prompt = _build_system_prompt(card_count, language, difficulty)
 
-    # OpenWebUI's /api/chat/completions endpoint runs `Depends(get_verified_user)`,
-    # so the caller's bearer token must be re-presented on the inner loopback call.
-    # We forward only the Authorization header (no cookies, no body rewrite) and the
-    # target is the same process, so the token never leaves this backend.
-    auth_header = request.headers.get("authorization", "")
-    # OpenWebUI is mounted at "/" of this same FastAPI process (see main.py),
-    # so /api/chat/completions is always reached via loopback. PORT is the only
-    # part that varies between environments — host stays localhost by design.
-    port = int(os.environ.get("PORT", "8080"))
-
-    payload = {
+    form_data = {
         "model": body.model,
         "messages": [{"role": "system", "content": system_prompt}] + body.messages,
         "stream": False,
         # Force JSON-only output where the backend supports it. Two keys to
-        # cover both routes:
-        #   - "response_format" is the OpenAI standard and is honored by
-        #     OpenAI / Anthropic-compatible models.
-        #   - "format" is Ollama's native JSON-mode flag, which OpenWebUI
-        #     forwards when the target model is served by Ollama.
-        # Models that don't recognize either key just ignore it, so this is
-        # safe to always include — the lenient parser below remains the
-        # safety net.
+        # cover both routes: `response_format` is the OpenAI standard,
+        # `format: "json"` is Ollama's native flag. Models that don't
+        # recognize either key just ignore it, so this is safe to always
+        # include — the lenient parser below remains the safety net.
         "response_format": {"type": "json_object"},
         "format": "json",
     }
 
+    # OpenWebUI is mounted on this same process, so we call its completion
+    # function directly instead of going back out over HTTP. Token forwarding
+    # falls out for free (the request still carries the caller's auth state),
+    # and exceptions propagate as real Python stack traces.
     try:
-        async with httpx.AsyncClient(timeout=90) as client:
-            r = await client.post(
-                f"http://localhost:{port}/api/chat/completions",
-                json=payload,
-                headers={
-                    "Authorization": auth_header,
-                    "Content-Type": "application/json",
-                },
-            )
-        r.raise_for_status()
-    except httpx.HTTPStatusError as e:
-        log.error(f"LLM call failed: {e.response.status_code} {e.response.text}")
-        raise HTTPException(status_code=502, detail="LLM call failed")
+        completion = await generate_chat_completion(
+            _inner_webui_request(request), form_data, user
+        )
+    except HTTPException:
+        raise
     except Exception as e:
-        log.error(f"LLM call error: {e}")
-        raise HTTPException(status_code=502, detail="Could not reach LLM")
+        log.error("LLM call failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=502, detail="LLM call failed")
 
     raw_content: Optional[str] = None
     try:
-        response_json = r.json()
-        choices = response_json.get("choices")
-        if not isinstance(choices, list) or len(choices) == 0:
-            raise ValueError("LLM response contains no completion choices")
-
-        raw_content = choices[0].get("message", {}).get("content")
-        if not isinstance(raw_content, str):
-            raise ValueError("LLM response missing message content")
-
+        raw_content = _content_from_completion(completion)
         raw_cards = _parse_llm_flashcards(raw_content)
         if not raw_cards:
             raise ValueError("empty flashcards list")
-        raw_cards = _validate_flashcards(raw_cards)
     except Exception as e:
         # Log a truncated copy of the LLM output so the failure mode is
         # diagnosable (model returned prose, wrong shape, hit token limit, …)
         # without flooding the logs on huge responses.
         snippet = (raw_content or "<no content>")[:2000]
-        log.error("Failed to parse LLM response: %s\n----- LLM content (truncated to 2000 chars) -----\n%s\n-----", e, snippet)
+        log.error(
+            "Failed to parse LLM response: %s\n"
+            "----- LLM content (truncated to 2000 chars) -----\n%s\n-----",
+            e,
+            snippet,
+        )
         raise HTTPException(
             status_code=500, detail="Could not parse flashcards from LLM response"
         )
 
-    db = SessionLocal()
     try:
-        source_label = body.source_label
-        if body.support_id:
-            support = _validate_support_ownership(db, body.support_id, user.id)
-            source_label = f"Support: {support.subject}"
+        raw_cards = _validate_flashcards(raw_cards)
+    except ValueError as e:
+        # Model returned a JSON list of the wrong shape/size — that's a 422
+        # (validation), not a 500 (parser failure). Caller can retry with a
+        # different count / model.
+        raise HTTPException(status_code=422, detail=str(e))
 
-        fs = FlashcardSet(
-            id=str(uuid.uuid4()),
-            user_id=user.id,
-            title=body.title,
-            source_label=source_label,
-            support_id=body.support_id,
-            model_used=body.model,
-            cards=raw_cards,
-            known_indices=[],
-            created_at=datetime.utcnow(),
-        )
-        db.add(fs)
-        db.commit()
-        db.refresh(fs)
-        return _to_response(fs)
-    finally:
-        db.close()
+    source_label = body.source_label
+    if body.support_id:
+        support = _validate_support_ownership(db, body.support_id, user.id)
+        source_label = f"Support: {support.subject}"
+
+    fs = FlashcardSet(
+        id=str(uuid.uuid4()),
+        user_id=user.id,
+        title=body.title,
+        source_label=source_label,
+        support_id=body.support_id,
+        model_used=body.model,
+        cards=raw_cards,
+        known_indices=[],
+        created_at=datetime.utcnow(),
+    )
+    db.add(fs)
+    db.commit()
+    db.refresh(fs)
+    return _to_response(fs)
 
 
 @router.get("/flashcards/sets", response_model=list[FlashcardSetResponse])
-async def list_flashcard_sets(user=Depends(get_verified_user)):
-    db = SessionLocal()
-    try:
-        sets = (
-            db.query(FlashcardSet)
-            .filter(FlashcardSet.user_id == user.id)
-            .order_by(FlashcardSet.created_at.desc())
-            .all()
-        )
-        return [_to_response(fs) for fs in sets]
-    finally:
-        db.close()
+async def list_flashcard_sets(
+    db: Session = Depends(get_db),
+    user=Depends(get_verified_user),
+):
+    sets = (
+        db.query(FlashcardSet)
+        .filter(FlashcardSet.user_id == user.id)
+        .order_by(FlashcardSet.created_at.desc())
+        .all()
+    )
+    return [_to_response(fs) for fs in sets]
 
 
 @router.get("/flashcards/sets/{set_id}", response_model=FlashcardSetResponse)
-async def get_flashcard_set(set_id: str, user=Depends(get_verified_user)):
-    db = SessionLocal()
-    try:
-        return _to_response(_get_set_or_404(db, set_id, user.id))
-    finally:
-        db.close()
+async def get_flashcard_set(
+    set_id: str,
+    db: Session = Depends(get_db),
+    user=Depends(get_verified_user),
+):
+    return _to_response(_get_set_or_404(db, set_id, user.id))
 
 
 @router.patch("/flashcards/sets/{set_id}/progress", response_model=FlashcardSetResponse)
 async def update_progress(
     set_id: str,
     body: ProgressUpdateRequest,
+    db: Session = Depends(get_db),
     user=Depends(get_verified_user),
 ):
-    db = SessionLocal()
-    try:
-        fs = _get_set_or_404(db, set_id, user.id)
-        fs.known_indices = _normalize_known_indices(
-            body.known_indices, len(fs.cards or [])
-        )
-        fs.updated_at = datetime.utcnow()
-        db.commit()
-        db.refresh(fs)
-        return _to_response(fs)
-    finally:
-        db.close()
+    fs = _get_set_or_404(db, set_id, user.id)
+    fs.known_indices = _normalize_known_indices(
+        body.known_indices, len(fs.cards or [])
+    )
+    fs.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(fs)
+    return _to_response(fs)
 
 
 @router.patch("/flashcards/sets/{set_id}", response_model=FlashcardSetResponse)
 async def update_flashcard_set(
     set_id: str,
     body: FlashcardSetUpdateRequest,
+    db: Session = Depends(get_db),
     user=Depends(get_verified_user),
 ):
     try:
@@ -509,32 +524,28 @@ async def update_flashcard_set(
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
-    db = SessionLocal()
-    try:
-        fs = _get_set_or_404(db, set_id, user.id)
-        fs.cards = validated_cards
-        fs.known_indices = _normalize_known_indices(
-            body.known_indices or [], len(validated_cards)
-        )
-        if body.title is not None:
-            title = body.title.strip()
-            if not title:
-                raise HTTPException(status_code=422, detail="title must not be empty")
-            fs.title = title[:200]
-        fs.updated_at = datetime.utcnow()
-        db.commit()
-        db.refresh(fs)
-        return _to_response(fs)
-    finally:
-        db.close()
+    fs = _get_set_or_404(db, set_id, user.id)
+    fs.cards = validated_cards
+    fs.known_indices = _normalize_known_indices(
+        body.known_indices or [], len(validated_cards)
+    )
+    if body.title is not None:
+        title = body.title.strip()
+        if not title:
+            raise HTTPException(status_code=422, detail="title must not be empty")
+        fs.title = title[:200]
+    fs.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(fs)
+    return _to_response(fs)
 
 
 @router.delete("/flashcards/sets/{set_id}", status_code=204)
-async def delete_flashcard_set(set_id: str, user=Depends(get_verified_user)):
-    db = SessionLocal()
-    try:
-        fs = _get_set_or_404(db, set_id, user.id)
-        db.delete(fs)
-        db.commit()
-    finally:
-        db.close()
+async def delete_flashcard_set(
+    set_id: str,
+    db: Session = Depends(get_db),
+    user=Depends(get_verified_user),
+):
+    fs = _get_set_or_404(db, set_id, user.id)
+    db.delete(fs)
+    db.commit()
