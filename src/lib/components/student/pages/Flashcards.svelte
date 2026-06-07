@@ -87,6 +87,9 @@
 
 	// ── derived ───────────────────────────────────────────────
 	$: if ($models.length && !selectedModel) selectedModel = $models[0]?.id ?? '';
+	$: selectedSupport = selectedSupportId
+		? supports.find((s) => s.id === selectedSupportId) ?? null
+		: null;
 
 	$: displayCards = reviewUnknownsOnly
 		? studyCards.filter((c) => !isKnown(c.idx))
@@ -149,6 +152,26 @@
 			.map((m: any) => ({ role: m.role, content: m.content.trim() }));
 	}
 
+	// Build a synthetic user message from a support's metadata fields. Used when
+	// the support has no chat to draw from — gives the LLM a concrete brief
+	// (subject, level, learning objective) instead of starting from nothing.
+	function buildMetadataMessage(sup: SupportResponse, extraNotes: string): string {
+		const lines: string[] = [];
+		lines.push(`Title: ${sup.title}`);
+		lines.push(`Subject: ${sup.subject}${sup.custom_subject ? ` (${sup.custom_subject})` : ''}`);
+		if (sup.level) lines.push(`Level: ${sup.level}`);
+		if (sup.learning_type) lines.push(`Learning type: ${sup.learning_type}`);
+		if (sup.learning_objective) lines.push(`Learning objective: ${sup.learning_objective}`);
+		if (sup.short_description) lines.push(`Description: ${sup.short_description}`);
+		if (sup.keywords?.length) lines.push(`Keywords: ${sup.keywords.join(', ')}`);
+		if (extraNotes.trim()) {
+			lines.push('');
+			lines.push('Additional notes from the student:');
+			lines.push(extraNotes.trim());
+		}
+		return lines.join('\n');
+	}
+
 	async function generate() {
 		const token = localStorage.getItem('token') ?? '';
 		if (!selectedModel) { toast.error($i18n.t('Please select a model first')); return; }
@@ -160,24 +183,32 @@
 
 		if (selectedSupportId) {
 			const sup = supports.find((s) => s.id === selectedSupportId);
-			if (!sup?.chat_id) { toast.error($i18n.t('This support has no chat session yet')); return; }
-			try {
-				const chatData = await getChatById(token, sup.chat_id);
-				messages = extractMessages(chatData);
-			} catch { toast.error($i18n.t('Could not load the chat for this support')); return; }
+			if (!sup) { toast.error($i18n.t('Selected support not found')); return; }
+
+			if (sup.chat_id) {
+				try {
+					const chatData = await getChatById(token, sup.chat_id);
+					messages = extractMessages(chatData);
+				} catch { toast.error($i18n.t('Could not load the chat for this support')); return; }
+				if (!messages.length) { toast.error($i18n.t('The linked chat is empty')); return; }
+				source_label = `Support: ${sup.subject}`;
+			} else {
+				// No chat linked — fall back to support metadata + optional notes.
+				messages = [{ role: 'user', content: buildMetadataMessage(sup, manualText) }];
+				source_label = `Support: ${sup.subject} (${$i18n.t('metadata')})`;
+			}
 			if (!title) title = sup.title;
-			source_label = `Support: ${sup.subject}`;
 			support_id = sup.id;
 		} else if (manualText.trim()) {
 			messages = [{ role: 'user', content: manualText.trim() }];
 			if (!title) title = $i18n.t('Manual set');
 			source_label = $i18n.t('Manual');
 		} else {
-			toast.error($i18n.t('Select a support session or paste some text first'));
+			toast.error($i18n.t('Select a support or paste some text first'));
 			return;
 		}
 
-		if (!messages.length) { toast.error($i18n.t('No messages found in this session')); return; }
+		if (!messages.length) { toast.error($i18n.t('No content to generate from')); return; }
 
 		generating = true;
 		try {
@@ -662,21 +693,28 @@
 						<!-- Support session -->
 						<div>
 							<label for="fc-support" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-								{$i18n.t('From a support session')}
+								{$i18n.t('From a support')}
 							</label>
-							{#if supports.filter(s => s.chat_id).length === 0}
-								<p class="text-sm text-gray-500 dark:text-gray-400">{$i18n.t('No support sessions with a chat found.')}</p>
+							{#if supports.length === 0}
+								<p class="text-sm text-gray-500 dark:text-gray-400">{$i18n.t('You have no supports yet. Create one from the Supports page first.')}</p>
 							{:else}
 								<select
 									id="fc-support"
 									bind:value={selectedSupportId}
 									class="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 								>
-									<option value="">{$i18n.t('— select a session —')}</option>
-									{#each supports.filter(s => s.chat_id) as s}
-										<option value={s.id}>{s.title} ({s.subject})</option>
+									<option value="">{$i18n.t('— select a support —')}</option>
+									{#each supports as s}
+										<option value={s.id}>
+											{s.title} ({s.subject}){!s.chat_id ? ` — ${$i18n.t('no chat')}` : ''}
+										</option>
 									{/each}
 								</select>
+								{#if selectedSupport && !selectedSupport.chat_id}
+									<p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+										{$i18n.t('This support has no linked chat. Flashcards will be generated from its metadata (title, subject, level, learning objective). You can add extra context in the text area below.')}
+									</p>
+								{/if}
 							{/if}
 						</div>
 
@@ -690,18 +728,26 @@
 						<!-- Manual text -->
 						<div>
 							<label for="fc-manual" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-								{$i18n.t('Paste lesson or conversation text')}
+								{#if selectedSupport && !selectedSupport.chat_id}
+									{$i18n.t('Additional context (optional)')}
+								{:else}
+									{$i18n.t('Paste lesson or conversation text')}
+								{/if}
 							</label>
 							<textarea
 								id="fc-manual"
 								bind:value={manualText}
 								rows="6"
-								placeholder={$i18n.t('Paste a lesson, notes, or a conversation here…')}
-								disabled={!!selectedSupportId}
+								placeholder={
+									selectedSupport && !selectedSupport.chat_id
+										? $i18n.t('Add any notes you want the cards to cover…')
+										: $i18n.t('Paste a lesson, notes, or a conversation here…')
+								}
+								disabled={!!(selectedSupport && selectedSupport.chat_id)}
 								class="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none disabled:opacity-50"
 							></textarea>
-							{#if selectedSupportId}
-								<p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">{$i18n.t('Deselect the session above to use manual text instead.')}</p>
+							{#if selectedSupport && selectedSupport.chat_id}
+								<p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">{$i18n.t('Using the chat linked to this support. Deselect the support above to use manual text instead.')}</p>
 							{/if}
 						</div>
 					</div>
