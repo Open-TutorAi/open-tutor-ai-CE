@@ -4,9 +4,13 @@ Database module for OpenTutorAI
 This module defines the database tables specific to OpenTutorAI while using
 the same database connection as OpenWebUI to maintain compatibility.
 """
+
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean, func, ARRAY
 from sqlalchemy.orm import relationship
 from open_webui.internal.db import Base, get_db, JSONField
+from sqlalchemy import  Float, Index
+from datetime import datetime
+import uuid
 
 PREFIX = "opentutorai_"
 
@@ -77,3 +81,25 @@ def init_database():
     print("OpenTutorAI database tables initialized successfully")
     
     return engine
+
+# backend/open_tutorai/models/database.py
+
+# AJOUTER CE MODÈLE À LA FIN DU FICHIER (avec les autres modèles)
+
+
+
+class Activity(Base):
+    
+    __tablename__ = "activities"
+    
+    id = Column(String, primary_key=True)
+    user_id = Column(String, nullable=False, index=True)  # Index pour performances
+    type = Column(String, nullable=False)  # 'session_start', 'session_end', 'click', 'drop_off', 'feedback', 'page_view'
+    duration = Column(Integer, default=0)  # en secondes (pour session_end)
+    metadata_json = Column(String, nullable=True)  # données supplémentaires (JSON string)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    
+    __table_args__ = (
+        Index('idx_activity_user_date', 'user_id', 'created_at'),
+        Index('idx_activity_user_type', 'user_id', 'type'),
+    )
