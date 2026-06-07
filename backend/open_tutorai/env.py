@@ -1,3 +1,5 @@
+import importlib.metadata
+import json
 import os
 import pkgutil
 from pathlib import Path
