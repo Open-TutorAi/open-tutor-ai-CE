@@ -10,6 +10,7 @@
 		getFlashcardSets,
 		deleteFlashcardSet,
 		updateProgress,
+		updateFlashcardSet,
 		type FlashcardSet,
 		type Flashcard
 	} from '$lib/apis/flashcards';
@@ -29,6 +30,9 @@
 	import ArrowsPointingOut from '$lib/components/icons/ArrowsPointingOut.svelte';
 	import Keyboard from '$lib/components/icons/Keyboard.svelte';
 	import QuestionMarkCircle from '$lib/components/icons/QuestionMarkCircle.svelte';
+	import Pencil from '$lib/components/icons/Pencil.svelte';
+	import ChevronUp from '$lib/components/icons/ChevronUp.svelte';
+	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 
 	interface I18n { t: (key: string) => string }
 	const i18n = getContext<Writable<I18n>>('i18n');
@@ -53,6 +57,11 @@
 	let selectedModel = '';
 	let customTitle = '';
 	let generating = false;
+	// Generation params — defaults align with the backend (DEFAULT_CARD_COUNT=8,
+	// no language/difficulty hint).
+	let cardCount = 8;
+	let languageHint = '';
+	let difficultyHint: '' | 'beginner' | 'intermediate' | 'advanced' = '';
 
 	// ── study state ───────────────────────────────────────────
 	type CardState = Flashcard & { idx: number; flipped: boolean };
@@ -63,11 +72,24 @@
 	let focusMode = false;
 	let showShortcuts = false;
 
+	// ── edit state ────────────────────────────────────────────
+	// originalIdx is null for cards added during this edit session (not used
+	// yet — we only support edit/delete/reorder for Sprint 2). It maps each
+	// editable row back to its position in `activeSet.cards` so we can
+	// re-derive `known_indices` against the new order on save.
+	type EditCard = Flashcard & { originalIdx: number | null; key: string };
+	let editMode = false;
+	let editCards: EditCard[] = [];
+	let editSaving = false;
+
 	// ── keyboard ──────────────────────────────────────────────
 	let keyHandler: (e: KeyboardEvent) => void;
 
 	// ── derived ───────────────────────────────────────────────
 	$: if ($models.length && !selectedModel) selectedModel = $models[0]?.id ?? '';
+	$: selectedSupport = selectedSupportId
+		? supports.find((s) => s.id === selectedSupportId) ?? null
+		: null;
 
 	$: displayCards = reviewUnknownsOnly
 		? studyCards.filter((c) => !isKnown(c.idx))
@@ -87,6 +109,7 @@
 
 		keyHandler = (e: KeyboardEvent) => {
 			if (view !== 'study' || !currentCard) return;
+			if (editMode) return;
 			if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 			if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); flip(); }
 			else if (e.key === 'ArrowRight') { e.preventDefault(); next(); }
@@ -129,6 +152,26 @@
 			.map((m: any) => ({ role: m.role, content: m.content.trim() }));
 	}
 
+	// Build a synthetic user message from a support's metadata fields. Used when
+	// the support has no chat to draw from — gives the LLM a concrete brief
+	// (subject, level, learning objective) instead of starting from nothing.
+	function buildMetadataMessage(sup: SupportResponse, extraNotes: string): string {
+		const lines: string[] = [];
+		lines.push(`Title: ${sup.title}`);
+		lines.push(`Subject: ${sup.subject}${sup.custom_subject ? ` (${sup.custom_subject})` : ''}`);
+		if (sup.level) lines.push(`Level: ${sup.level}`);
+		if (sup.learning_type) lines.push(`Learning type: ${sup.learning_type}`);
+		if (sup.learning_objective) lines.push(`Learning objective: ${sup.learning_objective}`);
+		if (sup.short_description) lines.push(`Description: ${sup.short_description}`);
+		if (sup.keywords?.length) lines.push(`Keywords: ${sup.keywords.join(', ')}`);
+		if (extraNotes.trim()) {
+			lines.push('');
+			lines.push('Additional notes from the student:');
+			lines.push(extraNotes.trim());
+		}
+		return lines.join('\n');
+	}
+
 	async function generate() {
 		const token = localStorage.getItem('token') ?? '';
 		if (!selectedModel) { toast.error($i18n.t('Please select a model first')); return; }
@@ -140,28 +183,45 @@
 
 		if (selectedSupportId) {
 			const sup = supports.find((s) => s.id === selectedSupportId);
-			if (!sup?.chat_id) { toast.error($i18n.t('This support has no chat session yet')); return; }
-			try {
-				const chatData = await getChatById(token, sup.chat_id);
-				messages = extractMessages(chatData);
-			} catch { toast.error($i18n.t('Could not load the chat for this support')); return; }
+			if (!sup) { toast.error($i18n.t('Selected support not found')); return; }
+
+			if (sup.chat_id) {
+				try {
+					const chatData = await getChatById(token, sup.chat_id);
+					messages = extractMessages(chatData);
+				} catch { toast.error($i18n.t('Could not load the chat for this support')); return; }
+				if (!messages.length) { toast.error($i18n.t('The linked chat is empty')); return; }
+				source_label = `Support: ${sup.subject}`;
+			} else {
+				// No chat linked — fall back to support metadata + optional notes.
+				messages = [{ role: 'user', content: buildMetadataMessage(sup, manualText) }];
+				source_label = `Support: ${sup.subject} (${$i18n.t('metadata')})`;
+			}
 			if (!title) title = sup.title;
-			source_label = `Support: ${sup.subject}`;
 			support_id = sup.id;
 		} else if (manualText.trim()) {
 			messages = [{ role: 'user', content: manualText.trim() }];
 			if (!title) title = $i18n.t('Manual set');
 			source_label = $i18n.t('Manual');
 		} else {
-			toast.error($i18n.t('Select a support session or paste some text first'));
+			toast.error($i18n.t('Select a support or paste some text first'));
 			return;
 		}
 
-		if (!messages.length) { toast.error($i18n.t('No messages found in this session')); return; }
+		if (!messages.length) { toast.error($i18n.t('No content to generate from')); return; }
 
 		generating = true;
 		try {
-			const newSet = await generateFlashcards(token, messages, selectedModel, title, source_label, support_id);
+			const newSet = await generateFlashcards(token, {
+				messages,
+				model: selectedModel,
+				title,
+				source_label,
+				support_id,
+				card_count: cardCount,
+				language: languageHint.trim() || undefined,
+				difficulty: difficultyHint || undefined
+			});
 			sets = [newSet, ...sets];
 			toast.success(`"${newSet.title}" — ${newSet.card_count} ${$i18n.t('cards')}`);
 			openSet(newSet);
@@ -181,6 +241,8 @@
 		studyCards = s.cards.map((c, idx) => ({ ...c, idx, flipped: false }));
 		currentPos = 0;
 		reviewUnknownsOnly = false;
+		editMode = false;
+		editCards = [];
 		view = 'study';
 	}
 
@@ -288,6 +350,86 @@
 		reviewUnknownsOnly = false;
 		sets = sets.map((s) => s.id === activeSet!.id ? activeSet! : s);
 		await saveProgress(previous);
+	}
+
+	// ── edit ──────────────────────────────────────────────────
+	function enterEditMode() {
+		if (!activeSet) return;
+		editCards = activeSet.cards.map((c, idx) => ({
+			question: c.question,
+			answer: c.answer,
+			originalIdx: idx,
+			key: `o${idx}`
+		}));
+		editMode = true;
+	}
+
+	function exitEditMode() {
+		editMode = false;
+		editCards = [];
+	}
+
+	function moveCard(from: number, to: number) {
+		if (to < 0 || to >= editCards.length) return;
+		const next = editCards.slice();
+		const [moved] = next.splice(from, 1);
+		next.splice(to, 0, moved);
+		editCards = next;
+	}
+
+	function deleteEditCard(at: number) {
+		if (editCards.length <= 3) {
+			toast.error($i18n.t('A set must keep at least 3 cards'));
+			return;
+		}
+		editCards = editCards.filter((_, i) => i !== at);
+	}
+
+	async function saveEdits() {
+		if (!activeSet) return;
+
+		const trimmed = editCards.map((c) => ({
+			...c,
+			question: c.question.trim(),
+			answer: c.answer.trim()
+		}));
+		const empty = trimmed.find((c) => !c.question || !c.answer);
+		if (empty) {
+			toast.error($i18n.t('Every card must have a question and an answer'));
+			return;
+		}
+		if (trimmed.length < 3 || trimmed.length > 10) {
+			toast.error($i18n.t('A set must have between 3 and 10 cards'));
+			return;
+		}
+
+		// Re-derive known_indices against the new positional order.
+		const oldKnown = new Set(activeSet.known_indices);
+		const newKnownIndices: number[] = [];
+		trimmed.forEach((c, newIdx) => {
+			if (c.originalIdx !== null && oldKnown.has(c.originalIdx)) {
+				newKnownIndices.push(newIdx);
+			}
+		});
+
+		const newCards = trimmed.map(({ question, answer }) => ({ question, answer }));
+
+		editSaving = true;
+		const token = localStorage.getItem('token') ?? '';
+		try {
+			const updated = await updateFlashcardSet(token, activeSet.id, newCards, newKnownIndices);
+			activeSet = updated;
+			sets = sets.map((s) => (s.id === updated.id ? updated : s));
+			studyCards = updated.cards.map((c, idx) => ({ ...c, idx, flipped: false }));
+			currentPos = 0;
+			reviewUnknownsOnly = false;
+			exitEditMode();
+			toast.success($i18n.t('Changes saved'));
+		} catch (e: any) {
+			toast.error(e?.message ?? $i18n.t('Could not save changes'));
+		} finally {
+			editSaving = false;
+		}
 	}
 
 	function startReviewUnknowns() {
@@ -491,6 +633,59 @@
 						{/if}
 					</div>
 
+					<!-- Section: generation params -->
+					<div class="pt-2">
+						<p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">{$i18n.t('Generation')}</p>
+
+						<!-- Card count -->
+						<div class="mb-4">
+							<div class="flex items-center justify-between mb-1.5">
+								<label for="fc-count" class="block text-sm font-medium text-gray-700 dark:text-gray-300">{$i18n.t('Number of cards')}</label>
+								<span class="text-sm tabular-nums text-gray-700 dark:text-gray-200 font-medium">{cardCount}</span>
+							</div>
+							<input
+								id="fc-count"
+								type="range"
+								min="3"
+								max="10"
+								step="1"
+								bind:value={cardCount}
+								class="w-full accent-blue-600"
+							/>
+							<div class="flex justify-between text-[10px] text-gray-400 dark:text-gray-500 px-0.5 mt-0.5 tabular-nums">
+								<span>3</span><span>10</span>
+							</div>
+						</div>
+
+						<!-- Language + difficulty side by side -->
+						<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+							<div>
+								<label for="fc-language" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{$i18n.t('Language')}</label>
+								<input
+									id="fc-language"
+									type="text"
+									bind:value={languageHint}
+									maxlength="50"
+									placeholder={$i18n.t('Match the source language')}
+									class="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+								/>
+							</div>
+							<div>
+								<label for="fc-difficulty" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{$i18n.t('Difficulty')}</label>
+								<select
+									id="fc-difficulty"
+									bind:value={difficultyHint}
+									class="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+								>
+									<option value="">{$i18n.t('Auto')}</option>
+									<option value="beginner">{$i18n.t('Beginner')}</option>
+									<option value="intermediate">{$i18n.t('Intermediate')}</option>
+									<option value="advanced">{$i18n.t('Advanced')}</option>
+								</select>
+							</div>
+						</div>
+					</div>
+
 					<!-- Section: source -->
 					<div class="pt-2">
 						<p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">{$i18n.t('Source')}</p>
@@ -498,21 +693,28 @@
 						<!-- Support session -->
 						<div>
 							<label for="fc-support" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-								{$i18n.t('From a support session')}
+								{$i18n.t('From a support')}
 							</label>
-							{#if supports.filter(s => s.chat_id).length === 0}
-								<p class="text-sm text-gray-500 dark:text-gray-400">{$i18n.t('No support sessions with a chat found.')}</p>
+							{#if supports.length === 0}
+								<p class="text-sm text-gray-500 dark:text-gray-400">{$i18n.t('You have no supports yet. Create one from the Supports page first.')}</p>
 							{:else}
 								<select
 									id="fc-support"
 									bind:value={selectedSupportId}
 									class="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 								>
-									<option value="">{$i18n.t('— select a session —')}</option>
-									{#each supports.filter(s => s.chat_id) as s}
-										<option value={s.id}>{s.title} ({s.subject})</option>
+									<option value="">{$i18n.t('— select a support —')}</option>
+									{#each supports as s}
+										<option value={s.id}>
+											{s.title} ({s.subject}){!s.chat_id ? ` — ${$i18n.t('no chat')}` : ''}
+										</option>
 									{/each}
 								</select>
+								{#if selectedSupport && !selectedSupport.chat_id}
+									<p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+										{$i18n.t('This support has no linked chat. Flashcards will be generated from its metadata (title, subject, level, learning objective). You can add extra context in the text area below.')}
+									</p>
+								{/if}
 							{/if}
 						</div>
 
@@ -526,18 +728,26 @@
 						<!-- Manual text -->
 						<div>
 							<label for="fc-manual" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-								{$i18n.t('Paste lesson or conversation text')}
+								{#if selectedSupport && !selectedSupport.chat_id}
+									{$i18n.t('Additional context (optional)')}
+								{:else}
+									{$i18n.t('Paste lesson or conversation text')}
+								{/if}
 							</label>
 							<textarea
 								id="fc-manual"
 								bind:value={manualText}
 								rows="6"
-								placeholder={$i18n.t('Paste a lesson, notes, or a conversation here…')}
-								disabled={!!selectedSupportId}
+								placeholder={
+									selectedSupport && !selectedSupport.chat_id
+										? $i18n.t('Add any notes you want the cards to cover…')
+										: $i18n.t('Paste a lesson, notes, or a conversation here…')
+								}
+								disabled={!!(selectedSupport && selectedSupport.chat_id)}
 								class="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none disabled:opacity-50"
 							></textarea>
-							{#if selectedSupportId}
-								<p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">{$i18n.t('Deselect the session above to use manual text instead.')}</p>
+							{#if selectedSupport && selectedSupport.chat_id}
+								<p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">{$i18n.t('Using the chat linked to this support. Deselect the support above to use manual text instead.')}</p>
 							{/if}
 						</div>
 					</div>
@@ -599,11 +809,24 @@
 						{/if}
 						<button
 							on:click={resetSet}
-							class="p-1.5 rounded-md text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors"
+							disabled={editMode}
+							class="p-1.5 rounded-md text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
 							title={$i18n.t('Reset progress')}
 							aria-label={$i18n.t('Reset progress')}
 						>
 							<ArrowPath className="w-4 h-4" strokeWidth="1.75" />
+						</button>
+						<button
+							on:click={editMode ? exitEditMode : enterEditMode}
+							class="p-1.5 rounded-md transition-colors
+								{editMode
+									? 'text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/30'
+									: 'text-gray-500 hover:text-gray-800 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800'}"
+							title={editMode ? $i18n.t('Cancel edit') : $i18n.t('Edit cards')}
+							aria-label={editMode ? $i18n.t('Cancel edit') : $i18n.t('Edit cards')}
+							aria-pressed={editMode}
+						>
+							<Pencil className="w-4 h-4" strokeWidth="1.75" />
 						</button>
 						<button
 							on:click={() => focusMode = !focusMode}
@@ -626,6 +849,101 @@
 					</div>
 				</div>
 
+				{#if editMode}
+					<!-- ════ EDIT MODE ════ -->
+					<div class="space-y-3">
+						<p class="text-xs text-gray-500 dark:text-gray-400">
+							{$i18n.t('Edit, delete or reorder cards. Progress is preserved per card.')}
+						</p>
+
+						{#each editCards as card, i (card.key)}
+							<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+								<div class="flex items-start gap-3">
+									<div class="flex flex-col gap-1 shrink-0 pt-1">
+										<button
+											on:click={() => moveCard(i, i - 1)}
+											disabled={i === 0}
+											class="p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
+											title={$i18n.t('Move up')}
+											aria-label={$i18n.t('Move up')}
+										>
+											<ChevronUp className="w-4 h-4" strokeWidth="2" />
+										</button>
+										<span class="text-[10px] text-gray-400 dark:text-gray-500 text-center tabular-nums">{i + 1}</span>
+										<button
+											on:click={() => moveCard(i, i + 1)}
+											disabled={i === editCards.length - 1}
+											class="p-1 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
+											title={$i18n.t('Move down')}
+											aria-label={$i18n.t('Move down')}
+										>
+											<ChevronDown className="w-4 h-4" strokeWidth="2" />
+										</button>
+									</div>
+
+									<div class="flex-1 min-w-0 space-y-2">
+										<div>
+											<label class="block text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
+												{$i18n.t('Question')}
+											</label>
+											<textarea
+												bind:value={card.question}
+												rows="2"
+												maxlength="500"
+												class="w-full rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+											></textarea>
+										</div>
+										<div>
+											<label class="block text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
+												{$i18n.t('Answer')}
+											</label>
+											<textarea
+												bind:value={card.answer}
+												rows="3"
+												maxlength="1500"
+												class="w-full rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+											></textarea>
+										</div>
+									</div>
+
+									<button
+										on:click={() => deleteEditCard(i)}
+										disabled={editCards.length <= 3}
+										class="shrink-0 p-1.5 rounded text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+										title={editCards.length <= 3 ? $i18n.t('At least 3 cards required') : $i18n.t('Delete card')}
+										aria-label={$i18n.t('Delete card')}
+									>
+										<GarbageBin className="w-4 h-4" strokeWidth="1.75" />
+									</button>
+								</div>
+							</div>
+						{/each}
+
+						<div class="flex justify-end gap-2 pt-2 sticky bottom-0 bg-gray-50 dark:bg-gray-900 py-3">
+							<button
+								on:click={exitEditMode}
+								disabled={editSaving}
+								class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50 transition-colors"
+							>{$i18n.t('Cancel')}</button>
+							<button
+								on:click={saveEdits}
+								disabled={editSaving}
+								class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-900 hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-100 dark:text-gray-900 text-white text-sm font-medium disabled:opacity-50 transition-colors"
+							>
+								{#if editSaving}
+									<svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+										<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+										<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+									</svg>
+									{$i18n.t('Saving…')}
+								{:else}
+									<Check className="w-4 h-4" strokeWidth="2.5" />
+									{$i18n.t('Save changes')}
+								{/if}
+							</button>
+						</div>
+					</div>
+				{:else}
 				<!-- segmented progress / card-nav bar -->
 				<div class="mb-6">
 					<div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-2 tabular-nums">
@@ -748,6 +1066,7 @@
 					{/if}
 
 					<!-- (the all-cards list lived here; replaced by the segmented progress bar above) -->
+				{/if}
 				{/if}
 			</div>
 		{/if}
