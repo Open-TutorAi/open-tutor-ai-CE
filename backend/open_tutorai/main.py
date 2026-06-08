@@ -28,8 +28,7 @@ CORS_ALLOW_ORIGIN = [
     if origin.strip()
 ]
 
-print(
-    rf"""
+print(rf"""
  ██████╗ ██████╗ ███████╗███╗   ██╗    ████████╗██╗   ██╗████████╗ ██████╗ ██████╗    █████╗ ██╗
 ██╔═══██╗██╔══██╗██╔════╝████╗  ██║    ╚══██╔══╝██║   ██║╚══██╔══╝██╔═══██╗██╔══██╗  ██╔══██╗██║
 ██║   ██║██████╔╝█████╗  ██╔██╗ ██║       ██║   ██║   ██║   ██║   ██║   ██║██████╔╝  ███████║██║
@@ -39,8 +38,7 @@ print(
 v{VERSION} - empowering education through open-source AI tutoring.
 {f"Commit: {TUTORAI_BUILD_HASH}" if TUTORAI_BUILD_HASH != "dev-build" else ""}
 https://github.com/Open-TutorAi/open-tutor-ai-CE
-"""
-)
+""")
 
 
 # Create main FastAPI app
