@@ -25,13 +25,16 @@ export const actions = {
     try {
       const formData = await request.formData();
       const name = formData.get('name');
-      const message = formData.get('feedback'); // Change 'feedback' en 'message' si besoin côté serveur
+      const message = formData.get('feedback');
+      
+      // ⭐ AJOUT 1 : Récupérer la note
+      const note = formData.get('note');
 
-      // 2. On envoie au backend Python
+      // ⭐ AJOUT 2 : Envoyer la note au backend
       const response = await fetch(`${BACKEND_URL}/api/feedback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, message })
+        body: JSON.stringify({ name, message, note: note ? parseInt(note) : null })  // ← modifié
       });
 
       if (!response.ok) {

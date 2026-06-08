@@ -64,12 +64,12 @@ class SupportFile(Base):
         return f"<SupportFile(id={self.id}, support_id={self.support_id}, filename={self.filename})>"
 
 class UserFeedback(Base):
-    """Table pour stocker les feedbacks utilisateurs du formulaire."""
     __tablename__ = f"{PREFIX}user_feedback"
     
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    name = Column(String, nullable=True)  # Le champ Name du formulaire
-    message = Column(Text, nullable=False) # Le champ Feedback
+    name = Column(String, nullable=True)
+    message = Column(Text, nullable=False)
+    note = Column(Integer, nullable=True)  # ⭐ AJOUTE CETTE LIGNE
     created_at = Column(DateTime, nullable=False, server_default=func.now())
     
     def __repr__(self):

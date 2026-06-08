@@ -1,10 +1,30 @@
 <script>
   import { enhance } from '$app/forms';
+  import Toast from '$lib/Toast.svelte';
 
-  // 'data' contient les feedbacks envoyés par +page.server.js
   export let data;
-  // 'form' contient le résultat de l'envoi du formulaire
   export let form;
+  
+  let note = 0;
+  let hoverNote = 0;
+  let showToast = false;
+  let toastMessage = '';
+  let toastType = 'success';
+  
+  function afficherNotification(message, type = 'success') {
+    toastMessage = message;
+    toastType = type;
+    showToast = true;
+    setTimeout(() => { showToast = false; }, 3000);
+  }
+  
+  // Déclencher la notification quand le formulaire est soumis
+  $: if (form?.success && !showToast) {
+    afficherNotification('✅ Thank you! Your feedback has been saved.', 'success');
+  }
+  $: if (form?.error && !showToast) {
+    afficherNotification(form.error, 'error');
+  }
 </script>
 
 <div class="max-w-2xl mx-auto p-6 space-y-8">
@@ -28,6 +48,27 @@
         />
       </div>
 
+      <!-- ⭐ ÉTOILES DE NOTATION -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">⭐ Your rating (1 to 5)</label>
+        <div class="flex gap-2">
+          {#each [1, 2, 3, 4, 5] as star}
+            <button
+              type="button"
+              class="text-3xl transition transform hover:scale-110 focus:outline-none {star <= (hoverNote || note) ? 'text-yellow-400' : 'text-gray-300'}"
+              on:mouseenter={() => hoverNote = star}
+              on:mouseleave={() => hoverNote = 0}
+              on:click={() => note = star}
+            >
+              {star <= (hoverNote || note) ? '★' : '☆'}
+            </button>
+          {/each}
+        </div>
+        {#if note > 0}
+          <p class="text-sm text-gray-500 mt-1">Selected rating: {note} star{note > 1 ? 's' : ''}</p>
+        {/if}
+      </div>
+
       <div>
         <label for="feedback" class="block text-sm font-medium text-gray-700 mb-1">Your Feedback</label>
         <textarea
@@ -40,6 +81,9 @@
         ></textarea>
       </div>
 
+      <!-- Champ caché pour envoyer la note -->
+      <input type="hidden" name="note" value={note} />
+
       <button
         type="submit"
         class="w-full sm:w-auto bg-black text-white px-6 py-2 rounded-lg hover:bg-gray-800 transition font-medium"
@@ -48,24 +92,16 @@
       </button>
     </form>
 
-    <!-- Notifications (Succès / Erreur) -->
-    {#if form?.success}
-      <div class="mt-4 p-3 bg-green-50 text-green-700 border border-green-200 rounded-lg text-sm">
-        ✅ Merci pour votre feedback ! Il a bien été enregistré.
-      </div>
-    {/if}
-    
-    {#if form?.error}
-      <div class="mt-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded-lg text-sm">
-        ❌ {form.error}
-      </div>
+    <!-- 🔔 NOTIFICATION TOAST -->
+    {#if showToast}
+      <Toast message={toastMessage} type={toastType} />
     {/if}
   </div>
 
   <!-- Liste des Feedbacks -->
   <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
     <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
-      💬 Feedbacks reçus
+      💬 Feedbacks received
       <span class="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
         {data.feedbacks?.length || 0}
       </span>
@@ -73,7 +109,7 @@
 
     {#if data.feedbacks?.length === 0}
       <div class="text-center py-8 text-gray-400">
-        <p>Aucun feedback pour le moment. Soyez le premier !</p>
+        <p>No feedback yet. Be the first!</p>
       </div>
     {:else}
       <div class="space-y-4 max-h-[500px] overflow-y-auto pr-2 scrollbar-thin">
@@ -81,11 +117,19 @@
           <div class="border-b border-gray-100 pb-3 last:border-0">
             <div class="flex justify-between items-start mb-1">
               <span class="font-semibold text-gray-800">{f.name || 'Anonyme'}</span>
-              <span class="text-xs text-gray-400 whitespace-nowrap ml-2">
-                {new Date(f.created_at).toLocaleDateString('fr-FR', {
-                  day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
-                })}
-              </span>
+              <div class="flex items-center gap-2">
+                <!-- ⭐ AFFICHAGE DES ÉTOILES DANS LA LISTE -->
+                {#if f.note}
+                  <span class="text-xs text-yellow-500">
+                    {'★'.repeat(f.note)}{'☆'.repeat(5 - f.note)}
+                  </span>
+                {/if}
+                <span class="text-xs text-gray-400 whitespace-nowrap">
+                  {new Date(f.created_at).toLocaleDateString('fr-FR', {
+                    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                  })}
+                </span>
+              </div>
             </div>
             <p class="text-gray-600 whitespace-pre-wrap text-sm leading-relaxed">{f.message}</p>
           </div>
