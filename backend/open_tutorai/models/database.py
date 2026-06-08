@@ -56,6 +56,13 @@ class Support(Base):
         String, ForeignKey("chat.id", ondelete="CASCADE"), index=True, nullable=True
     )
 
+    # JSON array of chat ids ever linked to this support, in chronological order.
+    # `chat_id` above mirrors the most-recently-linked entry for backward compat
+    # with any code still reading a single id; new code should prefer chat_ids.
+    # Default to None (rather than []) so existing rows without the column read
+    # as null and the router can normalise them to an empty list on write.
+    chat_ids = Column(JSONField, nullable=True)
+
     def __repr__(self):
         return f"<Support(id={self.id}, user_id={self.user_id}, title={self.title})>"
 

@@ -273,6 +273,11 @@ async def get_support_requests(
                         "avatar_id": support.avatar_id,
                         "status": support.status,
                         "chat_id": support.chat_id,
+                        "chat_ids": (
+                            support.chat_ids
+                            if isinstance(support.chat_ids, list)
+                            else ([support.chat_id] if support.chat_id else [])
+                        ),
                         "created_at": (
                             support.created_at.isoformat()
                             if support.created_at
@@ -342,6 +347,11 @@ async def get_support_by_id(support_id: str, user=Depends(get_verified_user)):
                 "avatar_id": support.avatar_id,
                 "status": support.status,
                 "chat_id": support.chat_id,
+                "chat_ids": (
+                    support.chat_ids
+                    if isinstance(support.chat_ids, list)
+                    else ([support.chat_id] if support.chat_id else [])
+                ),
                 "created_at": (
                     support.created_at.isoformat() if support.created_at else None
                 ),
@@ -403,18 +413,30 @@ async def update_support_chat_id(
                 f"Updating support {support_id} - Current chat_id: {support.chat_id}, New chat_id: {chat_id}"
             )
 
-            # Update the chat_id
+            # Append to chat_ids (dedup, preserve insertion order) so a support
+            # can accumulate multiple chats over time. `chat_id` keeps mirroring
+            # the most recently linked chat for backward compatibility with any
+            # code still reading a single value.
+            existing = support.chat_ids if isinstance(support.chat_ids, list) else []
+            if chat_id not in existing:
+                existing = existing + [chat_id]
+            else:
+                # Move the existing entry to the end so "most recent" semantics
+                # are preserved when the same chat is re-linked.
+                existing = [c for c in existing if c != chat_id] + [chat_id]
+            support.chat_ids = existing
             support.chat_id = chat_id
             support.updated_at = datetime.now()
             session.commit()
 
             log.info(
-                f"Successfully updated support {support_id} with chat_id {chat_id}"
+                f"Successfully updated support {support_id} with chat_id {chat_id} (chat_ids now has {len(existing)} entries)"
             )
 
             return {
                 "id": support.id,
                 "chat_id": support.chat_id,
+                "chat_ids": support.chat_ids,
                 "status": "success",
                 "message": "Chat ID updated successfully",
             }

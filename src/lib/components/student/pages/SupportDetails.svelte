@@ -5,6 +5,7 @@
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { getSupportById, deleteSupport } from '$lib/apis/supports';
+	import { getChatById } from '$lib/apis/chats';
 	import type { Writable } from 'svelte/store';
 	import { browser } from '$app/environment';
 	import ConfirmDialog from '$lib/components/student/elements/ConfirmDialog.svelte';
@@ -66,6 +67,51 @@
 
 	// Confirmation dialog
 	let showDeleteConfirm = false;
+
+	// Map of chat_id → resolved title. Filled lazily as the chat list renders.
+	// Display falls back to the raw id when a fetch fails; this is a display
+	// nicety, not load-critical.
+	let chatTitles: Record<string, string> = {};
+	let chatTitlesLoading: Record<string, boolean> = {};
+
+	async function loadChatTitle(chatId: string) {
+		if (!browser) return;
+		if (chatTitles[chatId] !== undefined) return;
+		if (chatTitlesLoading[chatId]) return;
+		chatTitlesLoading = { ...chatTitlesLoading, [chatId]: true };
+		try {
+			const token = localStorage.getItem('token') ?? '';
+			if (!token) return;
+			const chat = await getChatById(token, chatId);
+			const title = chat?.chat?.title ?? chat?.title ?? null;
+			if (title) chatTitles = { ...chatTitles, [chatId]: title };
+		} catch {
+			// Leave title unset — the template renders the id as a fallback.
+		} finally {
+			chatTitlesLoading = { ...chatTitlesLoading, [chatId]: false };
+		}
+	}
+
+	// Canonical list of linked chats. We prefer chat_ids (the new array) but
+	// gracefully fall back to a single-element array built from the legacy
+	// chat_id field so a backend that hasn't been updated yet still renders.
+	function getLinkedChatIds(s: any): string[] {
+		if (Array.isArray(s?.chat_ids) && s.chat_ids.length > 0) {
+			return s.chat_ids.filter((x: any): x is string => typeof x === 'string');
+		}
+		if (typeof s?.chat_id === 'string' && s.chat_id) return [s.chat_id];
+		return [];
+	}
+
+	let linkedChatIds: string[] = [];
+	let displayChatIds: string[] = []; // reversed (newest first) for rendering
+
+	$: linkedChatIds = getLinkedChatIds(support);
+	$: displayChatIds = linkedChatIds.slice().reverse();
+
+	$: if (linkedChatIds.length) {
+		linkedChatIds.forEach((cid) => loadChatTitle(cid));
+	}
 
 	// Extract support ID from URL
 	$: supportId = $page.params.id;
@@ -575,23 +621,51 @@
 						<h3
 							class="text-lg font-semibold text-gray-800 dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-gray-700"
 						>
-							{$i18n.t('Support Chat')}
+							{$i18n.t('Support Chats')}
 						</h3>
 
-						<div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-							<!-- Chat ID -->
-							{#if support.chat_id}
-								<div>
-									<h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-										{$i18n.t('Associated Chat')}
-									</h4>
-									<div class="flex items-center">
-										<span class="text-gray-700 dark:text-gray-300 mr-3 text-sm"
-											>{support.chat_id}</span
-										>
+						{#if linkedChatIds.length === 0}
+							<div class="flex flex-col items-start gap-2">
+								<p class="text-sm text-gray-500 dark:text-gray-400">
+									{$i18n.t('No chats linked to this support yet.')}
+								</p>
+								<a
+									href="/student/chat"
+									on:click={handleStartChat}
+									class="inline-flex items-center text-white bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-full text-sm"
+								>
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										class="h-4 w-4 mr-1"
+										viewBox="0 0 20 20"
+										fill="currentColor"
+									>
+										<path
+											fill-rule="evenodd"
+											d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+											clip-rule="evenodd"
+										/>
+									</svg>
+									{$i18n.t('Start a Chat')}
+								</a>
+							</div>
+						{:else}
+							<ul class="space-y-2 mb-3">
+								{#each displayChatIds as cid (cid)}
+									<li
+										class="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
+									>
+										<div class="min-w-0 flex-1">
+											<p
+												class="text-sm font-medium text-gray-800 dark:text-gray-100 truncate"
+												title={chatTitles[cid] ?? cid}
+											>
+												{chatTitles[cid] ?? (chatTitlesLoading[cid] ? $i18n.t('Loading…') : cid)}
+											</p>
+										</div>
 										<a
-											href={`/student/c/${support.chat_id}`}
-											class="inline-flex items-center text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100 text-sm bg-blue-100 dark:bg-blue-800 px-3 py-1 rounded-full transition-colors"
+											href={`/student/c/${cid}`}
+											class="shrink-0 inline-flex items-center text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100 text-sm bg-blue-100 dark:bg-blue-800/40 hover:bg-blue-200 dark:hover:bg-blue-800 px-3 py-1 rounded-full transition-colors"
 										>
 											<svg
 												xmlns="http://www.w3.org/2000/svg"
@@ -606,35 +680,32 @@
 													d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"
 												/>
 											</svg>
-											{$i18n.t('Continue Chat')}
+											{$i18n.t('Continue')}
 										</a>
-									</div>
-								</div>
-							{:else}
-								<div>
-									<h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-										{$i18n.t('No Associated Chat')}
-									</h4>
-									<div class="flex items-center">
-										<a
-											href="/student/chat"
-											on:click={handleStartChat}
-											class="inline-flex items-center text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded-full text-sm"
-										>
-											<svg
-												xmlns="http://www.w3.org/2000/svg"
-												class="h-4 w-4 mr-1"
-												viewBox="0 0 20 20"
-												fill="currentColor"
-											>
-												<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
-											</svg>
-											{$i18n.t('Start a Chat')}
-										</a>
-									</div>
-								</div>
-							{/if}
-						</div>
+									</li>
+								{/each}
+							</ul>
+
+							<a
+								href="/student/chat"
+								on:click={handleStartChat}
+								class="inline-flex items-center text-white bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-full text-sm"
+							>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									class="h-4 w-4 mr-1"
+									viewBox="0 0 20 20"
+									fill="currentColor"
+								>
+									<path
+										fill-rule="evenodd"
+										d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+										clip-rule="evenodd"
+									/>
+								</svg>
+								{$i18n.t('Start a new chat')}
+							</a>
+						{/if}
 					</div>
 
 					<!-- Actions footer -->

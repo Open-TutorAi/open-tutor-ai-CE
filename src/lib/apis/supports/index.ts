@@ -45,7 +45,10 @@ export interface SupportResponse {
     end_date?: string;
     avatar_id?: string;
     status: string;
+    /** Most recently linked chat. Mirrors `chat_ids[chat_ids.length - 1]`; kept for backward compat. */
     chat_id?: string;
+    /** All chats ever linked to this support, in chronological order (oldest first). */
+    chat_ids?: string[];
     created_at: string;
     updated_at?: string;
 }
