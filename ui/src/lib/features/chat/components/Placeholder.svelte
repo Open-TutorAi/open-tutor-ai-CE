@@ -22,7 +22,7 @@
 
 	import { settings, user } from '$lib/stores';
 	import { goto } from '$app/navigation';
-	import AvatarSelection from '$lib/features/chat/components/AvatarSelection.svelte';
+	import { AvatarSelection } from '$lib/features/avatar';
 
 	// Props that must be kept for component compatibility
 	export let createMessagePair: Function;

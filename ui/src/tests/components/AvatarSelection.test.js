@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 import { tick } from 'svelte';
-import AvatarSelection from '$lib/features/chat/components/AvatarSelection.svelte';
+import AvatarSelection from '$lib/features/avatar/components/AvatarSelection.svelte';
 
 // Mock the stores first, before any imports
 vi.mock('$lib/stores', () => {

@@ -85,7 +85,7 @@
 	import Placeholder from '$lib/features/chat/components/Placeholder.svelte';
 	import NotificationToast from '$lib/components/NotificationToast.svelte';
 	import Spinner from '$lib/ui/Spinner.svelte';
-	import AvatarChat from '$lib/features/chat/components/AvatarChat.svelte';
+	import { AvatarChat } from '$lib/features/avatar';
 
 	export let chatIdProp = '';
 
