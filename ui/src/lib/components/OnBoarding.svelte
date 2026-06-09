@@ -6,8 +6,8 @@
 
 	import { TUTOR_FRONT_URL } from '$lib/constants';
 
-	import Marquee from './common/Marquee.svelte';
-	import SlideShow from './common/SlideShow.svelte';
+	import Marquee from '$lib/ui/Marquee.svelte';
+	import SlideShow from '$lib/ui/SlideShow.svelte';
 	import ArrowRightCircle from './icons/ArrowRightCircle.svelte';
 
 	export let show = true;

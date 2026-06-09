@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Checkbox from '$lib/components/common/Checkbox.svelte';
+	import Checkbox from '$lib/ui/Checkbox.svelte';
 	import { getContext, onMount } from 'svelte';
 
 	export let tools = [];

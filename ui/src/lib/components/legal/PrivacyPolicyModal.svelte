@@ -1,6 +1,6 @@
 <script>
     import { getContext } from 'svelte';
-    import Modal from '../common/LegalModal.svelte';
+    import Modal from '$lib/ui/LegalModal.svelte';
 
     export let open = false;
 

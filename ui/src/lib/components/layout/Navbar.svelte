@@ -17,7 +17,7 @@
 	import { slide } from 'svelte/transition';
 	import ShareChatModal from '../chat/ShareChatModal.svelte';
 	import ModelSelector from '../chat/ModelSelector.svelte';
-	import Tooltip from '../common/Tooltip.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import Menu from './Navbar/Menu.svelte';
 	import { page } from '$app/stores';
 	import UserMenu from './Sidebar/UserMenu.svelte';

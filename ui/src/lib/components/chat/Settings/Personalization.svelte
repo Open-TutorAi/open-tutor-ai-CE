@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { getBackendConfig } from '$lib/apis';
 	import { setDefaultPromptSuggestions } from '$lib/apis/configs';
-	import Switch from '$lib/components/common/Switch.svelte';
+	import Switch from '$lib/ui/Switch.svelte';
 	import { config, models, settings, user } from '$lib/stores';
 	import { createEventDispatcher, onMount, getContext, tick } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import ManageModal from './Personalization/ManageModal.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	const dispatch = createEventDispatcher();
 
 	const i18n = getContext('i18n');

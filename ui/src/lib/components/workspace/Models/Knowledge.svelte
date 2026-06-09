@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
 	import Selector from './Knowledge/Selector.svelte';
-	import FileItem from '$lib/components/common/FileItem.svelte';
+	import FileItem from '$lib/ui/FileItem.svelte';
 
 	export let selectedKnowledge = [];
 	export let collections = [];

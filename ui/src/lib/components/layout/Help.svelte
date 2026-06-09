@@ -4,7 +4,7 @@
 	const i18n = getContext('i18n');
 
 	import ShortcutsModal from '../chat/ShortcutsModal.svelte';
-	import Tooltip from '../common/Tooltip.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import HelpMenu from './Help/HelpMenu.svelte';
 
 	let showShortcuts = false;

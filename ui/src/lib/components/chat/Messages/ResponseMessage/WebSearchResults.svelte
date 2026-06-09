@@ -2,7 +2,7 @@
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import ChevronUp from '$lib/components/icons/ChevronUp.svelte';
 	import MagnifyingGlass from '$lib/components/icons/MagnifyingGlass.svelte';
-	import Collapsible from '$lib/components/common/Collapsible.svelte';
+	import Collapsible from '$lib/ui/Collapsible.svelte';
 
 	export let status = { urls: [], query: '' };
 	let state = false;

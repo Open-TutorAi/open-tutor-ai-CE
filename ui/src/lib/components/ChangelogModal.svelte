@@ -7,7 +7,7 @@
 	import { TUTOR_VERSION } from '$lib/constants';
 	import { getChangelog } from '$lib/apis';
 
-	import Modal from './common/Modal.svelte';
+	import Modal from '$lib/ui/Modal.svelte';
 	import { updateUserSettings } from '$lib/apis/users';
 
 	const i18n = getContext('i18n');

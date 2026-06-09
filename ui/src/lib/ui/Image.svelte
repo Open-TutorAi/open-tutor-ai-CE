@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { TUTOR_BASE_URL } from '$lib/constants';
-	import ImagePreview from './ImagePreview.svelte';
+	import ImagePreview from '$lib/ui/ImagePreview.svelte';
 
 	export let src = '';
 	export let alt = '';

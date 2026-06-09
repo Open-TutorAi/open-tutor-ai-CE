@@ -3,7 +3,7 @@
 	import { onMount, tick, getContext } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import Selector from './ModelSelector/Selector.svelte';
-	import Tooltip from '../common/Tooltip.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 
 	import { updateUserSettings } from '$lib/apis/users';
 	const i18n = getContext('i18n');

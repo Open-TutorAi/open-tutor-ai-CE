@@ -6,8 +6,8 @@
 	import XMark from '$lib/components/icons/XMark.svelte';
 	import AdvancedParams from '../Settings/Advanced/AdvancedParams.svelte';
 	import Valves from '$lib/components/chat/Controls/Valves.svelte';
-	import FileItem from '$lib/components/common/FileItem.svelte';
-	import Collapsible from '$lib/components/common/Collapsible.svelte';
+	import FileItem from '$lib/ui/FileItem.svelte';
+	import Collapsible from '$lib/ui/Collapsible.svelte';
 
 	import { user } from '$lib/stores';
 	export let models = [];

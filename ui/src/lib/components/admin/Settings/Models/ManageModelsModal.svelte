@@ -7,10 +7,10 @@
 
 	import { user } from '$lib/stores';
 
-	import Modal from '$lib/components/common/Modal.svelte';
+	import Modal from '$lib/ui/Modal.svelte';
 	import ManageOllama from './Manage/ManageOllama.svelte';
 	import { getOllamaConfig } from '$lib/apis/ollama';
-	import Spinner from '$lib/components/common/Spinner.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
 	import ManageMultipleOllama from './Manage/ManageMultipleOllama.svelte';
 
 	export let show = false;

@@ -9,7 +9,7 @@
 
 	import Suggestions from './Suggestions.svelte';
 	import { sanitizeResponseContent } from '$lib/utils';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import EyeSlash from '$lib/components/icons/EyeSlash.svelte';
 
 	const i18n = getContext('i18n');

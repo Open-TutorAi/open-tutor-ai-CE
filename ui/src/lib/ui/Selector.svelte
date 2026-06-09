@@ -4,9 +4,9 @@
 	import { flyAndScale } from '$lib/utils/transitions';
 
 	import { createEventDispatcher } from 'svelte';
-	import ChevronDown from '../icons/ChevronDown.svelte';
-	import Check from '../icons/Check.svelte';
-	import Search from '../icons/Search.svelte';
+	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
+	import Check from '$lib/components/icons/Check.svelte';
+	import Search from '$lib/components/icons/Search.svelte';
 
 	const dispatch = createEventDispatcher();
 

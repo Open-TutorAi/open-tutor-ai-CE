@@ -19,7 +19,7 @@
 
 	const dispatch = createEventDispatcher();
 
-	import Tags from '../common/Tags.svelte';
+	import Tags from '$lib/ui/Tags.svelte';
 	import { toast } from 'svelte-sonner';
 
 	export let chatId = '';

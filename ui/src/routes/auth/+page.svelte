@@ -15,7 +15,7 @@
 
 	import { generateInitialsImage, canvasPixelTest } from '$lib/utils';
 
-	import Spinner from '$lib/components/common/Spinner.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
 	import OnBoarding from '$lib/components/OnBoarding.svelte';
 	import RoleSelection from '$lib/components/RoleSelectionPage.svelte';
 

@@ -1,5 +1,5 @@
 <script>
-	import Spinner from './Spinner.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
 
 	export let show = false;
 	export let content = '';

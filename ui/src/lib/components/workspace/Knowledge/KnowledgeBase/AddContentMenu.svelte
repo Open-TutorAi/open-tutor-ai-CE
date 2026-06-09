@@ -4,8 +4,8 @@
 	import { getContext, createEventDispatcher } from 'svelte';
 	const dispatch = createEventDispatcher();
 
-	import Dropdown from '$lib/components/common/Dropdown.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Dropdown from '$lib/ui/Dropdown.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import ArrowUpCircle from '$lib/components/icons/ArrowUpCircle.svelte';
 	import BarsArrowUp from '$lib/components/icons/BarsArrowUp.svelte';
 	import FolderOpen from '$lib/components/icons/FolderOpen.svelte';

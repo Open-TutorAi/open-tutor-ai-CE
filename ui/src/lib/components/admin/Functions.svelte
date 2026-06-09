@@ -18,16 +18,16 @@
 	} from '$lib/apis/functions';
 
 	import ArrowDownTray from '../icons/ArrowDownTray.svelte';
-	import Tooltip from '../common/Tooltip.svelte';
-	import ConfirmDialog from '../common/ConfirmDialog.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
+	import ConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 	import { getModels } from '$lib/apis';
 	import FunctionMenu from './Functions/FunctionMenu.svelte';
 	import EllipsisHorizontal from '../icons/EllipsisHorizontal.svelte';
-	import Switch from '../common/Switch.svelte';
+	import Switch from '$lib/ui/Switch.svelte';
 	import ValvesModal from '../workspace/common/ValvesModal.svelte';
 	import ManifestModal from '../workspace/common/ManifestModal.svelte';
 	import Heart from '../icons/Heart.svelte';
-	import DeleteConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
+	import DeleteConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 	import GarbageBin from '../icons/GarbageBin.svelte';
 	import Search from '../icons/Search.svelte';
 	import Plus from '../icons/Plus.svelte';

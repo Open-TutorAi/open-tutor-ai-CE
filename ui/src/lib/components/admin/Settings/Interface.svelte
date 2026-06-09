@@ -12,9 +12,9 @@
 
 	import { getBanners, setBanners } from '$lib/apis/configs';
 
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	import Switch from '$lib/components/common/Switch.svelte';
-	import Textarea from '$lib/components/common/Textarea.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
+	import Switch from '$lib/ui/Switch.svelte';
+	import Textarea from '$lib/ui/Textarea.svelte';
 
 	const dispatch = createEventDispatcher();
 

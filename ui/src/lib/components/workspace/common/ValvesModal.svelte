@@ -4,16 +4,16 @@
 	import { onMount, getContext } from 'svelte';
 	import { addUser } from '$lib/apis/auths';
 
-	import Modal from '../../common/Modal.svelte';
+	import Modal from '$lib/ui/Modal.svelte';
 	import {
 		getFunctionValvesById,
 		getFunctionValvesSpecById,
 		updateFunctionValvesById
 	} from '$lib/apis/functions';
 	import { getToolValvesById, getToolValvesSpecById, updateToolValvesById } from '$lib/apis/tools';
-	import Spinner from '../../common/Spinner.svelte';
-	import Switch from '$lib/components/common/Switch.svelte';
-	import Valves from '$lib/components/common/Valves.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
+	import Switch from '$lib/ui/Switch.svelte';
+	import Valves from '$lib/ui/Valves.svelte';
 
 	const i18n = getContext('i18n');
 	const dispatch = createEventDispatcher();

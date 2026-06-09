@@ -17,9 +17,9 @@
 		getArchivedChatList
 	} from '$lib/apis/chats';
 
-	import Modal from '$lib/components/common/Modal.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	import UnarchiveAllConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
+	import Modal from '$lib/ui/Modal.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
+	import UnarchiveAllConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 	const i18n = getContext('i18n');
 
 	export let show = false;

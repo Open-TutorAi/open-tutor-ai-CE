@@ -7,8 +7,8 @@
 	import { onMount, getContext } from 'svelte';
 	import { models } from '$lib/stores';
 
-	import Spinner from '$lib/components/common/Spinner.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import MagnifyingGlass from '$lib/components/icons/MagnifyingGlass.svelte';
 
 	const i18n = getContext('i18n');

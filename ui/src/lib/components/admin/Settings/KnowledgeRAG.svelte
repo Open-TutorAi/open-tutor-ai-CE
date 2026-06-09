@@ -17,10 +17,10 @@
 
 	import type { Writable } from 'svelte/store';
 	import type { i18n as i18nType } from 'i18next';
-	import Switch from '$lib/components/common/Switch.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	import SensitiveInput from '$lib/components/common/SensitiveInput.svelte';
-	import ConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
+	import Switch from '$lib/ui/Switch.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
+	import SensitiveInput from '$lib/ui/SensitiveInput.svelte';
+	import ConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 
 	const dispatch = createEventDispatcher();
 	const i18n = getContext<Writable<i18nType>>('i18n');

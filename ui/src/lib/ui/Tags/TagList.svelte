@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import Tooltip from '../Tooltip.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import XMark from '$lib/components/icons/XMark.svelte';
-	import Badge from '../Badge.svelte';
+	import Badge from '$lib/ui/Badge.svelte';
 	const dispatch = createEventDispatcher();
 
 	export let tags = [];

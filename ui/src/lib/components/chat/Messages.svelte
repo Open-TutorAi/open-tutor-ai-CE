@@ -17,8 +17,8 @@
 	import { copyToClipboard, findWordIndices } from '$lib/utils';
 
 	import Message from './Messages/Message.svelte';
-	import Loader from '../common/Loader.svelte';
-	import Spinner from '../common/Spinner.svelte';
+	import Loader from '$lib/ui/Loader.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
 
 	import ChatPlaceholder from './ChatPlaceholder.svelte';
 

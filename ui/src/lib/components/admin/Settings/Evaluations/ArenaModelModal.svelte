@@ -3,7 +3,7 @@
 	const i18n = getContext('i18n');
 	const dispatch = createEventDispatcher();
 
-	import Modal from '$lib/components/common/Modal.svelte';
+	import Modal from '$lib/ui/Modal.svelte';
 	import { models } from '$lib/stores';
 	import Plus from '$lib/components/icons/Plus.svelte';
 	import Minus from '$lib/components/icons/Minus.svelte';

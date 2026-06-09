@@ -2,11 +2,11 @@
 	import { getContext } from 'svelte';
 	const i18n = getContext('i18n');
 
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import Plus from '$lib/components/icons/Plus.svelte';
 	import { TUTOR_BASE_URL } from '$lib/constants';
-	import Checkbox from '$lib/components/common/Checkbox.svelte';
-	import Badge from '$lib/components/common/Badge.svelte';
+	import Checkbox from '$lib/ui/Checkbox.svelte';
+	import Badge from '$lib/ui/Badge.svelte';
 
 	export let users = [];
 	export let userIds = [];

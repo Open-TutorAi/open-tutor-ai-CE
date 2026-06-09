@@ -23,10 +23,10 @@
 	import FilesOverlay from '../chat/MessageInput/FilesOverlay.svelte';
 	import Commands from '../chat/MessageInput/Commands.svelte';
 
-	import RichTextInput from '../common/RichTextInput.svelte';
-	import Tooltip from '../common/Tooltip.svelte';
-	import FileItem from '../common/FileItem.svelte';
-	import Image from '../common/Image.svelte';
+	import RichTextInput from '$lib/ui/RichTextInput.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
+	import FileItem from '$lib/ui/FileItem.svelte';
+	import Image from '$lib/ui/Image.svelte';
 
 	import XMark from '../icons/XMark.svelte';
 	import GlobeAlt from '../icons/GlobeAlt.svelte';

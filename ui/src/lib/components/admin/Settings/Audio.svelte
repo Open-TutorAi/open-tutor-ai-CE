@@ -12,7 +12,7 @@
 	} from '$lib/apis/audio';
 	import { config, settings } from '$lib/stores';
 
-	import SensitiveInput from '$lib/components/common/SensitiveInput.svelte';
+	import SensitiveInput from '$lib/ui/SensitiveInput.svelte';
 
 	import { TTS_RESPONSE_SPLIT } from '$lib/types';
 

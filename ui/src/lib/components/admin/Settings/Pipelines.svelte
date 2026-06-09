@@ -18,8 +18,8 @@
 		uploadPipeline
 	} from '$lib/apis';
 
-	import Spinner from '$lib/components/common/Spinner.svelte';
-	import Switch from '$lib/components/common/Switch.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
+	import Switch from '$lib/ui/Switch.svelte';
 
 	const i18n: Writable<i18nType> = getContext('i18n');
 

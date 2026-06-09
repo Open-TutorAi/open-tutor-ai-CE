@@ -6,7 +6,7 @@
 
 	import { TUTOR_BASE_URL } from '$lib/constants';
 
-	import Modal from '$lib/components/common/Modal.svelte';
+	import Modal from '$lib/ui/Modal.svelte';
 
 	const i18n = getContext('i18n');
 	const dispatch = createEventDispatcher();

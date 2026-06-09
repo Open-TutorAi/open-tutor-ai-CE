@@ -6,11 +6,11 @@
 	const i18n = getContext('i18n');
 	const dispatch = createEventDispatcher();
 
-	import Modal from '$lib/components/common/Modal.svelte';
-	import RichTextInput from '$lib/components/common/RichTextInput.svelte';
+	import Modal from '$lib/ui/Modal.svelte';
+	import RichTextInput from '$lib/ui/RichTextInput.svelte';
 	import XMark from '$lib/components/icons/XMark.svelte';
 	import Mic from '$lib/components/icons/Mic.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import VoiceRecording from '$lib/components/chat/MessageInput/VoiceRecording.svelte';
 	export let show = false;
 

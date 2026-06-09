@@ -16,7 +16,7 @@
 
 	import { Editor } from '@tiptap/core';
 
-	import { AIAutocompletion } from './RichTextInput/AutoCompletion.js';
+	import { AIAutocompletion } from '$lib/ui/RichTextInput/AutoCompletion.js';
 
 	import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 	import Placeholder from '@tiptap/extension-placeholder';

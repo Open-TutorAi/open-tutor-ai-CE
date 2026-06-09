@@ -2,7 +2,7 @@
 	import { createEventDispatcher } from 'svelte';
 	const dispatch = createEventDispatcher();
 
-	import FileItem from '$lib/components/common/FileItem.svelte';
+	import FileItem from '$lib/ui/FileItem.svelte';
 
 	export let selectedFileId = null;
 	export let files = [];

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getContext, onMount, tick } from 'svelte';
-	import Modal from '$lib/components/common/Modal.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Modal from '$lib/ui/Modal.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import { TUTOR_API_BASE_URL } from '$lib/constants';
 
 	const i18n = getContext('i18n');

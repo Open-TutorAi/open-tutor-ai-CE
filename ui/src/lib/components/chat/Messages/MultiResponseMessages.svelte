@@ -10,7 +10,7 @@
 	import { createOpenAITextStream } from '$lib/apis/streaming';
 
 	import ResponseMessage from './ResponseMessage.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import Merge from '$lib/components/icons/Merge.svelte';
 
 	import Markdown from './Markdown.svelte';

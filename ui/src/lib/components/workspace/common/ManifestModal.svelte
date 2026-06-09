@@ -3,7 +3,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import { onMount, getContext } from 'svelte';
 
-	import Modal from '../../common/Modal.svelte';
+	import Modal from '$lib/ui/Modal.svelte';
 
 	const i18n = getContext('i18n');
 	const dispatch = createEventDispatcher();

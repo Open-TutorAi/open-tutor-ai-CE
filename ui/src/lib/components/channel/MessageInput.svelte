@@ -9,14 +9,14 @@
 	import { config, mobile, settings, socket } from '$lib/stores';
 	import { blobToFile, compressImage } from '$lib/utils';
 
-	import Tooltip from '../common/Tooltip.svelte';
-	import RichTextInput from '../common/RichTextInput.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
+	import RichTextInput from '$lib/ui/RichTextInput.svelte';
 	import VoiceRecording from '../chat/MessageInput/VoiceRecording.svelte';
 	import InputMenu from './MessageInput/InputMenu.svelte';
 	import { uploadFile } from '$lib/apis/files';
 	import { TUTOR_API_BASE_URL } from '$lib/constants';
-	import FileItem from '../common/FileItem.svelte';
-	import Image from '../common/Image.svelte';
+	import FileItem from '$lib/ui/FileItem.svelte';
+	import Image from '$lib/ui/Image.svelte';
 	import { transcribeAudio } from '$lib/apis/audio';
 	import FilesOverlay from '../chat/MessageInput/FilesOverlay.svelte';
 

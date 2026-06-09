@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Switch from '$lib/components/common/Switch.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Switch from '$lib/ui/Switch.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import { getContext, createEventDispatcher } from 'svelte';
 
 	const dispatch = createEventDispatcher();

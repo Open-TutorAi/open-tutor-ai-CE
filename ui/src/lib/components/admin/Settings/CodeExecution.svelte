@@ -3,11 +3,11 @@
 	import { onMount, getContext } from 'svelte';
 	import { getCodeExecutionConfig, setCodeExecutionConfig } from '$lib/apis/configs';
 
-	import SensitiveInput from '$lib/components/common/SensitiveInput.svelte';
+	import SensitiveInput from '$lib/ui/SensitiveInput.svelte';
 
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	import Textarea from '$lib/components/common/Textarea.svelte';
-	import Switch from '$lib/components/common/Switch.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
+	import Textarea from '$lib/ui/Textarea.svelte';
+	import Switch from '$lib/ui/Switch.svelte';
 
 	const i18n = getContext('i18n');
 

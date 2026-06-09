@@ -7,9 +7,9 @@
 	import { getModels } from '$lib/apis';
 	import { getConfig, updateConfig } from '$lib/apis/evaluations';
 
-	import Switch from '$lib/components/common/Switch.svelte';
-	import Spinner from '$lib/components/common/Spinner.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Switch from '$lib/ui/Switch.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import Plus from '$lib/components/icons/Plus.svelte';
 	import Model from './Evaluations/Model.svelte';
 	import ArenaModelModal from './Evaluations/ArenaModelModal.svelte';

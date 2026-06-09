@@ -10,8 +10,8 @@
 
 	import ChevronDown from '../../icons/ChevronDown.svelte';
 	import ChevronRight from '../../icons/ChevronRight.svelte';
-	import Collapsible from '../../common/Collapsible.svelte';
-	import DragGhost from '$lib/components/common/DragGhost.svelte';
+	import Collapsible from '$lib/ui/Collapsible.svelte';
+	import DragGhost from '$lib/ui/DragGhost.svelte';
 
 	import FolderOpen from '$lib/components/icons/FolderOpen.svelte';
 	import EllipsisHorizontal from '$lib/components/icons/EllipsisHorizontal.svelte';
@@ -30,7 +30,7 @@
 	} from '$lib/apis/chats';
 	import ChatItem from './ChatItem.svelte';
 	import FolderMenu from './Folders/FolderMenu.svelte';
-	import DeleteConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
+	import DeleteConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 
 	export let open = false;
 

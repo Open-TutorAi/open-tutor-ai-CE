@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
 	import CitationsModal from './CitationsModal.svelte';
-	import Collapsible from '$lib/components/common/Collapsible.svelte';
+	import Collapsible from '$lib/ui/Collapsible.svelte';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import ChevronUp from '$lib/components/icons/ChevronUp.svelte';
 

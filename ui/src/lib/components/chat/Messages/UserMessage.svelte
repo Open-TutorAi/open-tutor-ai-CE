@@ -9,11 +9,11 @@
 
 	import Name from './Name.svelte';
 	import ProfileImage from './ProfileImage.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	import FileItem from '$lib/components/common/FileItem.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
+	import FileItem from '$lib/ui/FileItem.svelte';
 	import Markdown from './Markdown.svelte';
-	import Image from '$lib/components/common/Image.svelte';
-	import DeleteConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
+	import Image from '$lib/ui/Image.svelte';
+	import DeleteConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 
 	import localizedFormat from 'dayjs/plugin/localizedFormat';
 

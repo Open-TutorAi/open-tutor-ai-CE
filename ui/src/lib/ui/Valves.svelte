@@ -3,7 +3,7 @@
 	const dispatch = createEventDispatcher();
 	const i18n = getContext('i18n');
 
-	import Switch from './Switch.svelte';
+	import Switch from '$lib/ui/Switch.svelte';
 
 	export let valvesSpec = null;
 	export let valves = {};

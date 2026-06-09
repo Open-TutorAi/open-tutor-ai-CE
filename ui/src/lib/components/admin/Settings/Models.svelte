@@ -17,13 +17,13 @@
 
 	import { getModels } from '$lib/apis';
 	import Search from '$lib/components/icons/Search.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	import Switch from '$lib/components/common/Switch.svelte';
-	import Spinner from '$lib/components/common/Spinner.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
+	import Switch from '$lib/ui/Switch.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
 
 	import ModelEditor from '$lib/components/workspace/Models/ModelEditor.svelte';
 	import { toast } from 'svelte-sonner';
-	import ConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
+	import ConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 	import Cog6 from '$lib/components/icons/Cog6.svelte';
 	import ConfigureModelsModal from './Models/ConfigureModelsModal.svelte';
 	import Wrench from '$lib/components/icons/Wrench.svelte';

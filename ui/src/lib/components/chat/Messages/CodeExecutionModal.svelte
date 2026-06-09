@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
 	import CodeBlock from './CodeBlock.svelte';
-	import Modal from '$lib/components/common/Modal.svelte';
-	import Spinner from '$lib/components/common/Spinner.svelte';
-	import Badge from '$lib/components/common/Badge.svelte';
+	import Modal from '$lib/ui/Modal.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
+	import Badge from '$lib/ui/Badge.svelte';
 	const i18n = getContext('i18n');
 
 	export let show = false;

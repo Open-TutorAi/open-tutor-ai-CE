@@ -5,10 +5,10 @@
 
 	const dispatch = createEventDispatcher();
 
-	import Modal from '$lib/components/common/Modal.svelte';
+	import Modal from '$lib/ui/Modal.svelte';
 	import AddMemoryModal from './AddMemoryModal.svelte';
 	import { deleteMemoriesByUserId, deleteMemoryById, getMemories } from '$lib/apis/memories';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import { error } from '@sveltejs/kit';
 	import EditMemoryModal from './EditMemoryModal.svelte';
 	import localizedFormat from 'dayjs/plugin/localizedFormat';

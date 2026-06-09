@@ -31,14 +31,14 @@
 	import Name from './Name.svelte';
 	import ProfileImage from './ProfileImage.svelte';
 	import Skeleton from './Skeleton.svelte';
-	import Image from '$lib/components/common/Image.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Image from '$lib/ui/Image.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import RateComment from './RateComment.svelte';
-	import Spinner from '$lib/components/common/Spinner.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
 	import WebSearchResults from './ResponseMessage/WebSearchResults.svelte';
 	import Sparkles from '$lib/components/icons/Sparkles.svelte';
 
-	import DeleteConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
+	import DeleteConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 
 	import Error from './Error.svelte';
 	import Citations from './Citations.svelte';

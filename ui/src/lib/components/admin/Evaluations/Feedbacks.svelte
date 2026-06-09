@@ -12,11 +12,11 @@
 
 	import { deleteFeedbackById, exportAllFeedbacks, getAllFeedbacks } from '$lib/apis/evaluations';
 
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import ArrowDownTray from '$lib/components/icons/ArrowDownTray.svelte';
-	import Badge from '$lib/components/common/Badge.svelte';
+	import Badge from '$lib/ui/Badge.svelte';
 	import CloudArrowUp from '$lib/components/icons/CloudArrowUp.svelte';
-	import Pagination from '$lib/components/common/Pagination.svelte';
+	import Pagination from '$lib/ui/Pagination.svelte';
 	import FeedbackMenu from './FeedbackMenu.svelte';
 	import EllipsisHorizontal from '$lib/components/icons/EllipsisHorizontal.svelte';
 

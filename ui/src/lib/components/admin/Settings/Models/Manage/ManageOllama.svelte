@@ -19,10 +19,10 @@
 	} from '$lib/apis/ollama';
 	import { getModels } from '$lib/apis';
 
-	import Modal from '$lib/components/common/Modal.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	import ModelDeleteConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
-	import Spinner from '$lib/components/common/Spinner.svelte';
+	import Modal from '$lib/ui/Modal.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
+	import ModelDeleteConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
 
 	let modelUploadInputElement: HTMLInputElement;
 	let showModelDeleteConfirm = false;

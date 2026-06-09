@@ -7,7 +7,7 @@
 	import ArchiveBox from '$lib/components/icons/ArchiveBox.svelte';
 	import { showSettings, activeUserIds, USAGE_POOL, mobile, showSidebar } from '$lib/stores';
 	import { fade, slide } from 'svelte/transition';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import { userSignOut } from '$lib/apis/auths';
 
 	const i18n = getContext('i18n');

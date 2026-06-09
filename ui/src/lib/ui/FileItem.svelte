@@ -2,10 +2,10 @@
 	import { createEventDispatcher, getContext } from 'svelte';
 	import { formatFileSize } from '$lib/utils';
 
-	import FileItemModal from './FileItemModal.svelte';
-	import GarbageBin from '../icons/GarbageBin.svelte';
-	import Spinner from './Spinner.svelte';
-	import Tooltip from './Tooltip.svelte';
+	import FileItemModal from '$lib/ui/FileItemModal.svelte';
+	import GarbageBin from '$lib/components/icons/GarbageBin.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 
 	const i18n = getContext('i18n');
 	const dispatch = createEventDispatcher();

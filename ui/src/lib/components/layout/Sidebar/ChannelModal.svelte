@@ -2,9 +2,9 @@
 	import { getContext, createEventDispatcher, onMount } from 'svelte';
 	import { createNewChannel, deleteChannelById } from '$lib/apis/channels';
 
-	import Modal from '$lib/components/common/Modal.svelte';
+	import Modal from '$lib/ui/Modal.svelte';
 	import AccessControl from '$lib/components/workspace/common/AccessControl.svelte';
-	import DeleteConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
+	import DeleteConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 
 	import { toast } from 'svelte-sonner';
 	import { page } from '$app/stores';

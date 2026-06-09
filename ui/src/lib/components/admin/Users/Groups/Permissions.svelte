@@ -2,8 +2,8 @@
 	import { getContext, onMount } from 'svelte';
 	const i18n = getContext('i18n');
 
-	import Switch from '$lib/components/common/Switch.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Switch from '$lib/ui/Switch.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 
 	// Default values for permissions
 	const defaultPermissions = {

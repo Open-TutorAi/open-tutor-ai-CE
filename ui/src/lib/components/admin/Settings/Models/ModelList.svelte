@@ -5,7 +5,7 @@
 	const i18n = getContext('i18n');
 
 	import { models } from '$lib/stores';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import EllipsisVertical from '$lib/components/icons/EllipsisVertical.svelte';
 
 	export let modelIds = [];

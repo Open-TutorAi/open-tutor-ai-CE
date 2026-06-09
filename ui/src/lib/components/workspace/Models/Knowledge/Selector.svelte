@@ -5,7 +5,7 @@
 	import { onMount, getContext, createEventDispatcher } from 'svelte';
 	import { flyAndScale } from '$lib/utils/transitions';
 	import { knowledge } from '$lib/stores';
-	import Dropdown from '$lib/components/common/Dropdown.svelte';
+	import Dropdown from '$lib/ui/Dropdown.svelte';
 
 	const i18n = getContext('i18n');
 	const dispatch = createEventDispatcher();

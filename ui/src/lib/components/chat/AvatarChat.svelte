@@ -3,7 +3,7 @@
 	import * as THREE from 'three';
 	import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 	import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-	import Spinner from '$lib/components/common/Spinner.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
 	import { settings } from '$lib/stores';
 	import ClassroomBackground from '$lib/components/classroom/ClassroomBackground.svelte';
 

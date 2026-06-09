@@ -14,8 +14,8 @@
 	import { settings, user } from '$lib/stores';
 
 	import Message from './Messages/Message.svelte';
-	import Loader from '../common/Loader.svelte';
-	import Spinner from '../common/Spinner.svelte';
+	import Loader from '$lib/ui/Loader.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
 	import { addReaction, deleteMessage, removeReaction, updateMessage } from '$lib/apis/channels';
 
 	const i18n = getContext('i18n');

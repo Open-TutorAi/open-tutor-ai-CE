@@ -17,9 +17,9 @@
 		getFunctions
 	} from '$lib/apis/functions';
 
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	import Spinner from '$lib/components/common/Spinner.svelte';
-	import Valves from '$lib/components/common/Valves.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
+	import Valves from '$lib/ui/Valves.svelte';
 
 	const dispatch = createEventDispatcher();
 

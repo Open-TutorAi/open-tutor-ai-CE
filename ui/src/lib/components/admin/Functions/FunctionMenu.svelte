@@ -3,13 +3,13 @@
 	import { flyAndScale } from '$lib/utils/transitions';
 	import { getContext } from 'svelte';
 
-	import Dropdown from '$lib/components/common/Dropdown.svelte';
+	import Dropdown from '$lib/ui/Dropdown.svelte';
 	import GarbageBin from '$lib/components/icons/GarbageBin.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import Share from '$lib/components/icons/Share.svelte';
 	import DocumentDuplicate from '$lib/components/icons/DocumentDuplicate.svelte';
 	import ArrowDownTray from '$lib/components/icons/ArrowDownTray.svelte';
-	import Switch from '$lib/components/common/Switch.svelte';
+	import Switch from '$lib/ui/Switch.svelte';
 	import GlobeAlt from '$lib/components/icons/GlobeAlt.svelte';
 
 	const i18n = getContext('i18n');

@@ -86,15 +86,15 @@
 	import { getSupportById } from '$lib/apis/supports';
 	import { getTutorSystemPrompt } from '$lib/apis/configs';
 
-	import Banner from '$lib/components/common/Banner.svelte';
+	import Banner from '$lib/ui/Banner.svelte';
 	import MessageInput from '$lib/components/chat/MessageInput.svelte';
 	import Messages from '$lib/components/chat/Messages.svelte';
 	import Navbar from '$lib/components/student/tutor/ChatNavbar.svelte';
 	import ChatControls from '$lib/components/chat/ChatControls.svelte';
-	import EventConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
+	import EventConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 	import Placeholder from '$lib/components/chat/Placeholder.svelte';
 	import NotificationToast from '$lib/components/NotificationToast.svelte';
-	import Spinner from '$lib/components/common/Spinner.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
 	import AvatarChat from '$lib/components/chat/AvatarChat.svelte';
 	import FullscreenButton from '$lib/components/chat/FullscreenButton.svelte';
 

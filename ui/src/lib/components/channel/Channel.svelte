@@ -11,7 +11,7 @@
 	import Messages from './Messages.svelte';
 	import MessageInput from './MessageInput.svelte';
 	import Navbar from './Navbar.svelte';
-	import Drawer from '../common/Drawer.svelte';
+	import Drawer from '$lib/ui/Drawer.svelte';
 	import EllipsisVertical from '../icons/EllipsisVertical.svelte';
 	import Thread from './Thread.svelte';
 

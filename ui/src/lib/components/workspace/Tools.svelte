@@ -17,19 +17,19 @@
 		getTools
 	} from '$lib/apis/tools';
 	import ArrowDownTray from '../icons/ArrowDownTray.svelte';
-	import Tooltip from '../common/Tooltip.svelte';
-	import ConfirmDialog from '../common/ConfirmDialog.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
+	import ConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 	import ToolMenu from './Tools/ToolMenu.svelte';
 	import EllipsisHorizontal from '../icons/EllipsisHorizontal.svelte';
 	import ValvesModal from './common/ValvesModal.svelte';
 	import ManifestModal from './common/ManifestModal.svelte';
 	import Heart from '../icons/Heart.svelte';
-	import DeleteConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
+	import DeleteConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 	import GarbageBin from '../icons/GarbageBin.svelte';
 	import Search from '../icons/Search.svelte';
 	import Plus from '../icons/Plus.svelte';
 	import ChevronRight from '../icons/ChevronRight.svelte';
-	import Spinner from '../common/Spinner.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
 	import { capitalizeFirstLetter } from '$lib/utils';
 
 	const i18n = getContext('i18n');

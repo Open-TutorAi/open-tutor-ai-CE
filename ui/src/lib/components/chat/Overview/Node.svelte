@@ -3,7 +3,7 @@
 	import { Handle, Position, type NodeProps } from '@xyflow/svelte';
 
 	import ProfileImage from '../Messages/ProfileImage.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import Heart from '$lib/components/icons/Heart.svelte';
 
 	type $$Props = NodeProps;

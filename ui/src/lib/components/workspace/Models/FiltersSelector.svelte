@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { getContext, onMount } from 'svelte';
-	import Checkbox from '$lib/components/common/Checkbox.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Checkbox from '$lib/ui/Checkbox.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 
 	const i18n = getContext('i18n');
 

@@ -26,17 +26,17 @@
 	import { blobToFile } from '$lib/utils';
 	import { processFile } from '$lib/apis/retrieval';
 
-	import Spinner from '$lib/components/common/Spinner.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
 	import Files from './KnowledgeBase/Files.svelte';
 	import AddFilesPlaceholder from '$lib/components/AddFilesPlaceholder.svelte';
 
 	import AddContentMenu from './KnowledgeBase/AddContentMenu.svelte';
 	import AddTextContentModal from './KnowledgeBase/AddTextContentModal.svelte';
 
-	import SyncConfirmDialog from '../../common/ConfirmDialog.svelte';
-	import RichTextInput from '$lib/components/common/RichTextInput.svelte';
+	import SyncConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
+	import RichTextInput from '$lib/ui/RichTextInput.svelte';
 	import EllipsisVertical from '$lib/components/icons/EllipsisVertical.svelte';
-	import Drawer from '$lib/components/common/Drawer.svelte';
+	import Drawer from '$lib/ui/Drawer.svelte';
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
 	import LockClosed from '$lib/components/icons/LockClosed.svelte';
 	import AccessControlModal from '../common/AccessControlModal.svelte';

@@ -14,8 +14,8 @@
 	import CodeBlock from '$lib/components/chat/Messages/CodeBlock.svelte';
 	import MarkdownInlineTokens from '$lib/components/chat/Messages/Markdown/MarkdownInlineTokens.svelte';
 	import KatexRenderer from './KatexRenderer.svelte';
-	import Collapsible from '$lib/components/common/Collapsible.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Collapsible from '$lib/ui/Collapsible.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import ArrowDownTray from '$lib/components/icons/ArrowDownTray.svelte';
 
 	const dispatch = createEventDispatcher();

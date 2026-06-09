@@ -8,9 +8,9 @@
 		updateLdapConfig,
 		updateLdapServer
 	} from '$lib/apis/auths';
-	import SensitiveInput from '$lib/components/common/SensitiveInput.svelte';
-	import Switch from '$lib/components/common/Switch.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import SensitiveInput from '$lib/ui/SensitiveInput.svelte';
+	import Switch from '$lib/ui/Switch.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import { TUTOR_BUILD_HASH, TUTOR_VERSION } from '$lib/constants';
 	import { config, showChangelog } from '$lib/stores';
 	import { compareVersion } from '$lib/utils';

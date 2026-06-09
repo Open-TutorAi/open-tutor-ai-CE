@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { onMount, tick, getContext } from 'svelte';
 
-	import Textarea from '$lib/components/common/Textarea.svelte';
+	import Textarea from '$lib/ui/Textarea.svelte';
 	import { toast } from 'svelte-sonner';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import AccessControl from '../common/AccessControl.svelte';
 	import LockClosed from '$lib/components/icons/LockClosed.svelte';
 	import AccessControlModal from '../common/AccessControlModal.svelte';

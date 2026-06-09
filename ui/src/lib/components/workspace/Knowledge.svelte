@@ -18,14 +18,14 @@
 
 	import { goto } from '$app/navigation';
 
-	import DeleteConfirmDialog from '../common/ConfirmDialog.svelte';
+	import DeleteConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 	import ItemMenu from './Knowledge/ItemMenu.svelte';
-	import Badge from '../common/Badge.svelte';
+	import Badge from '$lib/ui/Badge.svelte';
 	import Search from '../icons/Search.svelte';
 	import Plus from '../icons/Plus.svelte';
-	import Spinner from '../common/Spinner.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
 	import { capitalizeFirstLetter } from '$lib/utils';
-	import Tooltip from '../common/Tooltip.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 
 	let loaded = false;
 

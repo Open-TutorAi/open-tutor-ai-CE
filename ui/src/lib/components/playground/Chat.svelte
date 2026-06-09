@@ -15,14 +15,14 @@
 	import { chatCompletion, generateOpenAIChatCompletion } from '$lib/apis/openai';
 
 	import { splitStream } from '$lib/utils';
-	import Collapsible from '../common/Collapsible.svelte';
+	import Collapsible from '$lib/ui/Collapsible.svelte';
 
 	import Messages from '$lib/components/playground/Chat/Messages.svelte';
 	import ChevronUp from '../icons/ChevronUp.svelte';
 	import ChevronDown from '../icons/ChevronDown.svelte';
 	import Pencil from '../icons/Pencil.svelte';
 	import Cog6 from '../icons/Cog6.svelte';
-	import Sidebar from '../common/Sidebar.svelte';
+	import Sidebar from '$lib/ui/Sidebar.svelte';
 	import ArrowRight from '../icons/ArrowRight.svelte';
 
 	const i18n = getContext('i18n');

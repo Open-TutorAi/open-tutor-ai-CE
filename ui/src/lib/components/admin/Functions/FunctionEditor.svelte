@@ -5,10 +5,10 @@
 	const dispatch = createEventDispatcher();
 	const i18n = getContext('i18n');
 
-	import CodeEditor from '$lib/components/common/CodeEditor.svelte';
-	import ConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
-	import Badge from '$lib/components/common/Badge.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import CodeEditor from '$lib/ui/CodeEditor.svelte';
+	import ConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
+	import Badge from '$lib/ui/Badge.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
 
 	let formElement = null;

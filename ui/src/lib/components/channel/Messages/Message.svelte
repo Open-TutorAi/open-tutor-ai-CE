@@ -20,13 +20,13 @@
 	import Markdown from '$lib/components/chat/Messages/Markdown.svelte';
 	import ProfileImage from '$lib/components/chat/Messages/ProfileImage.svelte';
 	import Name from '$lib/components/chat/Messages/Name.svelte';
-	import ConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
+	import ConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 	import GarbageBin from '$lib/components/icons/GarbageBin.svelte';
 	import Pencil from '$lib/components/icons/Pencil.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	import Textarea from '$lib/components/common/Textarea.svelte';
-	import Image from '$lib/components/common/Image.svelte';
-	import FileItem from '$lib/components/common/FileItem.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
+	import Textarea from '$lib/ui/Textarea.svelte';
+	import Image from '$lib/ui/Image.svelte';
+	import FileItem from '$lib/ui/FileItem.svelte';
 	import ProfilePreview from './Message/ProfilePreview.svelte';
 	import ChatBubbleOvalEllipsis from '$lib/components/icons/ChatBubbleOvalEllipsis.svelte';
 	import FaceSmile from '$lib/components/icons/FaceSmile.svelte';

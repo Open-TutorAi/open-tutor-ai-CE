@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import Plus from '$lib/components/icons/Plus.svelte';
 
 	let selected = '';

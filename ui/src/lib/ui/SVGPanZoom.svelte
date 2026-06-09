@@ -12,11 +12,11 @@
 
 	import { copyToClipboard } from '$lib/utils';
 
-	import DocumentDuplicate from '../icons/DocumentDuplicate.svelte';
-	import Tooltip from './Tooltip.svelte';
-	import Clipboard from '../icons/Clipboard.svelte';
-	import Reset from '../icons/Reset.svelte';
-	import ArrowDownTray from '../icons/ArrowDownTray.svelte';
+	import DocumentDuplicate from '$lib/components/icons/DocumentDuplicate.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
+	import Clipboard from '$lib/components/icons/Clipboard.svelte';
+	import Reset from '$lib/components/icons/Reset.svelte';
+	import ArrowDownTray from '$lib/components/icons/ArrowDownTray.svelte';
 
 	export let className = '';
 	export let svg = '';

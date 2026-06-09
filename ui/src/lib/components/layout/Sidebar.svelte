@@ -46,13 +46,13 @@
 	import ArchivedChatsModal from './Sidebar/ArchivedChatsModal.svelte';
 	import UserMenu from './Sidebar/UserMenu.svelte';
 	import ChatItem from './Sidebar/ChatItem.svelte';
-	import Spinner from '../common/Spinner.svelte';
-	import Loader from '../common/Loader.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
+	import Loader from '$lib/ui/Loader.svelte';
 	import AddFilesPlaceholder from '../AddFilesPlaceholder.svelte';
 	import SearchInput from './Sidebar/SearchInput.svelte';
-	import Folder from '../common/Folder.svelte';
+	import Folder from '$lib/ui/Folder.svelte';
 	import Plus from '../icons/Plus.svelte';
-	import Tooltip from '../common/Tooltip.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import Folders from './Sidebar/Folders.svelte';
 	import { getChannels, createNewChannel } from '$lib/apis/channels';
 	import ChannelModal from './Sidebar/ChannelModal.svelte';

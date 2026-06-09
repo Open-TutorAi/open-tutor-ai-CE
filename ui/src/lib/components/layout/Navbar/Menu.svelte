@@ -18,7 +18,7 @@
 	} from '$lib/stores';
 	import { flyAndScale } from '$lib/utils/transitions';
 
-	import Dropdown from '$lib/components/common/Dropdown.svelte';
+	import Dropdown from '$lib/ui/Dropdown.svelte';
 	import Tags from '$lib/components/chat/Tags.svelte';
 	import Map from '$lib/components/icons/Map.svelte';
 	import Clipboard from '$lib/components/icons/Clipboard.svelte';

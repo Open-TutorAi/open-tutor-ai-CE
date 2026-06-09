@@ -6,7 +6,7 @@
 	import { getModels as _getModels } from '$lib/apis';
 	import { goto } from '$app/navigation';
 
-	import Modal from '../common/Modal.svelte';
+	import Modal from '$lib/ui/Modal.svelte';
 	import Account from './Settings/Account.svelte';
 	import About from './Settings/About.svelte';
 	import General from './Settings/General.svelte';

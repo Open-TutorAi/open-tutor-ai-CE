@@ -22,12 +22,12 @@
 	import { getKnowledgeBases } from '$lib/apis/knowledge';
 	import { uploadDir, deleteAllFiles, deleteFileById } from '$lib/apis/files';
 
-	import ResetUploadDirConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
-	import ResetVectorDBConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
-	import SensitiveInput from '$lib/components/common/SensitiveInput.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	import Switch from '$lib/components/common/Switch.svelte';
-	import Textarea from '$lib/components/common/Textarea.svelte';
+	import ResetUploadDirConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
+	import ResetVectorDBConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
+	import SensitiveInput from '$lib/ui/SensitiveInput.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
+	import Switch from '$lib/ui/Switch.svelte';
+	import Textarea from '$lib/ui/Textarea.svelte';
 
 	const i18n = getContext('i18n');
 

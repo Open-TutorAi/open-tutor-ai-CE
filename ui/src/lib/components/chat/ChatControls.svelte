@@ -6,10 +6,10 @@
 	import { onDestroy, onMount, tick } from 'svelte';
 	import { mobile, showControls, showCallOverlay, showOverview, showArtifacts } from '$lib/stores';
 
-	import Modal from '../common/Modal.svelte';
+	import Modal from '$lib/ui/Modal.svelte';
 	import Controls from './Controls/Controls.svelte';
 	import CallOverlay from './MessageInput/CallOverlay.svelte';
-	import Drawer from '../common/Drawer.svelte';
+	import Drawer from '$lib/ui/Drawer.svelte';
 	import Overview from './Overview.svelte';
 	import EllipsisVertical from '../icons/EllipsisVertical.svelte';
 	import Artifacts from './Artifacts.svelte';

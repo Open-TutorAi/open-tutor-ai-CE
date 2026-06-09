@@ -5,11 +5,11 @@
 
 	const i18n = getContext('i18n');
 
-	import Modal from './Modal.svelte';
-	import XMark from '../icons/XMark.svelte';
-	import Info from '../icons/Info.svelte';
-	import Switch from './Switch.svelte';
-	import Tooltip from './Tooltip.svelte';
+	import Modal from '$lib/ui/Modal.svelte';
+	import XMark from '$lib/components/icons/XMark.svelte';
+	import Info from '$lib/components/icons/Info.svelte';
+	import Switch from '$lib/ui/Switch.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 
 	export let item;
 	export let show = false;

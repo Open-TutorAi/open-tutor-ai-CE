@@ -4,7 +4,7 @@
 
 	import { updateMemoryById } from '$lib/apis/memories';
 
-	import Modal from '$lib/components/common/Modal.svelte';
+	import Modal from '$lib/ui/Modal.svelte';
 
 	const dispatch = createEventDispatcher();
 

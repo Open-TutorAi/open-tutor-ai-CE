@@ -6,7 +6,7 @@
 
 	import { updateUserById } from '$lib/apis/users';
 
-	import Modal from '$lib/components/common/Modal.svelte';
+	import Modal from '$lib/ui/Modal.svelte';
 	import localizedFormat from 'dayjs/plugin/localizedFormat';
 
 	const i18n = getContext('i18n');

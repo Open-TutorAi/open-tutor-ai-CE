@@ -6,9 +6,9 @@
 	import { user, settings, config } from '$lib/stores';
 	import { getVoices as _getVoices } from '$lib/apis/audio';
 
-	import Switch from '$lib/components/common/Switch.svelte';
+	import Switch from '$lib/ui/Switch.svelte';
 	import { round } from '@huggingface/transformers';
-	import Spinner from '$lib/components/common/Spinner.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
 	const dispatch = createEventDispatcher();
 
 	const i18n = getContext('i18n');

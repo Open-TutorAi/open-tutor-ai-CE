@@ -13,9 +13,9 @@
 		updateConfig,
 		verifyConfigUrl
 	} from '$lib/apis/images';
-	import SensitiveInput from '$lib/components/common/SensitiveInput.svelte';
-	import Switch from '$lib/components/common/Switch.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import SensitiveInput from '$lib/ui/SensitiveInput.svelte';
+	import Switch from '$lib/ui/Switch.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	const dispatch = createEventDispatcher();
 
 	const i18n = getContext('i18n');

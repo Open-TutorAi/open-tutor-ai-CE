@@ -25,14 +25,14 @@
 
 	import EllipsisHorizontal from '../icons/EllipsisHorizontal.svelte';
 	import ModelMenu from './Models/ModelMenu.svelte';
-	import ModelDeleteConfirmDialog from '../common/ConfirmDialog.svelte';
-	import Tooltip from '../common/Tooltip.svelte';
+	import ModelDeleteConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import GarbageBin from '../icons/GarbageBin.svelte';
 	import Search from '../icons/Search.svelte';
 	import Plus from '../icons/Plus.svelte';
 	import ChevronRight from '../icons/ChevronRight.svelte';
-	import Switch from '../common/Switch.svelte';
-	import Spinner from '../common/Spinner.svelte';
+	import Switch from '$lib/ui/Switch.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
 	import { capitalizeFirstLetter } from '$lib/utils';
 
 	let shiftKey = false;

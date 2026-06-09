@@ -10,9 +10,9 @@
 	import { TUTOR_NAME, config, user, showSidebar, knowledge } from '$lib/stores';
 	import { TUTOR_BASE_URL } from '$lib/constants';
 
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import Plus from '$lib/components/icons/Plus.svelte';
-	import Badge from '$lib/components/common/Badge.svelte';
+	import Badge from '$lib/ui/Badge.svelte';
 	import UsersSolid from '$lib/components/icons/UsersSolid.svelte';
 	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
 	import EllipsisHorizontal from '$lib/components/icons/EllipsisHorizontal.svelte';

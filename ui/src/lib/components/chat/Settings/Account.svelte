@@ -10,8 +10,8 @@
 	import { generateInitialsImage, canvasPixelTest } from '$lib/utils';
 	import { copyToClipboard } from '$lib/utils';
 	import Plus from '$lib/components/icons/Plus.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	import SensitiveInput from '$lib/components/common/SensitiveInput.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
+	import SensitiveInput from '$lib/ui/SensitiveInput.svelte';
 
 	const i18n = getContext('i18n');
 

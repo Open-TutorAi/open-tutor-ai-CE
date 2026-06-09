@@ -2,8 +2,8 @@
 	import { getContext, tick } from 'svelte';
 	const i18n = getContext('i18n');
 
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	import SensitiveInput from '$lib/components/common/SensitiveInput.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
+	import SensitiveInput from '$lib/ui/SensitiveInput.svelte';
 	import Cog6 from '$lib/components/icons/Cog6.svelte';
 	import AddConnectionModal from '$lib/components/AddConnectionModal.svelte';
 

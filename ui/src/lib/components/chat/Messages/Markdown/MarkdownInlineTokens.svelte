@@ -10,7 +10,7 @@
 	import { TUTOR_BASE_URL } from '$lib/constants';
 	import { copyToClipboard, unescapeHtml } from '$lib/utils';
 
-	import Image from '$lib/components/common/Image.svelte';
+	import Image from '$lib/ui/Image.svelte';
 	import KatexRenderer from './KatexRenderer.svelte';
 	import Source from './Source.svelte';
 

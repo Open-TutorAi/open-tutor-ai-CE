@@ -18,8 +18,8 @@
 	import 'highlight.js/styles/github-dark.min.css';
 
 	import PyodideWorker from '$lib/workers/pyodide.worker?worker';
-	import CodeEditor from '$lib/components/common/CodeEditor.svelte';
-	import SvgPanZoom from '$lib/components/common/SVGPanZoom.svelte';
+	import CodeEditor from '$lib/ui/CodeEditor.svelte';
+	import SvgPanZoom from '$lib/ui/SVGPanZoom.svelte';
 	import { config } from '$lib/stores';
 	import { executeCode } from '$lib/apis/utils';
 	import { toast } from 'svelte-sonner';

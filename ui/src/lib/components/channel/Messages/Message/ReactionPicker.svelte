@@ -3,7 +3,7 @@
 	import { flyAndScale } from '$lib/utils/transitions';
 	import emojiGroups from '$lib/emoji-groups.json';
 	import emojiShortCodes from '$lib/emoji-shortcodes.json';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import VirtualList from '@sveltejs/svelte-virtual-list';
 
 	export let onClose = () => {};

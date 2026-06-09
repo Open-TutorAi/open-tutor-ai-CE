@@ -3,8 +3,8 @@
 	import { getContext, onMount } from 'svelte';
 	const i18n = getContext('i18n');
 
-	import Modal from '$lib/components/common/Modal.svelte';
-	import Textarea from '$lib/components/common/Textarea.svelte';
+	import Modal from '$lib/ui/Modal.svelte';
+	import Textarea from '$lib/ui/Textarea.svelte';
 	export let onSubmit: Function = () => {};
 	export let show = false;
 

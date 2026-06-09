@@ -76,15 +76,15 @@
 	} from '$lib/apis';
 	import { getTools } from '$lib/apis/tools';
 
-	import Banner from '../common/Banner.svelte';
+	import Banner from '$lib/ui/Banner.svelte';
 	import MessageInput from '$lib/components/chat/MessageInput.svelte';
 	import Messages from '$lib/components/chat/Messages.svelte';
 	import Navbar from '$lib/components/chat/Navbar.svelte';
 	import ChatControls from './ChatControls.svelte';
-	import EventConfirmDialog from '../common/ConfirmDialog.svelte';
+	import EventConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 	import Placeholder from './Placeholder.svelte';
 	import NotificationToast from '../NotificationToast.svelte';
-	import Spinner from '../common/Spinner.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
 	import AvatarChat from './AvatarChat.svelte';
 
 	export let chatIdProp = '';

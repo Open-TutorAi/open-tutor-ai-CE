@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { getRAGConfig, updateRAGConfig } from '$lib/apis/retrieval';
-	import Switch from '$lib/components/common/Switch.svelte';
+	import Switch from '$lib/ui/Switch.svelte';
 
 	import { models } from '$lib/stores';
 	import { onMount, getContext } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import SensitiveInput from '$lib/components/common/SensitiveInput.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+	import SensitiveInput from '$lib/ui/SensitiveInput.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 
 	const i18n = getContext('i18n');
 

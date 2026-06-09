@@ -8,8 +8,8 @@
 	import XMark from '../icons/XMark.svelte';
 	import { copyToClipboard, createMessagesList } from '$lib/utils';
 	import ArrowsPointingOut from '../icons/ArrowsPointingOut.svelte';
-	import Tooltip from '../common/Tooltip.svelte';
-	import SvgPanZoom from '../common/SVGPanZoom.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
+	import SvgPanZoom from '$lib/ui/SVGPanZoom.svelte';
 	import ArrowLeft from '../icons/ArrowLeft.svelte';
 
 	export let overlay = false;
