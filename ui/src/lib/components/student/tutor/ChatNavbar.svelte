@@ -17,8 +17,8 @@
 	import { slide } from 'svelte/transition';
 	import { page } from '$app/stores';
 
-	import ShareChatModal from '../../chat/ShareChatModal.svelte';
-	import ModelSelector from '../../chat/ModelSelector.svelte';
+	import ShareChatModal from '$lib/features/chat/components/ShareChatModal.svelte';
+	import ModelSelector from '$lib/features/chat/components/ModelSelector.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import Menu from '$lib/components/layout/Navbar/Menu.svelte';
 	import UserMenu from '$lib/components/layout/Sidebar/UserMenu.svelte';

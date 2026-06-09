@@ -1,5 +1,5 @@
 <script lang="ts">
-	import PairedResponses from '$lib/components/chat/PairedResponses.svelte';
+	import PairedResponses from '$lib/features/chat/components/PairedResponses.svelte';
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
 	import type { i18n as i18nType } from 'i18next';

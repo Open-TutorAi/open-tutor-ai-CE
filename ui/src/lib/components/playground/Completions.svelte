@@ -9,7 +9,7 @@
 	import { chatCompletion } from '$lib/apis/openai';
 
 	import { splitStream } from '$lib/utils';
-	import Selector from '$lib/components/chat/ModelSelector/Selector.svelte';
+	import Selector from '$lib/features/chat/components/ModelSelector/Selector.svelte';
 	import MenuLines from '../icons/MenuLines.svelte';
 
 	const i18n = getContext('i18n');

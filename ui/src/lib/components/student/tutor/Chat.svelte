@@ -87,16 +87,16 @@
 	import { getTutorSystemPrompt } from '$lib/apis/configs';
 
 	import Banner from '$lib/ui/Banner.svelte';
-	import MessageInput from '$lib/components/chat/MessageInput.svelte';
-	import Messages from '$lib/components/chat/Messages.svelte';
+	import MessageInput from '$lib/features/chat/components/MessageInput.svelte';
+	import Messages from '$lib/features/chat/components/Messages.svelte';
 	import Navbar from '$lib/components/student/tutor/ChatNavbar.svelte';
-	import ChatControls from '$lib/components/chat/ChatControls.svelte';
+	import ChatControls from '$lib/features/chat/components/ChatControls.svelte';
 	import EventConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
-	import Placeholder from '$lib/components/chat/Placeholder.svelte';
+	import Placeholder from '$lib/features/chat/components/Placeholder.svelte';
 	import NotificationToast from '$lib/components/NotificationToast.svelte';
 	import Spinner from '$lib/ui/Spinner.svelte';
-	import AvatarChat from '$lib/components/chat/AvatarChat.svelte';
-	import FullscreenButton from '$lib/components/chat/FullscreenButton.svelte';
+	import AvatarChat from '$lib/features/chat/components/AvatarChat.svelte';
+	import FullscreenButton from '$lib/features/chat/components/FullscreenButton.svelte';
 
 	// Debug: Print user permissions when they change
 	$: if ($user) {

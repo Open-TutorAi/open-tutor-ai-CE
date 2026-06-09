@@ -17,9 +17,9 @@
 
 	import { TUTOR_BASE_URL, TUTOR_FRONT_URL } from '$lib/constants';
 
-	import Markdown from '$lib/components/chat/Messages/Markdown.svelte';
-	import ProfileImage from '$lib/components/chat/Messages/ProfileImage.svelte';
-	import Name from '$lib/components/chat/Messages/Name.svelte';
+	import Markdown from '$lib/features/chat/components/Messages/Markdown.svelte';
+	import ProfileImage from '$lib/features/chat/components/Messages/ProfileImage.svelte';
+	import Name from '$lib/features/chat/components/Messages/Name.svelte';
 	import ConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 	import GarbageBin from '$lib/components/icons/GarbageBin.svelte';
 	import Pencil from '$lib/components/icons/Pencil.svelte';

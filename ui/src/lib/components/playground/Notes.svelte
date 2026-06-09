@@ -7,7 +7,7 @@
 	import Sparkles from '../icons/Sparkles.svelte';
 	import SparklesSolid from '../icons/SparklesSolid.svelte';
 	import Mic from '../icons/Mic.svelte';
-	import VoiceRecording from '../chat/MessageInput/VoiceRecording.svelte';
+	import VoiceRecording from '$lib/features/chat/components/MessageInput/VoiceRecording.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import { toast } from 'svelte-sonner';
 

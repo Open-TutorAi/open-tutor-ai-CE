@@ -5,7 +5,7 @@
 	import { user } from '$lib/stores';
 	import { updateUserProfile, getSessionUser } from '$lib/apis/auths';
 
-	import UpdatePassword from '$lib/components/chat/Settings/Account/UpdatePassword.svelte';
+	import UpdatePassword from '$lib/features/chat/components/Settings/Account/UpdatePassword.svelte';
 	import { getGravatarUrl } from '$lib/apis/utils';
 	import { generateInitialsImage, canvasPixelTest } from '$lib/utils';
 	import { settings, theme } from '$lib/stores';

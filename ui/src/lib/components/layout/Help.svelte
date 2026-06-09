@@ -3,7 +3,7 @@
 
 	const i18n = getContext('i18n');
 
-	import ShortcutsModal from '../chat/ShortcutsModal.svelte';
+	import ShortcutsModal from '$lib/features/chat/components/ShortcutsModal.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import HelpMenu from './Help/HelpMenu.svelte';
 

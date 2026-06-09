@@ -11,7 +11,7 @@
 	import XMark from '$lib/components/icons/XMark.svelte';
 	import Mic from '$lib/components/icons/Mic.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import VoiceRecording from '$lib/components/chat/MessageInput/VoiceRecording.svelte';
+	import VoiceRecording from '$lib/features/chat/components/MessageInput/VoiceRecording.svelte';
 	export let show = false;
 
 	let name = 'Untitled';
