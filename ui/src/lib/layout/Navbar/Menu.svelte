@@ -20,10 +20,10 @@
 
 	import Dropdown from '$lib/ui/Dropdown.svelte';
 	import Tags from '$lib/features/chat/components/Tags.svelte';
-	import Map from '$lib/components/icons/Map.svelte';
-	import Clipboard from '$lib/components/icons/Clipboard.svelte';
-	import AdjustmentsHorizontal from '$lib/components/icons/AdjustmentsHorizontal.svelte';
-	import Cube from '$lib/components/icons/Cube.svelte';
+	import Map from '$lib/icons/Map.svelte';
+	import Clipboard from '$lib/icons/Clipboard.svelte';
+	import AdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
+	import Cube from '$lib/icons/Cube.svelte';
 	import { getChatById } from '$lib/apis/chats';
 
 	const i18n = getContext('i18n');

@@ -43,22 +43,22 @@
 	import { createNewFolder, getFolders, updateFolderParentIdById } from '$lib/apis/folders';
 	import { TUTOR_BASE_URL } from '$lib/constants';
 
-	import ArchivedChatsModal from './Sidebar/ArchivedChatsModal.svelte';
-	import UserMenu from './Sidebar/UserMenu.svelte';
-	import ChatItem from './Sidebar/ChatItem.svelte';
+	import ArchivedChatsModal from '$lib/layout/Sidebar/ArchivedChatsModal.svelte';
+	import UserMenu from '$lib/layout/Sidebar/UserMenu.svelte';
+	import ChatItem from '$lib/layout/Sidebar/ChatItem.svelte';
 	import Spinner from '$lib/ui/Spinner.svelte';
 	import Loader from '$lib/ui/Loader.svelte';
-	import AddFilesPlaceholder from '../AddFilesPlaceholder.svelte';
-	import SearchInput from './Sidebar/SearchInput.svelte';
+	import AddFilesPlaceholder from '$lib/components/AddFilesPlaceholder.svelte';
+	import SearchInput from '$lib/layout/Sidebar/SearchInput.svelte';
 	import Folder from '$lib/ui/Folder.svelte';
-	import Plus from '../icons/Plus.svelte';
+	import Plus from '$lib/icons/Plus.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import Folders from './Sidebar/Folders.svelte';
+	import Folders from '$lib/layout/Sidebar/Folders.svelte';
 	import { getChannels, createNewChannel } from '$lib/apis/channels';
-	import ChannelModal from './Sidebar/ChannelModal.svelte';
-	import ChannelItem from './Sidebar/ChannelItem.svelte';
-	import PencilSquare from '../icons/PencilSquare.svelte';
-	import Home from '../icons/Home.svelte';
+	import ChannelModal from '$lib/layout/Sidebar/ChannelModal.svelte';
+	import ChannelItem from '$lib/layout/Sidebar/ChannelItem.svelte';
+	import PencilSquare from '$lib/icons/PencilSquare.svelte';
+	import Home from '$lib/icons/Home.svelte';
 
 	const BREAKPOINT = 768;
 

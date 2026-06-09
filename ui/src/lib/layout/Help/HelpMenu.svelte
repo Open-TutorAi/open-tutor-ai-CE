@@ -6,9 +6,9 @@
 	import { flyAndScale } from '$lib/utils/transitions';
 
 	import Dropdown from '$lib/ui/Dropdown.svelte';
-	import QuestionMarkCircle from '$lib/components/icons/QuestionMarkCircle.svelte';
-	import Lifebuoy from '$lib/components/icons/Lifebuoy.svelte';
-	import Keyboard from '$lib/components/icons/Keyboard.svelte';
+	import QuestionMarkCircle from '$lib/icons/QuestionMarkCircle.svelte';
+	import Lifebuoy from '$lib/icons/Lifebuoy.svelte';
+	import Keyboard from '$lib/icons/Keyboard.svelte';
 	const i18n = getContext('i18n');
 
 	export let showDocsHandler: Function;

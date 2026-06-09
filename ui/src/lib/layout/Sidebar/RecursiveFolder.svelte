@@ -8,13 +8,13 @@
 	import fileSaver from 'file-saver';
 	const { saveAs } = fileSaver;
 
-	import ChevronDown from '../../icons/ChevronDown.svelte';
-	import ChevronRight from '../../icons/ChevronRight.svelte';
+	import ChevronDown from '$lib/icons/ChevronDown.svelte';
+	import ChevronRight from '$lib/icons/ChevronRight.svelte';
 	import Collapsible from '$lib/ui/Collapsible.svelte';
 	import DragGhost from '$lib/ui/DragGhost.svelte';
 
-	import FolderOpen from '$lib/components/icons/FolderOpen.svelte';
-	import EllipsisHorizontal from '$lib/components/icons/EllipsisHorizontal.svelte';
+	import FolderOpen from '$lib/icons/FolderOpen.svelte';
+	import EllipsisHorizontal from '$lib/icons/EllipsisHorizontal.svelte';
 	import {
 		deleteFolderById,
 		updateFolderIsExpandedById,
@@ -28,8 +28,8 @@
 		importChat,
 		updateChatFolderIdById
 	} from '$lib/apis/chats';
-	import ChatItem from './ChatItem.svelte';
-	import FolderMenu from './Folders/FolderMenu.svelte';
+	import ChatItem from '$lib/layout/Sidebar/ChatItem.svelte';
+	import FolderMenu from '$lib/layout/Sidebar/Folders/FolderMenu.svelte';
 	import DeleteConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 
 	export let open = false;

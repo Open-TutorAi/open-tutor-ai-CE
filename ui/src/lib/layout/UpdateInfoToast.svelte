@@ -5,7 +5,7 @@
 	const i18n = getContext('i18n');
 
 	import { TUTOR_VERSION } from '$lib/constants';
-	import XMark from '../icons/XMark.svelte';
+	import XMark from '$lib/icons/XMark.svelte';
 
 	export let version = {
 		current: TUTOR_VERSION,

@@ -4,7 +4,7 @@
 
 	import { flyAndScale } from '$lib/utils/transitions';
 	import { goto } from '$app/navigation';
-	import ArchiveBox from '$lib/components/icons/ArchiveBox.svelte';
+	import ArchiveBox from '$lib/icons/ArchiveBox.svelte';
 	import { showSettings, activeUserIds, USAGE_POOL, mobile, showSidebar } from '$lib/stores';
 	import { fade, slide } from 'svelte/transition';
 	import Tooltip from '$lib/ui/Tooltip.svelte';

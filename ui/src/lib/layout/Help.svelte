@@ -5,7 +5,7 @@
 
 	import ShortcutsModal from '$lib/features/chat/components/ShortcutsModal.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import HelpMenu from './Help/HelpMenu.svelte';
+	import HelpMenu from '$lib/layout/Help/HelpMenu.svelte';
 
 	let showShortcuts = false;
 </script>

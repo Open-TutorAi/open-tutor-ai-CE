@@ -7,8 +7,8 @@
 	import { mobile, showSidebar, user } from '$lib/stores';
 	import { updateChannelById } from '$lib/apis/channels';
 
-	import Cog6 from '$lib/components/icons/Cog6.svelte';
-	import ChannelModal from './ChannelModal.svelte';
+	import Cog6 from '$lib/icons/Cog6.svelte';
+	import ChannelModal from '$lib/layout/Sidebar/ChannelModal.svelte';
 
 	export let onUpdate: Function = () => {};
 

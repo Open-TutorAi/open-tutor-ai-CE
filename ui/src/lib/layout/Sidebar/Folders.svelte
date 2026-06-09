@@ -2,7 +2,7 @@
 	import { createEventDispatcher } from 'svelte';
 
 	const dispatch = createEventDispatcher();
-	import RecursiveFolder from './RecursiveFolder.svelte';
+	import RecursiveFolder from '$lib/layout/Sidebar/RecursiveFolder.svelte';
 	export let folders = {};
 
 	let folderList = [];

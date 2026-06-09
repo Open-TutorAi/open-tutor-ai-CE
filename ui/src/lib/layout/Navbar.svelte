@@ -18,15 +18,15 @@
 	import ShareChatModal from '$lib/features/chat/components/ShareChatModal.svelte';
 	import ModelSelector from '$lib/features/chat/components/ModelSelector.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import Menu from './Navbar/Menu.svelte';
+	import Menu from '$lib/layout/Navbar/Menu.svelte';
 	import { page } from '$app/stores';
-	import UserMenu from './Sidebar/UserMenu.svelte';
-	import MenuLines from '../icons/MenuLines.svelte';
-	import AdjustmentsHorizontal from '../icons/AdjustmentsHorizontal.svelte';
-	import Map from '../icons/Map.svelte';
+	import UserMenu from '$lib/layout/Sidebar/UserMenu.svelte';
+	import MenuLines from '$lib/icons/MenuLines.svelte';
+	import AdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
+	import Map from '$lib/icons/Map.svelte';
 	import { stringify } from 'postcss';
-	import PencilSquare from '../icons/PencilSquare.svelte';
-	import Plus from '../icons/Plus.svelte';
+	import PencilSquare from '$lib/icons/PencilSquare.svelte';
+	import Plus from '$lib/icons/Plus.svelte';
 
 	const i18n = getContext('i18n');
 
