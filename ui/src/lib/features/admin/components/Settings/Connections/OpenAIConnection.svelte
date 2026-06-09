@@ -5,7 +5,7 @@
 	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import SensitiveInput from '$lib/ui/SensitiveInput.svelte';
 	import Cog6 from '$lib/icons/Cog6.svelte';
-	import AddConnectionModal from '$lib/components/AddConnectionModal.svelte';
+	import AddConnectionModal from '$lib/ui/AddConnectionModal.svelte';
 
 	import { connect } from 'socket.io-client';
 

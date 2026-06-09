@@ -40,7 +40,7 @@
 
 	import Sidebar from '$lib/layout/Sidebar.svelte';
 	import SettingsModal from '$lib/features/chat/components/SettingsModal.svelte';
-	import ChangelogModal from '$lib/components/ChangelogModal.svelte';
+	import ChangelogModal from '$lib/ui/ChangelogModal.svelte';
 	import AccountPending from '$lib/layout/Overlay/AccountPending.svelte';
 	import UpdateInfoToast from '$lib/layout/UpdateInfoToast.svelte';
 

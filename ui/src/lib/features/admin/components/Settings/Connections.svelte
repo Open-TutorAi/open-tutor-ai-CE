@@ -17,7 +17,7 @@
 	import Plus from '$lib/icons/Plus.svelte';
 
 	import OpenAIConnection from '$lib/features/admin/components/Settings/Connections/OpenAIConnection.svelte';
-	import AddConnectionModal from '$lib/components/AddConnectionModal.svelte';
+	import AddConnectionModal from '$lib/ui/AddConnectionModal.svelte';
 	import OllamaConnection from '$lib/features/admin/components/Settings/Connections/OllamaConnection.svelte';
 
 	const i18n = getContext('i18n');

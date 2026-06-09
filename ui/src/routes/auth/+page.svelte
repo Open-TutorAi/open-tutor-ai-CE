@@ -3,7 +3,7 @@
 	import { onMount, getContext } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import ForgotPassword from '$lib/components/ForgotPassword.svelte';
+	import ForgotPassword from '$lib/features/auth/components/ForgotPassword.svelte';
 	import TermsOfServiceModal from '$lib/features/legal/components/TermsOfServiceModal.svelte';
 	import PrivacyPolicyModal from '$lib/features/legal/components/PrivacyPolicyModal.svelte';
 
@@ -16,8 +16,8 @@
 	import { generateInitialsImage, canvasPixelTest } from '$lib/utils';
 
 	import Spinner from '$lib/ui/Spinner.svelte';
-	import OnBoarding from '$lib/components/OnBoarding.svelte';
-	import RoleSelection from '$lib/components/RoleSelectionPage.svelte';
+	import OnBoarding from '$lib/features/auth/components/OnBoarding.svelte';
+	import RoleSelection from '$lib/features/auth/components/RoleSelectionPage.svelte';
 
 	const i18n = getContext('i18n');
 

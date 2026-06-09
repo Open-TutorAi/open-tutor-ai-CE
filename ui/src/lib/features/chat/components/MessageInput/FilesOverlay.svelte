@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { showSidebar } from '$lib/stores';
-	import AddFilesPlaceholder from '$lib/components/AddFilesPlaceholder.svelte';
+	import AddFilesPlaceholder from '$lib/ui/AddFilesPlaceholder.svelte';
 
 	export let show = false;
 	let overlayElement = null;

@@ -48,7 +48,7 @@
 	import ChatItem from '$lib/layout/Sidebar/ChatItem.svelte';
 	import Spinner from '$lib/ui/Spinner.svelte';
 	import Loader from '$lib/ui/Loader.svelte';
-	import AddFilesPlaceholder from '$lib/components/AddFilesPlaceholder.svelte';
+	import AddFilesPlaceholder from '$lib/ui/AddFilesPlaceholder.svelte';
 	import SearchInput from '$lib/layout/Sidebar/SearchInput.svelte';
 	import Folder from '$lib/ui/Folder.svelte';
 	import Plus from '$lib/icons/Plus.svelte';
