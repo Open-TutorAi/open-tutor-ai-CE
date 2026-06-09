@@ -5,7 +5,7 @@
 	import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 	import Spinner from '$lib/ui/Spinner.svelte';
 	import { settings } from '$lib/stores';
-	import ClassroomBackground from '$lib/components/classroom/ClassroomBackground.svelte';
+	import ClassroomBackground from '$lib/features/classroom/components/ClassroomBackground.svelte';
 
 	// Props
 	export let history = {}; // Chat history

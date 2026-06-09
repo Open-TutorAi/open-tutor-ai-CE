@@ -5,7 +5,7 @@
 
 	import { config, functions, models, settings } from '$lib/stores';
 	import { createNewFunction, getFunctions } from '$lib/apis/functions';
-	import FunctionEditor from '$lib/components/admin/Functions/FunctionEditor.svelte';
+	import FunctionEditor from '$lib/features/admin/components/Functions/FunctionEditor.svelte';
 	import { getModels } from '$lib/apis';
 	import { compareVersion, extractFrontmatter } from '$lib/utils';
 	import { TUTOR_VERSION } from '$lib/constants';

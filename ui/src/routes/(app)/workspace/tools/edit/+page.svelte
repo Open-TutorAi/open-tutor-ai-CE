@@ -3,7 +3,7 @@
 	import { page } from '$app/stores';
 	import { getToolById, getTools, updateToolById } from '$lib/apis/tools';
 	import Spinner from '$lib/ui/Spinner.svelte';
-	import ToolkitEditor from '$lib/components/workspace/Tools/ToolkitEditor.svelte';
+	import ToolkitEditor from '$lib/features/workspace/components/Tools/ToolkitEditor.svelte';
 	import { TUTOR_VERSION } from '$lib/constants';
 	import { tools } from '$lib/stores';
 	import { compareVersion, extractFrontmatter } from '$lib/utils';

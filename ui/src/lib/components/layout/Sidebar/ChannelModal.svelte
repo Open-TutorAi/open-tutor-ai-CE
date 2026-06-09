@@ -3,7 +3,7 @@
 	import { createNewChannel, deleteChannelById } from '$lib/apis/channels';
 
 	import Modal from '$lib/ui/Modal.svelte';
-	import AccessControl from '$lib/components/workspace/common/AccessControl.svelte';
+	import AccessControl from '$lib/features/workspace/components/common/AccessControl.svelte';
 	import DeleteConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 
 	import { toast } from 'svelte-sonner';
