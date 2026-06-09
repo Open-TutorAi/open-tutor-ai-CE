@@ -4,8 +4,8 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import ForgotPassword from '$lib/components/ForgotPassword.svelte';
-	import TermsOfServiceModal from '$lib/components/legal/TermsOfServiceModal.svelte';
-	import PrivacyPolicyModal from '$lib/components/legal/PrivacyPolicyModal.svelte';
+	import TermsOfServiceModal from '$lib/features/legal/components/TermsOfServiceModal.svelte';
+	import PrivacyPolicyModal from '$lib/features/legal/components/PrivacyPolicyModal.svelte';
 
 	import { getBackendConfig } from '$lib/apis';
 	import { ldapUserSignIn, getSessionUser, userSignIn, userSignUp, getUserCount } from '$lib/apis/auths';

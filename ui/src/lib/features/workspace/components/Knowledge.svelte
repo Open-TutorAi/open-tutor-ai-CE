@@ -21,8 +21,8 @@
 	import DeleteConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 	import ItemMenu from '$lib/features/workspace/components/Knowledge/ItemMenu.svelte';
 	import Badge from '$lib/ui/Badge.svelte';
-	import Search from '$lib/components/icons/Search.svelte';
-	import Plus from '$lib/components/icons/Plus.svelte';
+	import Search from '$lib/icons/Search.svelte';
+	import Plus from '$lib/icons/Plus.svelte';
 	import Spinner from '$lib/ui/Spinner.svelte';
 	import { capitalizeFirstLetter } from '$lib/utils';
 	import Tooltip from '$lib/ui/Tooltip.svelte';

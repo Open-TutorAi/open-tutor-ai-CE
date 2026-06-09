@@ -8,9 +8,9 @@
 	import { verifyOllamaConnection } from '$lib/apis/ollama';
 
 	import Modal from '$lib/ui/Modal.svelte';
-	import Plus from '$lib/components/icons/Plus.svelte';
-	import Minus from '$lib/components/icons/Minus.svelte';
-	import PencilSolid from '$lib/components/icons/PencilSolid.svelte';
+	import Plus from '$lib/icons/Plus.svelte';
+	import Minus from '$lib/icons/Minus.svelte';
+	import PencilSolid from '$lib/icons/PencilSolid.svelte';
 	import SensitiveInput from '$lib/ui/SensitiveInput.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import Switch from '$lib/ui/Switch.svelte';

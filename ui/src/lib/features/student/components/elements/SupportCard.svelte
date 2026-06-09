@@ -1,4 +1,4 @@
-<!-- src/lib/components/student/elements/SupportCard.svelte -->
+<!-- src/lib/features/student/components/elements/SupportCard.svelte -->
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	

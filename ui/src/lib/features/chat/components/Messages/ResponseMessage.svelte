@@ -36,7 +36,7 @@
 	import RateComment from '$lib/features/chat/components/Messages/RateComment.svelte';
 	import Spinner from '$lib/ui/Spinner.svelte';
 	import WebSearchResults from '$lib/features/chat/components/Messages/ResponseMessage/WebSearchResults.svelte';
-	import Sparkles from '$lib/components/icons/Sparkles.svelte';
+	import Sparkles from '$lib/icons/Sparkles.svelte';
 
 	import DeleteConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 

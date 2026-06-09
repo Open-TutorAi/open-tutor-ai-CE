@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Fuse from 'fuse.js';
-	import Bolt from '$lib/components/icons/Bolt.svelte';
+	import Bolt from '$lib/icons/Bolt.svelte';
 	import { onMount, getContext, createEventDispatcher } from 'svelte';
 	import { TUTOR_NAME } from '$lib/stores';
 	import { TUTOR_VERSION } from '$lib/constants';

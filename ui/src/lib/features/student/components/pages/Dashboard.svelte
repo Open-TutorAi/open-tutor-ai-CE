@@ -6,7 +6,7 @@
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
 	import { chatId as storeChatId, isDemo, demoData } from '$lib/stores';
-	import CourseCard from '../elements/CourseCard.svelte';
+	import CourseCard from '$lib/features/student/components/elements/CourseCard.svelte';
 	import { getSupportRequests, type SupportResponse, updateSupportChatId } from '$lib/apis/supports';
 	import { page } from '$app/stores';
 	import { fade, scale } from 'svelte/transition';

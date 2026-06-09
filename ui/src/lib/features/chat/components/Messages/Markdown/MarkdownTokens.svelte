@@ -16,7 +16,7 @@
 	import KatexRenderer from '$lib/features/chat/components/Messages/Markdown/KatexRenderer.svelte';
 	import Collapsible from '$lib/ui/Collapsible.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import ArrowDownTray from '$lib/components/icons/ArrowDownTray.svelte';
+	import ArrowDownTray from '$lib/icons/ArrowDownTray.svelte';
 
 	const dispatch = createEventDispatcher();
 

@@ -10,7 +10,7 @@
 	import Suggestions from '$lib/features/chat/components/Suggestions.svelte';
 	import { sanitizeResponseContent } from '$lib/utils';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import EyeSlash from '$lib/components/icons/EyeSlash.svelte';
+	import EyeSlash from '$lib/icons/EyeSlash.svelte';
 
 	const i18n = getContext('i18n');
 

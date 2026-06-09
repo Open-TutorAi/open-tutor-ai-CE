@@ -7,9 +7,9 @@
 	import { goto } from '$app/navigation';
 	import ConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 	import Badge from '$lib/ui/Badge.svelte';
-	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
+	import ChevronLeft from '$lib/icons/ChevronLeft.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import LockClosed from '$lib/components/icons/LockClosed.svelte';
+	import LockClosed from '$lib/icons/LockClosed.svelte';
 	import AccessControlModal from '$lib/features/workspace/components/common/AccessControlModal.svelte';
 
 	const dispatch = createEventDispatcher();

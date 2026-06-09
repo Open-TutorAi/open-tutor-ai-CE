@@ -10,7 +10,7 @@
 	import Switch from '$lib/ui/Switch.svelte';
 	import Spinner from '$lib/ui/Spinner.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import Plus from '$lib/components/icons/Plus.svelte';
+	import Plus from '$lib/icons/Plus.svelte';
 	import Model from '$lib/features/admin/components/Settings/Evaluations/Model.svelte';
 	import ArenaModelModal from '$lib/features/admin/components/Settings/Evaluations/ArenaModelModal.svelte';
 

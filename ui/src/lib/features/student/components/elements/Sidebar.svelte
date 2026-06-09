@@ -4,11 +4,11 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount, getContext } from 'svelte';
-	import Settings from '$lib/components/icons/Settings.svelte';
-	import Dashboard from '$lib/components/icons/Dashboard.svelte';
-	import Classroom from '$lib/components/icons/Classroom.svelte';
-	import Assignment from '$lib/components/icons/Assignment.svelte';
-	import Message from '$lib/components/icons/Messages.svelte';
+	import Settings from '$lib/icons/Settings.svelte';
+	import Dashboard from '$lib/icons/Dashboard.svelte';
+	import Classroom from '$lib/icons/Classroom.svelte';
+	import Assignment from '$lib/icons/Assignment.svelte';
+	import Message from '$lib/icons/Messages.svelte';
 	import type { ComponentType } from 'svelte';
 	import { writable, type Writable } from 'svelte/store';
 	const i18n = getContext('i18n');

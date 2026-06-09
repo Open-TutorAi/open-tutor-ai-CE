@@ -1,6 +1,6 @@
 <!-- dashboard/+page.svelte -->
 <script lang="ts">
-	import Dashboard from '$lib/components/student/pages/Classrooms.svelte';
+	import Dashboard from '$lib/features/student/components/pages/Classrooms.svelte';
 </script>
 
 <Dashboard />

@@ -8,7 +8,7 @@
 
 	import Marquee from '$lib/ui/Marquee.svelte';
 	import SlideShow from '$lib/ui/SlideShow.svelte';
-	import ArrowRightCircle from './icons/ArrowRightCircle.svelte';
+	import ArrowRightCircle from '$lib/icons/ArrowRightCircle.svelte';
 
 	export let show = true;
 	export let getStartedHandler = () => {};

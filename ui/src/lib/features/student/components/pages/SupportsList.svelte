@@ -6,7 +6,7 @@
 	import { getSupportRequests } from '$lib/apis/supports';
 	import type { Writable } from 'svelte/store';
 	import { browser } from '$app/environment';
-	import SupportCard from '$lib/components/student/elements/SupportCard.svelte';
+	import SupportCard from '$lib/features/student/components/elements/SupportCard.svelte';
 	import { isDemo, demoData } from '$lib/stores';
 
 	// Get i18n from context with proper typing

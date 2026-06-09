@@ -5,12 +5,12 @@
 	const dispatch = createEventDispatcher();
 
 	import { chatId, showArtifacts, showControls } from '$lib/stores';
-	import XMark from '$lib/components/icons/XMark.svelte';
+	import XMark from '$lib/icons/XMark.svelte';
 	import { copyToClipboard, createMessagesList } from '$lib/utils';
-	import ArrowsPointingOut from '$lib/components/icons/ArrowsPointingOut.svelte';
+	import ArrowsPointingOut from '$lib/icons/ArrowsPointingOut.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import SvgPanZoom from '$lib/ui/SVGPanZoom.svelte';
-	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
+	import ArrowLeft from '$lib/icons/ArrowLeft.svelte';
 
 	export let overlay = false;
 	export let history;

@@ -2,8 +2,8 @@
 	import { Pagination } from 'bits-ui';
 	import { createEventDispatcher } from 'svelte';
 
-	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
-	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
+	import ChevronLeft from '$lib/icons/ChevronLeft.svelte';
+	import ChevronRight from '$lib/icons/ChevronRight.svelte';
 
 	export let page = 0;
 	export let count = 0;

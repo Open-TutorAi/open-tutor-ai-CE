@@ -3,7 +3,7 @@
 	const dispatch = createEventDispatcher();
 	const i18n = getContext('i18n');
 
-	import XMark from '$lib/components/icons/XMark.svelte';
+	import XMark from '$lib/icons/XMark.svelte';
 	import AdvancedParams from '$lib/features/chat/components/Settings/Advanced/AdvancedParams.svelte';
 	import Valves from '$lib/features/chat/components/Controls/Valves.svelte';
 	import FileItem from '$lib/ui/FileItem.svelte';

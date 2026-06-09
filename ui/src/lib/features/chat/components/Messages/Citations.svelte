@@ -2,8 +2,8 @@
 	import { getContext } from 'svelte';
 	import CitationsModal from '$lib/features/chat/components/Messages/CitationsModal.svelte';
 	import Collapsible from '$lib/ui/Collapsible.svelte';
-	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
-	import ChevronUp from '$lib/components/icons/ChevronUp.svelte';
+	import ChevronDown from '$lib/icons/ChevronDown.svelte';
+	import ChevronUp from '$lib/icons/ChevronUp.svelte';
 
 	const i18n = getContext('i18n');
 

@@ -4,9 +4,9 @@
 
 	import RichTextInput from '$lib/ui/RichTextInput.svelte';
 	import Spinner from '$lib/ui/Spinner.svelte';
-	import Sparkles from '$lib/components/icons/Sparkles.svelte';
-	import SparklesSolid from '$lib/components/icons/SparklesSolid.svelte';
-	import Mic from '$lib/components/icons/Mic.svelte';
+	import Sparkles from '$lib/icons/Sparkles.svelte';
+	import SparklesSolid from '$lib/icons/SparklesSolid.svelte';
+	import Mic from '$lib/icons/Mic.svelte';
 	import VoiceRecording from '$lib/features/chat/components/MessageInput/VoiceRecording.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import { toast } from 'svelte-sonner';

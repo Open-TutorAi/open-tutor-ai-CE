@@ -13,10 +13,10 @@
 	import Interface from '$lib/features/chat/components/Settings/Interface.svelte';
 	import Audio from '$lib/features/chat/components/Settings/Audio.svelte';
 	import Chats from '$lib/features/chat/components/Settings/Chats.svelte';
-	import User from '$lib/components/icons/User.svelte';
+	import User from '$lib/icons/User.svelte';
 	import Personalization from '$lib/features/chat/components/Settings/Personalization.svelte';
-	import SearchInput from '$lib/components/layout/Sidebar/SearchInput.svelte';
-	import Search from '$lib/components/icons/Search.svelte';
+	import SearchInput from '$lib/layout/Sidebar/SearchInput.svelte';
+	import Search from '$lib/icons/Search.svelte';
 	import Connections from '$lib/features/chat/components/Settings/Connections.svelte';
 
 	const i18n = getContext('i18n');

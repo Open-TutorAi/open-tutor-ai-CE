@@ -1,7 +1,7 @@
 <script lang="ts">
-	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
-	import ChevronUp from '$lib/components/icons/ChevronUp.svelte';
-	import MagnifyingGlass from '$lib/components/icons/MagnifyingGlass.svelte';
+	import ChevronDown from '$lib/icons/ChevronDown.svelte';
+	import ChevronUp from '$lib/icons/ChevronUp.svelte';
+	import MagnifyingGlass from '$lib/icons/MagnifyingGlass.svelte';
 	import Collapsible from '$lib/ui/Collapsible.svelte';
 
 	export let status = { urls: [], query: '' };

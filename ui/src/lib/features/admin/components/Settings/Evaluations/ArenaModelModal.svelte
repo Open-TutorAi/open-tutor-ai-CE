@@ -5,9 +5,9 @@
 
 	import Modal from '$lib/ui/Modal.svelte';
 	import { models } from '$lib/stores';
-	import Plus from '$lib/components/icons/Plus.svelte';
-	import Minus from '$lib/components/icons/Minus.svelte';
-	import PencilSolid from '$lib/components/icons/PencilSolid.svelte';
+	import Plus from '$lib/icons/Plus.svelte';
+	import Minus from '$lib/icons/Minus.svelte';
+	import PencilSolid from '$lib/icons/PencilSolid.svelte';
 	import { toast } from 'svelte-sonner';
 	import AccessControl from '$lib/features/workspace/components/common/AccessControl.svelte';
 

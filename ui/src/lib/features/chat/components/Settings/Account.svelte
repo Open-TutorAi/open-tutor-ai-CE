@@ -9,7 +9,7 @@
 	import { getGravatarUrl } from '$lib/apis/utils';
 	import { generateInitialsImage, canvasPixelTest } from '$lib/utils';
 	import { copyToClipboard } from '$lib/utils';
-	import Plus from '$lib/components/icons/Plus.svelte';
+	import Plus from '$lib/icons/Plus.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import SensitiveInput from '$lib/ui/SensitiveInput.svelte';
 

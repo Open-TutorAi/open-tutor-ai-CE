@@ -7,7 +7,7 @@
 	import { getSupportById, deleteSupport } from '$lib/apis/supports';
 	import type { Writable } from 'svelte/store';
 	import { browser } from '$app/environment';
-	import ConfirmDialog from '$lib/components/student/elements/ConfirmDialog.svelte';
+	import ConfirmDialog from '$lib/features/student/components/elements/ConfirmDialog.svelte';
 	import { isDemo, demoData } from '$lib/stores';
 
 	// Get i18n from context with proper typing

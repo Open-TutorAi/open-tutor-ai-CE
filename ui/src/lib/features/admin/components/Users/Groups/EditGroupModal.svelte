@@ -7,8 +7,8 @@
 	import Display from '$lib/features/admin/components/Users/Groups/Display.svelte';
 	import Permissions from '$lib/features/admin/components/Users/Groups/Permissions.svelte';
 	import Users from '$lib/features/admin/components/Users/Groups/Users.svelte';
-	import UserPlusSolid from '$lib/components/icons/UserPlusSolid.svelte';
-	import WrenchSolid from '$lib/components/icons/WrenchSolid.svelte';
+	import UserPlusSolid from '$lib/icons/UserPlusSolid.svelte';
+	import WrenchSolid from '$lib/icons/WrenchSolid.svelte';
 
 	export let onSubmit: Function = () => {};
 	export let onDelete: Function = () => {};

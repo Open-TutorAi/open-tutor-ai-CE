@@ -5,7 +5,7 @@
 
 	import { getChannelThreadMessages, sendMessage } from '$lib/apis/channels';
 
-	import XMark from '$lib/components/icons/XMark.svelte';
+	import XMark from '$lib/icons/XMark.svelte';
 	import MessageInput from '$lib/features/channel/components/MessageInput.svelte';
 	import Messages from '$lib/features/channel/components/Messages.svelte';
 	import { onDestroy, onMount, tick } from 'svelte';

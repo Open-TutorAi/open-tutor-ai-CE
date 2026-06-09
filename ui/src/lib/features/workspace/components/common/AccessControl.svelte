@@ -5,9 +5,9 @@
 
 	import { getGroups } from '$lib/apis/groups';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import Plus from '$lib/components/icons/Plus.svelte';
-	import UserCircleSolid from '$lib/components/icons/UserCircleSolid.svelte';
-	import XMark from '$lib/components/icons/XMark.svelte';
+	import Plus from '$lib/icons/Plus.svelte';
+	import UserCircleSolid from '$lib/icons/UserCircleSolid.svelte';
+	import XMark from '$lib/icons/XMark.svelte';
 	import Badge from '$lib/ui/Badge.svelte';
 
 	export let onChange: Function = () => {};

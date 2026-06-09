@@ -6,10 +6,10 @@
 
 	import Dropdown from '$lib/ui/Dropdown.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import ArrowUpCircle from '$lib/components/icons/ArrowUpCircle.svelte';
-	import BarsArrowUp from '$lib/components/icons/BarsArrowUp.svelte';
-	import FolderOpen from '$lib/components/icons/FolderOpen.svelte';
-	import ArrowPath from '$lib/components/icons/ArrowPath.svelte';
+	import ArrowUpCircle from '$lib/icons/ArrowUpCircle.svelte';
+	import BarsArrowUp from '$lib/icons/BarsArrowUp.svelte';
+	import FolderOpen from '$lib/icons/FolderOpen.svelte';
+	import ArrowPath from '$lib/icons/ArrowPath.svelte';
 
 	const i18n = getContext('i18n');
 

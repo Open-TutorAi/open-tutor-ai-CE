@@ -7,7 +7,7 @@
 	import { copyToClipboard } from '$lib/utils';
 
 	import Modal from '$lib/ui/Modal.svelte';
-	import Link from '$lib/components/icons/Link.svelte';
+	import Link from '$lib/icons/Link.svelte';
 
 	export let chatId;
 

@@ -11,15 +11,15 @@
 	import { TUTOR_BASE_URL } from '$lib/constants';
 
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import Plus from '$lib/components/icons/Plus.svelte';
+	import Plus from '$lib/icons/Plus.svelte';
 	import Badge from '$lib/ui/Badge.svelte';
-	import UsersSolid from '$lib/components/icons/UsersSolid.svelte';
-	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
-	import EllipsisHorizontal from '$lib/components/icons/EllipsisHorizontal.svelte';
-	import User from '$lib/components/icons/User.svelte';
-	import UserCircleSolid from '$lib/components/icons/UserCircleSolid.svelte';
+	import UsersSolid from '$lib/icons/UsersSolid.svelte';
+	import ChevronRight from '$lib/icons/ChevronRight.svelte';
+	import EllipsisHorizontal from '$lib/icons/EllipsisHorizontal.svelte';
+	import User from '$lib/icons/User.svelte';
+	import UserCircleSolid from '$lib/icons/UserCircleSolid.svelte';
 	import GroupModal from '$lib/features/admin/components/Users/Groups/EditGroupModal.svelte';
-	import Pencil from '$lib/components/icons/Pencil.svelte';
+	import Pencil from '$lib/icons/Pencil.svelte';
 	import GroupItem from '$lib/features/admin/components/Users/Groups/GroupItem.svelte';
 	import AddGroupModal from '$lib/features/admin/components/Users/Groups/AddGroupModal.svelte';
 	import { createNewGroup, getGroups } from '$lib/apis/groups';

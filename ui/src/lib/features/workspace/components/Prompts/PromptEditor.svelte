@@ -5,7 +5,7 @@
 	import { toast } from 'svelte-sonner';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import AccessControl from '$lib/features/workspace/components/common/AccessControl.svelte';
-	import LockClosed from '$lib/components/icons/LockClosed.svelte';
+	import LockClosed from '$lib/icons/LockClosed.svelte';
 	import AccessControlModal from '$lib/features/workspace/components/common/AccessControlModal.svelte';
 
 	export let onSubmit: Function;

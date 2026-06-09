@@ -4,13 +4,13 @@
 	import { getContext } from 'svelte';
 
 	import Dropdown from '$lib/ui/Dropdown.svelte';
-	import GarbageBin from '$lib/components/icons/GarbageBin.svelte';
+	import GarbageBin from '$lib/icons/GarbageBin.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import Share from '$lib/components/icons/Share.svelte';
-	import DocumentDuplicate from '$lib/components/icons/DocumentDuplicate.svelte';
-	import ArrowDownTray from '$lib/components/icons/ArrowDownTray.svelte';
+	import Share from '$lib/icons/Share.svelte';
+	import DocumentDuplicate from '$lib/icons/DocumentDuplicate.svelte';
+	import ArrowDownTray from '$lib/icons/ArrowDownTray.svelte';
 	import Switch from '$lib/ui/Switch.svelte';
-	import GlobeAlt from '$lib/components/icons/GlobeAlt.svelte';
+	import GlobeAlt from '$lib/icons/GlobeAlt.svelte';
 
 	const i18n = getContext('i18n');
 

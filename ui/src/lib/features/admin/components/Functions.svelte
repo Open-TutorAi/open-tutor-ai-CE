@@ -17,21 +17,21 @@
 		toggleGlobalById
 	} from '$lib/apis/functions';
 
-	import ArrowDownTray from '$lib/components/icons/ArrowDownTray.svelte';
+	import ArrowDownTray from '$lib/icons/ArrowDownTray.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import ConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 	import { getModels } from '$lib/apis';
 	import FunctionMenu from '$lib/features/admin/components/Functions/FunctionMenu.svelte';
-	import EllipsisHorizontal from '$lib/components/icons/EllipsisHorizontal.svelte';
+	import EllipsisHorizontal from '$lib/icons/EllipsisHorizontal.svelte';
 	import Switch from '$lib/ui/Switch.svelte';
 	import ValvesModal from '$lib/features/workspace/components/common/ValvesModal.svelte';
 	import ManifestModal from '$lib/features/workspace/components/common/ManifestModal.svelte';
-	import Heart from '$lib/components/icons/Heart.svelte';
+	import Heart from '$lib/icons/Heart.svelte';
 	import DeleteConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
-	import GarbageBin from '$lib/components/icons/GarbageBin.svelte';
-	import Search from '$lib/components/icons/Search.svelte';
-	import Plus from '$lib/components/icons/Plus.svelte';
-	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
+	import GarbageBin from '$lib/icons/GarbageBin.svelte';
+	import Search from '$lib/icons/Search.svelte';
+	import Plus from '$lib/icons/Plus.svelte';
+	import ChevronRight from '$lib/icons/ChevronRight.svelte';
 
 	const i18n = getContext('i18n');
 

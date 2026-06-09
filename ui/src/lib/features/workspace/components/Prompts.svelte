@@ -15,11 +15,11 @@
 	} from '$lib/apis/prompts';
 
 	import PromptMenu from '$lib/features/workspace/components/Prompts/PromptMenu.svelte';
-	import EllipsisHorizontal from '$lib/components/icons/EllipsisHorizontal.svelte';
+	import EllipsisHorizontal from '$lib/icons/EllipsisHorizontal.svelte';
 	import DeleteConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
-	import Search from '$lib/components/icons/Search.svelte';
-	import Plus from '$lib/components/icons/Plus.svelte';
-	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
+	import Search from '$lib/icons/Search.svelte';
+	import Plus from '$lib/icons/Plus.svelte';
+	import ChevronRight from '$lib/icons/ChevronRight.svelte';
 	import Spinner from '$lib/ui/Spinner.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import { capitalizeFirstLetter } from '$lib/utils';

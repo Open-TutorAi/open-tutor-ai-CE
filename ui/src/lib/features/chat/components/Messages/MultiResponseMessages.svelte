@@ -11,7 +11,7 @@
 
 	import ResponseMessage from '$lib/features/chat/components/Messages/ResponseMessage.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import Merge from '$lib/components/icons/Merge.svelte';
+	import Merge from '$lib/icons/Merge.svelte';
 
 	import Markdown from '$lib/features/chat/components/Messages/Markdown.svelte';
 	import Name from '$lib/features/chat/components/Messages/Name.svelte';

@@ -4,11 +4,11 @@
 	const i18n = getContext('i18n');
 	const dispatch = createEventDispatcher();
 
-	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
-	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
+	import ChevronDown from '$lib/icons/ChevronDown.svelte';
+	import ChevronRight from '$lib/icons/ChevronRight.svelte';
 	import Collapsible from '$lib/ui/Collapsible.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import Plus from '$lib/components/icons/Plus.svelte';
+	import Plus from '$lib/icons/Plus.svelte';
 
 	export let open = true;
 

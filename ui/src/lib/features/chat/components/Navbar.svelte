@@ -20,14 +20,14 @@
 	import ShareChatModal from '$lib/features/chat/components/ShareChatModal.svelte';
 	import ModelSelector from '$lib/features/chat/components/ModelSelector.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import Menu from '$lib/components/layout/Navbar/Menu.svelte';
-	import UserMenu from '$lib/components/layout/Sidebar/UserMenu.svelte';
-	import MenuLines from '$lib/components/icons/MenuLines.svelte';
-	import AdjustmentsHorizontal from '$lib/components/icons/AdjustmentsHorizontal.svelte';
-	import ChatBubbleOval from '$lib/components/icons/ChatBubbleOval.svelte';
-	import User from '$lib/components/icons/User.svelte';
+	import Menu from '$lib/layout/Navbar/Menu.svelte';
+	import UserMenu from '$lib/layout/Sidebar/UserMenu.svelte';
+	import MenuLines from '$lib/icons/MenuLines.svelte';
+	import AdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
+	import ChatBubbleOval from '$lib/icons/ChatBubbleOval.svelte';
+	import User from '$lib/icons/User.svelte';
 
-	import PencilSquare from '$lib/components/icons/PencilSquare.svelte';
+	import PencilSquare from '$lib/icons/PencilSquare.svelte';
 
 	const i18n = getContext('i18n');
 

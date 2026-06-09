@@ -9,8 +9,8 @@
 
 	import { chatCompletion } from '$lib/apis/openai';
 
-	import ChatBubble from '$lib/components/icons/ChatBubble.svelte';
-	import LightBlub from '$lib/components/icons/LightBlub.svelte';
+	import ChatBubble from '$lib/icons/ChatBubble.svelte';
+	import LightBlub from '$lib/icons/LightBlub.svelte';
 	import Markdown from '$lib/features/chat/components/Messages/Markdown.svelte';
 	import Skeleton from '$lib/features/chat/components/Messages/Skeleton.svelte';
 

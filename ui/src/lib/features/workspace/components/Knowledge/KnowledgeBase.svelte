@@ -35,10 +35,10 @@
 
 	import SyncConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 	import RichTextInput from '$lib/ui/RichTextInput.svelte';
-	import EllipsisVertical from '$lib/components/icons/EllipsisVertical.svelte';
+	import EllipsisVertical from '$lib/icons/EllipsisVertical.svelte';
 	import Drawer from '$lib/ui/Drawer.svelte';
-	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
-	import LockClosed from '$lib/components/icons/LockClosed.svelte';
+	import ChevronLeft from '$lib/icons/ChevronLeft.svelte';
+	import LockClosed from '$lib/icons/LockClosed.svelte';
 	import AccessControlModal from '$lib/features/workspace/components/common/AccessControlModal.svelte';
 
 	let largeScreen = true;

@@ -11,7 +11,7 @@
 	import Switch from '$lib/ui/Switch.svelte';
 	import Spinner from '$lib/ui/Spinner.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import Plus from '$lib/components/icons/Plus.svelte';
+	import Plus from '$lib/icons/Plus.svelte';
 	import Connection from '$lib/features/chat/components/Settings/Connections/Connection.svelte';
 
 	import AddConnectionModal from '$lib/components/AddConnectionModal.svelte';

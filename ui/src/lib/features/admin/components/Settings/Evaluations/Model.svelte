@@ -3,7 +3,7 @@
 	const dispatch = createEventDispatcher();
 	const i18n = getContext('i18n');
 
-	import Cog6 from '$lib/components/icons/Cog6.svelte';
+	import Cog6 from '$lib/icons/Cog6.svelte';
 	import ArenaModelModal from '$lib/features/admin/components/Settings/Evaluations/ArenaModelModal.svelte';
 	export let model;
 

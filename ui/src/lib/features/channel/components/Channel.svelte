@@ -12,7 +12,7 @@
 	import MessageInput from '$lib/features/channel/components/MessageInput.svelte';
 	import Navbar from '$lib/features/channel/components/Navbar.svelte';
 	import Drawer from '$lib/ui/Drawer.svelte';
-	import EllipsisVertical from '$lib/components/icons/EllipsisVertical.svelte';
+	import EllipsisVertical from '$lib/icons/EllipsisVertical.svelte';
 	import Thread from '$lib/features/channel/components/Thread.svelte';
 
 	export let id = '';

@@ -6,8 +6,8 @@
 	const i18n = getContext('i18n');
 
 	import Modal from '$lib/ui/Modal.svelte';
-	import XMark from '$lib/components/icons/XMark.svelte';
-	import Info from '$lib/components/icons/Info.svelte';
+	import XMark from '$lib/icons/XMark.svelte';
+	import Info from '$lib/icons/Info.svelte';
 	import Switch from '$lib/ui/Switch.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
 

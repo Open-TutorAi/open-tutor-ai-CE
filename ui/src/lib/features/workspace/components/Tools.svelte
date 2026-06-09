@@ -16,19 +16,19 @@
 		getToolList,
 		getTools
 	} from '$lib/apis/tools';
-	import ArrowDownTray from '$lib/components/icons/ArrowDownTray.svelte';
+	import ArrowDownTray from '$lib/icons/ArrowDownTray.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import ConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 	import ToolMenu from '$lib/features/workspace/components/Tools/ToolMenu.svelte';
-	import EllipsisHorizontal from '$lib/components/icons/EllipsisHorizontal.svelte';
+	import EllipsisHorizontal from '$lib/icons/EllipsisHorizontal.svelte';
 	import ValvesModal from '$lib/features/workspace/components/common/ValvesModal.svelte';
 	import ManifestModal from '$lib/features/workspace/components/common/ManifestModal.svelte';
-	import Heart from '$lib/components/icons/Heart.svelte';
+	import Heart from '$lib/icons/Heart.svelte';
 	import DeleteConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
-	import GarbageBin from '$lib/components/icons/GarbageBin.svelte';
-	import Search from '$lib/components/icons/Search.svelte';
-	import Plus from '$lib/components/icons/Plus.svelte';
-	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
+	import GarbageBin from '$lib/icons/GarbageBin.svelte';
+	import Search from '$lib/icons/Search.svelte';
+	import Plus from '$lib/icons/Plus.svelte';
+	import ChevronRight from '$lib/icons/ChevronRight.svelte';
 	import Spinner from '$lib/ui/Spinner.svelte';
 	import { capitalizeFirstLetter } from '$lib/utils';
 

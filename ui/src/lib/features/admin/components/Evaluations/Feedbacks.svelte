@@ -13,12 +13,12 @@
 	import { deleteFeedbackById, exportAllFeedbacks, getAllFeedbacks } from '$lib/apis/evaluations';
 
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import ArrowDownTray from '$lib/components/icons/ArrowDownTray.svelte';
+	import ArrowDownTray from '$lib/icons/ArrowDownTray.svelte';
 	import Badge from '$lib/ui/Badge.svelte';
-	import CloudArrowUp from '$lib/components/icons/CloudArrowUp.svelte';
+	import CloudArrowUp from '$lib/icons/CloudArrowUp.svelte';
 	import Pagination from '$lib/ui/Pagination.svelte';
 	import FeedbackMenu from '$lib/features/admin/components/Evaluations/FeedbackMenu.svelte';
-	import EllipsisHorizontal from '$lib/components/icons/EllipsisHorizontal.svelte';
+	import EllipsisHorizontal from '$lib/icons/EllipsisHorizontal.svelte';
 
 	export let feedbacks = [];
 

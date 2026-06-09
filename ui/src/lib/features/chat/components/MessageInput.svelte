@@ -28,9 +28,9 @@
 	import FileItem from '$lib/ui/FileItem.svelte';
 	import Image from '$lib/ui/Image.svelte';
 
-	import XMark from '$lib/components/icons/XMark.svelte';
-	import GlobeAlt from '$lib/components/icons/GlobeAlt.svelte';
-	import Photo from '$lib/components/icons/Photo.svelte';
+	import XMark from '$lib/icons/XMark.svelte';
+	import GlobeAlt from '$lib/icons/GlobeAlt.svelte';
+	import Photo from '$lib/icons/Photo.svelte';
 
 	const i18n = getContext('i18n');
 

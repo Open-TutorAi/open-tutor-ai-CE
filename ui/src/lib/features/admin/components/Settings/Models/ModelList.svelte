@@ -6,7 +6,7 @@
 
 	import { models } from '$lib/stores';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import EllipsisVertical from '$lib/components/icons/EllipsisVertical.svelte';
+	import EllipsisVertical from '$lib/icons/EllipsisVertical.svelte';
 
 	export let modelIds = [];
 

@@ -3,7 +3,7 @@
 	const i18n = getContext('i18n');
 
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import Plus from '$lib/components/icons/Plus.svelte';
+	import Plus from '$lib/icons/Plus.svelte';
 	import { TUTOR_BASE_URL } from '$lib/constants';
 	import Checkbox from '$lib/ui/Checkbox.svelte';
 	import Badge from '$lib/ui/Badge.svelte';

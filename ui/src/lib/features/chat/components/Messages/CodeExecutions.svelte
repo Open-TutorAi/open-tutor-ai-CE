@@ -1,9 +1,9 @@
 <script lang="ts">
 	import CodeExecutionModal from '$lib/features/chat/components/Messages/CodeExecutionModal.svelte';
 	import Spinner from '$lib/ui/Spinner.svelte';
-	import Check from '$lib/components/icons/Check.svelte';
-	import XMark from '$lib/components/icons/XMark.svelte';
-	import EllipsisHorizontal from '$lib/components/icons/EllipsisHorizontal.svelte';
+	import Check from '$lib/icons/Check.svelte';
+	import XMark from '$lib/icons/XMark.svelte';
+	import EllipsisHorizontal from '$lib/icons/EllipsisHorizontal.svelte';
 
 	export let codeExecutions = [];
 

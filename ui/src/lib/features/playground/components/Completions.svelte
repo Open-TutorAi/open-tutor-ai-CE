@@ -10,7 +10,7 @@
 
 	import { splitStream } from '$lib/utils';
 	import Selector from '$lib/features/chat/components/ModelSelector/Selector.svelte';
-	import MenuLines from '$lib/components/icons/MenuLines.svelte';
+	import MenuLines from '$lib/icons/MenuLines.svelte';
 
 	const i18n = getContext('i18n');
 

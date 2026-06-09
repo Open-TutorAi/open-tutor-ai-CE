@@ -14,8 +14,8 @@
 	import ModelList from '$lib/features/admin/components/Settings/Models/ModelList.svelte';
 	import { getModelsConfig, setModelsConfig } from '$lib/apis/configs';
 	import Spinner from '$lib/ui/Spinner.svelte';
-	import Minus from '$lib/components/icons/Minus.svelte';
-	import Plus from '$lib/components/icons/Plus.svelte';
+	import Minus from '$lib/icons/Minus.svelte';
+	import Plus from '$lib/icons/Plus.svelte';
 
 	export let show = false;
 	export let initHandler = () => {};

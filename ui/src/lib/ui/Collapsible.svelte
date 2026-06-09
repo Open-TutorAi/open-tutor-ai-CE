@@ -29,8 +29,8 @@
 	import { slide } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
 
-	import ChevronUp from '$lib/components/icons/ChevronUp.svelte';
-	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
+	import ChevronUp from '$lib/icons/ChevronUp.svelte';
+	import ChevronDown from '$lib/icons/ChevronDown.svelte';
 	import Spinner from '$lib/ui/Spinner.svelte';
 
 	export let open = false;

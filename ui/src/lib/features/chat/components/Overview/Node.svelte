@@ -4,7 +4,7 @@
 
 	import ProfileImage from '$lib/features/chat/components/Messages/ProfileImage.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import Heart from '$lib/components/icons/Heart.svelte';
+	import Heart from '$lib/icons/Heart.svelte';
 
 	type $$Props = NodeProps;
 	export let data: $$Props['data'];

@@ -9,7 +9,7 @@
 	import ConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 	import Badge from '$lib/ui/Badge.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
+	import ChevronLeft from '$lib/icons/ChevronLeft.svelte';
 
 	let formElement = null;
 	let loading = false;

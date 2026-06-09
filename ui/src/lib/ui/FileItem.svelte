@@ -3,7 +3,7 @@
 	import { formatFileSize } from '$lib/utils';
 
 	import FileItemModal from '$lib/ui/FileItemModal.svelte';
-	import GarbageBin from '$lib/components/icons/GarbageBin.svelte';
+	import GarbageBin from '$lib/icons/GarbageBin.svelte';
 	import Spinner from '$lib/ui/Spinner.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
 

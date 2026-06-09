@@ -6,9 +6,9 @@
 
 	import { deleteGroupById, updateGroupById } from '$lib/apis/groups';
 
-	import Pencil from '$lib/components/icons/Pencil.svelte';
-	import User from '$lib/components/icons/User.svelte';
-	import UserCircleSolid from '$lib/components/icons/UserCircleSolid.svelte';
+	import Pencil from '$lib/icons/Pencil.svelte';
+	import User from '$lib/icons/User.svelte';
+	import UserCircleSolid from '$lib/icons/UserCircleSolid.svelte';
 	import GroupModal from '$lib/features/admin/components/Users/Groups/EditGroupModal.svelte';
 
 	export let users = [];

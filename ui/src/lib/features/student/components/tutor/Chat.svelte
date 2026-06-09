@@ -15,7 +15,7 @@
 	import { get, type Unsubscriber, type Writable } from 'svelte/store';
 	import type { i18n as i18nType } from 'i18next';
 	import { TUTOR_BASE_URL, TUTOR_API_BASE_URL } from '$lib/constants';
-	import promptData  from './prompt.json';
+	import promptData  from '$lib/features/student/components/tutor/prompt.json';
 
 
 	import {
@@ -89,7 +89,7 @@
 	import Banner from '$lib/ui/Banner.svelte';
 	import MessageInput from '$lib/features/chat/components/MessageInput.svelte';
 	import Messages from '$lib/features/chat/components/Messages.svelte';
-	import Navbar from '$lib/components/student/tutor/ChatNavbar.svelte';
+	import Navbar from '$lib/features/student/components/tutor/ChatNavbar.svelte';
 	import ChatControls from '$lib/features/chat/components/ChatControls.svelte';
 	import EventConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 	import Placeholder from '$lib/features/chat/components/Placeholder.svelte';

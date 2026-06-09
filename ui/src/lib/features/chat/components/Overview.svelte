@@ -14,8 +14,8 @@
 
 	import CustomNode from '$lib/features/chat/components/Overview/Node.svelte';
 	import Flow from '$lib/features/chat/components/Overview/Flow.svelte';
-	import XMark from '$lib/components/icons/XMark.svelte';
-	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
+	import XMark from '$lib/icons/XMark.svelte';
+	import ArrowLeft from '$lib/icons/ArrowLeft.svelte';
 
 	const { width, height } = useStore();
 

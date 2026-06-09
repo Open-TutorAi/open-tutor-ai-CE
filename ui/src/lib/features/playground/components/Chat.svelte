@@ -18,12 +18,12 @@
 	import Collapsible from '$lib/ui/Collapsible.svelte';
 
 	import Messages from '$lib/features/playground/components/Chat/Messages.svelte';
-	import ChevronUp from '$lib/components/icons/ChevronUp.svelte';
-	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
-	import Pencil from '$lib/components/icons/Pencil.svelte';
-	import Cog6 from '$lib/components/icons/Cog6.svelte';
+	import ChevronUp from '$lib/icons/ChevronUp.svelte';
+	import ChevronDown from '$lib/icons/ChevronDown.svelte';
+	import Pencil from '$lib/icons/Pencil.svelte';
+	import Cog6 from '$lib/icons/Cog6.svelte';
 	import Sidebar from '$lib/ui/Sidebar.svelte';
-	import ArrowRight from '$lib/components/icons/ArrowRight.svelte';
+	import ArrowRight from '$lib/icons/ArrowRight.svelte';
 
 	const i18n = getContext('i18n');
 

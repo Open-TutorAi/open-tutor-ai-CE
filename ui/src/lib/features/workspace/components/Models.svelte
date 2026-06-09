@@ -23,14 +23,14 @@
 	import { getModels } from '$lib/apis';
 	import { getGroups } from '$lib/apis/groups';
 
-	import EllipsisHorizontal from '$lib/components/icons/EllipsisHorizontal.svelte';
+	import EllipsisHorizontal from '$lib/icons/EllipsisHorizontal.svelte';
 	import ModelMenu from '$lib/features/workspace/components/Models/ModelMenu.svelte';
 	import ModelDeleteConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import GarbageBin from '$lib/components/icons/GarbageBin.svelte';
-	import Search from '$lib/components/icons/Search.svelte';
-	import Plus from '$lib/components/icons/Plus.svelte';
-	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
+	import GarbageBin from '$lib/icons/GarbageBin.svelte';
+	import Search from '$lib/icons/Search.svelte';
+	import Plus from '$lib/icons/Plus.svelte';
+	import ChevronRight from '$lib/icons/ChevronRight.svelte';
 	import Switch from '$lib/ui/Switch.svelte';
 	import Spinner from '$lib/ui/Spinner.svelte';
 	import { capitalizeFirstLetter } from '$lib/utils';

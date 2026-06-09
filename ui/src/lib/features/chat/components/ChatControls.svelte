@@ -11,7 +11,7 @@
 	import CallOverlay from '$lib/features/chat/components/MessageInput/CallOverlay.svelte';
 	import Drawer from '$lib/ui/Drawer.svelte';
 	import Overview from '$lib/features/chat/components/Overview.svelte';
-	import EllipsisVertical from '$lib/components/icons/EllipsisVertical.svelte';
+	import EllipsisVertical from '$lib/icons/EllipsisVertical.svelte';
 	import Artifacts from '$lib/features/chat/components/Artifacts.svelte';
 	import { min } from '@floating-ui/utils';
 

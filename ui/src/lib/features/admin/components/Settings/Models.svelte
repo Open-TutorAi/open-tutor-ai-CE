@@ -16,7 +16,7 @@
 	} from '$lib/apis/models';
 
 	import { getModels } from '$lib/apis';
-	import Search from '$lib/components/icons/Search.svelte';
+	import Search from '$lib/icons/Search.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import Switch from '$lib/ui/Switch.svelte';
 	import Spinner from '$lib/ui/Spinner.svelte';
@@ -24,10 +24,10 @@
 	import ModelEditor from '$lib/features/workspace/components/Models/ModelEditor.svelte';
 	import { toast } from 'svelte-sonner';
 	import ConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
-	import Cog6 from '$lib/components/icons/Cog6.svelte';
+	import Cog6 from '$lib/icons/Cog6.svelte';
 	import ConfigureModelsModal from '$lib/features/admin/components/Settings/Models/ConfigureModelsModal.svelte';
-	import Wrench from '$lib/components/icons/Wrench.svelte';
-	import ArrowDownTray from '$lib/components/icons/ArrowDownTray.svelte';
+	import Wrench from '$lib/icons/Wrench.svelte';
+	import ArrowDownTray from '$lib/icons/ArrowDownTray.svelte';
 	import ManageModelsModal from '$lib/features/admin/components/Settings/Models/ManageModelsModal.svelte';
 
 	let importFiles;

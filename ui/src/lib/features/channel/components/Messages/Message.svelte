@@ -21,17 +21,17 @@
 	import ProfileImage from '$lib/features/chat/components/Messages/ProfileImage.svelte';
 	import Name from '$lib/features/chat/components/Messages/Name.svelte';
 	import ConfirmDialog from '$lib/ui/ConfirmDialog.svelte';
-	import GarbageBin from '$lib/components/icons/GarbageBin.svelte';
-	import Pencil from '$lib/components/icons/Pencil.svelte';
+	import GarbageBin from '$lib/icons/GarbageBin.svelte';
+	import Pencil from '$lib/icons/Pencil.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import Textarea from '$lib/ui/Textarea.svelte';
 	import Image from '$lib/ui/Image.svelte';
 	import FileItem from '$lib/ui/FileItem.svelte';
 	import ProfilePreview from '$lib/features/channel/components/Messages/Message/ProfilePreview.svelte';
-	import ChatBubbleOvalEllipsis from '$lib/components/icons/ChatBubbleOvalEllipsis.svelte';
-	import FaceSmile from '$lib/components/icons/FaceSmile.svelte';
+	import ChatBubbleOvalEllipsis from '$lib/icons/ChatBubbleOvalEllipsis.svelte';
+	import FaceSmile from '$lib/icons/FaceSmile.svelte';
 	import ReactionPicker from '$lib/features/channel/components/Messages/Message/ReactionPicker.svelte';
-	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
+	import ChevronRight from '$lib/icons/ChevronRight.svelte';
 	import { formatDate } from '$lib/utils';
 
 	export let message;

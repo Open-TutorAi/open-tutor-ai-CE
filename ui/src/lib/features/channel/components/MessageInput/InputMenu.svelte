@@ -8,11 +8,11 @@
 
 	import Dropdown from '$lib/ui/Dropdown.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import DocumentArrowUpSolid from '$lib/components/icons/DocumentArrowUpSolid.svelte';
+	import DocumentArrowUpSolid from '$lib/icons/DocumentArrowUpSolid.svelte';
 	import Switch from '$lib/ui/Switch.svelte';
-	import GlobeAltSolid from '$lib/components/icons/GlobeAltSolid.svelte';
-	import WrenchSolid from '$lib/components/icons/WrenchSolid.svelte';
-	import CameraSolid from '$lib/components/icons/CameraSolid.svelte';
+	import GlobeAltSolid from '$lib/icons/GlobeAltSolid.svelte';
+	import WrenchSolid from '$lib/icons/WrenchSolid.svelte';
+	import CameraSolid from '$lib/icons/CameraSolid.svelte';
 
 	const i18n = getContext('i18n');
 

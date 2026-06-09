@@ -6,10 +6,10 @@
 	import SensitiveInput from '$lib/ui/SensitiveInput.svelte';
 	import AddConnectionModal from '$lib/components/AddConnectionModal.svelte';
 
-	import Cog6 from '$lib/components/icons/Cog6.svelte';
-	import Wrench from '$lib/components/icons/Wrench.svelte';
+	import Cog6 from '$lib/icons/Cog6.svelte';
+	import Wrench from '$lib/icons/Wrench.svelte';
 	import ManageOllamaModal from '$lib/features/admin/components/Settings/Connections/ManageOllamaModal.svelte';
-	import ArrowDownTray from '$lib/components/icons/ArrowDownTray.svelte';
+	import ArrowDownTray from '$lib/icons/ArrowDownTray.svelte';
 
 	export let onDelete = () => {};
 	export let onSubmit = () => {};
