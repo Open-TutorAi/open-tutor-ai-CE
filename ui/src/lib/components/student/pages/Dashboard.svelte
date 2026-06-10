@@ -7,7 +7,11 @@
 	import { browser } from '$app/environment';
 	import { chatId as storeChatId, isDemo, demoData } from '$lib/stores';
 	import CourseCard from '../elements/CourseCard.svelte';
-	import { getSupportRequests, type SupportResponse, updateSupportChatId } from '$lib/apis/supports';
+	import {
+		getSupportRequests,
+		type SupportResponse,
+		updateSupportChatId
+	} from '$lib/apis/supports';
 	import { page } from '$app/stores';
 	import { fade, scale } from 'svelte/transition';
 	import { toast } from 'svelte-sonner';
@@ -17,17 +21,19 @@
 	// State for user's support requests
 	let userSupports: SupportResponse[] = [];
 	let isLoading = true;
-	
-	$: displaySupports = $isDemo ? $demoData.supports.map(s => ({
-		id: s.id,
-		title: s.title,
-		description: s.description,
-		status: s.progress < 30 ? 'not-started' : s.progress < 100 ? 'in-progress' : 'completed',
-		category: s.category,
-		difficulty: s.difficulty,
-		progress: s.progress
-	})) : userSupports;
-	
+
+	$: displaySupports = $isDemo
+		? $demoData.supports.map((s) => ({
+				id: s.id,
+				title: s.title,
+				description: s.description,
+				status: s.progress < 30 ? 'not-started' : s.progress < 100 ? 'in-progress' : 'completed',
+				category: s.category,
+				difficulty: s.difficulty,
+				progress: s.progress
+			}))
+		: userSupports;
+
 	// Track pending support and chat linkage
 	let pendingSupportId = '';
 	let chatIdSubscription: Function;
@@ -39,20 +45,20 @@
 	onMount(async () => {
 		if (browser) {
 			console.log('Dashboard mounted: clearing chat and support data');
-			
+
 			// Clear chatId from the store
 			storeChatId.set('');
-			
+
 			// Clear any sessionStorage data
 			if (sessionStorage.selectedModels) {
 				sessionStorage.removeItem('selectedModels');
 			}
-			
+
 			// Clear any localStorage data for pending support
 			if (localStorage.getItem('pendingSupportData')) {
 				localStorage.removeItem('pendingSupportData');
 			}
-			
+
 			// Clear any stored chat input data
 			const keysToRemove = [];
 			for (let i = 0; i < localStorage.length; i++) {
@@ -61,12 +67,12 @@
 					keysToRemove.push(key);
 				}
 			}
-			
+
 			// Remove the collected keys
-			keysToRemove.forEach(key => {
+			keysToRemove.forEach((key) => {
 				localStorage.removeItem(key);
 			});
-			
+
 			// Fetch user's support requests
 			if ($isDemo) {
 				// In demo mode, skip API calls
@@ -97,19 +103,19 @@
 			if (!window.openTutorEvents) {
 				window.openTutorEvents = new EventTarget();
 			}
-			
+
 			// Add global event listener for chat creation
 			window.openTutorEvents.addEventListener('chatCreated', ((event: CustomEvent) => {
 				const newChatId = event.detail?.chatId;
 				const timestamp = event.detail?.timestamp;
 				console.log('Received chatCreated event with chatId:', newChatId, 'timestamp:', timestamp);
-				
+
 				if (newChatId && pendingSupportId) {
 					console.log('Immediately updating support with new chat ID from event');
 					updateSupportWithChatId(pendingSupportId, newChatId);
 				}
 			}) as EventListener);
-			
+
 			// Subscribe to the chatId store as a backup
 			chatIdSubscription = storeChatId.subscribe((newChatId) => {
 				console.log('Chat ID store changed:', newChatId);
@@ -118,7 +124,7 @@
 					updateSupportWithChatId(pendingSupportId, newChatId);
 				}
 			});
-			
+
 			// Set up monitoring for URL changes as another backup
 			urlCheckInterval = setInterval(() => {
 				// Check if there's still a pending support to process
@@ -129,20 +135,20 @@
 						clearInterval(urlCheckInterval);
 						return;
 					}
-					
+
 					// Check for expiration
 					const supportData = JSON.parse(pendingSupportData);
 					const currentTime = Date.now();
 					const supportTimestamp = supportData.timestamp || 0;
 					const MAX_SUPPORT_AGE_MS = 30 * 60 * 1000; // 30 minutes
-					
+
 					if (currentTime - supportTimestamp >= MAX_SUPPORT_AGE_MS) {
 						console.log('Support expired during URL check, clearing');
 						localStorage.removeItem('pendingSupportData');
 						clearInterval(urlCheckInterval);
 						return;
 					}
-					
+
 					// Check for URL changes indicating chat creation
 					const currentURL = window.location.pathname;
 					if (currentURL.startsWith('/student/c/')) {
@@ -170,12 +176,12 @@
 			window.openTutorEvents.removeEventListener('chatCreated', ((event: CustomEvent) => {
 				// This is just for cleanup, the actual handler is defined in onMount
 			}) as EventListener);
-			
+
 			if (chatIdSubscription) {
 				chatIdSubscription();
 				console.log('Chat ID subscription removed');
 			}
-			
+
 			if (urlCheckInterval) {
 				clearInterval(urlCheckInterval);
 				console.log('URL check interval cleared');
@@ -186,22 +192,22 @@
 	// Subscribe to page changes as an additional detection method
 	$: if ($page && $page.url && browser) {
 		currentPath = $page.url.pathname || '';
-		
+
 		// Check for chat creation
 		if (currentPath.startsWith('/student/c/')) {
 			chatIdFromURL = currentPath.replace('/student/c/', '').split('/')[0];
-			
+
 			// Only proceed if we have a valid ID and there's a pending support
 			if (chatIdFromURL && localStorage.getItem('pendingSupportData')) {
 				try {
 					const supportData = JSON.parse(localStorage.getItem('pendingSupportData') || '{}');
 					const supportId = supportData.id;
-					
+
 					// Validate support hasn't expired
 					const currentTime = Date.now();
 					const supportTimestamp = supportData.timestamp || 0;
 					const MAX_SUPPORT_AGE_MS = 30 * 60 * 1000; // 30 minutes
-					
+
 					if (supportId && currentTime - supportTimestamp < MAX_SUPPORT_AGE_MS) {
 						console.log('Detected chat page navigation:', chatIdFromURL);
 						updateSupportWithChatId(supportId, chatIdFromURL);
@@ -225,7 +231,7 @@
 			console.log('Invalid inputs for updateSupportWithChatId:', { supportId, chatId });
 			return;
 		}
-		
+
 		// Make sure we haven't already processed this
 		let pendingSupportData;
 		try {
@@ -234,23 +240,23 @@
 				console.log('No pending support data found in localStorage, update already completed');
 				return;
 			}
-			
+
 			const supportData = JSON.parse(pendingSupportData);
-			
+
 			// Only process if the pending ID matches our input ID
 			if (supportData.id !== supportId) {
-				console.log('Support ID mismatch:', { 
-					pendingId: supportData.id, 
-					providedId: supportId 
+				console.log('Support ID mismatch:', {
+					pendingId: supportData.id,
+					providedId: supportId
 				});
 				return;
 			}
-			
+
 			// Check if support is too old
 			const currentTime = Date.now();
 			const supportTimestamp = supportData.timestamp || 0;
 			const MAX_SUPPORT_AGE_MS = 30 * 60 * 1000; // 30 minutes
-			
+
 			if (currentTime - supportTimestamp >= MAX_SUPPORT_AGE_MS) {
 				console.log('Support too old, ignoring update');
 				localStorage.removeItem('pendingSupportData');
@@ -261,30 +267,30 @@
 			localStorage.removeItem('pendingSupportData');
 			return;
 		}
-		
+
 		try {
 			const token = localStorage.getItem('token');
 			if (!token) {
 				console.error('No token found in localStorage');
 				return;
 			}
-			
+
 			console.log(`Updating support ${supportId} with chat ID ${chatId}`);
 			const result = await updateSupportChatId(token, supportId, chatId);
 			console.log('Support update result:', result);
-			
+
 			// Clear the pending support data to prevent duplicate updates
 			localStorage.removeItem('pendingSupportData');
 			pendingSupportId = '';
 			console.log('Support updated successfully with chat ID:', chatId);
 		} catch (error) {
-			console.error("Failed to update support with chat ID:", error);
-			
+			console.error('Failed to update support with chat ID:', error);
+
 			// Even on error, clear the pending support after a certain number of attempts
 			try {
 				const supportData = JSON.parse(pendingSupportData || '{}');
 				const attemptCount = (supportData.attempts || 0) + 1;
-				
+
 				if (attemptCount >= 3) {
 					// After 3 failed attempts, give up
 					console.log('Exceeded max attempts to update support, clearing data');
@@ -404,7 +410,7 @@
 		goto('/student/support/create');
 		showSupportPopup = false;
 	}
-	
+
 	// Handle card click - open support details page
 	function handleCardClick(support: SupportResponse, index: number) {
 		goto(`/student/support/${support.id}`);
@@ -438,14 +444,29 @@
 	<div class="flex flex-col gap-6">
 		{#if isLoading}
 			<div class="flex justify-center items-center py-12">
-				<div class="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
-				<span class="ml-3 text-gray-600 dark:text-gray-300">{$i18n.t('Loading your supports...')}</span>
-		</div>
+				<div
+					class="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"
+				></div>
+				<span class="ml-3 text-gray-600 dark:text-gray-300"
+					>{$i18n.t('Loading your supports...')}</span
+				>
+			</div>
 		{:else if displaySupports.length === 0}
 			<div class="flex flex-col items-center justify-center py-6 text-center">
-				<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-400 dark:text-indigo-300 mb-3">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="40"
+					height="40"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.5"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					class="text-indigo-400 dark:text-indigo-300 mb-3"
+				>
 					<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-					</svg>
+				</svg>
 				<h3 class="text-lg font-medium text-gray-800 dark:text-white mb-2">
 					{$i18n.t('No supports found')}
 				</h3>
@@ -457,33 +478,51 @@
 			<div class="relative">
 				<!-- Left arrow -->
 				{#if currentPage > 0}
-				<button
+					<button
 						class="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-4 sm:-translate-x-6 p-2 rounded-full bg-white dark:bg-gray-700 shadow-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 z-10 transition-all"
-					on:click={previousPage}
-						aria-label="{$i18n.t('Previous supports')}"
+						on:click={previousPage}
+						aria-label={$i18n.t('Previous supports')}
 					>
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-							<path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-					</svg>
-				</button>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="h-5 w-5"
+							viewBox="0 0 20 20"
+							fill="currentColor"
+						>
+							<path
+								fill-rule="evenodd"
+								d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+								clip-rule="evenodd"
+							/>
+						</svg>
+					</button>
 				{/if}
-				
+
 				<!-- Right arrow -->
 				{#if currentPage < totalPages - 1}
-				<button
+					<button
 						class="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-4 sm:translate-x-6 p-2 rounded-full bg-white dark:bg-gray-700 shadow-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 z-10 transition-all"
-					on:click={nextPage}
-						aria-label="{$i18n.t('Next supports')}"
+						on:click={nextPage}
+						aria-label={$i18n.t('Next supports')}
 					>
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-							<path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-					</svg>
-				</button>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="h-5 w-5"
+							viewBox="0 0 20 20"
+							fill="currentColor"
+						>
+							<path
+								fill-rule="evenodd"
+								d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+								clip-rule="evenodd"
+							/>
+						</svg>
+					</button>
 				{/if}
 
 				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 card-container">
 					{#each currentSupports as support, index (support.id)}
-						<div 
+						<div
 							class="cursor-pointer card-item h-full"
 							class:card-slide-enter-from-right={animationDirection === 'right'}
 							class:card-slide-enter-from-left={animationDirection === 'left'}
@@ -510,10 +549,14 @@
 <!-- Join Course Popup Modal -->
 {#if showJoinCoursePopup}
 	<div
-		class="fixed inset-0 backdrop-blur-sm bg-white/30 dark:bg-black/30 flex items-center justify-center z-50" role="dialog" aria-modal="true" in:fade
+		class="fixed inset-0 backdrop-blur-sm bg-white/30 dark:bg-black/30 flex items-center justify-center z-50"
+		role="dialog"
+		aria-modal="true"
+		in:fade
 	>
 		<div
-			class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-11/12 sm:w-full max-w-md mx-auto relative overflow-y-auto max-h-[90vh] ring-1 ring-gray-200 dark:ring-gray-700" transition:scale={{ duration: 200 }}
+			class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-11/12 sm:w-full max-w-md mx-auto relative overflow-y-auto max-h-[90vh] ring-1 ring-gray-200 dark:ring-gray-700"
+			transition:scale={{ duration: 200 }}
 		>
 			<!-- Close Button -->
 			<button
@@ -576,10 +619,14 @@
 <!-- Support Popup Modal -->
 {#if showSupportPopup}
 	<div
-		class="fixed inset-0 backdrop-blur-sm bg-white/30 dark:bg-black/30 flex items-center justify-center z-50" role="dialog" aria-modal="true" in:fade
+		class="fixed inset-0 backdrop-blur-sm bg-white/30 dark:bg-black/30 flex items-center justify-center z-50"
+		role="dialog"
+		aria-modal="true"
+		in:fade
 	>
 		<div
-			class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 w-11/12 sm:w-full max-w-sm mx-auto relative overflow-y-auto max-h-[90vh] ring-1 ring-gray-200 dark:ring-gray-700" transition:scale={{ duration: 200 }}
+			class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 w-11/12 sm:w-full max-w-sm mx-auto relative overflow-y-auto max-h-[90vh] ring-1 ring-gray-200 dark:ring-gray-700"
+			transition:scale={{ duration: 200 }}
 		>
 			<!-- Close Button -->
 			<button
@@ -657,7 +704,7 @@
 					class="h-3 w-3 text-indigo-600 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-indigo-500"
 				/>
 				<label for="dontShow" class="text-xs text-gray-500 dark:text-gray-400"
-					>{$i18n.t('Don\'t show me again')}</label
+					>{$i18n.t("Don't show me again")}</label
 				>
 			</div>
 		</div>
@@ -677,12 +724,12 @@
 		transition: transform 0.2s ease;
 		display: flex; /* Make the card item a flex container */
 	}
-	
+
 	.card-item > :global(*) {
 		flex: 1; /* Make child components expand to fill the space */
 		height: 100%; /* Ensure full height */
 	}
-	
+
 	.card-item:hover {
 		transform: translateY(-3px);
 	}
