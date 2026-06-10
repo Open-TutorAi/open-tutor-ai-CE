@@ -17,7 +17,7 @@
 		"format:check": "prettier --check \"**/*.{js,ts,svelte,css,md,html,json}\"",
 		"i18n:parse": "i18next --config i18next-parser.config.ts && prettier --write \"src/lib/i18n/**/*.{js,json}\"",
 		"cy:open": "cypress open",
-		"test:frontend": "vitest --passWithNoTests",
+		"test:frontend": "vitest run --passWithNoTests",
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"test:coverage": "vitest run --coverage",
