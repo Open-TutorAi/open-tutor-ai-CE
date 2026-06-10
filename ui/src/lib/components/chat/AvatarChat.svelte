@@ -510,7 +510,7 @@
 				// Original position for avatar only view
 				avatar.position.set(-center.x, -center.y + size.y / 2, -center.z);
 			}
-			
+
 			loading = false;
 
 			// Set a more natural default pose instead of T-pose
@@ -2725,12 +2725,12 @@
 			<Spinner />
 		</div>
 	{/if}
-	
+
 	{#if scene && useClassroom}
-		<ClassroomBackground 
+		<ClassroomBackground
 			bind:this={classroomComponent}
-			{scene} 
-			{camera} 
+			{scene}
+			{camera}
 			{classroomModel}
 			boardMessage={currentMessage}
 		/>

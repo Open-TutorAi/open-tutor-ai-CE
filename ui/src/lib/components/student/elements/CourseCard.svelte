@@ -42,7 +42,9 @@
 			</div>
 		</div>
 
-		<h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4 group-hover:text-gray-900 dark:group-hover:text-white transition-colors text-left line-clamp-2">
+		<h3
+			class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4 group-hover:text-gray-900 dark:group-hover:text-white transition-colors text-left line-clamp-2"
+		>
 			{title}
 		</h3>
 	</div>
@@ -73,4 +75,4 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
-</style> 
+</style>

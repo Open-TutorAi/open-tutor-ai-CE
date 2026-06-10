@@ -19,6 +19,7 @@ repos:
         language: system
         entry: ui/node_modules/.bin/prettier
         args:
-          - --write
+          - --check
+          - --config=ui/.prettierrc
           - --plugin=ui/node_modules/prettier-plugin-svelte/plugin.js
         files: ^ui/.*\.(js|ts|svelte|css|json|md)$

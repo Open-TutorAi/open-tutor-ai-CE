@@ -63,9 +63,15 @@
 	<div class="flex flex-col gap-1.5">
 		<div class="font-medium">{$i18n.t('Version')}</div>
 		<div class="flex gap-4 text-xs text-gray-500 dark:text-gray-400">
-			<span>{$i18n.t('Open TutorAI')} <strong class="text-gray-700 dark:text-gray-200">{TUTOR_VERSION}</strong></span>
+			<span
+				>{$i18n.t('Open TutorAI')}
+				<strong class="text-gray-700 dark:text-gray-200">{TUTOR_VERSION}</strong></span
+			>
 			{#if TUTOR_BUILD_HASH}
-				<span>{$i18n.t('Build')} <code class="text-gray-600 dark:text-gray-300">{TUTOR_BUILD_HASH.slice(0, 8)}</code></span>
+				<span
+					>{$i18n.t('Build')}
+					<code class="text-gray-600 dark:text-gray-300">{TUTOR_BUILD_HASH.slice(0, 8)}</code></span
+				>
 			{/if}
 		</div>
 	</div>
@@ -86,7 +92,9 @@
 			</button>
 
 			<label
-				class="flex-1 py-2 text-xs rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-850 transition text-center cursor-pointer {importing ? 'opacity-50 pointer-events-none' : ''}"
+				class="flex-1 py-2 text-xs rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-850 transition text-center cursor-pointer {importing
+					? 'opacity-50 pointer-events-none'
+					: ''}"
 			>
 				{importing ? $i18n.t('Importing...') : $i18n.t('Import Config')}
 				<input type="file" accept=".json" class="hidden" on:change={importConfigHandler} />

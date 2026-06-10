@@ -4,13 +4,13 @@
 	import RightBar from '$lib/components/student/elements/RightBar.svelte';
 	import { page } from '$app/stores';
 	import { isFullscreenAvatar } from '$lib/stores';
-	
+
 	let chatData = {};
 	let isRightBarVisible = false;
-	
+
 	function handleChatEvent(event) {
 		// Process chat events and update rightbar if needed
-		chatData = {...chatData, ...event.detail};
+		chatData = { ...chatData, ...event.detail };
 	}
 
 	function toggleRightBar() {
@@ -18,11 +18,19 @@
 	}
 </script>
 
-<div class="chat-layout flex h-full overflow-hidden relative bg-white dark:bg-gray-900 {$isFullscreenAvatar ? '' : 'p-2'}">
+<div
+	class="chat-layout flex h-full overflow-hidden relative bg-white dark:bg-gray-900 {$isFullscreenAvatar
+		? ''
+		: 'p-2'}"
+>
 	<!-- Main Chat component takes most of the space -->
-	<div class="chat-container flex-1 h-full overflow-hidden bg-[#F5F7F9] dark:bg-gray-900 {$isFullscreenAvatar ? '' : 'rounded-2xl shadow-sm mr-2'}">
+	<div
+		class="chat-container flex-1 h-full overflow-hidden bg-[#F5F7F9] dark:bg-gray-900 {$isFullscreenAvatar
+			? ''
+			: 'rounded-2xl shadow-sm mr-2'}"
+	>
 		<Chat chatIdProp={$page.params.id} on:chatEvent={handleChatEvent} />
-		
+
 		<!-- Toggle button for mobile - hide in fullscreen -->
 		{#if !$isFullscreenAvatar}
 			<button
@@ -56,10 +64,11 @@
 			</button>
 		{/if}
 	</div>
-	
+
 	<!-- RightBar with fixed width - hide in fullscreen -->
 	{#if !$isFullscreenAvatar}
-		<div class="rightbar-container h-full w-80 bg-[#F5F7F9] dark:bg-gray-900 rounded-2xl shadow-sm overflow-y-auto transition-transform duration-300 ease-in-out"
+		<div
+			class="rightbar-container h-full w-80 bg-[#F5F7F9] dark:bg-gray-900 rounded-2xl shadow-sm overflow-y-auto transition-transform duration-300 ease-in-out"
 			class:mobile-visible={isRightBarVisible}
 		>
 			<RightBar {chatData} />
@@ -73,12 +82,13 @@
 		height: 100%;
 		width: 100%;
 	}
-	
-	.chat-container, .rightbar-container {
+
+	.chat-container,
+	.rightbar-container {
 		/* Ensure proper scroll containment */
 		height: 100%;
 	}
-	
+
 	/* Mobile styles */
 	@media (max-width: 1210px) {
 		.rightbar-container {

@@ -179,7 +179,11 @@
 								</div>
 							</div>
 
-							<a class="flex-shrink-0 text-xs font-medium underline" href="https://opentutorai.com/docs/intro" target="_blank">
+							<a
+								class="flex-shrink-0 text-xs font-medium underline"
+								href="https://opentutorai.com/docs/intro"
+								target="_blank"
+							>
 								{$i18n.t('Documentation')}
 							</a>
 						</div>

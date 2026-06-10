@@ -19,7 +19,7 @@
 	let supports: any[] = [];
 	let loading = true;
 	let error: string | null = null;
-	
+
 	$: displaySupports = $isDemo ? $demoData.supports : supports;
 
 	// Load supports
@@ -43,7 +43,7 @@
 			loading = false;
 			return;
 		}
-		
+
 		const token = localStorage.getItem('token');
 		if (!token) {
 			error = $i18n.t('Authentication required');
@@ -87,7 +87,9 @@
 						goto('/student/support/create');
 					}
 				}}
-				class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm {$isDemo ? 'opacity-75 cursor-not-allowed' : ''}"
+				class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm {$isDemo
+					? 'opacity-75 cursor-not-allowed'
+					: ''}"
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -106,7 +108,9 @@
 		</div>
 
 		<!-- Search or filter header - simplified with just the "All" option -->
-		<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6 flex items-center justify-between">
+		<div
+			class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6 flex items-center justify-between"
+		>
 			<div class="flex items-center">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -126,7 +130,7 @@
 					{$i18n.t('All Supports')}
 				</span>
 			</div>
-			
+
 			<button
 				on:click={loadSupports}
 				class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm flex items-center"

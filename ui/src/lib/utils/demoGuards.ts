@@ -24,7 +24,9 @@ export function showDemoToast(message: string) {
 	});
 }
 
-export function getDemoModeMessage(context: 'save' | 'delete' | 'upload' | 'submit' | 'general'): string {
+export function getDemoModeMessage(
+	context: 'save' | 'delete' | 'upload' | 'submit' | 'general'
+): string {
 	const messages = {
 		save: 'Saving is disabled in demo mode',
 		delete: 'Deleting is disabled in demo mode',
@@ -32,7 +34,6 @@ export function getDemoModeMessage(context: 'save' | 'delete' | 'upload' | 'subm
 		submit: 'Submissions are disabled in demo mode',
 		general: 'This action is disabled in demo mode'
 	};
-	
+
 	return messages[context];
 }
-

@@ -16,7 +16,12 @@
 	import { generateAutoCompletion } from '$lib/apis';
 	import { deleteFileById } from '$lib/apis/files';
 
-	import { TUTOR_FRONT_URL, TUTOR_BASE_URL, TUTOR_API_BASE_URL, PASTED_TEXT_CHARACTER_LIMIT } from '$lib/constants';
+	import {
+		TUTOR_FRONT_URL,
+		TUTOR_BASE_URL,
+		TUTOR_API_BASE_URL,
+		PASTED_TEXT_CHARACTER_LIMIT
+	} from '$lib/constants';
 
 	import InputMenu from '../chat/MessageInput/InputMenu.svelte';
 	import VoiceRecording from '../chat/MessageInput/VoiceRecording.svelte';
@@ -85,8 +90,6 @@
 	$: visionCapableModels = [...(atSelectedModel ? [atSelectedModel] : selectedModels)].filter(
 		(model) => $models.find((m) => m.id === model)?.info?.meta?.capabilities?.vision ?? true
 	);
-	
-	
 
 	const handleShortcut = async (event) => {
 		const text = event.detail;
@@ -94,8 +97,6 @@
 		await tick();
 		document.getElementById('send-message-button')?.click();
 	};
-
-
 
 	const scrollToBottom = () => {
 		const element = document.getElementById('messages-container');
@@ -665,10 +666,9 @@
 										{/each}
 									</div>
 								{/if}
-                                <PedagogicalShortcuts on:submit={handleShortcut} />
+								<PedagogicalShortcuts on:submit={handleShortcut} />
 								<div class="flex items-center gap-2 py-2.5 w-full">
 									<div class="flex-1 min-w-0">
-										
 										{#if $settings?.richTextInput ?? true}
 											<div
 												class="scrollbar-hidden text-left bg-transparent dark:text-gray-100 outline-hidden w-full resize-none max-h-80 overflow-y-auto break-words"

@@ -115,7 +115,7 @@
 
 		feedbacks.forEach((feedback) => {
 			if (!feedback.data || !feedback.data.model_id) return;
-			
+
 			const modelA = feedback.data.model_id;
 			const statsA = getOrDefaultStats(modelA);
 			let outcome: number;
