@@ -22,8 +22,9 @@ permissions:
   statuses: write
 
 jobs:
-  build:
-    name: Format, i18n & Build
+
+  lint:
+    name: Lint & Format
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -55,6 +56,7 @@ jobs:
 
   test:
     name: Vitest unit tests
+    needs: lint
     runs-on: ubuntu-latest
     defaults:
       run:

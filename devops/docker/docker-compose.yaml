@@ -5,7 +5,7 @@ networks:
 services:
   open-tutorai:
     build:
-      context: ..
+      context: ../..
       dockerfile: devops/docker/Dockerfile.backend
     image: open-tutorai
     container_name: open-tutorai
@@ -13,9 +13,9 @@ services:
       - "8080:8080"
     working_dir: /app
     volumes:
-      - ../var:/app/var
+      - ../../var:/app/var
     env_file:
-      - ../.env
+      - ../../.env
     # Mapping syntax avoids YAML list-parsing issues with interpolation strings.
     # SECRET_KEY is validated at compose-up time: missing key = hard failure with
     # a message that includes the generation command.

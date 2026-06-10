@@ -2002,26 +2002,26 @@
 			Available animation options are:
 
 			1. SIMPLE ANIMATION CODES (use in "animation" object):
-			- facial_expression: 
+			- facial_expression:
 				0=neutral, 1=smile, 2=frown, 3=raised_eyebrows, 4=surprise, 5=wink, 6=sad, 7=angry
-			- head_movement: 
+			- head_movement:
 				0=no_move, 1=nod_small, 2=shake, 3=tilt, 4=look_down, 5=look_up, 6=turn_left, 7=turn_right
-			- hand_gesture: 
+			- hand_gesture:
 				0=no_move, 1=open_hand, 2=pointing, 3=wave, 4=open_palm, 5=thumbs_up, 6=fist, 7=peace_sign, 8=finger_snap
-			- eye_movement: 
+			- eye_movement:
 				0=no_move, 1=look_up, 2=look_down, 3=look_left, 4=look_right, 5=blink, 6=wide_open, 7=squint
-			- body_posture: 
+			- body_posture:
 				0=neutral, 1=forward_lean, 2=lean_back, 3=shoulders_up, 4=rest_arms, 5=hands_on_hips, 6=sit, 7=stand
 
 			2. GLB ANIMATIONS (use in "glbAnimation" field with appropriate category):
 
 			A. EXPRESSION ANIMATIONS ("glbAnimationCategory": "expression")
-					"M_Talking_Variations_001", "M_Talking_Variations_002", "M_Talking_Variations_003", 
-					"M_Talking_Variations_004", "M_Talking_Variations_005", "M_Talking_Variations_006", 
-					"M_Talking_Variations_007", "M_Talking_Variations_008", "M_Talking_Variations_009", 
+					"M_Talking_Variations_001", "M_Talking_Variations_002", "M_Talking_Variations_003",
+					"M_Talking_Variations_004", "M_Talking_Variations_005", "M_Talking_Variations_006",
+					"M_Talking_Variations_007", "M_Talking_Variations_008", "M_Talking_Variations_009",
 					"M_Talking_Variations_010"
-					"M_Standing_Expressions_001", "M_Standing_Expressions_002", "M_Standing_Expressions_004", 
-					"M_Standing_Expressions_005", "M_Standing_Expressions_006", "M_Standing_Expressions_007", 
+					"M_Standing_Expressions_001", "M_Standing_Expressions_002", "M_Standing_Expressions_004",
+					"M_Standing_Expressions_005", "M_Standing_Expressions_006", "M_Standing_Expressions_007",
 					"M_Standing_Expressions_008", "M_Standing_Expressions_009", "M_Standing_Expressions_010",
 					"M_Standing_Expressions_011", "M_Standing_Expressions_012", "M_Standing_Expressions_013",
 					"M_Standing_Expressions_014", "M_Standing_Expressions_015", "M_Standing_Expressions_016",
@@ -2040,7 +2040,7 @@
 					"idle_normal", "idle_shift_weight", "idle_look_around", "idle_stretch", "idle_impatient"
 
 			C. LOCOMOTION ANIMATIONS ("glbAnimationCategory": "locomotion")
-					"M_Walk_001", "M_Walk_002", "M_Walk_Backwards_001", 
+					"M_Walk_001", "M_Walk_002", "M_Walk_Backwards_001",
 					"M_Walk_Strafe_Left_002", "M_Walk_Strafe_Right_002",
 					"M_Walk_Jump_001", "M_Walk_Jump_002", "M_Walk_Jump_003"
 					"M_Jog_001", "M_Jog_003", "M_Jog_Backwards_001",
