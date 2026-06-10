@@ -85,7 +85,7 @@ export function generateMockAvatarResponse(prompt: string): {
 	const response = generateMockResponse(prompt);
 	const lowerPrompt = prompt.toLowerCase();
 
-	let animation = {
+	const animation = {
 		facial_expression: 1,
 		head_movement: 1,
 		hand_gesture: 1,
@@ -94,7 +94,7 @@ export function generateMockAvatarResponse(prompt: string): {
 	};
 
 	let glbAnimation = 'talking_neutral';
-	let glbAnimationCategory = 'expression';
+	const glbAnimationCategory = 'expression';
 
 	if (lowerPrompt.includes('hello') || lowerPrompt.includes('hi')) {
 		animation.facial_expression = 1;

@@ -1607,7 +1607,6 @@
 			th: 'viseme_TH',
 			d: 'viseme_DD',
 			t: 'viseme_DD',
-			n: 'viseme_DD',
 			k: 'viseme_kk',
 			g: 'viseme_kk',
 			ch: 'viseme_CH',
