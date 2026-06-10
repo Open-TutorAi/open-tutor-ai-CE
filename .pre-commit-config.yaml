@@ -33,7 +33,7 @@ repos:
         language: system
         entry: bash -c 'cd ui && npm run lint:frontend'
         pass_filenames: false
-        files: ^ui/.*\.(js|ts|svelte)$
+        files: ^ui/src/.*\.(js|ts|svelte)$
 
       - id: i18n-parse
         name: i18n keys
