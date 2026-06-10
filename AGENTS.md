@@ -29,13 +29,16 @@ This repository is the Community Edition foundation. OpenWebUI and Hermes may be
 - Backend tests: `pytest -q --tb=short`
 - Single backend test file: `pytest tests/test_chats.py -q --tb=short`
 - Contract test: `pytest tests/test_contract_coverage.py -q --tb=short`
-- Backend format check: `black . --check --exclude ".venv/|/venv/|ui/"`
-- Backend format: `black . --exclude ".venv/|/venv/|ui/"`
+- Backend lint: `ruff check .`
+- Backend format check: `ruff format --check .`
+- Backend format: `ruff format .`
 - Frontend tests: `cd ui && npm run test:frontend`
 - Single frontend test pattern: `cd ui && npm run test -- -t "<name>"`
 - Frontend typecheck: `cd ui && npm run check`
 - Frontend lint/types: `cd ui && npm run lint`
+- Frontend lint check only (CI, no autofix): `cd ui && npm run lint:check`
 - Frontend format: `cd ui && npm run format`
+- Frontend format check only (CI, no write): `cd ui && npm run format:check`
 - Frontend i18n parse: `cd ui && npm run i18n:parse`
 - Frontend build: `cd ui && npm run build`
 - Full local check: `make check`
@@ -124,6 +127,7 @@ Never commit `.env`, real secrets, API keys, uploaded user data, generated DB fi
 
 ## Frontend Coding Conventions
 
+- OpenWebUI-first: the `ui/` frontend is based on OpenWebUI. Before introducing a new UI pattern, check whether OpenWebUI already implements the feature or a similar pattern and align with it — but never import from `open_webui` at runtime.
 - Keep fetch clients in `ui/src/lib/apis/<domain>/index.ts`, not scattered across components.
 - Use existing API constants from `ui/src/lib/constants.ts`; make backend prefix changes deliberately.
 - Keep TypeScript request/response shapes aligned with backend route bodies and path/query params.
@@ -167,6 +171,57 @@ Never commit `.env`, real secrets, API keys, uploaded user data, generated DB fi
 - Do not silence exceptions, skip tests, weaken assertions, or broaden contract exclusions as a substitute for fixing behavior.
 - State checks not run and why.
 
+### Proof Standards (what to run before claiming done)
+
+Scale verification to the blast radius of the change:
+
+- Docs/comments/typo-only: no tests required — say so explicitly.
+- Single-domain fix: that domain's suite, `pytest tests/test_<domain>.py`.
+- New or changed API route, or any edit to a UI client in `ui/src/lib/apis/`: the domain suite plus `pytest tests/test_contract_coverage.py`.
+- Changes to `gateway/`, `data/`, auth, `common/`, or `config/`: the full `pytest` suite — these are shared surfaces.
+- Frontend behavior changes: targeted Vitest; if the change touches an API call, the contract test as well.
+- Before PR handoff: `make check` (full lint + both test suites).
+
+Evidence beats assertion: paste the failing-then-passing output, not "tests pass."
+
+### Don't Write Change-Detector Tests
+
+A test is a change-detector if it fails whenever data that is *expected to change* gets updated — route counts, model catalogs, exclusion-list sizes, locale key counts. They add no behavioral coverage; they just break CI on routine updates.
+
+Do not write:
+
+```python
+assert len(app.routes) == 47                      # breaks on every new endpoint
+assert "gpt-4o" in PROVIDER_DEFAULT_MODELS        # breaks on every catalog update
+assert len(_SCANNED_PATH_EXCLUSIONS) == 12        # breaks on every legitimate exclusion
+```
+
+Do write:
+
+```python
+# behavior: the route exists and enforces auth
+r = client.get("/api/v1/chats/some-id")           # no token
+assert r.status_code == 401
+
+# invariant: every UI fetch path resolves to a backend route (contract test pattern)
+```
+
+## Known Pitfalls
+
+Hard-won rules — each exists because it bit someone. Add a line here whenever a non-trivial bug gets fixed.
+
+- **DO NOT import `open_webui` at runtime.** `FORBIDDEN_PATTERNS` in the contract test enforces this; OpenWebUI is a read-only design reference.
+- **Register every new ORM model in `data/models/__init__.py`.** `Base.metadata.create_all()` only sees imported models — an unregistered model fails at first query with a missing table, not at startup.
+- **Register API routers before the SPA catch-all** in `gateway/http/app.py`, or the route 404s into the frontend SPA and the error looks like a UI bug.
+- **The legacy `/ws/socket.io` path is rejected on purpose.** Realtime lives at `/realtime`. Do not "fix" a realtime bug by re-enabling the legacy path.
+- **Never auto-"fix" SQLAlchemy boolean filters.** Ruff E712 flags `Chat.archived == False`; the correct fix is `Chat.archived.is_(False)`. The suggested `not Chat.archived` evaluates Python truthiness on the column object and silently breaks the query.
+- **`ui/static/` is vendored** (Draco decoders, emoji SVGs — thousands of files). It is excluded from prettier, ESLint, and whitespace hooks. Never format, lint, or hand-edit anything under it.
+- **Green frontend CI does not mean type-clean.** `npm run lint:types` (svelte-check) runs `continue-on-error` due to known debt — check the step output before touching typed Svelte code.
+- **`npm run i18n:parse` writes files.** CI runs `git diff --exit-code` right after it: run it locally and commit the result, or CI fails on a dirty tree.
+- **The commit-msg hook is opt-in locally.** Conventional Commits are only enforced after `pre-commit install --hook-type commit-msg`; a clone without it accepts any message and fails later in review.
+- **Tests run on in-memory SQLite.** Don't rely on Postgres-only SQL features in repositories without gating them.
+- **`vitest` without `run` watches forever outside CI.** GitHub Actions sets `CI=true` so it exits there, but locally (or in any background shell) it hangs and leaks worker processes. Test scripts must use `vitest run`; only `test:watch` may omit it.
+
 ## Code Review Workflow
 
 - Start from `git status` and the relevant diff.
@@ -190,16 +245,19 @@ To invoke: read `.agents/skills/<skill-name>/SKILL.md` and follow its instructio
 ## CI/CD
 
 - Backend CI: `.github/workflows/ci-backend.yaml` runs on Python, requirements, pyproject, and workflow changes for PRs/pushes to `main` and `dev`.
-- Backend CI jobs: setup Python 3.11, install Black 24.8.0, run `black . --check --exclude ".venv/|/venv/|ui/"`, install `requirements-ci.txt`, run `pytest -q --tb=short`.
+- Backend CI jobs: setup Python 3.11, install `requirements-ci.txt`, run `ruff check .` and `ruff format --check .`, then run `pytest -q --tb=short`.
 - Frontend CI: `.github/workflows/ci-frontend.yaml` runs on `ui/**` and workflow changes for PRs/pushes to `main` and `dev`.
-- Frontend CI jobs: setup Node 22, `npm ci`, `npm run format -- --check`, `npm run i18n:parse`, `git diff --exit-code`, `npm run build`, and `npm run test:frontend`.
+- Frontend CI jobs: a `lint` job (`npm run format:check`, `npm run lint:check`, `npm run lint:types` advisory-only), then `build` (`npm run i18n:parse`, `git diff --exit-code`, `npm run build`) and `test` (`npm run test:frontend`), both gated on `lint`.
+- Security CI: `.github/workflows/osv-scanner.yaml` scans `requirements*.txt` and `ui/package-lock.json` against the OSV CVE database on manifest changes and weekly; detection-only, findings land in the Security tab.
+- Dependabot (`.github/dependabot.yml`) opens weekly pip/npm and monthly github-actions update PRs targeting `dev`.
 - Release CI: `.github/workflows/build-release.yml` runs on `v*` tags and builds GitHub releases from changelog content.
 - Disabled workflow files exist for historical or optional checks; do not assume they run in CI.
 - CI uses `requirements-ci.txt` for backend speed and stability, not the full `requirements.txt`.
 
 ## DevOps
 
-- `Makefile` wraps Docker Compose with `install`, `start`, `startAndBuild`, `stop`, `update`, `lint`, `test`, and `check`.
+- `Makefile` wraps Docker Compose with `install`, `start`, `startAndBuild`, `stop`, `update`, plus local validation targets `lint` (pre-commit on all files), `test` (pytest + vitest), and `check` (lint + test).
+- Bare `make` runs the first target, `install`, which starts Docker Compose — always use an explicit target (`make check`) for local validation.
 - Main Compose file: `devops/docker/docker-compose.yaml`.
 - Compose overlays include GPU, AMD GPU, API, data, Playwright, and A1111 test variants.
 - Dockerfiles: `devops/docker/Dockerfile.backend` and `devops/docker/Dockerfile.frontend`.
@@ -222,10 +280,30 @@ Install packages, download browsers or models, run Docker Compose services, chan
 
 Commit secrets or `.env` files, force-push `main` or `dev`, import runtime code from OpenWebUI/Hermes, hard-delete user records without explicit approval, or remove security/auth checks to satisfy tests.
 
+## Feature Workflow
+
+Every new feature follows: documented issue → architecture check → TDD → implementation → documentation → PR.
+
+1. The feature must have an issue filling the Architecture section of the feature-request template (domain boundary, API contract, test plan, documentation impact). No feature PR without a prior issue.
+2. UI work is OpenWebUI-first: check how OpenWebUI implements the pattern before inventing a new one (read-only reference, never imported at runtime).
+3. Backend work picks the owning domain boundary first and follows repository → service → router layering.
+4. Tests are written with the implementation (success, auth/ownership, missing resource, validation); the contract test must pass when API routes or UI clients change.
+5. Update `AGENTS.md`, `docs/`, and i18n locales (AR/FR/EN) when conventions, architecture, or user-visible text change.
+6. Run `make check` before handing off the PR.
+
+## Git Discipline
+
+- Branch from `dev`; name branches `<type>/<short-slug>` (`feat/admin-ui-control-center`, `refactor/ui-feature-structure`).
+- Pull with rebase (`git config pull.rebase true`); keep history linear — no merge commits from routine syncs.
+- `main` and `dev` move only through reviewed PRs; never force-push them.
+- Stage intended files explicitly. When a pre-commit hook reformats files, review and re-stage those files — don't reach for `git add -A`.
+- `CHANGELOG.md` is release-owned: contributors put the changelog entry in the PR body (per the PR template); maintainers fold entries into the file at release time.
+- One green CI run is enough — don't repeatedly rebase onto a moving `dev` chasing freshness.
+
 ## PR Standards
 
-- Target `dev` unless maintainers say otherwise.
 - Use PR title prefixes from `.github/pull_request_template.md`: `feat`, `fix`, `chore`, `docs`, `test`, `refactor`, `perf`, `ci`, `build`, `style`, `i18n`, `BREAKING CHANGE`, or `WIP`.
+- Commit messages must follow Conventional Commits; a `conventional-pre-commit` commit-msg hook enforces the allowed prefixes (run `pre-commit install --hook-type commit-msg` once to activate it locally).
 - Keep PRs focused by domain/workflow and include a changelog-style summary in the PR body.
 - Before PR handoff, run the narrowest relevant checks and state any checks not run.
 - If architecture, tooling, conventions, or domain rules changed, update `AGENTS.md`.

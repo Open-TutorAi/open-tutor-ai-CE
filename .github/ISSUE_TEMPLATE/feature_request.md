@@ -31,5 +31,22 @@ A clear and concise description of what you want to happen.
 **Describe alternatives you've considered**
 A clear and concise description of any alternative solutions or features you've considered.
 
+## Architecture (required before implementation)
+
+**OpenWebUI-first (UI changes only)**
+The `ui/` frontend is based on OpenWebUI. Does OpenWebUI already implement this feature or a similar pattern? If yes, reference the component/page so the implementation stays aligned. If no, explain why a new pattern is needed.
+
+**Domain boundary (backend changes only)**
+Which domain owns this feature: `accounts`, `learning`, `ai`, `content`, `governance`, or `system`? Does it follow the repository → service → router pattern, or does it need a new domain?
+
+**API contract**
+List the new/changed endpoints (`/api/v1/...`) and the matching UI client (`ui/src/lib/apis/<domain>/index.ts`). Every UI `fetch()` must have a backend route (enforced by the contract test).
+
+**Test plan (TDD)**
+Which tests will be written first? Backend: `tests/test_<domain>.py` covering success, auth/ownership, missing resource, and validation. Frontend: Vitest where applicable.
+
+**Documentation impact**
+Which docs need updating: `AGENTS.md` (conventions/architecture), `docs/`, README, or the i18n locales (AR/FR/EN)?
+
 **Additional context**
 Add any other context or screenshots about the feature request here.

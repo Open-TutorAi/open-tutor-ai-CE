@@ -1,9 +1,13 @@
 # Pull Request Checklist
 
-### Note to first-time contributors: Please open a discussion post in [Discussions](https://github.com/pr-elhajji/open-tutor-ai-CE/discussions) and describe your changes before submitting a pull request.
+### Note to first-time contributors: Please open a discussion post in [Discussions](https://github.com/Open-TutorAi/open-tutor-ai-CE/discussions) and describe your changes before submitting a pull request.
 
 **Before submitting, make sure you've checked the following:**
 
+- [ ] **Linked issue:** This PR implements a documented issue (`Closes #...`). Features without a prior issue describing the architecture will not be reviewed.
+- [ ] **OpenWebUI-first (UI changes):** The `ui/` frontend is based on OpenWebUI — existing OpenWebUI patterns/components were checked before introducing a new pattern. Never import from `open_webui` at runtime.
+- [ ] **Architecture (DDD):** Backend changes respect the domain boundaries (`accounts`, `learning`, `ai`, `content`, `governance`, `system`) and the repository → service → router layering. No ORM in routers, no business logic in repositories.
+- [ ] **Tests first (TDD):** Tests covering success, auth/ownership, missing resource, and validation were written with (not after) the implementation. The contract test passes if API routes or UI clients changed.
 - [ ] **Target branch:** Please verify that the pull request targets the `dev` branch.
 - [ ] **Description:** Provide a concise description of the changes made in this pull request.
 - [ ] **Changelog:** Ensure a changelog entry following the format of [Keep a Changelog](https://keepachangelog.com/) is added at the bottom of the PR description.

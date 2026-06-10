@@ -25,35 +25,96 @@ We've noticed an uptick in issues not directly related to Open TutorAI but rathe
 
 Looking to contribute? Great! Here's how you can help:
 
-### ⚙️ Setup local (obligatoire avant de contribuer)
+### ⚙️ Local Setup (required before contributing)
 
-Avant de soumettre un pull request, configure ton environnement local pour valider automatiquement ton code.
+Before submitting a pull request, set up your local environment so your code is validated automatically.
 
-**1. Installer les dépendances de développement**
+**1. Install the development dependencies**
 
 ```bash
 pip install pre-commit
 ```
 
-**2. Installer les hooks git**
+**2. Install the git hooks**
 
 ```bash
 pre-commit install
+pre-commit install --hook-type commit-msg
 ```
 
-Le hook s'exécutera automatiquement à chaque `git commit`. Il vérifie :
+The hooks run automatically on every `git commit`. They check:
 
-- Le formatage Python (Black 24.8.0)
-- Le formatage frontend (Prettier — JS/TS/Svelte)
-- Les fichiers mal terminés ou avec des espaces superflus
+- Python lint and formatting (Ruff)
+- Frontend formatting (Prettier — JS/TS/Svelte)
+- Frontend lint (ESLint) and i18n keys
+- Trailing whitespace and missing end-of-file newlines
+- Conventional Commits message format (`feat:`, `fix:`, `chore:`, …)
 
-**3. Valider avant de pousser**
+**3. Validate before pushing**
 
 ```bash
 make check
 ```
 
-Cette commande exécute `make lint` (format check complet) puis `make test` (pytest + vitest). **Un push sans avoir passé `make check` sera rejeté par la CI.**
+This command runs `make lint` (pre-commit on all files) then `make test` (pytest + vitest). **A push that has not passed `make check` will be rejected by CI.**
+
+#### Available Make targets
+
+| Target | Action |
+| ------------------- | ------------------------------------------------------------ |
+| `make lint` | Runs pre-commit on all files (Ruff, Prettier, ESLint, i18n) |
+| `make test` | Backend tests (pytest) + frontend tests (vitest) |
+| `make check` | `lint` + `test` — the full validation before pushing |
+| `make install` | Starts the Docker Compose stack |
+| `make start` / `make stop` | Starts / stops existing containers |
+| `make startAndBuild` | Rebuilds the images then starts |
+| `make update` | `git pull` + rebuild + restart of the stack |
+
+> ⚠️ Bare `make` runs `install` (the first target in the Makefile) and starts Docker Compose. For local validation, always use an explicit target: `make check`.
+
+---
+
+### 🔄 Feature Development Workflow (required)
+
+Every new feature follows this workflow — it guarantees code quality and speeds up PR validation:
+
+```
+Documented issue → Architecture check → TDD → Implementation → Documentation → PR
+```
+
+**1. Issue first — no PR without an issue**
+
+Open a [feature request](https://github.com/Open-TutorAi/open-tutor-ai-CE/issues/new/choose) that fills in the **Architecture** section of the template: domain boundary, API contract, test plan, documentation impact. A feature PR without a prior issue will not be reviewed.
+
+**2. OpenWebUI-first for the frontend**
+
+The `ui/` frontend is based on **OpenWebUI**. Before introducing a new UI pattern:
+
+- Check whether OpenWebUI already implements this feature or a similar pattern — align with it
+- Reuse existing components (`ui/src/lib/components/common`, `chat`, `admin`, `workspace`, `student`)
+- **Never import from `open_webui` at runtime** — it is a read-only design reference
+
+**3. DDD architecture for the backend**
+
+- Pick the owning domain boundary before writing code: `accounts`, `learning`, `ai`, `content`, `governance`, or `system`
+- Follow the layered pattern: `repository.py` (data access) → `service.py` (business logic) → `gateway/http/routers/` (HTTP only)
+- No ORM in routers, no business logic in repositories
+
+**4. TDD — tests go with the code**
+
+- Write tests with (not after) the implementation: success, auth/ownership, missing resource, validation
+- Every UI `fetch()` must have a backend route — the contract test (`tests/test_contract_coverage.py`) enforces this in CI
+
+**5. Documentation**
+
+- Update `AGENTS.md` whenever architecture, conventions, or domain rules change
+- Update the i18n locales (AR/FR/EN) for any user-visible text
+
+**6. Final validation**
+
+```bash
+make check   # lint + tests — required before pushing
+```
 
 ---
 
@@ -61,7 +122,7 @@ Cette commande exécute `make lint` (format check complet) puis `make test` (pyt
 
 We welcome pull requests. Before submitting one, please:
 
-1. Open a discussion regarding your ideas [here](https://github.com/Open-TutorAi/open-tutor-ai-CE/discussions/new/choose).
+1. Open a documented issue first (see the feature workflow above), or a discussion [here](https://github.com/Open-TutorAi/open-tutor-ai-CE/discussions/new/choose).
 2. Follow the project's coding standards and include tests for new features.
 3. Update documentation as necessary.
 4. Write clear, descriptive commit messages.
