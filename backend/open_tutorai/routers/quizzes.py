@@ -844,6 +844,7 @@ async def join_assignment_by_code(
     }
 
 
+
 @student_assignments_router.get("")
 async def list_student_assignments(
     codes: Optional[str] = None,
@@ -857,6 +858,7 @@ async def list_student_assignments(
     course_ids = [e.course_id for e in enrollments]
 
     # Fetch unlocked quiz IDs for the current student
+    # (for standalone quizzes joined by code)
     unlocked_accesses = (
         db.query(StudentQuizAccess.quiz_id)
         .filter(StudentQuizAccess.student_id == user.id)
@@ -864,20 +866,21 @@ async def list_student_assignments(
     )
     unlocked_quiz_ids = {a.quiz_id for a in unlocked_accesses}
 
-    # 2. Fetch quizzes associated with enrolled courses and unlocked by student
-    quizzes = (
+    # 2a. COURSE QUIZZES: Auto-visible to all enrolled students
+    #     (NO explicit unlock required — enrollment is enough)
+    course_quizzes = (
         db.query(Quiz)
         .filter(
             Quiz.course_id.in_(course_ids),
             Quiz.status == "published",
-            Quiz.id.in_(unlocked_quiz_ids),
         )
         .all()
         if course_ids
         else []
     )
 
-    # 3. Handle additional standalone quiz codes from the query parameter
+    # 2b. STANDALONE QUIZZES: Require explicit join via code + unlock record
+    standalone_quizzes = []
     standalone_codes = []
     if codes:
         standalone_codes = [c.strip().upper() for c in codes.split(",") if c.strip()]
@@ -888,15 +891,17 @@ async def list_student_assignments(
             .filter(
                 func.upper(Quiz.quiz_code).in_(standalone_codes),
                 Quiz.status == "published",
-                Quiz.id.in_(unlocked_quiz_ids),
+                Quiz.id.in_(unlocked_quiz_ids),  # ← unlock required for standalone
             )
             .all()
         )
-        # Merge, avoiding duplicates
-        existing_quiz_ids = {q.id for q in quizzes}
-        for sq in standalone_quizzes:
-            if sq.id not in existing_quiz_ids:
-                quizzes.append(sq)
+
+    # Merge course + standalone quizzes, avoiding duplicates
+    quizzes = list(course_quizzes)
+    existing_quiz_ids = {q.id for q in quizzes}
+    for sq in standalone_quizzes:
+        if sq.id not in existing_quiz_ids:
+            quizzes.append(sq)
 
     # 4. Map each quiz to assignment format
     assignments_list = []
@@ -952,6 +957,7 @@ async def list_student_assignments(
         assignments_list.append(
             {
                 "id": quiz.id,
+                "quiz_id": quiz.id,  # ← Ensure quiz_id is always present
                 "course": course_title,
                 "points": quiz.total_questions * 10,
                 "title": quiz.title,
@@ -965,6 +971,7 @@ async def list_student_assignments(
                 "submitted_at": submitted_at,
                 "time_spent": time_spent,
                 "limit_date": quiz.limit_date,
+                "total_questions": quiz.total_questions,
             }
         )
 
