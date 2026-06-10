@@ -56,19 +56,26 @@
 	let lastJoinedCode = '';
 	let lastTakenCode = '';
 	$: if ($page && $page.url) {
-		const codeParam = $page.url.searchParams.get('code');
-		if (codeParam && codeParam.length === 6 && codeParam !== lastJoinedCode) {
-			lastJoinedCode = codeParam;
-			quizCode = codeParam.toUpperCase();
-			joinQuiz();
-		}
+			const codeParam = $page.url.searchParams.get('code');
+			if (codeParam && codeParam.length === 6 && codeParam !== lastJoinedCode) {
+				lastJoinedCode = codeParam;
+				quizCode = codeParam.toUpperCase();
+				joinQuiz();
+			}
 
-		const takeParam = $page.url.searchParams.get('take');
-		if (takeParam && takeParam.length === 6 && takeParam !== lastTakenCode) {
-			lastTakenCode = takeParam;
-			startQuizTakingFlow(takeParam.toUpperCase());
+			const takeParam = $page.url.searchParams.get('take');
+			if (takeParam && takeParam.length === 6 && takeParam !== lastTakenCode) {
+				lastTakenCode = takeParam;
+				startQuizTakingFlow(takeParam.toUpperCase());
+			}
+
+			// ✅ NOUVEAU: Ouvrir directement le popup de code si demandé depuis Dashboard
+			const openCodeParam = $page.url.searchParams.get('openCode');
+			if (openCodeParam === '1' && state === 'dashboard') {
+				state = 'code_entry';
+				goto('/student/assignments', { replaceState: true });
+			}
 		}
-	}
 
 	$: upcomingDeadlines = assignments.filter(a => ['pending', 'in-progress', 'overdue'].includes(a.status)).length;
 	$: username = $user?.name ? $user.name.split(' ')[0] : 'Student';

@@ -132,29 +132,66 @@
 	}
 
 	// ── FETCH QUIZZES ───────────────────────────────────────
+	// ── FETCH QUIZZES ───────────────────────────────────────
 	async function fetchQuizzes() {
 		isLoadingQuizzes = true;
 		try {
 			const token = localStorage.getItem('token') ?? '';
-			let joinedCodes: string[] = [];
-			try {
-				joinedCodes = JSON.parse(localStorage.getItem('joined_quiz_codes') || '[]');
-			} catch (e) {}
-			const codesParam = joinedCodes.join(',');
+			const userStr = localStorage.getItem('user');
+			const user = userStr ? JSON.parse(userStr) : {};
+			const role: string = user.role || 'student';
 
-			const res = await fetch(`/api/v1/student/assignments?codes=${codesParam}`, {
+			let endpoint: string;
+			if (role === 'teacher') {
+				endpoint = '/api/v1/quizzes/teacher';
+			} else {
+				let joinedCodes: string[] = [];
+				try {
+					joinedCodes = JSON.parse(localStorage.getItem('joined_quiz_codes') || '[]');
+				} catch (e) {}
+				const codesParam = joinedCodes.join(',');
+				// ✅ FIX: حتى إلا ماكاينش codes، صيفط الطلب باش يجيب course quizzes
+				endpoint = `/api/v1/student/assignments${codesParam ? `?codes=${codesParam}` : ''}`;
+			}
+
+			// 🔍 DEBUG LOGS
+			console.log('🔗 [QUIZZES] Fetching from:', endpoint);
+			console.log('👤 [QUIZZES] Role:', role);
+			console.log('🔑 [QUIZZES] Token exists:', !!token);
+			console.log('📋 [QUIZZES] Joined codes:', localStorage.getItem('joined_quiz_codes'));
+
+			const res = await fetch(endpoint, {
 				headers: { Authorization: `Bearer ${token}` }
 			});
+
+			console.log('📡 [QUIZZES] Response status:', res.status);
+
 			if (res.ok) {
-				const allAssignments = await res.json();
-				userQuizzes = allAssignments.filter((a: any) => a.score !== undefined && a.score !== null);
+				const data = await res.json();
+				console.log('📦 [QUIZZES] Raw data received:', data);
+				console.log('📊 [QUIZZES] Number of quizzes:', data.length);
+
+				if (role === 'teacher') {
+					userQuizzes = data;
+				} else {
+					userQuizzes = data.map((a: any) => ({
+						...a,
+						quiz_id: a.quiz_id || a.id,
+						_displayStatus: a.score !== undefined && a.score !== null
+							? 'completed'
+							: (a.status || 'pending')
+					}));
+
+					console.log(`✅ [QUIZZES] Final count: ${userQuizzes.length}`);
+					console.log('✅ [QUIZZES] Final data:', userQuizzes);
+				}
 			} else {
-				const err = await res.json().catch(() => ({}));
-				console.error(err.detail || 'Failed to load quizzes');
+				const errText = await res.text();
+				console.error('❌ [QUIZZES] API error:', res.status, errText);
 				userQuizzes = [];
 			}
 		} catch (e: any) {
-			console.error('Network error while loading quizzes:', e);
+			console.error('💥 [QUIZZES] Network error:', e);
 			userQuizzes = [];
 		} finally {
 			isLoadingQuizzes = false;
@@ -203,6 +240,7 @@
 		joinQuizError = '';
 	}
 
+
 	async function handleJoinQuiz() {
 		const code = joinQuizCode.trim().toUpperCase();
 		if (!code) {
@@ -224,6 +262,19 @@
 				const err = await res.json().catch(() => ({}));
 				throw new Error(err.detail ?? $_('Code de quiz invalide ou expiré'));
 			}
+			
+			// ✅ FIX: Sauvegarder le code dans localStorage pour futurs fetch
+			try {
+				const existingCodes = JSON.parse(localStorage.getItem('joined_quiz_codes') || '[]');
+				if (!existingCodes.includes(code)) {
+					existingCodes.push(code);
+					localStorage.setItem('joined_quiz_codes', JSON.stringify(existingCodes));
+					console.log(`🔐 Quiz code ${code} saved to localStorage`);
+				}
+			} catch (e) {
+				console.warn('Failed to save quiz code to localStorage:', e);
+			}
+			
 			showJoinQuizModal = false;
 			goto(`/student/assignments?code=${code}`);
 		} catch (e: any) {
@@ -232,6 +283,8 @@
 			isJoiningQuiz = false;
 		}
 	}
+
+
 
 	// ── JOIN MODAL ──────────────────────────────────────────
 	let showJoinModal = false;
@@ -587,19 +640,32 @@
 <div class="flex flex-col gap-8">
 <div class="flex justify-end mb-4">
 		<div class="flex gap-3">
-			<button
-				class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-full transition shadow-sm"
-				on:click={openJoinModal}
-			>
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
-				</svg>
-				{$_('Rejoindre un cours')}
-			</button>
-
+			<!-- ✅ Enter Quiz Code (style harmonisé avec les autres boutons) -->
 			<button
 				class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full transition"
-				on:click={toggleSupportPopup}
+				on:click={() => goto('/student/assignments?openCode=1')}
+			>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                </svg>
+				{$_('Enter Quiz Code')}
+			</button>
+
+			<!-- ✅ Rejoindre un cours (style harmonisé avec page My Classrooms) -->
+            <button
+				class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full transition"
+                on:click={openJoinModal}
+            >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                </svg>
+                {$i18n.t('Rejoindre un cours')}
+            </button>
+
+			<!-- ✅ Support (redirige directement vers /student/support/create) -->
+			<button
+				class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full transition"
+				on:click={() => goto('/student/support/create')}
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
 					<path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
@@ -627,21 +693,10 @@
 					<p class="section-sub">{$_('Vos cours rejoints')}</p>
 				</div>
 			</div>
-			<button class="see-all-btn" on:click={() => goto('/student/courses')}>
-				{$_('Voir tout')}
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14">
-					<path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2.5"
-						d="M13 7l5 5m0 0l-5 5m5-5H6"
-					/>
-				</svg>
-			</button>
+
 		</div>
 
 		<div
-			class="w-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm relative"
 		>
 			{#if isLoadingCourses}
 				<div class="flex justify-center items-center py-8">
@@ -853,7 +908,6 @@
 		</div>
 
 		<div
-			class="w-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm relative"
 		>
 			{#if isLoadingSupports}
 				<div class="flex justify-center items-center py-8">
@@ -986,7 +1040,6 @@
 		</div>
 
 		<div
-			class="w-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm relative"
 		>
 			{#if isLoadingQuizzes}
 				<div class="flex justify-center items-center py-8">
@@ -997,8 +1050,10 @@
 						>{$_('Chargement des quiz...')}</span
 					>
 				</div>
+
 			{:else if userQuizzes.length === 0}
-				<div class="empty-section border-0 p-0 bg-transparent dark:bg-transparent">
+				<!-- ✅ FIX: enlevé border-0 p-0 bg-transparent qui rendait l'état invisible -->
+				<div class="empty-section">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="32"
@@ -1018,65 +1073,325 @@
 					<p class="text-sm font-medium text-gray-600 dark:text-gray-400">
 						{$_('Aucun quiz soumis pour le moment')}
 					</p>
-					<p class="text-xs text-gray-400 dark:text-gray-500 flex flex-col items-center gap-3">
-						<span>{$_('Rejoignez une évaluation avec un code fourni par votre enseignant')}</span>
-						<button
-							class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 rounded-full transition shadow-sm"
-							on:click={openJoinQuizModal}>+ Joindre un Quiz</button
-						>
+					<p class="text-xs text-gray-400 dark:text-gray-500">
+						{$_('Rejoignez une évaluation avec un code fourni par votre enseignant')}
 					</p>
+					<button
+						class="btn-join-inline"
+						on:click={openJoinQuizModal}
+					>
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14">
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2.5"
+								d="M12 4v16m8-8H4"
+							/>
+						</svg>
+						{$_('Joindre un Quiz')}
+					</button>
 				</div>
 			{:else}
 				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-					{#each userQuizzes as quiz (quiz.quiz_id)}
-						<div
-							class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between h-full"
-						>
-							<div>
-								<div class="flex items-center justify-between gap-2 mb-3">
-									<span
-										class="text-[10px] font-semibold tracking-wider text-gray-400 dark:text-gray-500 uppercase"
-									>
-										{new Date(quiz.submitted_at).toLocaleDateString(undefined, {
-											day: 'numeric',
-											month: 'short',
-											year: 'numeric'
-										})}
-									</span>
-									<span
-										class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400"
-									>
-										{$_('Complété')}
-									</span>
+					{#each userQuizzes as quiz (quiz.quiz_id ?? quiz.id)}
+						<!-- ═══ TEACHER VIEW (only if teacher created it) ═══ -->
+						{#if quiz.teacher_id !== undefined || quiz.participants_count !== undefined}
+							<div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between h-full">
+								<div>
+									<div class="flex items-center justify-between gap-2 mb-3">
+										<span class="text-[10px] font-semibold tracking-wider text-gray-400 dark:text-gray-500 uppercase">
+											{new Date(quiz.created_at).toLocaleDateString(undefined, {
+												day: 'numeric',
+												month: 'short',
+												year: 'numeric'
+											})}
+										</span>
+										<span class="px-2.5 py-0.5 text-xs font-semibold rounded-full {quiz.status === 'published' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400'}">
+											{quiz.status === 'published' ? $_('Publié') : $_('Brouillon')}
+										</span>
+									</div>
+
+									{#if quiz.status === 'published' && quiz.quiz_code}
+										<div class="mb-3 flex items-center gap-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 px-3 py-2">
+											<span class="text-[10px] font-semibold uppercase tracking-wider text-indigo-500 dark:text-indigo-400">{$_('Code')}</span>
+											<code class="rounded bg-white dark:bg-slate-900 px-2 py-0.5 font-mono text-sm font-black tracking-widest text-indigo-700 dark:text-indigo-300">
+												{quiz.quiz_code}
+											</code>
+										</div>
+									{/if}
+
+									<h3 class="text-base font-bold text-gray-800 dark:text-gray-100 mb-2 line-clamp-2">
+										{quiz.title}
+									</h3>
+									<p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
+										{quiz.total_questions} {quiz.total_questions > 1 ? $_('questions') : $_('question')}
+									</p>
 								</div>
-
-								<h3 class="text-base font-bold text-gray-800 dark:text-gray-100 mb-2 line-clamp-2">
-									{quiz.title}
-								</h3>
-
-								<p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-									{quiz.total_questions}
-									{quiz.total_questions > 1 ? $_('questions') : $_('question')}
-								</p>
+								<div class="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
+									<div>
+										<span class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{$_('Participants')}</span>
+										<span class="ml-2 text-lg font-extrabold text-fuchsia-600 dark:text-fuchsia-400">
+											{quiz.participants_count ?? 0}
+										</span>
+									</div>
+									<button class="rounded-lg bg-gradient-to-br from-indigo-600 to-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-md transition hover:from-indigo-700 hover:to-blue-700"
+										on:click={() => goto(`/teacher/quizzes/${quiz.id}`)}>
+										{quiz.status === 'published' ? $_('Analytics') : $_('Publier')}
+									</button>
+								</div>
 							</div>
+						{:else}
+							<!-- ═══ STUDENT VIEW (Matches Assignments page design) ═══ -->
+							{@const isCompleted = quiz._displayStatus === 'completed' || (quiz.score !== undefined && quiz.score !== null)}
+							{@const isOverdue = quiz._displayStatus === 'overdue' || quiz.status === 'overdue'}
+							{@const isPending = !isCompleted && !isOverdue}
+							
+							<div class="bg-white dark:bg-gray-800 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col min-h-[260px] pb-3 relative border border-gray-100 dark:border-gray-700 transition-transform hover:-translate-y-1 duration-300">
+								
+								<!-- Top colored bar (smaller) -->
+								<div class="h-2 w-full {isCompleted ? 'bg-green-500' : isOverdue ? 'bg-red-500' : 'bg-gray-400'}"></div>
+								
+								<div class="p-4 flex flex-col flex-1">
+									<!-- Subject & Points -->
+									<div class="flex justify-between items-center mb-3">
+										<span class="bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 text-[10px] font-medium px-2 py-0.5 rounded-md line-clamp-1">
+											{quiz.course || 'Quiz'}
+										</span>
+										<span class="text-gray-400 dark:text-gray-500 text-[10px] font-medium whitespace-nowrap ml-2">
+											{(quiz.total_questions ?? 0) * 10} {$_('points')}
+										</span>
+									</div>
 
-							<div
-								class="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700"
-							>
-								<span class="text-xs text-gray-400 dark:text-gray-500 font-medium"
-									>{$_('Score')}</span
-								>
-								<span class="text-lg font-extrabold text-blue-600 dark:text-blue-400">
-									{quiz.score} / {quiz.total_questions}
-								</span>
+									<!-- Title -->
+									<h3 class="text-slate-700 dark:text-gray-100 font-semibold text-[13px] mb-2 line-clamp-1">
+										{quiz.title}
+									</h3>
+									
+									{#if isCompleted}
+										<!-- Completed state statistics (compact) -->
+										<div class="bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 rounded-lg p-3 mt-1 space-y-1.5 flex-1">
+											<div class="grid grid-cols-2 gap-2 text-[10px] text-slate-600 dark:text-slate-300">
+												<div class="flex flex-col">
+													<span class="text-[8px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-black">Score</span>
+													<span class="font-extrabold text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">
+														{quiz.score}/{quiz.total ?? quiz.total_questions}
+													</span>
+												</div>
+												<div class="flex flex-col">
+													<span class="text-[8px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-black">Temps</span>
+													<span class="font-semibold text-[11px] text-slate-700 dark:text-slate-200 mt-0.5">
+														{quiz.time_spent || '1'} min
+													</span>
+												</div>
+												<div class="flex flex-col col-span-2 border-t border-slate-100 dark:border-slate-800 pt-1.5">
+													<span class="text-[8px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-black">Date</span>
+													<span class="font-semibold text-[10px] text-slate-700 dark:text-slate-200 mt-0.5 truncate">
+														{quiz.submitted_at ? new Date(quiz.submitted_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+													</span>
+												</div>
+												<div class="flex flex-col col-span-2">
+													<span class="text-[8px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-black">Limite</span>
+													<span class="font-semibold text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+														{quiz.due || quiz.limit_date || 'Aucune'}
+													</span>
+												</div>
+											</div>
+										</div>
+									{:else}
+										<!-- Pending state -->
+										<p class="text-gray-500 dark:text-gray-400 text-[11px] leading-relaxed line-clamp-3 mb-3 flex-1">
+											{quiz.description || `Quiz d'évaluation - ${quiz.total_questions} questions.`}
+										</p>
+
+										<div class="w-full h-px bg-gray-100 dark:bg-gray-700 mt-auto mb-3"></div>
+
+										<div class="flex justify-between items-center mb-2">
+											<span class="text-gray-400 dark:text-gray-500 text-[10px]">
+												{#if isOverdue}
+													Due: {quiz.due || quiz.limit_date} (En retard)
+												{:else}
+													Due: {quiz.due || quiz.limit_date || 'Aucune'}
+												{/if}
+											</span>
+										</div>
+
+										<button 
+											on:click={() => goto(`/student/assignments?take=${quiz.quiz_code}`)}
+											class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg py-2 text-[11px] text-center transition-colors"
+										>
+											{$_('Start Quiz')}
+										</button>
+									{/if}
+								</div>
 							</div>
-						</div>
+						{/if}
 					{/each}
 				</div>
 			{/if}
 		</div>
 	</div>
 </div>
+{#if showJoinModal}
+    <div
+        class="modal-overlay"
+        role="button"
+        tabindex="0"
+        on:click={closeJoinModal}
+        on:keydown={(e) => e.key === 'Escape' && closeJoinModal()}
+        in:fade={{ duration: 200 }}
+        out:fade={{ duration: 150 }}
+    >
+        <div
+            class="modal-card"
+            role="dialog"
+            aria-modal="true"
+            aria-label={$_('Rejoindre un cours')}
+            on:click|stopPropagation
+            on:keydown|stopPropagation
+            in:fly={{ y: 20, duration: 300, easing: cubicOut }}
+        >
+            <!-- Close button -->
+            <button class="modal-close" on:click={closeJoinModal} aria-label={$_('Fermer')}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="18" height="18">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+
+            {#if !joinSuccess}
+                <!-- ── DEFAULT STATE ── -->
+                <div class="modal-body">
+                    <div class="modal-logo-wrap">
+                        <img src="{TUTOR_FRONT_URL}/static/favicon.png" alt="OT AI" class="modal-logo-img" />
+                    </div>
+
+                    <h2 class="modal-title">{$_('Rejoindre un cours')}</h2>
+                    <p class="modal-subtitle">
+                        {$_('Entrez le code fourni par votre professeur')}
+                    </p>
+
+                    <!-- Code input -->
+                    <div class="input-group">
+                        <label for="courseCodeInputDash" class="input-label">
+                            {$_('Code du cours')}
+                        </label>
+                        <input
+                            id="courseCodeInputDash"
+                            type="text"
+                            bind:value={joinCourseCode}
+                            placeholder={$_('ex: a1b2c3d4-...')}
+                            class="code-input {joinError ? 'input-error' : ''}"
+                            disabled={isJoining}
+                            on:keydown={(e) => e.key === 'Enter' && joinCourse()}
+                            autocomplete="off"
+                            spellcheck="false"
+                        />
+                        {#if joinError}
+                            <p class="input-err-msg" in:fly={{ y: -4, duration: 150 }}>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="13" height="13">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                </svg>
+                                {joinError}
+                            </p>
+                        {/if}
+                    </div>
+
+                    <p class="modal-hint">
+                        {$_('Pas de code ? Demandez à votre professeur ou à votre institution')}
+                    </p>
+
+                    <!-- Join button -->
+                    <button class="btn-join-confirm" on:click={joinCourse} disabled={isJoining || !joinCourseCode.trim()}>
+                        {#if isJoining}
+                            <svg class="spin-icon" viewBox="0 0 50 50" width="16" height="16">
+                                <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5" stroke-dasharray="80 40"/>
+                            </svg>
+                            {$_('Inscription...')}
+                        {:else}
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            {$_('Rejoindre le cours')}
+                        {/if}
+                    </button>
+                </div>
+
+            {:else}
+                <!-- ── SUCCESS STATE ── -->
+                <div class="modal-success" in:fly={{ y: 12, duration: 280, easing: cubicOut }}>
+                    <div class="success-icon-wrap">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" width="32" height="32">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                    <h2 class="modal-title">{$_('Cours rejoint !')}</h2>
+                    <p class="modal-subtitle">{$_('Vous êtes maintenant inscrit au cours.')}</p>
+                </div>
+            {/if}
+
+        </div>
+    </div>
+{/if}
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- DELETE COURSE CONFIRMATION MODAL                        -->
+<!-- ═══════════════════════════════════════════════════════ -->
+{#if showDeleteModal}
+    <div
+        class="modal-overlay"
+        role="button"
+        tabindex="0"
+        on:click={closeDeleteModal}
+        on:keydown={(e) => e.key === 'Escape' && closeDeleteModal()}
+        in:fade={{ duration: 200 }}
+        out:fade={{ duration: 150 }}
+    >
+        <div
+            class="modal-card modal-delete"
+            role="dialog"
+            aria-modal="true"
+            on:click|stopPropagation
+            on:keydown|stopPropagation
+            in:fly={{ y: 20, duration: 300, easing: cubicOut }}
+        >
+            <div class="modal-body">
+                <div class="delete-icon-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" width="32" height="32">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                </div>
+
+                <h2 class="modal-title">{$_('Quitter ce cours ?')}</h2>
+                <p class="modal-subtitle">
+                    {$_('Êtes-vous sûr de vouloir vous désinscrire ? Vous perdrez l\'accès à toutes les ressources de ce cours.')}
+                </p>
+
+                {#if deleteError}
+                    <p class="input-err-msg text-center" in:fly={{ y: -4, duration: 150 }}>
+                        {deleteError}
+                    </p>
+                {/if}
+
+                <div class="delete-actions">
+                    <button class="btn-cancel" on:click={closeDeleteModal} disabled={isDeleting}>
+                        {$_('Annuler')}
+                    </button>
+                    <button class="btn-confirm-delete" on:click={unenrollCourse} disabled={isDeleting}>
+                        {#if isDeleting}
+                            <svg class="spin-icon" viewBox="0 0 50 50" width="16" height="16">
+                                <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5" stroke-dasharray="80 40"/>
+                            </svg>
+                            {$_('Suppression...')}
+                        {:else}
+                            {$_('Oui, quitter')}
+                        {/if}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+{/if}
 
 <style>
 /* ── SECTION HEADER ── */
