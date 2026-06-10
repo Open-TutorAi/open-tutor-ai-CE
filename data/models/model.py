@@ -1,7 +1,9 @@
 """Model configuration overlay model."""
 
 from datetime import datetime
-from sqlalchemy import Boolean, Column, DateTime, JSON, String
+
+from sqlalchemy import JSON, Boolean, Column, DateTime, String
+
 from data.database import Base
 
 

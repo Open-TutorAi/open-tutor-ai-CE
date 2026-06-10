@@ -3,8 +3,6 @@
 import os
 from typing import List, Optional
 
-from sqlalchemy.orm import Session
-
 from data.models import Support, SupportFile
 from data.repositories import BaseRepository
 

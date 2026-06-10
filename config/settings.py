@@ -6,11 +6,12 @@ for wildcard patterns and concrete origins.
 """
 
 import os
+
 from dotenv import load_dotenv
 
 load_dotenv()  # Load .env before class body reads os.getenv — no-op in CI/Docker
 
-from typing import Optional, List
+from typing import Optional
 
 
 class Settings:

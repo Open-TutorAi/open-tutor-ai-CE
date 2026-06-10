@@ -9,12 +9,11 @@ from sqlalchemy.orm import Session
 
 from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from config import settings
-from data.models import FileRecord
 from content.files.repository import FileRepository
+from data.models import FileRecord
 
 
 class FilesService:
-
     def __init__(self, session: Session):
         self.repo = FileRepository(session, FileRecord)
 

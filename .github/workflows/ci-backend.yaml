@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   lint:
-    name: Black format check
+    name: Ruff lint & format check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,8 +37,11 @@ jobs:
       - name: Install CI dependencies
         run: pip install -r requirements-ci.txt
 
+      - name: Lint
+        run: ruff check .
+
       - name: Check formatting
-        run: black . --check --exclude ".venv/|/venv/|ui/"
+        run: ruff format --check .
 
   test:
     name: Pytest
