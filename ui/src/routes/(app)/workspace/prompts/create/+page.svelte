@@ -7,7 +7,7 @@
 	const i18n = getContext('i18n');
 
 	import { createNewPrompt, getPrompts } from '$lib/apis/prompts';
-	import PromptEditor from '$lib/features/workspace/components/Prompts/PromptEditor.svelte';
+	import { PromptEditor } from '$lib/features/workspace';
 
 	let prompt = null;
 	const onSubmit = async (_prompt) => {

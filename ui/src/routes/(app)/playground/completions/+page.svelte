@@ -1,5 +1,5 @@
 <script>
-	import Completions from '$lib/features/playground/components/Completions.svelte';
+	import { Completions } from '$lib/features/playground';
 </script>
 
 <Completions />

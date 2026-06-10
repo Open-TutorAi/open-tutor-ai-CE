@@ -1,5 +1,5 @@
 <script lang="ts">
-	import SupportCreation from '$lib/features/student/components/elements/SupportCreation.svelte';
+	import { SupportCreation } from '$lib/features/student';
 </script>
 
 <SupportCreation />

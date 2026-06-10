@@ -1,5 +1,5 @@
 <script>
-	import Chat from '$lib/features/playground/components/Chat.svelte';
+	import { PlaygroundChat as Chat } from '$lib/features/playground';
 </script>
 
 <Chat />

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import SupportEdit from '$lib/features/student/components/pages/SupportEdit.svelte';
+	import { SupportEdit } from '$lib/features/student';
 </script>
 
 <SupportEdit />

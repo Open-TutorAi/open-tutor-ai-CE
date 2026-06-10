@@ -3,7 +3,7 @@
 	import { knowledge } from '$lib/stores';
 
 	import { getKnowledgeBases } from '$lib/apis/knowledge';
-	import Knowledge from '$lib/features/workspace/components/Knowledge.svelte';
+	import { Knowledge } from '$lib/features/workspace';
 
 	onMount(async () => {
 		await Promise.all([

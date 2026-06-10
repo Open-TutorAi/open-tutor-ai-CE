@@ -1,6 +1,6 @@
 <!-- messages/+page.svelte -->
 <script lang="ts">
-	import Dashboard from '$lib/features/student/components/pages/Messages.svelte';
+	import { StudentMessages as Dashboard } from '$lib/features/student';
 </script>
 
 <Dashboard />

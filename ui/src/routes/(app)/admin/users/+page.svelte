@@ -1,5 +1,5 @@
 <script>
-	import Users from '$lib/features/admin/components/Users.svelte';
+	import { Users } from '$lib/features/admin';
 </script>
 
 <Users />

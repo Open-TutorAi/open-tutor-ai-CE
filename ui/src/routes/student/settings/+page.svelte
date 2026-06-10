@@ -1,6 +1,6 @@
 <!-- settings/+page.svelte -->
 <script lang="ts">
-	import Settings from '$lib/features/student/components/pages/Settings.svelte';
+	import { StudentSettings as Settings } from '$lib/features/student';
 </script>
 
 <Settings />

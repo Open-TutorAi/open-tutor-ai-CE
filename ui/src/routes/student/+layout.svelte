@@ -5,8 +5,8 @@
 	import { page } from '$app/stores';
 	import { get, writable, derived } from 'svelte/store';
 
-	import Sidebar from '$lib/features/student/components/elements/Sidebar.svelte';
-	import Navbar from '$lib/features/student/components/elements/Navbar.svelte';
+	import { Sidebar } from '$lib/features/student';
+	import { Navbar } from '$lib/features/student';
 	import DemoModeBanner from '$lib/ui/DemoModeBanner.svelte';
 
 	import { getModels, getVersionUpdates } from '$lib/apis';

@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { config, models, settings } from '$lib/stores';
 	import { getModels } from '$lib/apis';
-	import Models from '$lib/features/workspace/components/Models.svelte';
+	import { Models } from '$lib/features/workspace';
 
 	onMount(async () => {
 		await Promise.all([
