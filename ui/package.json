@@ -13,6 +13,7 @@
 		"lint:frontend": "eslint . --fix",
 		"lint:types": "npm run check",
 		"format": "prettier --write --plugin=prettier-plugin-svelte \"**/*.{js,ts,svelte,css,md,html,json}\"",
+		"format:check": "prettier --check --plugin=prettier-plugin-svelte \"**/*.{js,ts,svelte,css,md,html,json}\"",
 		"i18n:parse": "i18next --config i18next-parser.config.ts && prettier --write \"src/lib/i18n/**/*.{js,json}\"",
 		"cy:open": "cypress open",
 		"test:frontend": "vitest --passWithNoTests",
