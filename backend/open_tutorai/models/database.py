@@ -22,6 +22,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship, backref
 from open_webui.internal.db import Base, get_db, JSONField
+from open_webui.internal.db import engine
+from open_tutorai.models.migrations import run_migrations
 
 PREFIX = "opentutorai_"
 
@@ -388,15 +390,35 @@ class UserPreference(Base):
     def __repr__(self):
         return f"<UserPreference(user_id={self.user_id}, language={self.language}, theme={self.theme})>"
 
+class DiscussionRoom(Base):
+    __tablename__ = "tutorai_discussion_rooms"
 
+    id = Column(String, primary_key=True, index=True)
+    course_id = Column(String, index=True, nullable=False)
+    student_id = Column(String, index=True, nullable=False)
+    student_name = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationship to load history easily
+    messages = relationship("DiscussionMessage", back_populates="room", cascade="all, delete-orphan")
+
+class DiscussionMessage(Base):
+    __tablename__ = "tutorai_discussion_messages"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    room_id = Column(String, ForeignKey("tutorai_discussion_rooms.id", ondelete="CASCADE"), index=True)
+    sender_id = Column(String, nullable=False) # ID processing either teacher or student
+    sender_role = Column(String, nullable=False) # 'teacher' or 'student'
+    sender_name = Column(String, nullable=False)
+    content = Column(Text, nullable=False)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    room = relationship("DiscussionRoom", back_populates="messages")
 def init_database():
     """
     Initialize the database tables for OpenTutorAI.
     Call this function when your app starts to ensure all tables exist.
     """
-    from open_webui.internal.db import engine
-    from open_tutorai.models.migrations import run_migrations
-
     Base.metadata.create_all(bind=engine, checkfirst=True)
     print("OpenTutorAI database tables initialized successfully")
 

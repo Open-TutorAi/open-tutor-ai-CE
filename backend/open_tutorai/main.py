@@ -20,6 +20,7 @@ from open_tutorai.routers import (
     supports,
     teacher_courses,
     settings,
+    discussions
 )
 
 
@@ -93,19 +94,13 @@ app.include_router(
 app.include_router(auths.router, prefix="/auths", tags=["auths"])
 app.include_router(supports.router, prefix="/api/v1", tags=["supports"])
 app.include_router(teacher_courses.router, prefix="/api/v1", tags=["teacher-courses"])
-app.include_router(
-    teacher_courses.analytics_router, prefix="/api/v1", tags=["teacher-analytics"]
-)
-app.include_router(
-    teacher_courses.students_router, prefix="/api/v1", tags=["teacher-students"]
-)
+app.include_router(teacher_courses.analytics_router, prefix="/api/v1", tags=["teacher-analytics"])
+app.include_router(teacher_courses.students_router, prefix="/api/v1", tags=["teacher-students"])
 app.include_router(student_courses.router, prefix="/api/v1", tags=["student-courses"])
 app.include_router(quizzes_router, prefix="/api/v1/quizzes", tags=["quizzes"])
-app.include_router(
-    student_assignments_router, prefix="/api/v1", tags=["student-assignments"]
-)
+app.include_router(student_assignments_router, prefix="/api/v1", tags=["student-assignments"])
 app.include_router(settings.router, prefix="/api/v1", tags=["settings"])
-
+app.include_router(discussions.router, prefix="/api/v1/discussions", tags=["discussions"])
 
 @app.get("/api/changelog")
 async def get_app_changelog():
