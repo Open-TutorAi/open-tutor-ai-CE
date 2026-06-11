@@ -4,42 +4,30 @@
 	import { onMount, getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
 	import type { i18n as i18nType } from 'i18next';
-	import { user } from '$lib/stores'; // Bach n-akhdou l-ID dial l-user
+	import { user } from '$lib/stores';
+	import { TUTOR_API_BASE_URL } from '$lib/constants';
 
 	const i18n = getContext<Writable<i18nType>>('i18n');
 	import { browser } from '$app/environment';
 
 	// --- 1. Dark Mode Logic ---
 	let isDarkMode = false;
-	onMount(() => {
+	onMount(async () => {
 		if (browser) {
 			isDarkMode =
 				localStorage.theme === 'dark' ||
 				(!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
 			applyTheme();
 
-			// Parse query params for active student chat
+			// Parse query params for active course chat
 			const params = new URLSearchParams(window.location.search);
-			const studentName = params.get('student');
-			const chatId = params.get('chatId');
-			if (studentName) {
-				const exists = channels.some((ch) => ch.id === (chatId || studentName));
-				if (!exists) {
-					channels = [
-						{
-							id: chatId || studentName,
-							name: studentName,
-							lastMsg: `Direct conversation with ${studentName}`,
-							unread: 0
-						},
-						...channels
-					];
-				}
-				activeChannelId = chatId || studentName;
+			const courseId = params.get('courseId') || params.get('chatId');
+			if (courseId) {
+				activeChannelId = courseId;
 			}
 		}
-		// Jib l-messages mnin t-7el l-page
-		fetchDiscussions();
+		// Fetch course discussion rooms on mount
+		await fetchRooms();
 	});
 
 	function applyTheme() {
@@ -52,43 +40,45 @@
 		}
 	}
 
-	// --- 2. Channels Data (Fake for now, but used for navigation) ---
-	let channels = [
-		{
-			id: 'JAVA-101',
-			name: 'General - Java Course',
-			lastMsg: "Don't forget tomorrow's practical.",
-			unread: 3
-		},
-		{
-			id: 'WEB-202',
-			name: 'Final Project - Web',
-			lastMsg: 'The specifications are online.',
-			unread: 0
-		},
-		{
-			id: 'ALGO-303',
-			name: 'Advanced Algorithms',
-			lastMsg: 'Did anyone understand merge sort?',
-			unread: 12
-		},
-		{ id: 'SQL-404', name: 'SQL Database', lastMsg: 'Outer joins are complex.', unread: 0 },
-		{ id: 'AI-505', name: 'Artificial Intelligence', lastMsg: 'New paper on LLMs.', unread: 1 }
-	];
-	let activeChannelId = 'JAVA-101';
+	// --- 2. Real Course Channels (Rooms) Data ---
+	let channels: any[] = [];
+	let activeChannelId = '';
+
+	// Fetch teacher's courses from backend
+	async function fetchRooms() {
+		try {
+			const token = localStorage.token;
+			if (!token) return;
+
+			const res = await fetch(`${TUTOR_API_BASE_URL}/discussions/courses`, {
+				headers: {
+					Authorization: `Bearer ${token}`
+				}
+			});
+			if (res.ok) {
+				channels = await res.json();
+				if (channels.length > 0 && !activeChannelId) {
+					activeChannelId = channels[0].id;
+				}
+			}
+		} catch (error) {
+			console.error('Error fetching course channels', error);
+		}
+	}
 
 	// --- 3. Messages Logic (REAL DATA FROM BACKEND) ---
 	let currentMessages: any[] = [];
 	let isLoading = false;
 
-	// GET: Jib l-messages mn l-backend
-	async function fetchDiscussions() {
+	// Fetch message history for the active course room
+	async function fetchDiscussions(roomId: string) {
+		if (!roomId) return;
 		try {
 			isLoading = true;
 			const token = localStorage.token;
 			if (!token) return;
 
-			const res = await fetch('http://localhost:8080/discussions/all', {
+			const res = await fetch(`${TUTOR_API_BASE_URL}/discussions/rooms/${roomId}/messages`, {
 				headers: {
 					Authorization: `Bearer ${token}`
 				}
@@ -103,9 +93,9 @@
 		}
 	}
 
-	// POST: Sift message jdid
+	// Send message to the course channel
 	const handleSend = async () => {
-		if (!newMessage.trim()) return;
+		if (!newMessage.trim() || !activeChannelId) return;
 
 		const token = localStorage.token;
 		if (!token) {
@@ -113,29 +103,33 @@
 			return;
 		}
 
-		const url = `http://localhost:8080/discussions/add?content=${encodeURIComponent(newMessage)}&user_id=${$user?.id || 'Abdelwahhab'}&avatar_type=default`;
-
 		try {
-			const res = await fetch(url, {
+			const res = await fetch(`${TUTOR_API_BASE_URL}/discussions/rooms/${activeChannelId}/send`, {
 				method: 'POST',
 				headers: {
-					Authorization: `Bearer ${localStorage.token}`
-				}
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${token}`
+				},
+				body: JSON.stringify({ content: newMessage })
 			});
 			if (res.ok) {
 				newMessage = '';
-				await fetchDiscussions(); // Refresh l-lista
+				await fetchDiscussions(activeChannelId); // Refresh messages list
 				toast.success('Message sent! 🚀');
 			} else {
 				const errorData = await res.json().catch(() => ({}));
 				const errorMessage = errorData.detail || 'Error sending message';
 				toast.error(`Error: ${errorMessage}`);
-				console.error('Backend error:', errorData);
 			}
 		} catch (error) {
 			toast.error('Backend offline!');
 		}
 	};
+
+	// Fetch discussion messages when active channel changes
+	$: if (activeChannelId) {
+		fetchDiscussions(activeChannelId);
+	}
 
 	$: activeChannel = channels.find((ch) => ch.id === activeChannelId);
 
@@ -144,8 +138,9 @@
 	let newMessage = '';
 	let showInviteModal = false;
 
+	// Filter by course title (which is in student_name field)
 	$: filteredChannels = channels.filter((ch) =>
-		ch.name.toLowerCase().includes(searchQuery.toLowerCase())
+		ch.student_name.toLowerCase().includes(searchQuery.toLowerCase())
 	);
 
 	const copyChannelLink = () => {
@@ -158,8 +153,9 @@
 </script>
 
 <div
-	class="flex h-screen w-full bg-white dark:bg-[#030712] overflow-hidden font-sans transition-colors duration-500"
+	class="flex h-screen max-h-screen w-full bg-white dark:bg-[#030712] overflow-hidden font-sans transition-colors duration-500"
 >
+	<!-- Sidebar / Channels list -->
 	<aside
 		class="w-72 border-r border-slate-100 dark:border-slate-800 flex flex-col bg-slate-50/20 dark:bg-[#030712]"
 	>
@@ -187,7 +183,7 @@
 			<p
 				class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest px-3 py-2"
 			>
-				{$i18n.t('Course channels')}
+				{$i18n.t('Course Channels')}
 			</p>
 			{#each filteredChannels as ch}
 				<button
@@ -202,13 +198,13 @@
 							? 'bg-white/20'
 							: 'bg-indigo-500 dark:bg-slate-800'} text-white flex flex-shrink-0 items-center justify-center font-bold"
 					>
-						#
+						{ch.student_name.charAt(0).toUpperCase()}
 					</div>
 					<div class="flex-1 text-left min-w-0">
 						<span class="font-bold text-sm truncate block dark:text-slate-100"
-							>{$i18n.t(ch.name)}</span
+							>{ch.student_name}</span
 						>
-						<p class="text-[10px] opacity-70 truncate">{$i18n.t(ch.lastMsg)}</p>
+						<p class="text-[10px] opacity-70 truncate">{ch.last_message}</p>
 					</div>
 				</button>
 			{/each}
@@ -225,44 +221,60 @@
 		</div>
 	</aside>
 
-	<main class="flex-1 flex flex-col bg-white dark:bg-[#030712]">
+	<!-- Main Chat Window -->
+	<main class="flex-1 flex flex-col h-full max-h-screen bg-white dark:bg-[#030712] overflow-hidden">
 		<header
 			class="h-16 px-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white/90 dark:bg-[#030712]/90 backdrop-blur-md z-10"
 		>
 			<div class="flex items-center gap-3">
-				<span class="text-2xl text-slate-300 dark:text-slate-600 font-light">#</span>
 				<div>
-					<h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm">
-						{$i18n.t(activeChannel?.name || 'Selection')}
+					<h3 class="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+						{activeChannel ? activeChannel.student_name : $i18n.t('Selection')}
 					</h3>
-					<p class="text-[10px] text-slate-400 font-medium">{activeChannelId} • 24 membres</p>
 				</div>
 			</div>
 		</header>
 
-		<div class="flex-1 overflow-y-auto p-6 space-y-8 bg-slate-50/20 dark:bg-[#030712]">
-			{#each currentMessages as m}
-				<div class="flex gap-4 group relative">
-					<div
-						class="w-10 h-10 rounded-2xl {m.color} text-white flex flex-shrink-0 items-center justify-center font-bold shadow-sm transition-transform group-hover:scale-105"
-					>
-						{m.user.charAt(0)}
-					</div>
-					<div class="flex-1 space-y-1.5">
-						<div class="flex justify-between items-center">
-							<span class="font-bold text-sm text-slate-800 dark:text-slate-200">{m.user}</span>
-							<span class="text-[10px] text-slate-400 dark:text-slate-600">{m.time}</span>
-						</div>
-						<div
-							class="bg-white dark:bg-[#111827] border border-slate-100 dark:border-slate-800 p-4 rounded-2xl rounded-tl-none shadow-sm text-sm text-slate-600 dark:text-slate-300 transition-colors"
-						>
-							{m.text}
-						</div>
-					</div>
+		<!-- Messages Area -->
+		<div class="flex-1 min-h-0 overflow-y-auto p-6 space-y-8 bg-slate-50/20 dark:bg-[#030712]">
+			{#if isLoading}
+				<div class="text-center text-slate-400 text-sm py-10">
+					{$i18n.t('Loading discussion...')}
 				</div>
-			{/each}
+			{:else}
+				{#each currentMessages as m}
+					<div class="flex gap-4 group relative">
+						<div
+							class="w-10 h-10 rounded-2xl {m.sender_role === 'teacher'
+								? 'bg-indigo-600'
+								: 'bg-emerald-600'} text-white flex flex-shrink-0 items-center justify-center font-bold shadow-sm transition-transform group-hover:scale-105"
+						>
+							{m.sender_name.charAt(0).toUpperCase()}
+						</div>
+						<div class="flex-1 space-y-1.5">
+							<div class="flex justify-between items-center">
+								<span class="font-bold text-sm text-slate-800 dark:text-slate-200"
+									>{m.sender_name}</span
+								>
+								<span class="text-[10px] text-slate-400 dark:text-slate-600">
+									{new Date(m.timestamp).toLocaleTimeString([], {
+										hour: '2-digit',
+										minute: '2-digit'
+									})}
+								</span>
+							</div>
+							<div
+								class="bg-white dark:bg-[#111827] border border-slate-100 dark:border-slate-800 p-4 rounded-2xl rounded-tl-none shadow-sm text-sm text-slate-600 dark:text-slate-300 transition-colors"
+							>
+								{m.content}
+							</div>
+						</div>
+					</div>
+				{/each}
+			{/if}
 		</div>
 
+		<!-- Chat Input Footer -->
 		<footer class="p-6 bg-white dark:bg-[#030712] border-t border-slate-100 dark:border-slate-800">
 			<div
 				class="max-w-4xl mx-auto bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-[28px] p-2 shadow-sm focus-within:ring-4 focus-within:ring-indigo-500/5 transition-all"
@@ -270,17 +282,17 @@
 				<textarea
 					bind:value={newMessage}
 					placeholder={$i18n.t('Send a message...')}
+					on:keydown={(e) => {
+						if (e.key === 'Enter' && !e.shiftKey) {
+							e.preventDefault();
+							handleSend();
+						}
+					}}
 					class="w-full p-4 bg-transparent border-none focus:ring-0 text-sm dark:text-slate-200 resize-none h-24 outline-none"
 				></textarea>
 				<div
 					class="flex justify-between items-center pt-2 px-3 pb-2 border-t border-slate-50 dark:border-slate-800/50"
 				>
-					<div class="flex gap-2">
-						<button
-							class="p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-full text-slate-400"
-							>📎</button
-						>
-					</div>
 					<button
 						on:click={handleSend}
 						class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-7 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all active:scale-95"
@@ -292,6 +304,7 @@
 		</footer>
 	</main>
 
+	<!-- Sidebar Members right side -->
 	<aside
 		class="w-64 border-l border-slate-100 dark:border-slate-800 p-6 hidden xl:flex flex-col bg-white dark:bg-[#030712]"
 	>
@@ -301,8 +314,9 @@
 			</h4>
 			<span
 				class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-0.5 rounded-full font-bold"
-				>24</span
 			>
+				{activeChannel?.members_count || 1}
+			</span>
 		</div>
 
 		<div class="flex-1 space-y-6 overflow-y-auto">
@@ -317,7 +331,7 @@
 						<div
 							class="w-8 h-8 rounded-xl bg-green-500 text-white flex items-center justify-center font-bold text-xs"
 						>
-							AD
+							{$user?.name ? $user.name.charAt(0).toUpperCase() : 'P'}
 						</div>
 						<div
 							class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-white dark:border-[#030712] rounded-full"
@@ -325,8 +339,9 @@
 					</div>
 					<span
 						class="text-sm font-semibold text-slate-700 dark:text-slate-300 group-hover:text-indigo-500 transition-colors"
-						>Aicha Dakir</span
 					>
+						{$user?.name || 'Professeur'}
+					</span>
 				</div>
 			</div>
 
@@ -339,6 +354,7 @@
 		</div>
 	</aside>
 
+	<!-- Invite Modal -->
 	{#if showInviteModal}
 		<div
 			class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-all"
@@ -388,7 +404,6 @@
 </div>
 
 <style>
-	/* Custom scrollbar to match deep dark theme */
 	:global(.dark) ::-webkit-scrollbar {
 		width: 5px;
 	}
