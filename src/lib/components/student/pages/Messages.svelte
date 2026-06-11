@@ -62,10 +62,6 @@
 			const res = await fetch(`http://localhost:8080/api/v1/discussions/rooms/${roomId}/messages`, {
 				headers: { Authorization: `Bearer ${token}` }
 			});
-			if (res.ok) {
-				currentMessages = await res.json();
-				scrollToBottom();
-			}
 		} catch (error) {
 			console.error('Error fetching chat history', error);
 		} finally {
@@ -273,8 +269,9 @@
 			{:else}
 				{#each currentMessages as m}
 					<div
-						class="flex gap-4 group relative items-start hover:bg-slate-50/50 dark:hover:bg-slate-800/20 p-2 rounded-2xl transition-all"
+						class="flex gap-4 items-start hover:bg-slate-50/50 dark:hover:bg-slate-800/20 p-2 rounded-2xl transition-all"
 					>
+						<!-- Sender Avatar -->
 						<div
 							class="w-10 h-10 rounded-2xl {m.sender_role === 'teacher'
 								? 'bg-indigo-600'
@@ -283,9 +280,11 @@
 							{m.sender_name ? m.sender_name.charAt(0).toUpperCase() : '?'}
 						</div>
 
-						<div class="flex-1 space-y-1.5 min-w-0 pr-12 relative">
+						<!-- Message Content Container -->
+						<div class="flex-1 space-y-1.5 min-w-0 relative">
 							<div class="flex items-center justify-between">
-								<div class="flex items-center gap-2">
+								<!-- Header Info: Sender Name, Timestamp & 3-Dots Menu -->
+								<div class="flex items-center gap-2 flex-wrap">
 									<span class="font-bold text-sm text-slate-800 dark:text-slate-200"
 										>{m.sender_name}</span
 									>
@@ -301,48 +300,49 @@
 											minute: '2-digit'
 										})}
 									</span>
-								</div>
 
-								{#if String(m.sender_id) === String($user?.id)}
-									<div
-										class="absolute right-2 top-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20"
-									>
-										<button
-											on:click|stopPropagation={() =>
-												(activeMenuId = activeMenuId === m.id ? null : m.id)}
-											class="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-lg font-extrabold text-base leading-none outline-none"
-										>
-											•••
-										</button>
-
-										{#if activeMenuId === m.id}
-											<div
-												class="absolute right-0 mt-1 w-32 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-xl z-30 py-1 font-medium overflow-hidden"
+									<!-- ✅ FIXED: 3-Dots Menu is now placed right next to the timestamp and is ALWAYS visible (No hover needed) -->
+									{#if m.sender_id && $user?.id && String(m.sender_id).trim() === String($user.id).trim()}
+										<div class="relative inline-block">
+											<button
+												on:click|stopPropagation={() =>
+													(activeMenuId = activeMenuId === m.id ? null : m.id)}
+												class="px-1.5 py-0.5 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-md font-extrabold text-xs transition-colors outline-none"
+												title="Options"
 											>
-												<button
-													on:click={() => {
-														editMessage(m.id, m.content);
-														activeMenuId = null;
-													}}
-													class="w-full text-left px-4 py-2 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors"
+												•••
+											</button>
+
+											{#if activeMenuId === m.id}
+												<div
+													class="absolute left-0 mt-1 w-32 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-xl z-30 py-1 font-medium overflow-hidden"
 												>
-													<span>✏️</span> Modifier
-												</button>
-												<button
-													on:click={() => {
-														deleteMessage(m.id);
-														activeMenuId = null;
-													}}
-													class="w-full text-left px-4 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 flex items-center gap-2 transition-colors border-t border-slate-50 dark:border-slate-800/50"
-												>
-													<span>🗑️</span> Supprimer
-												</button>
-											</div>
-										{/if}
-									</div>
-								{/if}
+													<button
+														on:click={() => {
+															editMessage(m.id, m.content);
+															activeMenuId = null;
+														}}
+														class="w-full text-left px-4 py-2 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors"
+													>
+														Modifier
+													</button>
+													<button
+														on:click={() => {
+															deleteMessage(m.id);
+															activeMenuId = null;
+														}}
+														class="w-full text-left px-4 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 flex items-center gap-2 transition-colors border-t border-slate-50 dark:border-slate-800/50"
+													>
+														Supprimer
+													</button>
+												</div>
+											{/if}
+										</div>
+									{/if}
+								</div>
 							</div>
 
+							<!-- Editing Form / Text view -->
 							{#if editingMessageId === m.id}
 								<div class="mt-1 flex flex-col gap-2 w-full">
 									<input
@@ -399,7 +399,7 @@
 						on:click={sendMessage}
 						class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-7 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all active:scale-95"
 					>
-						{$i18n.t('Send 🚀')}
+						{$i18n.t('Send')}
 					</button>
 				</div>
 			</div>
