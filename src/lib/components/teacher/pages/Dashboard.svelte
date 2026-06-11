@@ -37,6 +37,7 @@
 
 	// Delete state
 	let deletingCourseId = '';
+	let deletingItemType: 'course' | 'quiz' = 'course';
 	let isDeleting = false;
 	let deleteError = '';
 
@@ -103,8 +104,9 @@
 	}
 
 	// ── DELETE COURSE ──────────────────────────────────────────────
-	function openDeleteModal(courseId: string) {
-		deletingCourseId = courseId;
+	function openDeleteModal(itemId: string, type: 'course' | 'quiz' = 'course') {
+		deletingCourseId = itemId;
+		deletingItemType = type;
 		deleteError = '';
 	}
 
@@ -129,6 +131,30 @@
 			}
 			courses = courses.filter((c) => c.id !== courseId);
 			deletingCourseId = '';
+			deleteError = '';
+		} catch (e: any) {
+			deleteError = e?.message ?? $i18n.t('Erreur lors de la suppression');
+		} finally {
+			isDeleting = false;
+		}
+	}
+	async function deleteQuiz(quizId: string) {
+		isDeleting = true;
+		deleteError = '';
+		try {
+			const token = localStorage.getItem('token') ?? '';
+			const res = await fetch(`/api/v1/quizzes/teacher/${quizId}`, {
+				method: 'DELETE',
+				headers: { Authorization: `Bearer ${token}` }
+			});
+			if (!res.ok && res.status !== 204) {
+				const err = await res.json().catch(() => ({}));
+				throw new Error(err.detail ?? `Erreur ${res.status}`);
+			}
+			teacherQuizzes = teacherQuizzes.filter((q: any) => q.id !== quizId);
+			quizzesCount = teacherQuizzes.filter((q: any) => q.status === 'published').length;
+			deletingCourseId = '';
+			deletingItemType = 'course';
 			deleteError = '';
 		} catch (e: any) {
 			deleteError = e?.message ?? $i18n.t('Erreur lors de la suppression');
@@ -734,7 +760,7 @@
 						<div></div>
 						<button
 							class="cc-delete-btn"
-							on:click={() => openDeleteModal(quiz.id)}
+							on:click={() => openDeleteModal(quiz.id, 'quiz')}
 							title={$i18n.t('Supprimer le quiz')}
 						>
 							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14">
@@ -780,11 +806,14 @@
 					</svg>
 				</div>
 
-				<h3 class="del-title">{$i18n.t('Supprimer ce cours ?')}</h3>
+				<h3 class="del-title">
+					{deletingItemType === 'quiz' ? $i18n.t('Supprimer ce quiz ?') : $i18n.t('Supprimer ce cours ?')}
+				</h3>
 				<p class="del-sub">
-					{$i18n.t(
-						'Cette action est irréversible. Le cours, son plan et tous ses fichiers seront supprimés définitivement.'
-					)}
+					{deletingItemType === 'quiz'
+						? $i18n.t('Cette action est irréversible. Le quiz, ses questions et toutes les soumissions seront supprimés définitivement.')
+						: $i18n.t('Cette action est irréversible. Le cours, son plan et tous ses fichiers seront supprimés définitivement.')
+					}
 				</p>
 
 				{#if deleteError}
@@ -807,7 +836,13 @@
 					</button>
 					<button
 						class="btn-confirm-delete"
-						on:click={() => deleteCourse(deletingCourseId)}
+						on:click={() => {
+							if (deletingItemType === 'quiz') {
+								deleteQuiz(deletingCourseId);
+							} else {
+								deleteCourse(deletingCourseId);
+							}
+						}}
 						disabled={isDeleting}
 					>
 						{#if isDeleting}
