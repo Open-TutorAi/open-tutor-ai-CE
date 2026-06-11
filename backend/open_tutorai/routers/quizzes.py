@@ -976,3 +976,61 @@ async def list_student_assignments(
         )
 
     return assignments_list
+
+# ---------------------------------------------------------------
+# 6. DELETE /teacher/{quiz_id} - Teacher supprime un quiz
+# ---------------------------------------------------------------
+@router.delete("/teacher/{quiz_id}", status_code=204)
+async def delete_quiz(
+    quiz_id: str,
+    user=Depends(get_verified_user),
+    db=Depends(get_db),
+):
+    """
+    Supprimer un quiz et TOUT ce qui lui est lié :
+    - Soumissions des étudiants (QuizSubmission)
+    - Accès des étudiants (StudentQuizAccess)
+    - Questions du quiz (QuizQuestion)
+    - Le quiz lui-même
+    """
+    quiz = db.query(Quiz).filter(
+        Quiz.id == quiz_id,
+        Quiz.teacher_id == user.id
+    ).first()
+    
+    if not quiz:
+        raise HTTPException(
+            status_code=404,
+            detail="Quiz introuvable ou accès non autorisé"
+        )
+
+    try:
+        # 1. Supprimer les soumissions des étudiants
+        submissions_deleted = (
+            db.query(QuizSubmission)
+            .filter(QuizSubmission.quiz_id == quiz_id)
+            .delete(synchronize_session='fetch')
+        )
+        log.info(f"Quiz {quiz_id} : {submissions_deleted} soumission(s) supprimée(s)")
+
+        # 2. Supprimer les accès des étudiants (StudentQuizAccess)
+        accesses_deleted = (
+            db.query(StudentQuizAccess)
+            .filter(StudentQuizAccess.quiz_id == quiz_id)
+            .delete(synchronize_session='fetch')
+        )
+        log.info(f"Quiz {quiz_id} : {accesses_deleted} accès étudiant(s) supprimé(s)")
+
+        # 3. Supprimer le quiz (les QuizQuestion seront supprimées en cascade)
+        db.delete(quiz)
+        db.commit()
+
+        log.info(f"Quiz {quiz_id} supprimé définitivement par teacher {user.id}")
+
+    except Exception as e:
+        db.rollback()
+        log.error(f"Erreur suppression quiz {quiz_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur lors de la suppression du quiz: {str(e)[:200]}"
+        )
