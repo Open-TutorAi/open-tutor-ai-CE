@@ -15,12 +15,10 @@
 	let currentMessages: any[] = [];
 	let isLoading = false;
 	let searchQuery = '';
-	let showInviteModal = false;
 
-	// ✅ DEFINING VARIABLES FOR EDIT & MENU WITH PROPER TYPES
 	let editingMessageId: number | null = null;
 	let editingContent = '';
-	let activeMenuId: number | null = null; // Controls the 3 dots dropdown display
+	let activeMenuId: number | null = null;
 
 	onMount(async () => {
 		const currentCourseId = $page.params.id;
@@ -30,7 +28,6 @@
 		await fetchStudentRooms();
 	});
 
-	// 📡 Fetch student enrolled courses from backend
 	async function fetchStudentRooms() {
 		try {
 			const token = localStorage.getItem('token') ?? '';
@@ -45,15 +42,12 @@
 				if (channels.length > 0 && !activeChannelId) {
 					activeChannelId = channels[0].id;
 				}
-			} else {
-				console.error('Backend returned an error:', res.status);
 			}
 		} catch (error) {
 			console.error('Error loading student channels', error);
 		}
 	}
 
-	// 📡 Fetch discussion messages for active room
 	async function fetchDiscussions(roomId: string) {
 		if (!roomId) return;
 		try {
@@ -62,6 +56,11 @@
 			const res = await fetch(`http://localhost:8080/api/v1/discussions/rooms/${roomId}/messages`, {
 				headers: { Authorization: `Bearer ${token}` }
 			});
+			if (res.ok) {
+				// ✅ FIXED: عطينا البيانات للمصفوفة باش تفركع ف الشاشة دابا
+				currentMessages = await res.json();
+				await scrollToBottom();
+			}
 		} catch (error) {
 			console.error('Error fetching chat history', error);
 		} finally {
@@ -69,7 +68,6 @@
 		}
 	}
 
-	// 📩 Send message to current channel
 	async function sendMessage() {
 		if (!newMessage.trim() || !activeChannelId) return;
 
@@ -90,21 +88,17 @@
 			if (res.ok) {
 				newMessage = '';
 				await fetchDiscussions(activeChannelId);
-			} else {
-				console.error('Failed to send message:', res.status);
 			}
 		} catch (error) {
 			console.error('Error sending message', error);
 		}
 	}
 
-	// ✅ DEFINED: Explicitly defined editMessage function
 	function editMessage(msgId: number, oldContent: string) {
 		editingMessageId = msgId;
 		editingContent = oldContent;
 	}
 
-	// 📡 Save the edited message to database
 	async function saveEdit(msgId: number) {
 		if (!editingContent.trim()) return;
 		const token = localStorage.getItem('token') ?? '';
@@ -126,7 +120,6 @@
 		}
 	}
 
-	// 📡 Delete message from database
 	async function deleteMessage(msgId: number) {
 		if (!confirm('Voulez-vous vraiment supprimer ce message ?')) return;
 		const token = localStorage.getItem('token') ?? '';
@@ -143,20 +136,13 @@
 		}
 	}
 
-	function copyChannelLink() {
-		const link = `https://opentutorai.com/join/${activeChannelId}`;
-		navigator.clipboard.writeText(link);
-		alert('Lien copié !');
-	}
-
-	// 🔍 Reactive channel filtering based on search input
 	$: filteredChannels = channels.filter((ch) =>
 		ch.student_name.toLowerCase().includes(searchQuery.toLowerCase())
 	);
 
 	$: if (activeChannelId) {
 		fetchDiscussions(activeChannelId);
-		activeMenuId = null; // Reset menu dropdown on channel change
+		activeMenuId = null;
 	}
 
 	$: activeChannel = channels.find((c) => c.id === activeChannelId) || {
@@ -223,7 +209,6 @@
 						<span class="font-bold text-sm truncate block dark:text-slate-100"
 							>{ch.student_name}</span
 						>
-						<p class="text-[10px] opacity-70 truncate">{ch.last_message || 'Pas de message...'}</p>
 					</div>
 				</button>
 			{/each}
@@ -248,7 +233,6 @@
 				<h3 class="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">
 					{activeChannel ? activeChannel.student_name : $i18n.t('Selection')}
 				</h3>
-
 				<span
 					class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2.5 py-1 rounded-full font-bold flex items-center gap-1"
 				>
@@ -260,7 +244,7 @@
 
 		<div
 			bind:this={messagesContainer}
-			class="flex-1 min-h-0 overflow-y-auto p-6 space-y-8 bg-slate-50/20 dark:bg-[#030712]"
+			class="flex-1 min-h-0 overflow-y-auto p-6 space-y-4 bg-slate-50/20 dark:bg-[#030712]"
 		>
 			{#if isLoading}
 				<div class="text-center text-slate-400 text-sm py-10">
@@ -268,105 +252,103 @@
 				</div>
 			{:else}
 				{#each currentMessages as m}
+					{@const isMyMessage =
+						m.sender_id &&
+						$user?.id &&
+						String(m.sender_id).trim().toLowerCase() === String($user.id).trim().toLowerCase()}
+
 					<div
-						class="flex gap-4 items-start hover:bg-slate-50/50 dark:hover:bg-slate-800/20 p-2 rounded-2xl transition-all"
+						class="flex gap-3 items-start w-full p-1 rounded-2xl transition-all {isMyMessage
+							? 'flex-row-reverse'
+							: 'flex-row'}"
 					>
-						<!-- Sender Avatar -->
 						<div
-							class="w-10 h-10 rounded-2xl {m.sender_role === 'teacher'
-								? 'bg-indigo-600'
-								: 'bg-emerald-600'} text-white flex flex-shrink-0 items-center justify-center font-bold shadow-sm"
+							class="w-9 h-9 rounded-2xl text-white flex flex-shrink-0 items-center justify-center font-bold text-xs {isMyMessage
+								? 'bg-gradient-to-br from-blue-500 to-indigo-600'
+								: m.sender_role === 'teacher'
+									? 'bg-indigo-600'
+									: 'bg-emerald-600'}"
 						>
 							{m.sender_name ? m.sender_name.charAt(0).toUpperCase() : '?'}
 						</div>
 
-						<!-- Message Content Container -->
-						<div class="flex-1 space-y-1.5 min-w-0 relative">
-							<div class="flex items-center justify-between">
-								<!-- Header Info: Sender Name, Timestamp & 3-Dots Menu -->
-								<div class="flex items-center gap-2 flex-wrap">
-									<span class="font-bold text-sm text-slate-800 dark:text-slate-200"
-										>{m.sender_name}</span
-									>
-									<span
-										class="text-[10px] text-slate-400 dark:text-slate-500 font-medium bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md"
-									>
-										{new Date(m.timestamp).toLocaleDateString([], {
-											day: '2-digit',
-											month: '2-digit',
-											year: 'numeric'
-										})} • {new Date(m.timestamp).toLocaleTimeString([], {
-											hour: '2-digit',
-											minute: '2-digit'
-										})}
-									</span>
+						<div
+							class="flex flex-col max-w-[75%] min-w-0 space-y-1 {isMyMessage
+								? 'items-end'
+								: 'items-start'}"
+						>
+							<div class="flex items-center gap-2 flex-wrap flex-row">
+								<span class="font-bold text-xs text-slate-700 dark:text-slate-300"
+									>{isMyMessage ? $i18n.t('Moi') : m.sender_name}</span
+								>
+								<span class="text-[9px] text-slate-400 dark:text-slate-500 font-medium">
+									{new Date(m.timestamp).toLocaleTimeString([], {
+										hour: '2-digit',
+										minute: '2-digit'
+									})}
+								</span>
 
-									<!-- ✅ FIXED: 3-Dots Menu is now placed right next to the timestamp and is ALWAYS visible (No hover needed) -->
-									{#if m.sender_id && $user?.id && String(m.sender_id).trim() === String($user.id).trim()}
-										<div class="relative inline-block">
-											<button
-												on:click|stopPropagation={() =>
-													(activeMenuId = activeMenuId === m.id ? null : m.id)}
-												class="px-1.5 py-0.5 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 rounded-md font-extrabold text-xs transition-colors outline-none"
-												title="Options"
+								{#if isMyMessage}
+									<div class="relative inline-block">
+										<button
+											on:click|stopPropagation={() =>
+												(activeMenuId = activeMenuId === m.id ? null : m.id)}
+											class="px-1 py-0.5 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-500 rounded-md font-extrabold text-[10px] outline-none"
+											>•••</button
+										>
+										{#if activeMenuId === m.id}
+											<div
+												class="absolute right-0 mt-1 w-32 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-xl z-30 py-1 font-medium overflow-hidden"
 											>
-												•••
-											</button>
-
-											{#if activeMenuId === m.id}
-												<div
-													class="absolute left-0 mt-1 w-32 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-xl z-30 py-1 font-medium overflow-hidden"
+												<button
+													on:click={() => {
+														editMessage(m.id, m.content);
+														activeMenuId = null;
+													}}
+													class="w-full text-left px-4 py-2 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors"
+													>Modifier</button
 												>
-													<button
-														on:click={() => {
-															editMessage(m.id, m.content);
-															activeMenuId = null;
-														}}
-														class="w-full text-left px-4 py-2 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors"
-													>
-														Modifier
-													</button>
-													<button
-														on:click={() => {
-															deleteMessage(m.id);
-															activeMenuId = null;
-														}}
-														class="w-full text-left px-4 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 flex items-center gap-2 transition-colors border-t border-slate-50 dark:border-slate-800/50"
-													>
-														Supprimer
-													</button>
-												</div>
-											{/if}
-										</div>
-									{/if}
-								</div>
+												<button
+													on:click={() => {
+														deleteMessage(m.id);
+														activeMenuId = null;
+													}}
+													class="w-full text-left px-4 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 flex items-center gap-2 transition-colors border-t border-slate-50 dark:border-slate-800/50"
+													>Supprimer</button
+												>
+											</div>
+										{/if}
+									</div>
+								{/if}
 							</div>
 
-							<!-- Editing Form / Text view -->
 							{#if editingMessageId === m.id}
-								<div class="mt-1 flex flex-col gap-2 w-full">
+								<div class="mt-1 flex flex-col gap-2 w-full min-w-[220px]">
 									<input
 										type="text"
 										bind:value={editingContent}
-										class="w-full text-sm p-2.5 bg-white dark:bg-[#111827] border border-indigo-500 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 dark:text-slate-200"
+										class="w-full text-xs p-2 bg-white dark:bg-[#111827] border border-indigo-500 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 dark:text-slate-200"
 										on:keydown={(e) => e.key === 'Enter' && saveEdit(m.id)}
 									/>
 									<div class="flex gap-2 justify-end">
 										<button
 											on:click={() => (editingMessageId = null)}
-											class="px-3 py-1 text-xs bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg font-medium"
+											class="px-2.5 py-1 text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg font-medium"
 											>Annuler</button
 										>
 										<button
 											on:click={() => saveEdit(m.id)}
-											class="px-3 py-1 text-xs bg-indigo-600 text-white rounded-lg font-medium shadow-sm shadow-indigo-500/10"
+											class="px-2.5 py-1 text-[11px] bg-indigo-600 text-white rounded-lg font-medium shadow-sm"
 											>Enregistrer</button
 										>
 									</div>
 								</div>
 							{:else}
 								<div
-									class="bg-white dark:bg-[#111827] border border-slate-100 dark:border-slate-800 p-4 rounded-2xl rounded-tl-none shadow-sm text-sm text-slate-600 dark:text-slate-300 transition-colors max-w-[85%] inline-block break-words"
+									class="p-3 shadow-sm text-xs transition-colors break-words w-fit text-left min-w-[50px]
+									{isMyMessage
+										? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl rounded-tr-none'
+										: 'bg-white dark:bg-[#111827] border border-slate-100 dark:border-slate-800 text-slate-700 dark:text-slate-300 rounded-2xl rounded-tl-none'}"
 								>
 									{m.content}
 								</div>
@@ -377,45 +359,37 @@
 			{/if}
 		</div>
 
-		<footer class="p-6 bg-white dark:bg-[#030712] border-t border-slate-100 dark:border-slate-800">
+		<footer class="p-4 bg-white dark:bg-[#030712] border-t border-slate-100 dark:border-slate-800">
 			<div
-				class="max-w-4xl mx-auto bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-[28px] p-2 shadow-sm focus-within:ring-4 focus-within:ring-indigo-500/5 transition-all"
+				class="max-w-4xl mx-auto bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-800 rounded-2xl p-2 flex items-center gap-2 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all"
 			>
-				<textarea
+				<input
+					type="text"
 					bind:value={newMessage}
 					placeholder={$i18n.t('Send a message...')}
-					on:keydown={(e) => {
-						if (e.key === 'Enter' && !e.shiftKey) {
-							e.preventDefault();
-							sendMessage();
-						}
-					}}
-					class="w-full p-4 bg-transparent border-none focus:ring-0 text-sm dark:text-slate-200 resize-none h-24 outline-none"
-				></textarea>
-				<div
-					class="flex justify-between items-center pt-2 px-3 pb-2 border-t border-slate-50 dark:border-slate-800/50"
+					on:keydown={(e) => e.key === 'Enter' && sendMessage()}
+					class="flex-1 p-2 bg-transparent border-none focus:ring-0 text-xs dark:text-slate-200 outline-none"
+				/>
+				<button
+					on:click={sendMessage}
+					class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-2 rounded-xl text-xs font-bold shadow-md shadow-indigo-500/10 active:scale-95 transition-all"
 				>
-					<button
-						on:click={sendMessage}
-						class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-7 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all active:scale-95"
-					>
-						{$i18n.t('Send')}
-					</button>
-				</div>
+					{$i18n.t('Send')}
+				</button>
 			</div>
 		</footer>
 	</main>
 </div>
 
 <style>
-	:global(.dark) ::-webkit-scrollbar {
-		width: 5px;
+	::-webkit-scrollbar {
+		width: 4px;
 	}
-	:global(.dark) ::-webkit-scrollbar-track {
-		background: #030712;
+	::-webkit-scrollbar-thumb {
+		background: #cbd5e1;
+		border-radius: 10px;
 	}
 	:global(.dark) ::-webkit-scrollbar-thumb {
-		background: #1e293b;
-		border-radius: 10px;
+		background: #334155;
 	}
 </style>

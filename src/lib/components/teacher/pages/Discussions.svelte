@@ -273,7 +273,6 @@
 						<span class="font-bold text-sm truncate block dark:text-slate-100"
 							>{ch.student_name}</span
 						>
-						<p class="text-[10px] opacity-70 truncate">{ch.last_message || 'Pas de message...'}</p>
 					</div>
 				</button>
 			{/each}
