@@ -18,6 +18,7 @@ class SendMessageForm(BaseModel):
 
 class MessageResponse(BaseModel):
     id: int
+    sender_id: str
     sender_role: str
     sender_name: str
     content: str
@@ -138,6 +139,7 @@ async def get_room_messages(room_id: str, user=Depends(get_current_user), db: Se
         
         return [{
             "id": m.id,
+            "sender_id": str(m.sender_id),
             "sender_role": m.sender_role,
             "sender_name": m.sender_name,
             "content": m.content,
@@ -175,36 +177,97 @@ async def send_discussion_message(room_id: str, form_data: SendMessageForm, user
         session.add(new_msg)
         session.commit()
         return {"status": "success", "message_id": new_msg.id}
-# ── UPDATE MESSAGE ENDPOINT ───────────────────────────────────
+        
+# ── UPDATE MESSAGE ENDPOINT (STRICT CASTING + TEACHER GUARD) ──
 
 @router.put("/messages/{message_id}")
-async def update_message(message_id: int, form_data: SendMessageForm, user=Depends(get_current_user), db: Session = Depends(get_db)):
+async def update_message(
+    message_id: str,  # Read as string from URL to prevent routing/casting mismatch
+    form_data: SendMessageForm, 
+    user=Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
     with db as session:
-        message = session.query(DiscussionMessage).filter(DiscussionMessage.id == message_id).first()
+        try:
+            db_id = int(message_id)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid message ID format")
+
+        message = session.query(DiscussionMessage).filter(DiscussionMessage.id == db_id).first()
         if not message:
             raise HTTPException(status_code=404, detail="Message not found")
             
-        # Security guard: Only the original sender can edit their message
-        if message.sender_id != str(user.id):
+        # 🔒 STRICT RULE: Only the absolute original author can EDIT their own text 
+        # (Pedagogically, a teacher cannot modify a student's actual words)
+        if str(message.sender_id).strip() != str(user.id).strip():
             raise HTTPException(status_code=403, detail="You can only edit your own messages")
             
-        message.content = form_data.content
+        message.content = form_data.content.strip()
         session.commit()
+        
         return {"status": "success", "message": "Message updated successfully"}
 
-# ── DELETE MESSAGE ENDPOINT ───────────────────────────────────
+
+# ── DELETE MESSAGE ENDPOINT (TEACHER MODERATION ALLOWED) ──────
 
 @router.delete("/messages/{message_id}")
-async def delete_message(message_id: int, user=Depends(get_current_user), db: Session = Depends(get_db)):
+async def delete_message(
+    message_id: str,  # Read as string from URL to prevent routing/casting mismatch
+    user=Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
     with db as session:
-        message = session.query(DiscussionMessage).filter(DiscussionMessage.id == message_id).first()
+        try:
+            db_id = int(message_id)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid message ID format")
+
+        message = session.query(DiscussionMessage).filter(DiscussionMessage.id == db_id).first()
         if not message:
             raise HTTPException(status_code=404, detail="Message not found")
             
-        # Security guard: Only the original sender can delete their message
-        if message.sender_id != str(user.id):
-            raise HTTPException(status_code=403, detail="You can only delete your own messages")
+        # 🔑 FLEXIBLE GUARD: Author can delete their own message OR a teacher/admin can delete ANY message for moderation
+        is_author = str(message.sender_id).strip() == str(user.id).strip()
+        is_moderator = user.role == "teacher" or user.role == "admin"
+        
+        if not is_author and not is_moderator:
+            raise HTTPException(status_code=403, detail="You do not have permission to delete this message")
             
         session.delete(message)
         session.commit()
+        
         return {"status": "success", "message": "Message deleted successfully"}
+
+
+# ── REMOVE STUDENT FROM COURSE CHANNEL (KICK ENDPOINT) ────────
+
+@router.delete("/rooms/{room_id}/students/{student_id}")
+async def remove_student_from_course(
+    room_id: str, 
+    student_id: str, 
+    user=Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    # Security check: Only teachers or admins can access this orchestration
+    if user.role != "teacher" and user.role != "admin":
+        raise HTTPException(status_code=401, detail="Unauthorized action")
+        
+    with db as session:
+        # Verify that the current teacher actually owns this specific course
+        course = session.query(Course).filter(Course.id == room_id, Course.teacher_id == user.id).first()
+        if not course and user.role != "admin":
+            raise HTTPException(status_code=403, detail="You do not have permission to manage this course")
+            
+        # Find the enrollment record and remove it completely from database
+        enrollment = session.query(CourseEnrollment).filter(
+            CourseEnrollment.course_id == room_id,
+            CourseEnrollment.student_id == student_id
+        ).first()
+        
+        if not enrollment:
+            raise HTTPException(status_code=404, detail="Student enrollment not found")
+            
+        session.delete(enrollment)
+        session.commit()
+        
+        return {"status": "success", "message": "Student successfully removed from course channel"}
