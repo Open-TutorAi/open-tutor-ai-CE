@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, getContext } from 'svelte';
+	import { onMount, getContext, tick } from 'svelte';
 	import type { Writable } from 'svelte/store';
 	import type { i18n as i18nType } from 'i18next';
 	import { fade, fly } from 'svelte/transition';
@@ -35,6 +35,7 @@
 	let isLoadingAnalytics: boolean = false;
 
 	let manualQuestionType: string = 'QCM';
+	let questionsContainer: HTMLDivElement;
 
 	onMount(async () => {
 		const token = localStorage.getItem('token') ?? '';
@@ -186,16 +187,24 @@
 
 	function addManualQuestion() {
 		const isQCM = manualQuestionType === 'QCM';
-		questions = [
-			...questions,
-			{
-				id: 'manual_' + Math.random().toString(36).substr(2, 9),
-				question_type: manualQuestionType,
-				question_text: $i18n.t('Nouvelle question'),
-				options: isQCM ? [$i18n.t('Option A'), $i18n.t('Option B')] : [],
-				correct_answer: isQCM ? $i18n.t('Option A') : ''
+		const newQuestion = {
+			id: 'manual_' + Math.random().toString(36).substr(2, 9),
+			question_type: manualQuestionType,
+			question_text: $i18n.t('Nouvelle question'),
+			options: isQCM ? [$i18n.t('Option A'), $i18n.t('Option B')] : [],
+			correct_answer: isQCM ? $i18n.t('Option A') : ''
+		};
+		questions = [...questions, newQuestion];
+
+		// Scroll automatique l had la question jdida
+		tick().then(() => {
+			if (questionsContainer) {
+				const lastQuestion = questionsContainer.lastElementChild;
+				if (lastQuestion) {
+					lastQuestion.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				}
 			}
-		];
+		});
 	}
 
 	function deleteQuestion(index: number) {
@@ -214,6 +223,27 @@
 		questions = [];
 		publishedCode = '';
 	}
+
+	
+	// Ajouter un choix f un QCM
+	function addOption(questionIndex: number) {
+		questions[questionIndex].options = [...questions[questionIndex].options, $i18n.t('Nouveau choix')];
+		questions = questions; // trigger reactivity
+	}
+
+	// Supprimer un choix f un QCM (khas yb9a ghir 2 au minimum)
+	function removeOption(questionIndex: number, optionIndex: number) {
+		if (questions[questionIndex].options.length <= 2) {
+			alert($i18n.t('Un QCM doit avoir au moins 2 choix'));
+			return;
+		}
+		// Si le choix supprimé était la bonne réponse, on met la première option comme bonne réponse
+		if (questions[questionIndex].correct_answer === questions[questionIndex].options[optionIndex]) {
+			questions[questionIndex].correct_answer = questions[questionIndex].options[0];
+		}
+		questions[questionIndex].options = questions[questionIndex].options.filter((_: any, i: number) => i !== optionIndex);
+		questions = questions; // trigger reactivity
+	}	
 </script>
 
 <div class="page">
@@ -503,8 +533,7 @@
 						</button>
 					</div>
 				</div>
-
-				<div class="questions-list">
+				<div class="questions-list" bind:this={questionsContainer}>
 					{#each questions as question, index (question.id || index)}
 						<div class="q-card" in:fly={{ y: 6, duration: 180, delay: index * 25 }}>
 							<div class="q-head">
@@ -556,11 +585,35 @@
 														bind:value={question.options[oi]}
 														placeholder="{$i18n.t('Option')} {String.fromCharCode(65 + oi)}"
 													/>
+													<!-- Bouton supprimer le choix -->
+													<button
+														type="button"
+														class="btn-remove-option"
+														on:click={() => removeOption(index, oi)}
+														aria-label={$i18n.t('Supprimer ce choix')}
+														title={$i18n.t('Supprimer ce choix')}
+													>
+														<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14" aria-hidden="true">
+															<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+														</svg>
+													</button>
 												</div>
 											{/each}
+											<!-- Bouton ajouter un nouveau choix -->
+											<button
+												type="button"
+												class="btn-add-option"
+												on:click={() => addOption(index)}
+											>
+												<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="13" height="13" aria-hidden="true">
+													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+												</svg>
+												{$i18n.t('Ajouter un choix')}
+											</button>
 										</div>
 									</div>
 								{:else}
+									<!-- Pour les questions NON-QCM (Short Answer, True/False) -->
 									<div class="field">
 										<label class="label-sm">{$i18n.t('Réponse correcte')}</label>
 										<input
@@ -1321,7 +1374,31 @@
     .review-title { font-size: 16px; font-weight: 600; color: #0f172a; margin: 0 0 2px; }
     :global(.dark) .review-title { color: #f1f5f9; }
     .review-meta { font-size: 12px; color: #94a3b8; margin: 0; }
-    .review-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+	.review-actions { 
+		display: flex; 
+		gap: 10px; 
+	
+		align-items: center; 
+		flex-wrap: nowrap;
+	}
+
+	.review-actions select {
+		width: 110px;
+		min-width: 110px;
+		flex-shrink: 0;
+		align-items: center;
+		
+
+	}
+
+
+	.review-actions button {
+		white-space: nowrap; 
+		flex-shrink: 0;
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+	}
 
     /* Stack list of quiz question blocks */
     .questions-list { display: flex; flex-direction: column; gap: .75rem; }
@@ -1726,4 +1803,69 @@
         .metrics       { grid-template-columns: 1fr 1fr; }
         .success-wrap  { margin: 1rem auto; }
     }
+
+	/* Bouton pour supprimer un choix */
+	.btn-remove-option {
+		width: 28px;
+		height: 28px;
+		flex-shrink: 0;
+		border: 1px solid #e2e8f0;
+		background: white;
+		color: #94a3b8;
+		cursor: pointer;
+		border-radius: 6px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.15s;
+	}
+	.btn-remove-option:hover {
+		background: #fef2f2;
+		border-color: #fecaca;
+		color: #dc2626;
+	}
+	:global(.dark) .btn-remove-option {
+		background: #1e293b;
+		border-color: #334155;
+	}
+	:global(.dark) .btn-remove-option:hover {
+		background: rgba(220, 38, 38, 0.15);
+		border-color: rgba(220, 38, 38, 0.3);
+		color: #fca5a5;
+	}
+
+	/* Bouton pour ajouter un choix */
+	.btn-add-option {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		padding: 6px 12px;
+		background: #f0f9ff;
+		border: 1px dashed #bfdbfe;
+		border-radius: 7px;
+		font-size: 12px;
+		font-weight: 500;
+		color: #2563eb;
+		cursor: pointer;
+		transition: all 0.15s;
+		font-family: inherit;
+		margin-top: 4px;
+		width: 100%;
+		justify-content: center;
+	}
+	.btn-add-option:hover {
+		background: #eff6ff;
+		border-style: solid;
+		border-color: #2563eb;
+	}
+	:global(.dark) .btn-add-option {
+		background: rgba(37, 99, 235, 0.08);
+		border-color: rgba(37, 99, 235, 0.25);
+		color: #93c5fd;
+	}
+	:global(.dark) .btn-add-option:hover {
+		background: rgba(37, 99, 235, 0.15);
+		border-color: rgba(147, 197, 253, 0.5);
+	}
+
 </style>
