@@ -1,12 +1,8 @@
 <!-- 
-  ClassroomDetail.svelte — UPDATED
-  Replace: src/lib/components/student/pages/ClassroomDetail.svelte
-  
-  Changes:
-  - Shows real taux de progression (progress bar)
-  - "Commencer l'apprentissage" resumes existing chat if one exists
-  - Section statuses reflect real DB state (✓ completed, → in-progress)
+  ClassroomDetail.svelte — UPDATED with Dark Mode
+  Shows real progress tracking, section statuses, and resume learning functionality
 -->
+
 <script lang="ts">
 	import { getContext, onMount } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -17,6 +13,9 @@
 
 	const i18n = getContext('i18n');
 
+	// ============================================================================
+	// TYPES
+	// ============================================================================
 	interface Section {
 		id: string;
 		title: string;
@@ -54,11 +53,18 @@
 		chat_id: string | null;
 	}
 
+	// ============================================================================
+	// STATE
+	// ============================================================================
 	let cours: CourseDetail | null = null;
 	let estEnChargement = true;
 	let erreurChargement = '';
 	let chapitresDeveloppes = new Set<string>();
 
+	// ============================================================================
+	// HELPERS
+	// ============================================================================
+	// Normalize avatar image path for consistent display
 	function normalizeAvatarPath(url?: string | null) {
 		if (!url || url.trim() === '') return null;
 		const clean = url.split('?')[0].trim();
@@ -75,6 +81,7 @@
 		return `/uploads/avatars/${clean}`;
 	}
 
+	// Fetch course details from API
 	async function chargerDetailsCours() {
 		estEnChargement = true;
 		erreurChargement = '';
@@ -82,17 +89,21 @@
 			const token = localStorage.getItem('token') ?? '';
 			cours = await getCourseById(token, courseId);
 
+			// Auto-expand first chapter by default
 			if (cours?.chapters?.length) {
 				chapitresDeveloppes.add(cours.chapters[0].id);
 				chapitresDeveloppes = new Set(chapitresDeveloppes);
 			}
 		} catch (e: any) {
-			erreurChargement = e?.message ?? e ?? 'Erreur lors du chargement';
+			erreurChargement = e?.message ?? e ?? 'Error loading course';
 		} finally {
 			estEnChargement = false;
 		}
 	}
 
+	// ============================================================================
+	// LIFECYCLE
+	// ============================================================================
 	onMount(() => {
 		chargerDetailsCours();
 
@@ -105,7 +116,7 @@
 			}
 		};
 
-		// Listen for teacher avatar updates and refresh course data
+		// Listen for teacher avatar updates
 		const handleAvatarUpdate = () => {
 			if (cours) {
 				chargerDetailsCours();
@@ -123,17 +134,19 @@
 		}
 	});
 
-	// ── Progress helpers ───────────────────────────────────────────────────
+	// ============================================================================
+	// REACTIVE PROPERTIES
+	// ============================================================================
 	$: progressPct = cours?.progress_percentage ?? 0;
 	$: progressColor = progressPct >= 100 ? '#10b981' : progressPct >= 50 ? '#3b82f6' : '#f59e0b';
 	$: progressLabel =
 		progressPct >= 100
-			? $i18n.t('Terminé')
+			? $i18n.t('Completed')
 			: progressPct > 0
-				? `${progressPct}% ${$i18n.t('complété')}`
-				: $i18n.t('Pas encore commencé');
+				? `${progressPct}% ${$i18n.t('completed')}`
+				: $i18n.t('Not started yet');
 
-	// ── Section status helpers ─────────────────────────────────────────────
+	// Section status helpers
 	function statusIcon(status: string): string {
 		switch (status) {
 			case 'completed':
@@ -155,23 +168,23 @@
 		}
 	}
 
-	// ── Misc helpers ───────────────────────────────────────────────────────
+	// Format file size for display
 	function formaterTaille(kb: number): string {
 		if (!kb) return '';
 		return kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${kb} KB`;
 	}
 
+	// Toggle chapter expansion
 	function basculerChapitre(id: string) {
 		chapitresDeveloppes.has(id) ? chapitresDeveloppes.delete(id) : chapitresDeveloppes.add(id);
 		chapitresDeveloppes = new Set(chapitresDeveloppes);
 	}
 
-	// ── Start / Resume learning ────────────────────────────────────────────
+	// Start or resume learning - creates or resumes chat session
 	async function demarrerApprentissage() {
 		if (!cours) return;
 
 		// Refresh course data to get the latest chat_id from the backend
-		// This ensures we don't use stale data if a chat was previously saved
 		try {
 			const token = localStorage.getItem('token') ?? '';
 			const coursLatest = await getCourseById(token, courseId);
@@ -228,27 +241,41 @@
 	/>
 </svelte:head>
 
+<!-- ============================================================================
+     LOADING STATE
+     ============================================================================ -->
 {#if estEnChargement}
 	<div class="page-conteneur flex-centre">
 		<div class="chargeur"></div>
 	</div>
+
+<!-- ============================================================================
+     ERROR STATE
+     ============================================================================ -->
 {:else if erreurChargement}
 	<div class="page-conteneur flex-centre">
 		<div class="boite-erreur">
 			<p>{erreurChargement}</p>
 			<button class="btn-primaire" on:click={chargerDetailsCours}>
-				{$i18n.t('Réessayer')}
+				{$i18n.t('Retry')}
 			</button>
 		</div>
 	</div>
+
+<!-- ============================================================================
+     COURSE CONTENT
+     ============================================================================ -->
 {:else if cours}
 	<div class="page-conteneur" in:fade={{ duration: 300 }}>
+		<!-- Back button -->
 		<button class="btn-retour" on:click={() => goto('/student/classrooms')}>
-			← {$i18n.t('Retour aux cours')}
+			← {$i18n.t('Back to courses')}
 		</button>
 
 		<div class="grille-bento">
-			<!-- 1. HERO CARD -->
+			<!-- ==================================================================
+			     HERO CARD - Course title, teacher info, progress bar
+			     ================================================================== -->
 			<div class="carte carte-hero col-12">
 				<div class="en-tete-hero">
 					<div class="info-prof">
@@ -278,14 +305,14 @@
 				<p class="texte-bienvenue">
 					{cours.welcome_message ||
 						$i18n.t(
-							'Bienvenue dans ce cours ! Préparez-vous à apprendre et à explorer de nouveaux concepts.'
+							'Welcome to this course! Get ready to learn and explore new concepts.'
 						)}
 				</p>
 
-				<!-- ── PROGRESS BAR ── -->
+				<!-- Progress Bar -->
 				<div class="progress-section">
 					<div class="progress-header">
-						<span class="progress-label-text">{$i18n.t('Progression')}</span>
+						<span class="progress-label-text">{$i18n.t('Progress')}</span>
 						<span class="progress-pct-badge" style="color:{progressColor}">
 							{progressLabel}
 						</span>
@@ -298,15 +325,15 @@
 					</div>
 					<div class="progress-detail">
 						{sectionsCompletees} / {nombreTotalSections}
-						{$i18n.t('sections complétées')}
+						{$i18n.t('sections completed')}
 					</div>
 				</div>
 
-				<!-- STATS ROW -->
+				<!-- Statistics Row -->
 				<div class="statistiques">
 					<div class="stat-item">
 						<span class="stat-nombre">{cours.chapters?.length ?? 0}</span>
-						<span class="stat-libelle">{$i18n.t('Chapitres')}</span>
+						<span class="stat-libelle">{$i18n.t('Chapters')}</span>
 					</div>
 					<div class="stat-separateur"></div>
 					<div class="stat-item">
@@ -316,14 +343,16 @@
 					<div class="stat-separateur"></div>
 					<div class="stat-item">
 						<span class="stat-nombre">{cours.files?.length ?? 0}</span>
-						<span class="stat-libelle">{$i18n.t('Ressources')}</span>
+						<span class="stat-libelle">{$i18n.t('Resources')}</span>
 					</div>
 				</div>
 			</div>
 
-			<!-- 3. RESOURCES CARD -->
+			<!-- ==================================================================
+			     RESOURCES CARD - Course files and materials
+			     ================================================================== -->
 			<div class="carte col-6">
-				<h2 class="titre-carte">{$i18n.t('Ressources du cours')}</h2>
+				<h2 class="titre-carte">{$i18n.t('Course Resources')}</h2>
 				<hr class="separateur" />
 
 				{#if cours.files && cours.files.length > 0}
@@ -354,30 +383,33 @@
 						{/each}
 					</div>
 				{:else}
-					<p class="texte-centre texte-muet">{$i18n.t('Aucune ressource disponible')}</p>
+					<p class="texte-centre texte-muet">{$i18n.t('No resources available')}</p>
 				{/if}
 			</div>
 
-			<!-- 4. OBJECTIVES CARD -->
+			<!-- ==================================================================
+			     OBJECTIVES CARD - Learning objectives
+			     ================================================================== -->
 			<div class="carte col-6">
-				<h2 class="titre-carte">{$i18n.t("Objectifs d'apprentissage")}</h2>
+				<h2 class="titre-carte">{$i18n.t('Learning Objectives')}</h2>
 				<hr class="separateur" />
 
 				{#if listeObjectifs.length > 0}
-					<p class="texte-carte mb-4">{$i18n.t('À la fin de ce cours, vous serez capable de :')}</p>
 					<ol class="liste-objectifs">
 						{#each listeObjectifs as objectif}
 							<li>{objectif}</li>
 						{/each}
 					</ol>
 				{:else}
-					<p class="texte-centre texte-muet">{$i18n.t('Aucun objectif défini')}</p>
+					<p class="texte-centre texte-muet">{$i18n.t('No objectives defined')}</p>
 				{/if}
 			</div>
 
-			<!-- 5. CHAPTERS CARD (full width) -->
+			<!-- ==================================================================
+			     CHAPTERS CARD - Course structure with sections and progress
+			     ================================================================== -->
 			<div class="carte col-12">
-				<h2 class="titre-carte">{$i18n.t('Plan de cours')}</h2>
+				<h2 class="titre-carte">{$i18n.t('Course Plan')}</h2>
 				<hr class="separateur" />
 
 				{#if cours.chapters && cours.chapters.length > 0}
@@ -398,7 +430,7 @@
 									<div class="numero-chapitre">{indice + 1}</div>
 									<div class="ch-title-group">
 										<span class="titre-chapitre">{chapitre.title}</span>
-										<!-- mini progress per chapter -->
+										<!-- Chapter mini progress bar -->
 										{#if chTotal > 0}
 											<div class="ch-mini-progress">
 												<div class="ch-mini-track">
@@ -455,15 +487,15 @@
 																style="color:{statusColor(section.status)};"
 															>
 																{section.status === 'completed'
-																	? $i18n.t('Terminé')
-																	: $i18n.t('En cours')}
+																	? $i18n.t('Completed')
+																	: $i18n.t('In progress')}
 															</span>
 														{/if}
 													</div>
 												{/each}
 											</div>
 										{:else}
-											<p class="texte-muet p-4">{$i18n.t('Aucune section disponible')}</p>
+											<p class="texte-muet p-4">{$i18n.t('No sections available')}</p>
 										{/if}
 									</div>
 								{/if}
@@ -471,18 +503,18 @@
 						{/each}
 					</div>
 				{:else}
-					<p class="texte-centre texte-muet">{$i18n.t('Aucun chapitre disponible')}</p>
+					<p class="texte-centre texte-muet">{$i18n.t('No chapters available')}</p>
 				{/if}
 			</div>
 		</div>
 
-		<!-- ACTION BAR -->
+		<!-- Bottom Action Bar - Start/Resume Learning Button -->
 		<div class="barre-action">
 			<button class="btn-primaire btn-grand" on:click={demarrerApprentissage}>
 				{#if cours.chat_id && progressPct > 0}
-					{$i18n.t('Reprendre le cours')}
+					{$i18n.t('Resume Course')}
 				{:else}
-					{$i18n.t("Commencer l'apprentissage")}
+					{$i18n.t('Start Learning')}
 				{/if}
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20">
 					<path
@@ -497,11 +529,21 @@
 	</div>
 {/if}
 
+<!-- ============================================================================
+     STYLES - Light & Dark Mode
+     ============================================================================ -->
 <style>
+	/* Base body styles */
 	:global(body) {
 		background-color: #f8fafc;
 		margin: 0;
 		padding: 0;
+		transition: background-color 0.2s ease;
+	}
+
+	/* Dark mode body */
+	:global(.dark) body {
+		background-color: #0f172a;
 	}
 
 	.page-conteneur {
@@ -514,7 +556,14 @@
 		margin: 0 auto;
 		padding: 2rem;
 		color: #334155;
+		transition: color 0.2s ease;
 	}
+
+	/* Dark mode container */
+	:global(.dark) .page-conteneur {
+		color: #cbd5e1;
+	}
+
 	.flex-centre {
 		display: flex;
 		justify-content: center;
@@ -522,6 +571,7 @@
 		min-height: 60vh;
 	}
 
+	/* Back button */
 	.btn-retour {
 		background: transparent;
 		border: none;
@@ -534,36 +584,36 @@
 		margin-bottom: 1.5rem;
 		transition: color 0.2s;
 	}
+
+	:global(.dark) .btn-retour {
+		color: #94a3b8;
+	}
+
 	.btn-retour:hover {
 		color: #3b82f6;
 	}
 
+	:global(.dark) .btn-retour:hover {
+		color: #60a5fa;
+	}
+
+	/* Grid layout */
 	.grille-bento {
 		display: grid;
 		grid-template-columns: repeat(12, 1fr);
 		gap: 1.5rem;
 		margin-bottom: 2rem;
 	}
-	.col-4 {
-		grid-column: span 4;
-	}
-	.col-6 {
-		grid-column: span 6;
-	}
-	.col-8 {
-		grid-column: span 8;
-	}
-	.col-12 {
-		grid-column: span 12;
-	}
+	.col-4 { grid-column: span 4; }
+	.col-6 { grid-column: span 6; }
+	.col-8 { grid-column: span 8; }
+	.col-12 { grid-column: span 12; }
+
 	@media (max-width: 1024px) {
-		.col-4,
-		.col-6,
-		.col-8 {
-			grid-column: span 12;
-		}
+		.col-4, .col-6, .col-8 { grid-column: span 12; }
 	}
 
+	/* Cards */
 	.carte {
 		background: #ffffff;
 		border-radius: 16px;
@@ -572,17 +622,26 @@
 		border: 1px solid #e2e8f0;
 		display: flex;
 		flex-direction: column;
+		transition: all 0.2s ease;
 	}
+
+	:global(.dark) .carte {
+		background: #1e293b;
+		border-color: #334155;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+	}
+
 	.carte-hero {
 		background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
 		border: 1px solid #dbeafe;
 	}
-	.centre-contenu {
-		align-items: center;
-		justify-content: center;
-		text-align: center;
+
+	:global(.dark) .carte-hero {
+		background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+		border-color: #334155;
 	}
 
+	/* Hero header */
 	.en-tete-hero {
 		display: flex;
 		justify-content: space-between;
@@ -591,11 +650,13 @@
 		flex-wrap: wrap;
 		gap: 0.75rem;
 	}
+
 	.info-prof {
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
 	}
+
 	.avatar {
 		width: 40px;
 		height: 40px;
@@ -610,21 +671,29 @@
 		overflow: hidden;
 		flex-shrink: 0;
 	}
+
 	.avatar-img {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
 		border-radius: 50%;
 	}
+
 	.nom-prof {
 		font-size: 0.9rem;
 		font-weight: 600;
 		color: #475569;
 	}
+
+	:global(.dark) .nom-prof {
+		color: #94a3b8;
+	}
+
 	.badges {
 		display: flex;
 		gap: 0.5rem;
 	}
+
 	.etiquette-categorie {
 		background: #dbeafe;
 		color: #1e40af;
@@ -633,6 +702,12 @@
 		font-size: 0.75rem;
 		font-weight: 700;
 	}
+
+	:global(.dark) .etiquette-categorie {
+		background: #1e3a5f;
+		color: #93c5fd;
+	}
+
 	.etiquette-langue {
 		background: #f1f5f9;
 		color: #64748b;
@@ -641,6 +716,12 @@
 		font-size: 0.75rem;
 		font-weight: 600;
 	}
+
+	:global(.dark) .etiquette-langue {
+		background: #334155;
+		color: #cbd5e1;
+	}
+
 	.titre-cours {
 		font-size: 1.75rem;
 		font-weight: 800;
@@ -648,6 +729,11 @@
 		margin: 0 0 0.75rem 0;
 		line-height: 1.2;
 	}
+
+	:global(.dark) .titre-cours {
+		color: #f1f5f9;
+	}
+
 	.texte-bienvenue {
 		font-size: 0.95rem;
 		line-height: 1.6;
@@ -655,7 +741,11 @@
 		margin: 0 0 1.25rem 0;
 	}
 
-	/* ── PROGRESS BAR ── */
+	:global(.dark) .texte-bienvenue {
+		color: #94a3b8;
+	}
+
+	/* Progress section */
 	.progress-section {
 		background: rgba(255, 255, 255, 0.7);
 		border-radius: 12px;
@@ -663,12 +753,19 @@
 		margin-bottom: 1.25rem;
 		border: 1px solid rgba(219, 234, 254, 0.6);
 	}
+
+	:global(.dark) .progress-section {
+		background: rgba(30, 41, 59, 0.7);
+		border-color: rgba(51, 65, 85, 0.6);
+	}
+
 	.progress-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 		margin-bottom: 0.6rem;
 	}
+
 	.progress-label-text {
 		font-size: 0.8rem;
 		font-weight: 700;
@@ -676,10 +773,16 @@
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 	}
+
+	:global(.dark) .progress-label-text {
+		color: #94a3b8;
+	}
+
 	.progress-pct-badge {
 		font-size: 0.875rem;
 		font-weight: 800;
 	}
+
 	.progress-track {
 		width: 100%;
 		height: 10px;
@@ -688,16 +791,23 @@
 		overflow: hidden;
 		margin-bottom: 0.4rem;
 	}
+
+	:global(.dark) .progress-track {
+		background: #334155;
+	}
+
 	.progress-fill {
 		height: 100%;
 		border-radius: 9999px;
 		transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 	}
+
 	.progress-detail {
 		font-size: 0.75rem;
 		color: #94a3b8;
 	}
 
+	/* Statistics */
 	.statistiques {
 		display: flex;
 		align-items: center;
@@ -705,16 +815,27 @@
 		padding-top: 1.25rem;
 		border-top: 1px solid #dbeafe;
 	}
+
+	:global(.dark) .statistiques {
+		border-top-color: #334155;
+	}
+
 	.stat-item {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 	}
+
 	.stat-nombre {
 		font-size: 1.5rem;
 		font-weight: 800;
 		color: #1e40af;
 	}
+
+	:global(.dark) .stat-nombre {
+		color: #60a5fa;
+	}
+
 	.stat-libelle {
 		font-size: 0.75rem;
 		font-weight: 600;
@@ -722,12 +843,18 @@
 		text-transform: uppercase;
 		letter-spacing: 0.03em;
 	}
+
 	.stat-separateur {
 		width: 1px;
 		height: 40px;
 		background: #dbeafe;
 	}
 
+	:global(.dark) .stat-separateur {
+		background: #334155;
+	}
+
+	/* Card titles */
 	.titre-carte {
 		font-size: 1.05rem;
 		font-weight: 700;
@@ -735,57 +862,42 @@
 		text-align: center;
 		margin: 0 0 1rem 0;
 	}
+
+	:global(.dark) .titre-carte {
+		color: #e2e8f0;
+	}
+
 	.separateur {
 		border: none;
 		border-top: 1px solid #e2e8f0;
 		width: 60%;
 		margin: 0 auto 1.25rem auto;
 	}
-	.texte-carte {
-		font-size: 0.9rem;
-		line-height: 1.6;
-		color: #475569;
+
+	:global(.dark) .separateur {
+		border-top-color: #334155;
 	}
+
 	.texte-centre {
 		text-align: center;
 	}
+
 	.texte-muet {
 		color: #94a3b8;
 		font-size: 0.9rem;
 	}
-	.mt-auto {
-		margin-top: auto;
-	}
-	.mb-4 {
-		margin-bottom: 1rem;
-	}
+
 	.p-4 {
 		padding: 1rem;
 	}
 
-	.btn-outline {
-		background: transparent;
-		border: 2px solid #cbd5e1;
-		color: #475569;
-		padding: 0.6rem 1.5rem;
-		border-radius: 10px;
-		font-weight: 700;
-		font-size: 0.85rem;
-		font-family: inherit;
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-	.btn-outline:hover {
-		border-color: #f59e0b;
-		color: #d97706;
-		background: #fffbeb;
-	}
-
+	/* Resources list */
 	.liste-ressources {
 		display: flex;
 		flex-direction: column;
 		gap: 0.75rem;
 	}
+
 	.item-ressource {
 		display: flex;
 		align-items: center;
@@ -795,27 +907,41 @@
 		border-radius: 10px;
 		transition: background 0.2s;
 	}
+
+	:global(.dark) .item-ressource {
+		background: #0f172a;
+	}
+
 	.item-ressource:hover {
 		background: #eff6ff;
 	}
+
+	:global(.dark) .item-ressource:hover {
+		background: #1e293b;
+	}
+
 	.icone-ressource {
 		color: #3b82f6;
 	}
-	.info-ressource {
-		flex: 1;
-	}
+
 	.nom-ressource {
 		font-size: 0.875rem;
 		font-weight: 600;
 		color: #334155;
 		margin: 0 0 0.15rem 0;
 	}
+
+	:global(.dark) .nom-ressource {
+		color: #e2e8f0;
+	}
+
 	.meta-ressource {
 		font-size: 0.75rem;
 		color: #94a3b8;
 		margin: 0;
 	}
 
+	/* Objectives list */
 	.liste-objectifs {
 		margin: 0;
 		padding: 0 0 0 1.25rem;
@@ -823,25 +949,41 @@
 		flex-direction: column;
 		gap: 0.75rem;
 	}
+
 	.liste-objectifs li {
 		font-size: 0.9rem;
 		color: #475569;
 		line-height: 1.5;
 	}
 
+	:global(.dark) .liste-objectifs li {
+		color: #cbd5e1;
+	}
+
+	/* Chapters */
 	.liste-chapitres {
 		display: flex;
 		flex-direction: column;
 		gap: 0.75rem;
 	}
+
 	.bloc-chapitre {
 		border: 1px solid #e2e8f0;
 		border-radius: 12px;
 		overflow: hidden;
 		transition: border-color 0.2s;
 	}
+
+	:global(.dark) .bloc-chapitre {
+		border-color: #334155;
+	}
+
 	.bloc-chapitre:hover {
 		border-color: #93c5fd;
+	}
+
+	:global(.dark) .bloc-chapitre:hover {
+		border-color: #60a5fa;
 	}
 
 	.en-tete-chapitre {
@@ -857,9 +999,19 @@
 		font-family: inherit;
 		transition: background 0.2s;
 	}
+
+	:global(.dark) .en-tete-chapitre {
+		background: #0f172a;
+	}
+
 	.en-tete-chapitre:hover,
 	.en-tete-chapitre.developpe {
 		background: #eff6ff;
+	}
+
+	:global(.dark) .en-tete-chapitre:hover,
+	:global(.dark) .en-tete-chapitre.developpe {
+		background: #1e293b;
 	}
 
 	.numero-chapitre {
@@ -883,18 +1035,24 @@
 		gap: 0.35rem;
 		min-width: 0;
 	}
+
 	.titre-chapitre {
 		font-size: 0.95rem;
 		font-weight: 600;
 		color: #1e293b;
 	}
 
-	/* per-chapter mini progress */
+	:global(.dark) .titre-chapitre {
+		color: #f1f5f9;
+	}
+
+	/* Chapter mini progress */
 	.ch-mini-progress {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
 	}
+
 	.ch-mini-track {
 		flex: 1;
 		height: 4px;
@@ -903,11 +1061,17 @@
 		overflow: hidden;
 		max-width: 120px;
 	}
+
+	:global(.dark) .ch-mini-track {
+		background: #334155;
+	}
+
 	.ch-mini-fill {
 		height: 100%;
 		border-radius: 9999px;
 		transition: width 0.5s ease;
 	}
+
 	.ch-mini-label {
 		font-size: 0.7rem;
 		color: #94a3b8;
@@ -923,26 +1087,41 @@
 		border-radius: 12px;
 		white-space: nowrap;
 	}
+
+	:global(.dark) .nombre-sections {
+		background: #334155;
+		color: #cbd5e1;
+	}
+
 	.fleche {
 		color: #94a3b8;
 		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 		flex-shrink: 0;
 	}
+
 	.fleche.tournee {
 		transform: rotate(90deg);
 		color: #3b82f6;
 	}
 
+	/* Chapter content - sections */
 	.contenu-chapitre {
 		background: #ffffff;
 		border-top: 1px solid #e2e8f0;
 	}
+
+	:global(.dark) .contenu-chapitre {
+		background: #1e293b;
+		border-top-color: #334155;
+	}
+
 	.liste-sections {
 		padding: 0.75rem 1rem 0.75rem 2.5rem;
 		display: flex;
 		flex-direction: column;
 		gap: 0.4rem;
 	}
+
 	.item-section {
 		display: flex;
 		align-items: center;
@@ -951,8 +1130,13 @@
 		border-radius: 8px;
 		transition: background 0.2s;
 	}
+
 	.item-section:hover {
 		background: #f8fafc;
+	}
+
+	:global(.dark) .item-section:hover {
+		background: #0f172a;
 	}
 
 	.status-icon {
@@ -962,12 +1146,18 @@
 		text-align: center;
 		flex-shrink: 0;
 	}
+
 	.titre-section {
 		flex: 1;
 		font-size: 0.875rem;
 		color: #475569;
 		font-weight: 500;
 	}
+
+	:global(.dark) .titre-section {
+		color: #cbd5e1;
+	}
+
 	.statut-section {
 		font-size: 0.7rem;
 		font-weight: 700;
@@ -975,12 +1165,14 @@
 		letter-spacing: 0.02em;
 	}
 
+	/* Action bar */
 	.barre-action {
 		display: flex;
 		justify-content: center;
 		padding-top: 0.5rem;
 	}
 
+	/* Buttons */
 	.btn-primaire {
 		background: linear-gradient(135deg, #3b82f6, #1d4ed8);
 		color: white;
@@ -992,22 +1184,23 @@
 		font-family: inherit;
 		cursor: pointer;
 		box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
-		transition:
-			transform 0.2s,
-			box-shadow 0.2s;
+		transition: transform 0.2s, box-shadow 0.2s;
 		display: inline-flex;
 		align-items: center;
 		gap: 0.5rem;
 	}
+
 	.btn-primaire:hover {
 		transform: translateY(-2px);
 		box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45);
 	}
+
 	.btn-grand {
 		padding: 1rem 2.5rem;
 		font-size: 1.05rem;
 	}
 
+	/* Error box */
 	.boite-erreur {
 		background: #fef2f2;
 		border: 1px solid #fecaca;
@@ -1015,6 +1208,14 @@
 		padding: 2rem;
 		text-align: center;
 	}
+
+	:global(.dark) .boite-erreur {
+		background: #450a0a;
+		border-color: #991b1b;
+		color: #fca5a5;
+	}
+
+	/* Loader animation */
 	.chargeur {
 		width: 44px;
 		height: 44px;
@@ -1023,15 +1224,18 @@
 		border-radius: 50%;
 		animation: tourner 0.8s linear infinite;
 	}
-	@keyframes tourner {
-		0% {
-			transform: rotate(0deg);
-		}
-		100% {
-			transform: rotate(360deg);
-		}
+
+	:global(.dark) .chargeur {
+		border-color: #334155;
+		border-top-color: #3b82f6;
 	}
 
+	@keyframes tourner {
+		0% { transform: rotate(0deg); }
+		100% { transform: rotate(360deg); }
+	}
+
+	/* Responsive */
 	@media (max-width: 640px) {
 		.page-conteneur {
 			padding: 1rem;
