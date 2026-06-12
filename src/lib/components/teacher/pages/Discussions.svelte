@@ -2,13 +2,12 @@
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { onMount, getContext } from 'svelte';
-	import type { Writable } from 'svelte/store';
-	import type { i18n as i18nType } from 'i18next';
 	import { user } from '$lib/stores';
 	import { TUTOR_API_BASE_URL } from '$lib/constants';
-
-	const i18n = getContext<Writable<i18nType>>('i18n');
 	import { browser } from '$app/environment';
+	import { derived } from 'svelte/store';
+	const i18n: any = getContext('i18n');
+	const _ = derived(i18n, ($i18n: any) => (key: string, options?: any) => $i18n.t(key, options));
 
 	// --- 1. Dark Mode Logic ---
 	let isDarkMode = false;
@@ -469,8 +468,7 @@
 					on:keydown={(e) => {
 						if (e.key === 'Enter' && !e.shiftKey) {
 							e.preventDefault();
-							// If teacher page use handleSend(), if student use sendMessage()
-							typeof handleSend === 'function' ? handleSend() : sendMessage();
+							handleSend();
 						}
 					}}
 					class="flex-1 bg-transparent border-none focus:ring-0 text-sm dark:text-slate-200 resize-none h-9 py-2 outline-none min-h-[36px] max-h-[120px]"
@@ -478,10 +476,10 @@
 
 				<!-- Right Aligned Compact Send Button -->
 				<button
-					on:click={typeof handleSend === 'function' ? handleSend : sendMessage}
+					on:click={handleSend}
 					class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white h-9 px-5 rounded-xl text-xs font-bold shadow-md shadow-indigo-500/10 transition-all active:scale-95 shrink-0 flex items-center justify-center gap-1"
 				>
-					<span>{typeof handleSend === 'function' ? $i18n.t('Send') : $i18n.t('Send')}</span>
+					<span>{$i18n.t('Send')}</span>
 				</button>
 			</div>
 		</footer>

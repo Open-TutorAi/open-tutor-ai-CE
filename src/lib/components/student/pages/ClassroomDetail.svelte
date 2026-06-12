@@ -3,8 +3,8 @@
   Replace: src/lib/components/student/pages/ClassroomDetail.svelte
   
   Changes:
-  - Shows real taux de progression (progress bar)
-  - "Commencer l'apprentissage" resumes existing chat if one exists
+  - Shows real progression rate (progress bar)
+  - "Start learning" resumes existing chat if one exists
   - Section statuses reflect real DB state (✓ completed, → in-progress)
 -->
 <script lang="ts">
@@ -87,7 +87,7 @@
 				chapitresDeveloppes = new Set(chapitresDeveloppes);
 			}
 		} catch (e: any) {
-			erreurChargement = e?.message ?? e ?? 'Erreur lors du chargement';
+			erreurChargement = e?.message ?? e ?? 'Error while loading';
 		} finally {
 			estEnChargement = false;
 		}
@@ -128,10 +128,10 @@
 	$: progressColor = progressPct >= 100 ? '#10b981' : progressPct >= 50 ? '#3b82f6' : '#f59e0b';
 	$: progressLabel =
 		progressPct >= 100
-			? $i18n.t('Terminé')
+			? $i18n.t('Completed')
 			: progressPct > 0
-				? `${progressPct}% ${$i18n.t('complété')}`
-				: $i18n.t('Pas encore commencé');
+				? `${progressPct}% ${$i18n.t('completed')}`
+				: $i18n.t('Not started yet');
 
 	// ── Section status helpers ─────────────────────────────────────────────
 	function statusIcon(status: string): string {
@@ -237,14 +237,14 @@
 		<div class="boite-erreur">
 			<p>{erreurChargement}</p>
 			<button class="btn-primaire" on:click={chargerDetailsCours}>
-				{$i18n.t('Réessayer')}
+				{$i18n.t('Try Again')}
 			</button>
 		</div>
 	</div>
 {:else if cours}
 	<div class="page-conteneur" in:fade={{ duration: 300 }}>
 		<button class="btn-retour" on:click={() => goto('/student/classrooms')}>
-			← {$i18n.t('Retour aux cours')}
+			← {$i18n.t('Back to courses')}
 		</button>
 
 		<div class="grille-bento">
@@ -263,7 +263,7 @@
 								{cours.teacher_name?.slice(0, 2).toUpperCase() ?? 'PR'}
 							{/if}
 						</div>
-						<span class="nom-prof">Pr. {cours.teacher_name}</span>
+						<span class="nom-prof">Prof. {cours.teacher_name}</span>
 					</div>
 					<div class="badges">
 						{#if cours.category}
@@ -277,15 +277,13 @@
 
 				<p class="texte-bienvenue">
 					{cours.welcome_message ||
-						$i18n.t(
-							'Bienvenue dans ce cours ! Préparez-vous à apprendre et à explorer de nouveaux concepts.'
-						)}
+						$i18n.t('Welcome to this course! Get ready to learn and explore new concepts.')}
 				</p>
 
 				<!-- ── PROGRESS BAR ── -->
 				<div class="progress-section">
 					<div class="progress-header">
-						<span class="progress-label-text">{$i18n.t('Progression')}</span>
+						<span class="progress-label-text">{$i18n.t('Progress')}</span>
 						<span class="progress-pct-badge" style="color:{progressColor}">
 							{progressLabel}
 						</span>
@@ -298,7 +296,7 @@
 					</div>
 					<div class="progress-detail">
 						{sectionsCompletees} / {nombreTotalSections}
-						{$i18n.t('sections complétées')}
+						{$i18n.t('sections completed')}
 					</div>
 				</div>
 
@@ -306,7 +304,7 @@
 				<div class="statistiques">
 					<div class="stat-item">
 						<span class="stat-nombre">{cours.chapters?.length ?? 0}</span>
-						<span class="stat-libelle">{$i18n.t('Chapitres')}</span>
+						<span class="stat-libelle">{$i18n.t('Chapters')}</span>
 					</div>
 					<div class="stat-separateur"></div>
 					<div class="stat-item">
@@ -316,14 +314,14 @@
 					<div class="stat-separateur"></div>
 					<div class="stat-item">
 						<span class="stat-nombre">{cours.files?.length ?? 0}</span>
-						<span class="stat-libelle">{$i18n.t('Ressources')}</span>
+						<span class="stat-libelle">{$i18n.t('Resources')}</span>
 					</div>
 				</div>
 			</div>
 
 			<!-- 3. RESOURCES CARD -->
 			<div class="carte col-6">
-				<h2 class="titre-carte">{$i18n.t('Ressources du cours')}</h2>
+				<h2 class="titre-carte">{$i18n.t('Course Resources')}</h2>
 				<hr class="separateur" />
 
 				{#if cours.files && cours.files.length > 0}
@@ -354,30 +352,32 @@
 						{/each}
 					</div>
 				{:else}
-					<p class="texte-centre texte-muet">{$i18n.t('Aucune ressource disponible')}</p>
+					<p class="texte-centre texte-muet">{$i18n.t('No resources available')}</p>
 				{/if}
 			</div>
 
 			<!-- 4. OBJECTIVES CARD -->
 			<div class="carte col-6">
-				<h2 class="titre-carte">{$i18n.t("Objectifs d'apprentissage")}</h2>
+				<h2 class="titre-carte">{$i18n.t('Learning Objectives')}</h2>
 				<hr class="separateur" />
 
 				{#if listeObjectifs.length > 0}
-					<p class="texte-carte mb-4">{$i18n.t('À la fin de ce cours, vous serez capable de :')}</p>
+					<p class="texte-carte mb-4">
+						{$i18n.t('By the end of this course, you will be able to:')}
+					</p>
 					<ol class="liste-objectifs">
 						{#each listeObjectifs as objectif}
 							<li>{objectif}</li>
 						{/each}
 					</ol>
 				{:else}
-					<p class="texte-centre texte-muet">{$i18n.t('Aucun objectif défini')}</p>
+					<p class="texte-centre texte-muet">{$i18n.t('No objectives defined')}</p>
 				{/if}
 			</div>
 
 			<!-- 5. CHAPTERS CARD (full width) -->
 			<div class="carte col-12">
-				<h2 class="titre-carte">{$i18n.t('Plan de cours')}</h2>
+				<h2 class="titre-carte">{$i18n.t('Course Plan')}</h2>
 				<hr class="separateur" />
 
 				{#if cours.chapters && cours.chapters.length > 0}
@@ -455,15 +455,15 @@
 																style="color:{statusColor(section.status)};"
 															>
 																{section.status === 'completed'
-																	? $i18n.t('Terminé')
-																	: $i18n.t('En cours')}
+																	? $i18n.t('Completed')
+																	: $i18n.t('In progress')}
 															</span>
 														{/if}
 													</div>
 												{/each}
 											</div>
 										{:else}
-											<p class="texte-muet p-4">{$i18n.t('Aucune section disponible')}</p>
+											<p class="texte-muet p-4">{$i18n.t('No sections available')}</p>
 										{/if}
 									</div>
 								{/if}
@@ -471,7 +471,7 @@
 						{/each}
 					</div>
 				{:else}
-					<p class="texte-centre texte-muet">{$i18n.t('Aucun chapitre disponible')}</p>
+					<p class="texte-centre texte-muet">{$i18n.t('No chapters available')}</p>
 				{/if}
 			</div>
 		</div>
@@ -480,9 +480,9 @@
 		<div class="barre-action">
 			<button class="btn-primaire btn-grand" on:click={demarrerApprentissage}>
 				{#if cours.chat_id && progressPct > 0}
-					{$i18n.t('Reprendre le cours')}
+					{$i18n.t('Resume course')}
 				{:else}
-					{$i18n.t("Commencer l'apprentissage")}
+					{$i18n.t('Start learning')}
 				{/if}
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20">
 					<path

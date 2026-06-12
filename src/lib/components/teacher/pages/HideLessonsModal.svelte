@@ -5,7 +5,9 @@
 	import { toast } from 'svelte-sonner';
 	import Modal from '../../common/Modal.svelte';
 
-	const i18n = getContext<Writable<i18nType>>('i18n');
+	import { derived } from 'svelte/store';
+	const i18n: any = getContext('i18n');
+	const _ = derived(i18n, ($i18n: any) => (key: string, options?: any) => $i18n.t(key, options));
 
 	export let show = false;
 	export let studentId = '';
@@ -32,9 +34,7 @@
 			if (res.ok) {
 				courses = await res.json();
 				// Populate hidden courses
-				hiddenCourseIds = courses
-					.filter((c: any) => c.is_hidden)
-					.map((c: any) => c.course_id);
+				hiddenCourseIds = courses.filter((c: any) => c.is_hidden).map((c: any) => c.course_id);
 			} else {
 				const err = await res.json();
 				toast.error(err.detail || 'Failed to fetch student courses.');
@@ -87,25 +87,41 @@
 	}
 </script>
 
-<Modal bind:show size="md" className="bg-white dark:bg-[#111827] rounded-[28px] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-2xl">
+<Modal
+	bind:show
+	size="md"
+	className="bg-white dark:bg-[#111827] rounded-[28px] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-2xl"
+>
 	<div class="p-6 space-y-6">
 		<!-- Header -->
 		<div class="flex justify-between items-start">
 			<div>
-				<h2 class="text-xl font-extrabold text-slate-800 dark:text-slate-50 flex items-center gap-2">
+				<h2
+					class="text-xl font-extrabold text-slate-800 dark:text-slate-50 flex items-center gap-2"
+				>
 					<span class="text-blue-500 text-2xl">👁️‍🗨️</span>
 					{$i18n.t('Manage Lesson Visibility')}
 				</h2>
 				<p class="text-slate-500 dark:text-slate-400 text-sm mt-1">
-					{$i18n.t('Select which courses should be hidden from')} <span class="font-bold text-blue-600 dark:text-indigo-400">{studentName}</span>.
+					{$i18n.t('Select which courses should be hidden from')}
+					<span class="font-bold text-blue-600 dark:text-indigo-400">{studentName}</span>.
 				</p>
 			</div>
 			<button
 				class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
 				on:click={() => (show = false)}
 			>
-				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-					<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-5 w-5"
+					viewBox="0 0 20 20"
+					fill="currentColor"
+				>
+					<path
+						fill-rule="evenodd"
+						d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+						clip-rule="evenodd"
+					/>
 				</svg>
 			</button>
 		</div>
@@ -113,8 +129,12 @@
 		<!-- Body list -->
 		{#if isLoading}
 			<div class="flex flex-col items-center justify-center py-12 space-y-4">
-				<div class="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
-				<span class="text-xs font-bold text-slate-400 dark:text-slate-500">{$i18n.t('Loading enrolled courses...')}</span>
+				<div
+					class="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"
+				></div>
+				<span class="text-xs font-bold text-slate-400 dark:text-slate-500"
+					>{$i18n.t('Loading enrolled courses...')}</span
+				>
 			</div>
 		{:else if courses.length === 0}
 			<div class="flex flex-col items-center justify-center py-10 text-center space-y-3">
@@ -151,9 +171,7 @@
 						<div class="flex items-center gap-3" on:click|stopPropagation>
 							<span
 								class="text-[10px] font-black uppercase tracking-wider
-								{isHidden
-									? 'text-red-500 dark:text-red-400'
-									: 'text-slate-400 dark:text-slate-500'}"
+								{isHidden ? 'text-red-500 dark:text-red-400' : 'text-slate-400 dark:text-slate-500'}"
 							>
 								{isHidden ? $i18n.t('Hidden') : $i18n.t('Visible')}
 							</span>
@@ -196,7 +214,9 @@
 				disabled={isLoading || isSaving}
 			>
 				{#if isSaving}
-					<div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+					<div
+						class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"
+					></div>
 					{$i18n.t('Saving...')}
 				{:else}
 					{$i18n.t('Save Changes')}

@@ -71,7 +71,7 @@
 			startQuizTakingFlow(takeParam.toUpperCase());
 		}
 
-		// ✅ NOUVEAU: Ouvrir directement le popup de code si demandé depuis Dashboard
+		// ✅ NEW: Open code popup directly if requested from Dashboard
 		const openCodeParam = $page.url.searchParams.get('openCode');
 		if (openCodeParam === '1' && state === 'dashboard') {
 			state = 'code_entry';
@@ -149,7 +149,7 @@
 
 			if (!res.ok) {
 				const err = await res.json().catch(() => ({}));
-				throw new Error(err.detail ?? $i18n.t('Code de quiz invalide ou expiré'));
+				throw new Error(err.detail ?? $i18n.t('Invalid or expired quiz code'));
 			}
 
 			quizData = await res.json();
@@ -202,7 +202,7 @@
 	// Action: Join Quiz
 	async function joinQuiz() {
 		if (quizCode.length !== 6) {
-			joinError = $i18n.t('Le code doit comporter exactement 6 caractères.');
+			joinError = $i18n.t('The code must be exactly 6 characters.');
 			return;
 		}
 		isJoining = true;
@@ -221,7 +221,7 @@
 
 			if (!res.ok) {
 				const err = await res.json().catch(() => ({}));
-				throw new Error(err.detail ?? $i18n.t('Code de quiz invalide ou expiré'));
+				throw new Error(err.detail ?? $i18n.t('Invalid or expired quiz code'));
 			}
 
 			const newAssignment = await res.json();
@@ -239,7 +239,7 @@
 			}
 
 			await fetchAssignments();
-			toast.success($i18n.t('Évaluation rejointe avec succès !'));
+			toast.success($i18n.t('Assessment joined successfully!'));
 
 			// Transition back to dashboard so the card is rendered
 			state = 'dashboard';
@@ -272,7 +272,7 @@
 		return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 	}
 
-	// Select option in QCM/True-False
+	// Select option in MCQ/True-False
 	function selectOption(questionId: string, option: string) {
 		answers[questionId] = option;
 		answers = { ...answers }; // Svelte trigger reactivity
@@ -324,13 +324,13 @@
 
 			if (!res.ok) {
 				const err = await res.json().catch(() => ({}));
-				throw new Error(err.detail ?? $i18n.t('Erreur de soumission'));
+				throw new Error(err.detail ?? $i18n.t('Submission error'));
 			}
 
 			scoreResult = await res.json();
 			state = 'completed';
 		} catch (e: any) {
-			alert(e.message ?? $i18n.t("Une erreur est survenue lors de l'envoi."));
+			alert(e.message ?? $i18n.t('An error occurred while submitting.'));
 		} finally {
 			isSubmitting = false;
 		}
@@ -338,7 +338,7 @@
 
 	// Auto submit when time limit expires
 	async function autoSubmit() {
-		alert($i18n.t('Temps écoulé ! Votre quiz a été soumis automatiquement.'));
+		alert($i18n.t("Time's up! Your quiz has been submitted automatically."));
 		await submitQuiz();
 	}
 
@@ -359,18 +359,18 @@
 			const d = new Date(dateStr);
 			const day = d.getDate();
 			const months = [
-				'Janvier',
-				'Février',
-				'Mars',
-				'Avril',
-				'Mai',
-				'Juin',
-				'Juillet',
-				'Août',
-				'Septembre',
-				'Octobre',
-				'Novembre',
-				'Décembre'
+				'January',
+				'February',
+				'March',
+				'April',
+				'May',
+				'June',
+				'July',
+				'August',
+				'September',
+				'October',
+				'November',
+				'December'
 			];
 			const month = months[d.getMonth()];
 			const year = d.getFullYear();
@@ -529,10 +529,10 @@
 											<div class="flex flex-col">
 												<span
 													class="text-[9px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-black"
-													>Temps passé</span
+													>Time spent</span
 												>
 												<span class="font-semibold text-slate-700 dark:text-slate-200 mt-0.5">
-													Temps passé: {assignment.time_spent || '1'} min
+													Time spent: {assignment.time_spent || '1'} min
 												</span>
 											</div>
 											<div
@@ -540,19 +540,19 @@
 											>
 												<span
 													class="text-[9px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-black"
-													>Date d'accès</span
+													>Access date</span
 												>
 												<span class="font-semibold text-slate-700 dark:text-slate-200 mt-0.5">
-													Fait le: {formatDate(assignment.submitted_at)}
+													Done on: {formatDate(assignment.submitted_at)}
 												</span>
 											</div>
 											<div class="flex flex-col col-span-2">
 												<span
 													class="text-[9px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-black"
-													>Limite</span
+													>Due</span
 												>
 												<span class="font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
-													Dernier délai: {assignment.due || 'Pas de date limite'}
+													Last deadline: {assignment.due || 'No deadline'}
 												</span>
 											</div>
 										</div>
@@ -628,12 +628,10 @@
 							📝
 						</div>
 						<h2 class="text-2xl font-black tracking-tight">
-							{$i18n.t('Rejoindre une Évaluation')}
+							{$i18n.t('Join an Assessment')}
 						</h2>
 						<p class="text-xs text-slate-400 max-w-sm mx-auto">
-							{$i18n.t(
-								'Saisissez le code à 6 caractères partagé par votre enseignant pour débuter le quiz.'
-							)}
+							{$i18n.t('Enter the 6-character code shared by your teacher to start the quiz.')}
 						</p>
 					</div>
 
@@ -679,9 +677,9 @@
 										d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
 									></path>
 								</svg>
-								{$i18n.t('Vérification...')}
+								{$i18n.t('Verifying...')}
 							{:else}
-								{$i18n.t('Commencer')}
+								{$i18n.t('Start')}
 								<span>➡️</span>
 							{/if}
 						</button>
@@ -693,7 +691,7 @@
 								state = 'dashboard';
 							}}
 						>
-							{$i18n.t('Annuler')}
+							{$i18n.t('Cancel')}
 						</button>
 					</div>
 				</div>
@@ -706,7 +704,7 @@
 					>
 						<div class="space-y-1">
 							<span class="text-[9px] font-black uppercase tracking-widest text-indigo-500"
-								>{$i18n.t('Évaluation en cours')}</span
+								>{$i18n.t('Assessment in progress')}</span
 							>
 							<h3 class="text-sm font-black truncate max-w-[280px] sm:max-w-md">
 								{quizData.title}
@@ -729,7 +727,7 @@
 						<div
 							class="flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest"
 						>
-							<span>{$i18n.t('Progression')}</span>
+							<span>{$i18n.t('Progress')}</span>
 							<span>{currentQuestionIndex + 1} / {quizData.questions.length}</span>
 						</div>
 						<div
@@ -787,7 +785,7 @@
 							{:else if q.question_type === 'True/False'}
 								<!-- True or False options -->
 								<div class="grid grid-cols-2 gap-4 pt-2">
-									{#each ['Vrai', 'Faux'] as opt}
+									{#each ['True', 'False'] as opt}
 										<button
 											type="button"
 											class="flex flex-col items-center justify-center p-6 border rounded-2xl transition-all duration-200 hover:scale-[1.01] hover:border-indigo-500/20 {answers[
@@ -797,7 +795,7 @@
 												: 'border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-950/10 font-semibold'}"
 											on:click={() => selectOption(q.id, opt)}
 										>
-											<span class="text-xl mb-1">{opt === 'Vrai' ? '🟢' : '🔴'}</span>
+											<span class="text-xl mb-1">{opt === 'True' ? '🟢' : '🔴'}</span>
 											<span class="text-sm">{$i18n.t(opt)}</span>
 										</button>
 									{/each}
@@ -807,7 +805,7 @@
 								<div class="pt-2">
 									<textarea
 										bind:value={answers[q.id]}
-										placeholder={$i18n.t('Rédigez votre réponse courte ici...')}
+										placeholder={$i18n.t('Write your short answer here...')}
 										rows="4"
 										class="w-full p-4 bg-slate-50 dark:bg-slate-950 border border-slate-250/60 dark:border-slate-800/80 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500/10 text-sm font-semibold"
 									></textarea>
@@ -823,7 +821,7 @@
 								on:click={prevQuestion}
 								disabled={currentQuestionIndex === 0}
 							>
-								⬅️ {$i18n.t('Retour')}
+								⬅️ {$i18n.t('Previous')}
 							</button>
 
 							{#if currentQuestionIndex < quizData.questions.length - 1}
@@ -832,7 +830,7 @@
 									class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-indigo-500/15"
 									on:click={nextQuestion}
 								>
-									{$i18n.t('Suivant')} ➡️
+									{$i18n.t('Next question')} ➡️
 								</button>
 							{:else}
 								<button
@@ -861,10 +859,10 @@
 												d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
 											></path>
 										</svg>
-										{$i18n.t('Soumission...')}
+										{$i18n.t('Submitting...')}
 									{:else}
 										<span>🚀</span>
-										{$i18n.t('Terminer & Soumettre')}
+										{$i18n.t('Finish & Submit')}
 									{/if}
 								</button>
 							{/if}
@@ -889,12 +887,10 @@
 
 					<div class="space-y-2">
 						<h2 class="text-2xl font-black text-slate-855 dark:text-slate-50">
-							{$i18n.t('Quiz Terminé !')}
+							{$i18n.t('Quiz Completed!')}
 						</h2>
 						<p class="text-xs text-slate-400">
-							{$i18n.t(
-								'Félicitations, vos réponses ont été enregistrées et notées instantanément.'
-							)}
+							{$i18n.t('Congratulations, your answers have been recorded and graded instantly.')}
 						</p>
 					</div>
 
@@ -904,7 +900,7 @@
 							class="bg-slate-50 dark:bg-slate-950/80 border border-slate-200/50 dark:border-slate-800 rounded-3xl p-6 space-y-2 shadow-inner"
 						>
 							<span class="text-[10px] font-black uppercase tracking-widest text-slate-400"
-								>{$i18n.t('Votre Score Final')}</span
+								>{$i18n.t('Your Final Score')}</span
 							>
 							<div class="flex items-baseline justify-center gap-1.5 pt-1">
 								<span class="text-5xl font-black text-emerald-600 dark:text-emerald-400"
@@ -914,7 +910,7 @@
 							</div>
 							<div class="text-[11px] font-bold text-slate-400 pt-1">
 								{Math.round((scoreResult.score / scoreResult.total) * 100)} % {$i18n.t(
-									'de bonnes réponses'
+									'correct answers'
 								)}
 							</div>
 						</div>
@@ -925,7 +921,7 @@
 						class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-indigo-500/20 active:scale-95 transition-all"
 						on:click={resetQuiz}
 					>
-						{$i18n.t('Retour aux Évaluations')}
+						{$i18n.t('Back to Assessments')}
 					</button>
 				</div>
 			{/if}
