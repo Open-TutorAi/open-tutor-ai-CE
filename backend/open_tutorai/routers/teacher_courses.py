@@ -2,6 +2,7 @@ import uuid
 import json
 import logging
 import os
+
 from datetime import datetime
 from typing import Optional, List
 from open_tutorai.models.database import Course, CourseEnrollment
@@ -39,7 +40,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 COURSE_PLAN_SYSTEM_PROMPT = """You are an expert instructional designer. Given course details, generate a structured course plan WITH pedagogical objectives.
 Return ONLY a valid JSON object with this exact format, no extra text:
 {
-  "objectives": "By the end of this course, the student will be able to:\n\n1. ...\n2. ...\n3. ...",
+  "objectives": "\n\n1. ...\n2. ...\n3. ...",
   "chapters": [
     {
       "id": "ch1",
