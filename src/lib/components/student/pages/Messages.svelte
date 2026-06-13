@@ -121,7 +121,7 @@
 	}
 
 	async function deleteMessage(msgId: number) {
-		if (!confirm('Voulez-vous vraiment supprimer ce message ?')) return;
+		if (!confirm('Are you sure you want to delete this message?')) return;
 		const token = localStorage.getItem('token') ?? '';
 		try {
 			const res = await fetch(`http://localhost:8080/api/v1/discussions/messages/${msgId}`, {
@@ -237,7 +237,7 @@
 					class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2.5 py-1 rounded-full font-bold flex items-center gap-1"
 				>
 					👥 {activeChannel?.members_count || 1}
-					{activeChannel?.members_count > 1 ? 'Membres' : 'Membre'}
+					{activeChannel?.members_count > 1 ? 'Members' : 'Member'}
 				</span>
 			</div>
 		</header>
@@ -279,7 +279,7 @@
 						>
 							<div class="flex items-center gap-2 flex-wrap flex-row">
 								<span class="font-bold text-xs text-slate-700 dark:text-slate-300"
-									>{isMyMessage ? $i18n.t('Moi') : m.sender_name}</span
+									>{isMyMessage ? $i18n.t('Me') : m.sender_name}</span
 								>
 								<span class="text-[9px] text-slate-400 dark:text-slate-500 font-medium">
 									{new Date(m.timestamp).toLocaleTimeString([], {
@@ -306,7 +306,7 @@
 														activeMenuId = null;
 													}}
 													class="w-full text-left px-4 py-2 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors"
-													>Modifier</button
+													>Edit</button
 												>
 												<button
 													on:click={() => {
@@ -314,7 +314,7 @@
 														activeMenuId = null;
 													}}
 													class="w-full text-left px-4 py-2 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 flex items-center gap-2 transition-colors border-t border-slate-50 dark:border-slate-800/50"
-													>Supprimer</button
+													>Delete</button
 												>
 											</div>
 										{/if}
@@ -334,12 +334,12 @@
 										<button
 											on:click={() => (editingMessageId = null)}
 											class="px-2.5 py-1 text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg font-medium"
-											>Annuler</button
+											>Cancel</button
 										>
 										<button
 											on:click={() => saveEdit(m.id)}
 											class="px-2.5 py-1 text-[11px] bg-indigo-600 text-white rounded-lg font-medium shadow-sm"
-											>Enregistrer</button
+											>Save</button
 										>
 									</div>
 								</div>

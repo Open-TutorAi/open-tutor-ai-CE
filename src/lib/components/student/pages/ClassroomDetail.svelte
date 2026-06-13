@@ -1,6 +1,11 @@
 <!-- 
-  ClassroomDetail.svelte — UPDATED with Dark Mode
-  Shows real progress tracking, section statuses, and resume learning functionality
+  ClassroomDetail.svelte — UPDATED
+  Replace: src/lib/components/student/pages/ClassroomDetail.svelte
+  
+  Changes:
+  - Shows real progression rate (progress bar)
+  - "Start learning" resumes existing chat if one exists
+  - Section statuses reflect real DB state (✓ completed, → in-progress)
 -->
 
 <script lang="ts">
@@ -95,7 +100,7 @@
 				chapitresDeveloppes = new Set(chapitresDeveloppes);
 			}
 		} catch (e: any) {
-			erreurChargement = e?.message ?? e ?? 'Error loading course';
+			erreurChargement = e?.message ?? e ?? 'Error while loading';
 		} finally {
 			estEnChargement = false;
 		}
@@ -257,7 +262,7 @@
 		<div class="boite-erreur">
 			<p>{erreurChargement}</p>
 			<button class="btn-primaire" on:click={chargerDetailsCours}>
-				{$i18n.t('Retry')}
+				{$i18n.t('Try Again')}
 			</button>
 		</div>
 	</div>
@@ -290,7 +295,7 @@
 								{cours.teacher_name?.slice(0, 2).toUpperCase() ?? 'PR'}
 							{/if}
 						</div>
-						<span class="nom-prof">Pr. {cours.teacher_name}</span>
+						<span class="nom-prof">Prof. {cours.teacher_name}</span>
 					</div>
 					<div class="badges">
 						{#if cours.category}
@@ -304,9 +309,7 @@
 
 				<p class="texte-bienvenue">
 					{cours.welcome_message ||
-						$i18n.t(
-							'Welcome to this course! Get ready to learn and explore new concepts.'
-						)}
+						$i18n.t('Welcome to this course! Get ready to learn and explore new concepts.')}
 				</p>
 
 				<!-- Progress Bar -->
@@ -395,6 +398,9 @@
 				<hr class="separateur" />
 
 				{#if listeObjectifs.length > 0}
+					<p class="texte-carte mb-4">
+						{$i18n.t('By the end of this course, you will be able to:')}
+					</p>
 					<ol class="liste-objectifs">
 						{#each listeObjectifs as objectif}
 							<li>{objectif}</li>
@@ -512,9 +518,9 @@
 		<div class="barre-action">
 			<button class="btn-primaire btn-grand" on:click={demarrerApprentissage}>
 				{#if cours.chat_id && progressPct > 0}
-					{$i18n.t('Resume Course')}
+					{$i18n.t('Resume course')}
 				{:else}
-					{$i18n.t('Start Learning')}
+					{$i18n.t('Start learning')}
 				{/if}
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="20" height="20">
 					<path

@@ -19,7 +19,7 @@ from open_tutorai.models.database import (
     CourseFile,
     CourseProgress,
 )
-
+from open_webui.models.users import Users
 log = logging.getLogger(__name__)
 log.setLevel("INFO")
 
@@ -127,8 +127,6 @@ class ProgressSummaryResponse(BaseModel):
 def _get_teacher_name(teacher_id: str) -> str:
     teacher_name = "Professeur"
     try:
-        from open_webui.models.users import Users
-
         teacher = Users.get_user_by_id(teacher_id)
         if teacher:
             teacher_name = getattr(teacher, "name", None) or getattr(
@@ -144,8 +142,6 @@ def _get_teacher_info(teacher_id: str) -> tuple:
     teacher_name = "Professeur"
     teacher_image = None
     try:
-        from open_webui.models.users import Users
-
         teacher = Users.get_user_by_id(teacher_id)
         if teacher:
             teacher_name = getattr(teacher, "name", None) or getattr(

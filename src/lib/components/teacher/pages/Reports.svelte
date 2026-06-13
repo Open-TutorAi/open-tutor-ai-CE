@@ -2,13 +2,11 @@
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { getContext, onMount } from 'svelte';
-	import type { Writable } from 'svelte/store';
-	import type { i18n as i18nType } from 'i18next';
 	import { browser } from '$app/environment';
 	import HideLessonsModal from '$lib/components/teacher/pages/HideLessonsModal.svelte';
-
-	const i18n = getContext<Writable<i18nType>>('i18n');
-
+	import { derived } from 'svelte/store';
+	const i18n: any = getContext('i18n');
+	const _ = derived(i18n, ($i18n: any) => (key: string, options?: any) => $i18n.t(key, options));
 	let channels: any[] = [];
 	let students: any[] = [];
 	let completionRate = '0.0%';
@@ -26,7 +24,7 @@
 
 	let statuses = [
 		{ id: 'completed', name: 'Completed' },
-		{ id: 'in_progress', name: 'In progress' }
+		{ id: 'in progress', name: 'In progress' }
 	];
 
 	let searchQuery = '';
@@ -144,12 +142,9 @@
 	const handleGlobalReport = () => goto('/teacher/reports/global');
 </script>
 
-<!-- نفس الـ <script> ديالك شغال عادي ومريغل بدون أي تغيير ف الـ الـ logic -->
-
 <div
 	class="p-8 space-y-6 bg-[#F8FAFC] dark:bg-[#030712] min-h-screen text-slate-800 dark:text-slate-100 font-sans transition-colors duration-500"
 >
-	<!-- ── 1. HEADER SECTION (MATCHING QUIZ DESIGN) ── -->
 	<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4">
 		<div>
 			<h1 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
@@ -160,9 +155,7 @@
 			</p>
 		</div>
 
-		<!-- 📊 COMPACT STATS CARDS (RIGHT-ALIGNED LIKE IMAGE_DABBBC) -->
 		<div class="flex gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-			<!-- Card 1: Completion Rate -->
 			<div
 				class="bg-[#EFF6FF] dark:bg-blue-950/30 border border-[#BFDBFE] dark:border-blue-900/50 rounded-2xl px-5 py-3 min-w-[120px] text-center shadow-sm"
 			>
@@ -178,7 +171,6 @@
 				</span>
 			</div>
 
-			<!-- Card 2: Enrolled Students -->
 			<div
 				class="bg-[#F0FDF4] dark:bg-emerald-950/30 border border-[#BBF7D0] dark:border-emerald-900/50 rounded-2xl px-5 py-3 min-w-[120px] text-center shadow-sm"
 			>
@@ -199,7 +191,6 @@
 		</div>
 	</div>
 
-	<!-- ── 2. COMPACT FILTER BAR ── -->
 	<div
 		class="flex flex-wrap gap-3 items-center p-3 bg-white dark:bg-[#111827] rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm"
 	>
@@ -249,24 +240,22 @@
 			class="text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 text-xs font-bold flex items-center gap-1 ml-auto px-2 py-1 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-colors"
 		>
 			<span>🔄</span>
-			{$i18n.t('Réinitialiser')}
+			{$i18n.t('Reset')}
 		</button>
 	</div>
 
-	<!-- ── 3. LIST CONTAINER (BOX LOOK LIKE GENERAL INFORMATION) ── -->
 	<div
 		class="bg-white dark:bg-[#111827] border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden"
 	>
-		<!-- Header د الـ قائمة مع الـ البحث -->
 		<div
 			class="p-5 border-b border-slate-100 dark:border-slate-800 flex flex-wrap justify-between items-center gap-4"
 		>
 			<div>
 				<h2 class="text-sm font-bold text-slate-900 dark:text-slate-50">
-					{$i18n.t('Informations des étudiants')}
+					{$i18n.t('Student Information')}
 				</h2>
 				<p class="text-[11px] text-slate-400 mt-0.5">
-					{$i18n.t('Définissez et suivez la progression globale')}
+					{$i18n.t('Define and track global progress')}
 				</p>
 			</div>
 			<div class="relative">
@@ -280,7 +269,17 @@
 			</div>
 		</div>
 
-		<!-- الأسطر د الـ تلامذ نقيين وملمومين -->
+		<div
+			class="hidden md:flex items-center justify-between gap-4 px-4 py-2.5 bg-slate-50/60 dark:bg-[#1f2937]/20 border-b border-slate-100 dark:border-slate-800/50 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500"
+		>
+			<div class="w-full md:w-1/4 min-w-[180px]">{$i18n.t('Student')}</div>
+			<div class="text-left w-28">{$i18n.t('Enrollment Date')}</div>
+			<div class="w-full md:w-1/4 min-w-[140px]">{$i18n.t('Progress')}</div>
+			<div class="w-16 text-center">{$i18n.t('Quiz Note')}</div>
+			<div class="w-24 text-center md:text-left">{$i18n.t('Status')}</div>
+			<div class="w-8"></div>
+		</div>
+
 		<div class="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-[480px] overflow-y-auto">
 			{#if isLoading}
 				<div class="text-center text-slate-400 text-xs py-10">
@@ -295,7 +294,6 @@
 					<div
 						class="flex flex-wrap md:flex-nowrap items-center justify-between gap-4 p-4 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all duration-200 group"
 					>
-						<!-- الاسم والأفاتار -->
 						<div class="flex items-center gap-3 w-full md:w-1/4 min-w-[180px]">
 							<div
 								class="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xs font-black shadow-sm uppercase"
@@ -308,12 +306,10 @@
 							>
 						</div>
 
-						<!-- تاريخ الـتسجيل -->
-						<div class="text-xs text-slate-400 dark:text-slate-500 font-medium">
+						<div class="text-xs text-slate-400 dark:text-slate-500 font-medium w-28 text-left">
 							{s.date || '---'}
 						</div>
 
-						<!-- الـبروغريس بار رقيق ومفيني -->
 						<div class="w-full md:w-1/4 min-w-[140px]">
 							<div class="flex items-center gap-2">
 								<div class="flex-1 h-1 bg-slate-100 dark:bg-[#1e293b] rounded-full overflow-hidden">
@@ -329,20 +325,17 @@
 							</div>
 						</div>
 
-						<!-- الـنقطة -->
-						<div class="text-center">
+						<div class="text-center w-16">
 							<span
 								class="text-xs font-black text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-[#1e293b] px-2 py-0.5 rounded-md border border-slate-100 dark:border-slate-800"
 								>{s.note}</span
 							>
 						</div>
 
-						<!-- الـحالة بـ بادج دائري ناعم -->
-						<div class="text-center md:text-left">
+						<div class="text-center md:text-left w-24">
 							<span
 								class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider inline-block
-                                {s.status.toLowerCase() === 'active' ||
-								s.status.toLowerCase() === 'completed'
+								{s.status.toLowerCase() === 'active' || s.status.toLowerCase() === 'completed'
 									? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
 									: s.status.toLowerCase() === 'struggling' ||
 										  s.status.toLowerCase() === 'in progress'
@@ -353,9 +346,7 @@
 							</span>
 						</div>
 
-						<!-- الـتحكم (الأكشنز) -->
-						<div class="w-full md:w-auto flex justify-end gap-1 text-slate-400 items-center">
-							<!-- الـ 3 نقاط -->
+						<div class="w-full md:w-auto flex justify-end gap-1 text-slate-400 items-center w-8">
 							<div class="relative">
 								<button
 									on:click|stopPropagation={() => toggleMenu(index)}
@@ -370,7 +361,6 @@
 											on:click|stopPropagation={() => handleHideLesson(s)}
 											class="w-full text-left px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors"
 										>
-											<span>👁️‍🗨️</span>
 											{$i18n.t('Hide lesson')}
 										</button>
 									</div>
@@ -382,7 +372,6 @@
 			{/if}
 		</div>
 
-		<!-- الـ Pagination بـ نفس الـ روح -->
 		<div
 			class="p-3 bg-slate-50 dark:bg-[#111827] border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-[11px] font-bold text-slate-400 dark:text-slate-500"
 		>

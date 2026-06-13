@@ -4,7 +4,6 @@
 	import { goto } from '$app/navigation';
 	import { fly, fade } from 'svelte/transition';
 	import { user } from '$lib/stores';
-
 	const i18n: any = getContext('i18n');
 	const _ = derived(i18n, ($i18n: any) => (key: string, options?: any) => $i18n.t(key, options));
 
@@ -55,22 +54,22 @@
 		const then = new Date(normalized).getTime();
 		const diffSec = Math.floor((_now - then) / 1000);
 
-		if (diffSec < 10) return $i18n.t("à l'instant");
-		if (diffSec < 60) return $i18n.t('il y a') + ' ' + diffSec + ' ' + $i18n.t('secondes');
+		if (diffSec < 10) return $i18n.t('just now');
+		if (diffSec < 60) return diffSec + ' ' + $i18n.t('seconds') + ' ' + $i18n.t('ago');
 		if (diffSec < 3600) {
 			const m = Math.floor(diffSec / 60);
-			return $i18n.t('il y a') + ' ' + m + ' ' + (m === 1 ? $i18n.t('minute') : $i18n.t('minutes'));
+			return m + ' ' + (m === 1 ? $i18n.t('minute') : $i18n.t('minutes')) + ' ' + $i18n.t('ago');
 		}
 		if (diffSec < 86400) {
 			const h = Math.floor(diffSec / 3600);
-			return $i18n.t('il y a') + ' ' + h + ' ' + (h === 1 ? $i18n.t('heure') : $i18n.t('heures'));
+			return h + ' ' + (h === 1 ? $i18n.t('hour') : $i18n.t('hours')) + ' ' + $i18n.t('ago');
 		}
 		if (diffSec < 604800) {
 			const d = Math.floor(diffSec / 86400);
-			return $i18n.t('il y a') + ' ' + d + ' ' + (d === 1 ? $i18n.t('jour') : $i18n.t('jours'));
+			return d + ' ' + (d === 1 ? $i18n.t('day') : $i18n.t('days')) + ' ' + $i18n.t('ago');
 		}
 		const w = Math.floor(diffSec / 604800);
-		return $i18n.t('il y a') + ' ' + w + ' ' + (w === 1 ? $i18n.t('semaine') : $i18n.t('semaines'));
+		return w + ' ' + (w === 1 ? $i18n.t('week') : $i18n.t('weeks')) + ' ' + $i18n.t('ago');
 	}
 
 	function levelColor(level: string): string {
@@ -85,10 +84,10 @@
 
 	function levelLabel(level: string): string {
 		const map: Record<string, string> = {
-			'primary-school': $i18n.t('Primaire'),
-			'middle-school': $i18n.t('Collège'),
-			'high-school': $i18n.t('Lycée'),
-			university: $i18n.t('Université')
+			'primary-school': $i18n.t('Primary school'),
+			'middle-school': $i18n.t('Middle school'),
+			'high-school': $i18n.t('High school'),
+			university: $i18n.t('University')
 		};
 		return map[level] ?? level;
 	}
@@ -127,13 +126,13 @@
 			});
 			if (!res.ok && res.status !== 204) {
 				const err = await res.json().catch(() => ({}));
-				throw new Error(err.detail ?? `Erreur ${res.status}`);
+				throw new Error(err.detail ?? `Error ${res.status}`);
 			}
 			courses = courses.filter((c) => c.id !== courseId);
 			deletingCourseId = '';
 			deleteError = '';
 		} catch (e: any) {
-			deleteError = e?.message ?? $i18n.t('Erreur lors de la suppression');
+			deleteError = e?.message ?? $i18n.t('Error while deleting');
 		} finally {
 			isDeleting = false;
 		}
@@ -149,7 +148,7 @@
 			});
 			if (!res.ok && res.status !== 204) {
 				const err = await res.json().catch(() => ({}));
-				throw new Error(err.detail ?? `Erreur ${res.status}`);
+				throw new Error(err.detail ?? `Error ${res.status}`);
 			}
 			teacherQuizzes = teacherQuizzes.filter((q: any) => q.id !== quizId);
 			quizzesCount = teacherQuizzes.filter((q: any) => q.status === 'published').length;
@@ -157,7 +156,7 @@
 			deletingItemType = 'course';
 			deleteError = '';
 		} catch (e: any) {
-			deleteError = e?.message ?? $i18n.t('Erreur lors de la suppression');
+			deleteError = e?.message ?? $i18n.t('Error while deleting');
 		} finally {
 			isDeleting = false;
 		}
@@ -218,7 +217,7 @@
 			});
 			if (!res.ok) {
 				const err = await res.json().catch(() => ({}));
-				throw new Error(err.detail ?? `Erreur ${res.status}`);
+				throw new Error(err.detail ?? `Error ${res.status}`);
 			}
 			const data: Course[] = await res.json();
 			courses = data.sort((a, b) => {
@@ -229,7 +228,7 @@
 
 			await fetchStudentCounts();
 		} catch (e: any) {
-			fetchError = e?.message ?? $i18n.t('Erreur lors du chargement');
+			fetchError = e?.message ?? $i18n.t('Error while loading');
 		} finally {
 			isLoading = false;
 		}
@@ -272,8 +271,8 @@
 				</svg>
 			</div>
 			<div>
-				<h1 class="topbar-heading">{$i18n.t('Tableau de bord')}</h1>
-				<p class="topbar-sub">{$i18n.t('Gérez vos cours et suivez vos étudiants')}</p>
+				<h1 class="topbar-heading">{$i18n.t('Dashboard')}</h1>
+				<p class="topbar-sub">{$i18n.t('Manage your courses and track your students')}</p>
 			</div>
 		</div>
 		<button class="btn-create" on:click={() => goto('/teacher/courses')}>
@@ -285,7 +284,7 @@
 					d="M12 4v16m8-8H4"
 				/>
 			</svg>
-			{$i18n.t('Créer un cours')}
+			{$i18n.t('Create a course')}
 		</button>
 	</div>
 
@@ -300,9 +299,7 @@
 					d="M5 13l4 4L19 7"
 				/>
 			</svg>
-			<span
-				>{$i18n.t('Votre cours a été créé avec succès ! Il apparaît en premier ci-dessous.')}</span
-			>
+			<span>{$i18n.t('Your course has been created successfully! It appears first below.')}</span>
 		</div>
 	{/if}
 
@@ -320,7 +317,7 @@
 				</svg>
 			</div>
 			<div class="stat-body">
-				<span class="stat-label">{$i18n.t('Total des cours')}</span>
+				<span class="stat-label">{$i18n.t('Total courses')}</span>
 				<span class="stat-value">{isLoading ? '—' : totalCourses}</span>
 			</div>
 		</div>
@@ -337,7 +334,7 @@
 				</svg>
 			</div>
 			<div class="stat-body">
-				<span class="stat-label">{$i18n.t('Étudiants inscrits')}</span>
+				<span class="stat-label">{$i18n.t('Enrolled students')}</span>
 				<span class="stat-value">{isLoading ? '—' : totalStudents}</span>
 			</div>
 		</div>
@@ -357,7 +354,7 @@
 				</svg>
 			</div>
 			<div class="stat-body">
-				<span class="stat-label">{$i18n.t('Évaluations active(s)')}</span>
+				<span class="stat-label">{$i18n.t('Active assessments')}</span>
 				<span class="stat-value">{isLoading ? '—' : quizzesCount}</span>
 			</div>
 		</div>
@@ -374,9 +371,9 @@
 					d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
 				/>
 			</svg>
-			{$i18n.t('Cours récents')}
+			{$i18n.t('Recent courses')}
 		</h2>
-		<button class="btn-refresh" on:click={fetchCourses} title={$i18n.t('Actualiser')}>
+		<button class="btn-refresh" on:click={fetchCourses} title={$i18n.t('Refresh')}>
 			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="15" height="15">
 				<path
 					stroke-linecap="round"
@@ -400,7 +397,7 @@
 				/>
 			</svg>
 			{fetchError}
-			<button class="err-retry" on:click={fetchCourses}>{$i18n.t('Réessayer')}</button>
+			<button class="err-retry" on:click={fetchCourses}>{$i18n.t('Try Again')}</button>
 		</div>
 	{/if}
 
@@ -430,8 +427,8 @@
 					/>
 				</svg>
 			</div>
-			<p class="empty-title">{$i18n.t("Aucun cours pour l'instant")}</p>
-			<p class="empty-sub">{$i18n.t('Créez votre premier cours pour commencer')}</p>
+			<p class="empty-title">{$i18n.t('No courses yet')}</p>
+			<p class="empty-sub">{$i18n.t('Create your first course to get started')}</p>
 			<button class="btn-create" on:click={() => goto('/teacher/courses')}>
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="15" height="15">
 					<path
@@ -441,7 +438,7 @@
 						d="M12 4v16m8-8H4"
 					/>
 				</svg>
-				{$i18n.t('Créer un cours')}
+				{$i18n.t('Create a course')}
 			</button>
 		</div>
 
@@ -456,7 +453,7 @@
 					<!-- NEW badge -->
 					{#if course.id === newCourseId}
 						<div class="new-badge" in:fly={{ x: 10, duration: 300 }}>
-							✨ {$i18n.t('Nouveau')}
+							✨ {$i18n.t('New')}
 						</div>
 					{/if}
 
@@ -503,13 +500,13 @@
 					<div class="cc-code-block">
 						<div class="cc-code-inner">
 							<div>
-								<p class="cc-code-label">{$i18n.t('Code de participation')}</p>
+								<p class="cc-code-label">{$i18n.t('Participation code')}</p>
 								<p class="cc-code-value">{shortCode(course.id)}</p>
 							</div>
 							<button
 								class="cc-copy-btn {copiedId === course.id ? 'copied' : ''}"
 								on:click={() => copyCode(course.id)}
-								title={$i18n.t('Copier le code')}
+								title={$i18n.t('Copy code')}
 							>
 								{#if copiedId === course.id}
 									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="15" height="15">
@@ -530,7 +527,7 @@
 										/>
 									</svg>
 								{/if}
-								{copiedId === course.id ? $i18n.t('Copié !') : $i18n.t('Copier')}
+								{copiedId === course.id ? $i18n.t('Copied!') : $i18n.t('Copy')}
 							</button>
 						</div>
 					</div>
@@ -549,8 +546,8 @@
 							<span class="cc-students-count">{course.student_count ?? 0}</span>
 							<span class="cc-students-label">
 								{(course.student_count ?? 0) <= 1
-									? $i18n.t('étudiant inscrit')
-									: $i18n.t('étudiants inscrits')}
+									? $i18n.t('student enrolled')
+									: $i18n.t('students enrolled')}
 							</span>
 						</div>
 					</div>
@@ -561,7 +558,7 @@
 						<button
 							class="cc-delete-btn"
 							on:click={() => openDeleteModal(course.id)}
-							title={$i18n.t('Supprimer le cours')}
+							title={$i18n.t('Delete course')}
 						>
 							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14">
 								<path
@@ -591,7 +588,7 @@
 			</svg>
 			{$_('MY QUIZZES')}
 		</h2>
-		<button class="btn-refresh" on:click={fetchQuizzesCount} title={$i18n.t('Actualiser')}>
+		<button class="btn-refresh" on:click={fetchQuizzesCount} title={$i18n.t('Refresh')}>
 			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="15" height="15">
 				<path
 					stroke-linecap="round"
@@ -629,8 +626,8 @@
 					/>
 				</svg>
 			</div>
-			<p class="empty-title">{$i18n.t("Aucun quiz pour l'instant")}</p>
-			<p class="empty-sub">{$i18n.t("Générez votre premier quiz avec l'IA pour commencer")}</p>
+			<p class="empty-title">{$i18n.t('No quizzes yet')}</p>
+			<p class="empty-sub">{$i18n.t('Generate your first quiz with AI to get started')}</p>
 			<button class="btn-create" on:click={() => goto('/teacher/assignments')}>
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="15" height="15">
 					<path
@@ -640,7 +637,7 @@
 						d="M12 4v16m8-8H4"
 					/>
 				</svg>
-				{$i18n.t('Créer un quiz')}
+				{$i18n.t('Create a quiz')}
 			</button>
 		</div>
 
@@ -668,7 +665,7 @@
 						<span
 							class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400 self-start"
 						>
-							{quiz.status === 'published' ? $i18n.t('Publié') : $i18n.t('Brouillon')}
+							{quiz.status === 'published' ? $i18n.t('Published') : $i18n.t('Draft')}
 						</span>
 					</div>
 
@@ -691,13 +688,13 @@
 						<div class="cc-code-block" style="border-left-color: #7e22ce;">
 							<div class="cc-code-inner">
 								<div>
-									<p class="cc-code-label">{$i18n.t('Code de partage')}</p>
+									<p class="cc-code-label">{$i18n.t('Sharing code')}</p>
 									<p class="cc-code-value" style="color: #7e22ce;">{quiz.quiz_code}</p>
 								</div>
 								<button
 									class="cc-copy-btn {copiedId === quiz.quiz_code ? 'copied' : ''}"
 									on:click={() => copyCode(quiz.quiz_code)}
-									title={$i18n.t('Copier le code')}
+									title={$i18n.t('Copy code')}
 								>
 									{#if copiedId === quiz.quiz_code}
 										<svg
@@ -730,7 +727,7 @@
 											/>
 										</svg>
 									{/if}
-									{copiedId === quiz.quiz_code ? $i18n.t('Copié !') : $i18n.t('Copier')}
+									{copiedId === quiz.quiz_code ? $i18n.t('Copied!') : $i18n.t('Copy')}
 								</button>
 							</div>
 						</div>
@@ -750,8 +747,8 @@
 							<span class="cc-students-count">{quiz.participants_count ?? 0}</span>
 							<span class="cc-students-label">
 								{(quiz.participants_count ?? 0) <= 1
-									? $i18n.t('étudiant a participé')
-									: $i18n.t('étudiants ont participé')}
+									? $i18n.t('student participated')
+									: $i18n.t('students participated')}
 							</span>
 						</div>
 					</div>
@@ -761,7 +758,7 @@
 						<button
 							class="cc-delete-btn"
 							on:click={() => openDeleteModal(quiz.id, 'quiz')}
-							title={$i18n.t('Supprimer le quiz')}
+							title={$i18n.t('Delete quiz')}
 						>
 							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14">
 								<path
@@ -807,13 +804,18 @@
 				</div>
 
 				<h3 class="del-title">
-					{deletingItemType === 'quiz' ? $i18n.t('Supprimer ce quiz ?') : $i18n.t('Supprimer ce cours ?')}
+					{deletingItemType === 'quiz'
+						? $i18n.t('Delete this quiz?')
+						: $i18n.t('Delete this course?')}
 				</h3>
 				<p class="del-sub">
 					{deletingItemType === 'quiz'
-						? $i18n.t('Cette action est irréversible. Le quiz, ses questions et toutes les soumissions seront supprimés définitivement.')
-						: $i18n.t('Cette action est irréversible. Le cours, son plan et tous ses fichiers seront supprimés définitivement.')
-					}
+						? $i18n.t(
+								'This action is irreversible. The quiz, its questions and all submissions will be permanently deleted.'
+							)
+						: $i18n.t(
+								'This action is irreversible. The course, its plan and all its files will be permanently deleted.'
+							)}
 				</p>
 
 				{#if deleteError}
@@ -832,7 +834,7 @@
 
 				<div class="del-actions">
 					<button class="btn-cancel" on:click={closeDeleteModal} disabled={isDeleting}>
-						{$i18n.t('Annuler')}
+						{$i18n.t('Cancel')}
 					</button>
 					<button
 						class="btn-confirm-delete"
@@ -857,7 +859,7 @@
 									stroke-dasharray="80 40"
 								/>
 							</svg>
-							{$i18n.t('Suppression...')}
+							{$i18n.t('Deleting...')}
 						{:else}
 							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="15" height="15">
 								<path
@@ -867,7 +869,7 @@
 									d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
 								/>
 							</svg>
-							{$i18n.t('Supprimer définitivement')}
+							{$i18n.t('Delete permanently')}
 						{/if}
 					</button>
 				</div>
