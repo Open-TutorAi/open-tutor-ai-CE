@@ -53,26 +53,14 @@ class SupportsService:
         return self.repo.get_by_user(user_id, status)
 
     def update(self, support_id: str, data: Dict[str, Any]) -> Support:
-        keywords = data.get("keywords")
-        return self.repo.update(
-            support_id,
-            title=data["title"],
-            short_description=data.get("short_description"),
-            subject=data.get("subject"),
-            custom_subject=data.get("custom_subject"),
-            course_id=data.get("course_id"),
-            learning_objective=data.get("learning_objective"),
-            learning_type=data.get("learning_type"),
-            level=data.get("level"),
-            content_language=data.get("content_language"),
-            estimated_duration=data.get("estimated_duration"),
-            access_type=data.get("access_type"),
-            keywords=",".join(keywords) if keywords else None,
-            start_date=data.get("start_date"),
-            end_date=data.get("end_date"),
-            avatar_id=data.get("avatar_id"),
-            updated_at=datetime.utcnow(),
-        )
+        update_fields: Dict[str, Any] = {}
+        for key, value in data.items():
+            if key == "keywords":
+                update_fields["keywords"] = ",".join(value) if value else None
+            else:
+                update_fields[key] = value
+        update_fields["updated_at"] = datetime.utcnow()
+        return self.repo.update(support_id, **update_fields)
 
     def update_chat_id(self, support_id: str, chat_id: str) -> Support:
         return self.repo.update(

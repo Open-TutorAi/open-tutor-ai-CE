@@ -45,6 +45,25 @@ class SupportCreateRequest(BaseModel):
     chat_id: Optional[str] = None
 
 
+class SupportUpdateRequest(BaseModel):
+    title: Optional[str] = None
+    short_description: Optional[str] = None
+    subject: Optional[str] = None
+    custom_subject: Optional[str] = None
+    course_id: Optional[str] = None
+    learning_objective: Optional[str] = None
+    learning_type: Optional[str] = None
+    level: Optional[str] = None
+    content_language: Optional[str] = None
+    estimated_duration: Optional[str] = None
+    access_type: Optional[str] = None
+    keywords: Optional[List[str]] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    avatar_id: Optional[str] = None
+    chat_id: Optional[str] = None
+
+
 class SupportFileInfo(BaseModel):
     id: str
     filename: str
@@ -231,7 +250,7 @@ async def update_chat_id(
 @router.patch("/{support_id}", response_model=SupportResponse)
 async def update_support(
     support_id: str,
-    data: SupportCreateRequest,
+    data: SupportUpdateRequest,
     current_user: User = Depends(get_current_user),
     svc: SupportsService = Depends(get_supports_service),
 ):
@@ -240,7 +259,7 @@ async def update_support(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Support not found"
         )
-    updated = svc.update(support_id, data.model_dump())
+    updated = svc.update(support_id, data.model_dump(exclude_unset=True))
     return _to_response(updated)
 
 
