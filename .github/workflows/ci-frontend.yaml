@@ -23,8 +23,8 @@ permissions:
 
 jobs:
 
-  build:
-    name: Format, i18n & Build
+  lint:
+    name: Lint & Format
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -41,7 +41,32 @@ jobs:
       - run: npm ci
 
       - name: Check formatting
-        run: npm run format -- --check
+        run: npm run format:check
+
+      - name: ESLint
+        run: npm run lint:check
+
+      - name: Type check
+        run: npm run lint:types
+        continue-on-error: true  # TODO: fix 5026 type errors, then remove this
+
+  build:
+    name: i18n & Build
+    needs: lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ui
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - run: npm ci
 
       - name: Check i18n keys
         run: npm run i18n:parse
@@ -56,6 +81,7 @@ jobs:
 
   test:
     name: Vitest unit tests
+    needs: lint
     runs-on: ubuntu-latest
     defaults:
       run:

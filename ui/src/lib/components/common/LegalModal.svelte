@@ -37,30 +37,45 @@
 </script>
 
 {#if open}
-	<div 
+	<div
 		class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 overflow-y-auto"
 		on:click={handleClickOutside}
 	>
-		<div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg {width} w-full max-h-[90vh] overflow-y-auto">
-			<div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+		<div
+			class="bg-white dark:bg-gray-800 rounded-lg shadow-lg {width} w-full max-h-[90vh] overflow-y-auto"
+		>
+			<div
+				class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700"
+			>
 				<h3 class="text-xl font-semibold text-gray-900 dark:text-white">{title}</h3>
 				{#if showClose}
-				<button 
-					class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-					on:click={handleClose}
-					aria-label="Close"
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-					</svg>
-				</button>
+					<button
+						class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+						on:click={handleClose}
+						aria-label="Close"
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="h-6 w-6"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M6 18L18 6M6 6l12 12"
+							/>
+						</svg>
+					</button>
 				{/if}
 			</div>
 			<div class="p-4 overflow-y-auto" style="max-height: 70vh;">
 				<slot></slot>
 			</div>
 			<div class="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
-				<button 
+				<button
 					class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
 					on:click={handleClose}
 				>

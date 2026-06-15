@@ -35,6 +35,7 @@ class AccountService:
         password_plain: str,
         profile_image_url: Optional[str] = None,
         is_admin: bool = False,
+        role: str = "user",
     ) -> User:
         """Create a new user; first user is automatically admin."""
         if self.repo.get_by_email(email):
@@ -47,6 +48,7 @@ class AccountService:
             profile_image_url=profile_image_url,
             is_active=True,
             is_admin=is_admin,
+            role="admin" if is_admin else role,
         )
 
     def authenticate(self, email: str, password_plain: str) -> Optional[User]:

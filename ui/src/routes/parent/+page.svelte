@@ -45,7 +45,9 @@
 		class="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 p-6"
 	>
 		<div class="w-full max-w-4xl bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-			<h1 class="text-3xl font-bold text-center mb-4 text-red-600">{$i18n.t('Error Loading Parent Page')}</h1>
+			<h1 class="text-3xl font-bold text-center mb-4 text-red-600">
+				{$i18n.t('Error Loading Parent Page')}
+			</h1>
 			<p class="text-gray-700 dark:text-gray-300 text-center mb-6">{error}</p>
 			<div class="flex justify-center">
 				<button
@@ -62,7 +64,9 @@
 		class="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 p-6"
 	>
 		<div class="w-full max-w-4xl bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-			<h1 class="text-3xl font-bold text-center mb-8 text-gray-800 dark:text-white">{$i18n.t('Parent Page')}</h1>
+			<h1 class="text-3xl font-bold text-center mb-8 text-gray-800 dark:text-white">
+				{$i18n.t('Parent Page')}
+			</h1>
 
 			<div class="space-y-6">
 				<div class="bg-green-50 dark:bg-green-900/20 p-6 rounded-lg">
@@ -70,11 +74,15 @@
 						{$i18n.t('Welcome to Parent Dashboard')}
 					</h2>
 					<p class="text-gray-700 dark:text-gray-300">
-						{$i18n.t('This is your personalized parent dashboard. Here you can follow your childs learning journey, check their progress.')}
+						{$i18n.t(
+							'This is your personalized parent dashboard. Here you can follow your childs learning journey, check their progress.'
+						)}
 					</p>
 					{#if $user}
 						<div class="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-							<h3 class="font-medium text-green-700 dark:text-green-300">{$i18n.t('Your Account Info:')}</h3>
+							<h3 class="font-medium text-green-700 dark:text-green-300">
+								{$i18n.t('Your Account Info:')}
+							</h3>
 							<p class="text-gray-700 dark:text-gray-300">{$i18n.t('Full Name')}: {$user.name}</p>
 							<p class="text-gray-700 dark:text-gray-300">{$i18n.t('Email')}: {$user.email}</p>
 							<p class="text-gray-700 dark:text-gray-300">{$i18n.t('Role')}: {$user.role}</p>

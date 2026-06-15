@@ -8,7 +8,13 @@
 	import PrivacyPolicyModal from '$lib/components/legal/PrivacyPolicyModal.svelte';
 
 	import { getBackendConfig } from '$lib/apis';
-	import { ldapUserSignIn, getSessionUser, userSignIn, userSignUp, getUserCount } from '$lib/apis/auths';
+	import {
+		ldapUserSignIn,
+		getSessionUser,
+		userSignIn,
+		userSignUp,
+		getUserCount
+	} from '$lib/apis/auths';
 
 	import { TUTOR_FRONT_URL, TUTOR_BASE_URL } from '$lib/constants';
 	import { TUTOR_NAME, config, user, socket } from '$lib/stores';
@@ -69,11 +75,11 @@
 					// window.location.href = `/${sessionUser.role}`;
 					if (sessionUser.role == 'admin') {
 						window.location.href = '/admin/users';
-					}else if (sessionUser.role == 'user') {
+					} else if (sessionUser.role == 'user') {
 						window.location.href = '/student/dashboard';
-					}else if (sessionUser.role == 'teacher') {
+					} else if (sessionUser.role == 'teacher') {
 						window.location.href = '/teacher';
-					}else if (sessionUser.role == 'parent') {
+					} else if (sessionUser.role == 'parent') {
 						window.location.href = '/parent';
 					}
 				} else {
@@ -392,7 +398,11 @@
 											{#if isFirstUser}
 												<div class="mb-4 p-3 bg-blue-50 text-blue-800 rounded-md">
 													<p class="font-medium">{$i18n.t('First User Setup')}</p>
-													<p class="text-sm">{$i18n.t('You are the first user to register, so your account will be created with administrator privileges.')}</p>
+													<p class="text-sm">
+														{$i18n.t(
+															'You are the first user to register, so your account will be created with administrator privileges.'
+														)}
+													</p>
 												</div>
 											{/if}
 											<span
@@ -405,10 +415,10 @@
 															? 'bg-purple-100 text-purple-800'
 															: 'bg-purple-100 text-purple-800'}"
 											>
-												{role === 'user' 
-													? '👨‍🎓' 
-													: role === 'teacher' 
-														? '👨‍🏫' 
+												{role === 'user'
+													? '👨‍🎓'
+													: role === 'teacher'
+														? '👨‍🏫'
 														: role === 'admin'
 															? '👨‍💼'
 															: '👨‍👧'}

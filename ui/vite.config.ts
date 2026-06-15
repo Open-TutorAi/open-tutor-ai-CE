@@ -42,7 +42,12 @@ export default defineConfig({
 	},
 	server: {
 		fs: {
-			allow: ['./static/avatar', './static/classroom', './static/draco', './static/images/background.jpeg']
+			allow: [
+				'./static/avatar',
+				'./static/classroom',
+				'./static/draco',
+				'./static/images/background.jpeg'
+			]
 		},
 		host: true,
 		port: 5173,
@@ -65,12 +70,12 @@ export default defineConfig({
 					proxy.on('proxyRes', (proxyRes, req, _res) => {
 						console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
 					});
-				},
+				}
 			},
 			'/ws': {
 				target: 'ws://open-tutor-backend:8080',
 				ws: true,
-				changeOrigin: true,
+				changeOrigin: true
 			}
 		}
 	},

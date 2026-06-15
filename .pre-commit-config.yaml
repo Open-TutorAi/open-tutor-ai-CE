@@ -1,4 +1,11 @@
 repos:
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.4.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: [feat, fix, refactor, chore, docs, test, ci, build, perf, style, revert]
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
     hooks:
@@ -12,11 +19,25 @@ repos:
       - id: black
         args: [--exclude, ".venv/|/venv/|ui/"]
 
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.1.0
+  - repo: local
     hooks:
       - id: prettier
-        files: ^ui/.*\.(js|ts|svelte|css|json|md)$
-        additional_dependencies:
-          - prettier@3.3.3
-          - prettier-plugin-svelte@3.2.6
+        name: prettier
+        language: system
+        entry: bash -c 'cd ui && npm run format:check'
+        pass_filenames: false
+        files: ^ui/.*\.(js|ts|svelte|css|json|md|html)$
+
+      - id: eslint
+        name: eslint
+        language: system
+        entry: bash -c 'cd ui && npm run lint:frontend'
+        pass_filenames: false
+        files: ^ui/src/.*\.(js|ts|svelte)$
+
+      - id: i18n-parse
+        name: i18n keys
+        language: system
+        entry: bash -c 'cd ui && npm run i18n:parse'
+        pass_filenames: false
+        files: ^ui/src/.*\.(js|ts|svelte)$

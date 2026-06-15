@@ -35,7 +35,8 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-ci.txt
 
-      - run: pip install black==24.8.0
+      - name: Install CI dependencies
+        run: pip install -r requirements-ci.txt
 
       - name: Check formatting
         run: black . --check --exclude ".venv/|/venv/|ui/"

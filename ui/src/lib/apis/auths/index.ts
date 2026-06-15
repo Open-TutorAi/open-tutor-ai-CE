@@ -1,4 +1,4 @@
-import { TUTOR_API_BASE_URL, TUTOR_BASE_URL} from '$lib/constants';
+import { TUTOR_API_BASE_URL, TUTOR_BASE_URL } from '$lib/constants';
 
 export const getAdminDetails = async (token: string) => {
 	let error = null;
@@ -112,7 +112,7 @@ export const getSessionUser = async (token: string) => {
 
 export const getUserCount = async () => {
 	let error = null;
-	console.log("checking user count");
+	console.log('checking user count');
 
 	const res = await fetch(`${TUTOR_BASE_URL}/auths/user-count`, {
 		method: 'GET',
