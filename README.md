@@ -24,7 +24,6 @@
 
 > **Looking for a Support?** – **[Speak with our support Team Today!](mailto:opentutorai@gmail.com)**
 
->
 > Get **enhanced capabilities**, including **custom theming and branding**, **Service Level Agreement (SLA) support**, **Long-Term Support (LTS) versions**, and **more!**
 
 For more information, be sure to check out our [Open TutorAI Documentation](https://opentutorai.com/docs/intro).
@@ -81,6 +80,205 @@ Want to learn more about Open TutorAI's features? Check out our [Open TutorAI do
 ## 🔗 Also Check Out Open TutorAI Community!
 
 Don't forget to explore our sibling project, [Open TutorAI Community](https://discord.gg/BTQtE2deEm), where you can discover, download, and explore customized Modelfiles. Open TutorAI Community offers a wide range of exciting possibilities for enhancing your chat interactions with Open TutorAI! 🚀
+
+## 🔄 Backend Request Flow
+
+### Current Architecture (v1.0+)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Client as Client (Frontend)
+    participant Router as Gateway Router<br/>(gateway/http/routers/)
+    participant Deps as Dependencies<br/>(gateway/http/dependencies.py)
+    participant Service as Domain Service<br/>(e.g., ai/llm/service.py)
+    participant Repo as Repository<br/>(data/repositories/)
+    participant DB as Databases<br/>(PostgreSQL/SQLite + ChromaDB)
+    participant AI_Adapter as AI Provider Adapter<br/>(ai/providers/adapters/)
+    participant Ext_AI as External AI<br/>(Ollama / OpenAI / Groq)
+
+    Note over Client, Ext_AI: Complete Backend Request Flow (Clean Architecture v1.0+)
+
+    rect rgb(255, 243, 224)
+    Note right of Client: PHASE 1: GATEWAY (Ingress & Security)
+    Client->>Router: HTTP Request (e.g., POST /api/v1/chat/completions)
+    activate Router
+    Router->>Deps: Depends(require_user), Depends(get_db)
+    activate Deps
+    Deps-->>Router: Authenticated User + DB Session
+    deactivate Deps
+    end
+
+    rect rgb(243, 229, 245)
+    Note right of Client: PHASE 2: CORE BUSINESS LOGIC (Orchestration)
+    Router->>Service: service.process_request(user, data)
+    activate Service
+    Note right of Service: Validates input, checks permissions,<br/>and orchestrates the workflow.
+
+    %% Optional: Fetching context/history (RAG or Chat History)
+    Service->>Repo: repo.get_context(session_id, query)
+    activate Repo
+    Repo->>DB: SELECT history OR Vector Search (ChromaDB)
+    activate DB
+    DB-->>Repo: Context Chunks / History
+    deactivate DB
+    Repo-->>Service: Context Data
+    deactivate Repo
+    end
+
+    rect rgb(230, 240, 255)
+    Note right of Client: PHASE 3: AI ORCHESTRATION (The Brain)
+    Service->>AI_Adapter: adapter.generate(prompt, context, model_config)
+    activate AI_Adapter
+    Note right of AI_Adapter: Translates internal request to<br/>provider-specific API format.
+
+    alt Local Model (Ollama)
+        AI_Adapter->>Ext_AI: POST http://localhost:11434/api/generate
+    else External Model (OpenAI / Groq / Mistral)
+        AI_Adapter->>Ext_AI: POST https://api.openai.com/v1/chat/completions<br/>(using API Key from .env)
+    end
+    activate Ext_AI
+    Ext_AI-->>AI_Adapter: Streamed or Full AI Response
+    deactivate Ext_AI
+    AI_Adapter-->>Service: Standardized Parsed Response
+    deactivate AI_Adapter
+    end
+
+    rect rgb(232, 245, 233)
+    Note right of Client: PHASE 4: DATA PERSISTENCE (Storage)
+    Service->>Repo: repo.save_interaction(session_id, user_msg, ai_msg)
+    activate Repo
+    Repo->>DB: INSERT INTO messages (role, content, session_id)
+    activate DB
+    DB-->>Repo: Success Confirmation
+    deactivate DB
+    Repo-->>Service: Saved Message Objects
+    deactivate Repo
+
+    Service-->>Router: Processed Result (Pydantic Model / Dict)
+    deactivate Service
+    end
+
+    rect rgb(255, 243, 224)
+    Note right of Client: PHASE 5: EGRESS (Response)
+    Router-->>Client: HTTP 200 OK { JSON Response }
+    deactivate Router
+    end
+```
+
+### Target Architecture — Agentic Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Client as Client (Frontend)
+    participant GW as Gateway Layer<br/>(gateway/http/routers/ & gateway/realtime/)
+    participant Deps as Dependencies<br/>(gateway/http/dependencies.py)
+    participant Service as Domain Service<br/>(ai/agents/service.py)
+    participant Tool as AI Tool<br/>(ai/tools/)
+    participant Repo as Repository<br/>(data/repositories/)
+    participant DB as Databases<br/>(PostgreSQL + ChromaDB)
+    participant AI_Adapter as AI Provider Adapter<br/>(ai/providers/adapters/)
+    participant Ext_AI as External AI<br/>(Ollama / OpenAI / Groq)
+
+    Note over Client, Ext_AI: Complete Backend Flow
+
+    rect rgb(255, 243, 224)
+    Note right of Client: PHASE 1: GATEWAY LAYER (The Door)
+
+    alt 🌐 Standard HTTP Request (REST)
+        Client->>GW: HTTP Request (e.g., POST /api/v1/agents/run)
+        GW->>Deps: Depends(require_user), Depends(get_db)
+        Deps-->>GW: Authenticated User + DB Session
+    else 🔌 Realtime WebSocket (Socket.IO)
+        Client->>GW: WS Connect (/realtime/socket.io) + Emit Event
+        GW->>Deps: Verify JWT from handshake payload
+        Deps-->>GW: Authenticated User + DB Session
+    end
+    end
+
+    rect rgb(243, 229, 245)
+    Note right of Client: PHASE 2: CORE BUSINESS LOGIC (ai/agents/)
+    GW->>Service: service.run_task(user, goal)
+    activate Service
+    Note right of Service: Validates goal, initializes Agent loop.<br/>Logic lives in: ai/agents/service.py
+
+    Service->>Repo: repo.get_agent_memory(session_id)
+    activate Repo
+    Repo->>DB: SELECT past thoughts/actions
+    activate DB
+    DB-->>Repo: Memory Context
+    deactivate DB
+    Repo-->>Service: Past Steps
+    deactivate Repo
+    end
+
+    rect rgb(230, 240, 255)
+    Note right of Client: PHASE 3: AI ORCHESTRATION (ai/providers/ & ai/tools/)
+    loop Max Iterations (e.g., 5 steps)
+        Service->>AI_Adapter: adapter.generate(prompt, memory, tools)
+        activate AI_Adapter
+        Note right of AI_Adapter: Translates request to provider format.<br/>Logic lives in: ai/providers/adapters/
+
+        alt Local Model (Ollama)
+            AI_Adapter->>Ext_AI: POST http://localhost:11434/api/generate
+        else External Model (OpenAI / Groq)
+            AI_Adapter->>Ext_AI: POST https://api.openai.com/v1/chat/completions
+        end
+        activate Ext_AI
+        Ext_AI-->>AI_Adapter: AI Decision (Tool Call OR Final Answer)
+        deactivate Ext_AI
+        AI_Adapter-->>Service: Parsed Decision
+        deactivate AI_Adapter
+
+        alt Decision is "Tool Call"
+            Service->>Tool: tool.execute(action_input)
+            activate Tool
+            Note right of Tool: Executes action (e.g., web search).<br/>Logic lives in: ai/tools/
+            Tool->>DB: Fetch external data / RAG
+            activate DB
+            DB-->>Tool: Raw Observation Data
+            deactivate DB
+            Tool-->>Service: Observation Result
+            deactivate Tool
+
+            Service->>Repo: repo.save_agent_step(thought, action, observation)
+            activate Repo
+            Repo->>DB: INSERT INTO agent_memory
+            deactivate Repo
+        else Decision is "Final Answer"
+            Note right of Service: Loop breaks, proceed to Phase 4.
+        end
+    end
+    end
+
+    rect rgb(232, 245, 233)
+    Note right of Client: PHASE 4: DATA PERSISTENCE (data/repositories/)
+    Service->>Repo: repo.save_interaction(session_id, goal, final_answer)
+    activate Repo
+    Repo->>DB: INSERT INTO messages / tasks
+    activate DB
+    DB-->>Repo: Success Confirmation
+    deactivate DB
+    Repo-->>Service: Saved Objects
+    deactivate Repo
+
+    Service-->>GW: Processed Result (Pydantic Model / Dict)
+    deactivate Service
+    end
+
+    rect rgb(255, 243, 224)
+    Note right of Client: PHASE 5: EGRESS (Response)
+
+    alt 🌐 HTTP Response
+        GW-->>Client: HTTP 200 OK { JSON Response }
+    else 🔌 Realtime WebSocket Response
+        GW-->>Client: Emit Event (e.g., 'agent_task_completed', result)
+    end
+    end
+```
+
+---
 
 ## 🗂️ Project Structure
 
@@ -165,6 +363,7 @@ Use this path when you want hot-reload for active development or contribution.
 
 2. **Python Application Setup**
    - Create and activate a Python environment (conda or venv):
+
      ```bash
      # conda
      conda create -n tutorai-env python=3.11
@@ -173,6 +372,7 @@ Use this path when you want hot-reload for active development or contribution.
      # or plain venv
      python3 -m venv .venv && source .venv/bin/activate
      ```
+
    - Install the required packages:
      ```bash
      pip install -r requirements.txt
@@ -193,7 +393,7 @@ Use this path when you want hot-reload for active development or contribution.
      ```
    - Interactive API docs: **http://localhost:8080/docs**
 
-3. **Frontend Setup** *(in a second terminal)*
+3. **Frontend Setup** _(in a second terminal)_
    - Navigate to the `ui/` folder:
      ```bash
      cd ui
@@ -201,7 +401,7 @@ Use this path when you want hot-reload for active development or contribution.
      npm run dev        # dev server with hot-reload at http://localhost:5173
      ```
 
-4. **Ollama *(optional — for local models)***
+4. **Ollama _(optional — for local models)_**
    - Install from [ollama.com](https://ollama.com), then:
      ```bash
      ollama pull llama3.2
@@ -212,7 +412,7 @@ Use this path when you want hot-reload for active development or contribution.
    - Open **http://localhost:5173** and create an account.
    - The **first account registered becomes the administrator**.
 
-6. **Run tests** *(no external services required)*
+6. **Run tests** _(no external services required)_
    ```bash
    pytest -q
    ```
@@ -224,22 +424,26 @@ Use this path when you want hot-reload for active development or contribution.
 For a hassle-free setup without installing Python or Node.js, use Docker. A single container serves both the Python API and the built frontend.
 
 #### Prerequisites
+
 1. **Docker + Docker Compose** from [docker.com](https://www.docker.com/get-started)
 2. **Git** for cloning
 3. **At least 8 GB RAM** recommended for AI models
 
 #### Step 1: Clone the Repository
+
 ```bash
 git clone https://github.com/Open-TutorAi/open-tutor-ai-CE.git
 cd open-tutor-ai-CE
 ```
 
 #### Step 2: Set Up Environment Variables
+
 ```bash
 cp .env.example .env
 ```
 
 For **production**, replace the placeholder `SECRET_KEY` in your `.env` with a randomly generated value:
+
 ```bash
 # macOS / Linux — replaces the existing SECRET_KEY line in-place
 sed -i.bak "s/^SECRET_KEY=.*/SECRET_KEY=$(openssl rand -hex 32)/" .env && rm .env.bak
@@ -250,15 +454,18 @@ For **local development**, the defaults in `.env.example` work as-is (`DEBUG=tru
 #### Step 3: Start the Stack
 
 **With Ollama bundled (recommended for local models):**
+
 ```bash
 docker compose --env-file .env -f devops/docker/docker-compose.yaml up --build
 ```
 
 This starts:
+
 - `open-tutorai` — Python API + frontend at **http://localhost:8080**
 - `ollama` — local model server at **http://localhost:11434**
 
 **Without Ollama (use an external OpenAI-compatible API):**
+
 ```bash
 docker compose --env-file .env -f devops/docker/docker-compose.yaml up --build open-tutorai
 ```
@@ -266,6 +473,7 @@ docker compose --env-file .env -f devops/docker/docker-compose.yaml up --build o
 Set `OPENAI_API_BASE_URL` and `OPENAI_API_KEY` in `.env`.
 
 Then in another terminal, you can also start Ollama separately:
+
 ```bash
 chmod +x devops/scripts/run-ollama-docker.sh
 ./devops/scripts/run-ollama-docker.sh
@@ -278,11 +486,13 @@ docker exec -it ollama ollama pull llama3.2
 ```
 
 Verify the model is installed:
+
 ```bash
 docker exec -it ollama ollama list
 ```
 
 If the Python API was already running before the model was pulled, restart it:
+
 ```bash
 docker compose --env-file .env -f devops/docker/docker-compose.yaml restart open-tutorai
 ```
@@ -314,24 +524,24 @@ docker compose --env-file .env -f devops/docker/docker-compose.yaml -f devops/do
 
 ### ⚙️ Environment Variables Reference
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `DEBUG` | `true` | Set to `false` in production. Enables SECRET_KEY strength check. |
-| `SECRET_KEY` | *(dev placeholder)* | JWT signing key. Required in production (`openssl rand -hex 32`). |
-| `DATABASE_URL` | `sqlite:///./var/tutorai.db` | SQLAlchemy URL. SQLite for dev, PostgreSQL for production. |
-| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server. Use `http://ollama:11434` inside Docker Compose. |
-| `OPENAI_API_BASE_URL` | *(empty)* | OpenAI-compatible API (LMStudio, GroqCloud, Mistral…). |
-| `OPENAI_API_KEY` | *(empty)* | API key for the OpenAI-compatible provider. |
-| `GEMINI_API_KEY` | *(empty)* | Google Gemini API key. |
-| `CORS_ALLOW_ORIGIN` | `http://localhost:3000,http://localhost:5173` | Comma-separated allowed CORS origins. |
-| `UPLOAD_DIR` | `./var/uploads` | Directory for uploaded files. |
-| `MAX_UPLOAD_SIZE_MB` | `100` | Maximum upload size in MB. |
-| `VECTOR_DB_PATH` | `./var/vector_db` | ChromaDB storage path for RAG. |
-| `EMBEDDING_MODEL` | `sentence-transformers/all-MiniLM-L6-v2` | Default embedding model for RAG. |
-| `AUDIO_TTS_ENGINE` | *(empty)* | TTS engine (e.g. `openai`). Configure via Admin > Settings > Audio. |
-| `AUDIO_STT_ENGINE` | *(empty)* | STT engine. Configure via Admin > Settings > Audio. |
-| `IMAGES_ENGINE` | *(empty)* | Image generation engine (e.g. `openai`). Configure via Admin > Settings > Images. |
-| `GLOBAL_LOG_LEVEL` | `INFO` | Log level: `DEBUG`, `INFO`, `WARNING`, `ERROR`. |
+| Variable              | Default                                       | Description                                                                       |
+| --------------------- | --------------------------------------------- | --------------------------------------------------------------------------------- |
+| `DEBUG`               | `true`                                        | Set to `false` in production. Enables SECRET_KEY strength check.                  |
+| `SECRET_KEY`          | _(dev placeholder)_                           | JWT signing key. Required in production (`openssl rand -hex 32`).                 |
+| `DATABASE_URL`        | `sqlite:///./var/tutorai.db`                  | SQLAlchemy URL. SQLite for dev, PostgreSQL for production.                        |
+| `OLLAMA_BASE_URL`     | `http://localhost:11434`                      | Ollama server. Use `http://ollama:11434` inside Docker Compose.                   |
+| `OPENAI_API_BASE_URL` | _(empty)_                                     | OpenAI-compatible API (LMStudio, GroqCloud, Mistral…).                            |
+| `OPENAI_API_KEY`      | _(empty)_                                     | API key for the OpenAI-compatible provider.                                       |
+| `GEMINI_API_KEY`      | _(empty)_                                     | Google Gemini API key.                                                            |
+| `CORS_ALLOW_ORIGIN`   | `http://localhost:3000,http://localhost:5173` | Comma-separated allowed CORS origins.                                             |
+| `UPLOAD_DIR`          | `./var/uploads`                               | Directory for uploaded files.                                                     |
+| `MAX_UPLOAD_SIZE_MB`  | `100`                                         | Maximum upload size in MB.                                                        |
+| `VECTOR_DB_PATH`      | `./var/vector_db`                             | ChromaDB storage path for RAG.                                                    |
+| `EMBEDDING_MODEL`     | `sentence-transformers/all-MiniLM-L6-v2`      | Default embedding model for RAG.                                                  |
+| `AUDIO_TTS_ENGINE`    | _(empty)_                                     | TTS engine (e.g. `openai`). Configure via Admin > Settings > Audio.               |
+| `AUDIO_STT_ENGINE`    | _(empty)_                                     | STT engine. Configure via Admin > Settings > Audio.                               |
+| `IMAGES_ENGINE`       | _(empty)_                                     | Image generation engine (e.g. `openai`). Configure via Admin > Settings > Images. |
+| `GLOBAL_LOG_LEVEL`    | `INFO`                                        | Log level: `DEBUG`, `INFO`, `WARNING`, `ERROR`.                                   |
 
 ---
 
@@ -353,7 +563,6 @@ If you have any questions, suggestions, or need assistance, please open an issue
 [Open TutorAI Discord community](https://discord.gg/BTQtE2deEm) to connect with us! 🤝
 
 ## Star History
-
 
 <a href="https://www.star-history.com/#Open-TutorAi/open-tutor-ai-CE&Date">
  <picture>
