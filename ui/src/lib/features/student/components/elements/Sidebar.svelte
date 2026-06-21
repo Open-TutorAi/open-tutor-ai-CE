@@ -42,29 +42,22 @@
 	let isMobile = false;
 
 	onMount(() => {
-		// Check if we're on mobile
 		checkMobile();
-
-		// Add window resize listener
 		window.addEventListener('resize', checkMobile);
 
-		// Set active page based on URL path when component mounts
 		const pathSegments = $page.url.pathname.split('/');
 		if (pathSegments.length >= 3) {
-			let pageFromUrl = pathSegments[2]; // student/dashboard -> "dashboard"
+			let pageFromUrl = pathSegments[2];
+			const role = pathSegments[1] || 'student';
 
-			// Map chat routes to support
-			if (pageFromUrl === 'chat' || pageFromUrl === 'c') {
-				pageFromUrl = 'support';
+			if (role === 'student') {
+				if (pageFromUrl === 'chat' || pageFromUrl === 'c') pageFromUrl = 'support';
+				if (pageFromUrl === 'support') pageFromUrl = 'supports';
 			}
-			
-			// Mark support nav item as active for support pages
-			// Format: /student/support/ID, /student/support/ID/edit, /student/support/create
-			if (pageFromUrl === 'support') {
-				pageFromUrl = 'supports';
+			if (role === 'teacher') {
+				if (pageFromUrl === 'students') pageFromUrl = 'classrooms';
 			}
 
-			// Update the activePage store if it's a store
 			if (typeof activePage === 'object' && 'subscribe' in activePage) {
 				(activePage as Writable<string>).set(pageFromUrl);
 			} else {
@@ -72,29 +65,23 @@
 			}
 		}
 
-		return () => {
-			window.removeEventListener('resize', checkMobile);
-		};
+		return () => window.removeEventListener('resize', checkMobile);
 	});
 
-	// Also update active page whenever the URL changes
 	$: {
 		const pathSegments = $page.url.pathname.split('/');
 		if (pathSegments.length >= 3) {
 			let pageFromUrl = pathSegments[2];
-			
-			// Map chat routes to support
-			if (pageFromUrl === 'chat' || pageFromUrl === 'c') {
-				pageFromUrl = 'support';
+			const role = pathSegments[1] || 'student';
+
+			if (role === 'student') {
+				if (pageFromUrl === 'chat' || pageFromUrl === 'c') pageFromUrl = 'support';
+				if (pageFromUrl === 'support') pageFromUrl = 'supports';
 			}
-			
-			// Mark support nav item as active for support pages
-			// Format: /student/support/ID, /student/support/ID/edit, /student/support/create
-			if (pageFromUrl === 'support') {
-				pageFromUrl = 'supports';
+			if (role === 'teacher') {
+				if (pageFromUrl === 'students') pageFromUrl = 'classrooms';
 			}
 
-			// Only update if it has changed to avoid loops
 			if (currentActivePage !== pageFromUrl) {
 				if (typeof activePage === 'object' && 'subscribe' in activePage) {
 					(activePage as Writable<string>).set(pageFromUrl);
@@ -158,7 +145,14 @@
 			{ id: 'messages', label: 'Messages', icon: Message },
 			{ id: 'settings', label: 'Profile & Settings', icon: Settings }
 		],
-		teacher: [],
+		teacher: [
+			{ id: 'dashboard',   label: 'Dashboard',          icon: Dashboard  },
+			{ id: 'classrooms',  label: 'My Classrooms',      icon: Classroom  },
+			{ id: 'support',     label: 'Support',            icon: Message    },
+			{ id: 'assignments', label: 'Assignments',        icon: Assignment },
+			{ id: 'messages',    label: 'Messages',           icon: Message    },
+			{ id: 'settings',    label: 'Profile & Settings', icon: Settings   }
+		],
 		parent: []
 	};
 </script>
