@@ -60,3 +60,9 @@ class ClassroomsService:
 
     def get_student_classrooms(self, student_id: str) -> List[Enrollment]:
         return self.repo.get_student_classrooms(student_id)
+
+    def unenroll_student(self, classroom_id: str, student_id: str, teacher_id: str) -> None:
+        self.get_and_check_owner(classroom_id, teacher_id)
+        removed = self.repo.unenroll(classroom_id, student_id)
+        if not removed:
+            raise NotFoundError("Enrollment", student_id)

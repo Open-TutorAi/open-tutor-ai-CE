@@ -70,3 +70,15 @@ export const submitAssignment = (token: string, assignmentId: string, data: { co
 
 export const getMySubmission = (token: string, assignmentId: string): Promise<Submission | null> =>
     apiFetch(`${TUTOR_API_BASE_URL}/assignments/${assignmentId}/my-submission`, token);
+
+export const updateAssignment = (token: string, id: string, data: {
+    title?: string; instructions?: string; due_date?: string;
+    attachment_url?: string; max_score?: number;
+}): Promise<Assignment> =>
+    apiFetch(`${TUTOR_API_BASE_URL}/assignments/${id}`, token, { method: 'PUT', body: JSON.stringify(data) });
+
+export const deleteAssignment = (token: string, id: string): Promise<void> =>
+    apiFetch(`${TUTOR_API_BASE_URL}/assignments/${id}`, token, { method: 'DELETE' });
+
+export const cancelSubmission = (token: string, assignmentId: string): Promise<void> =>
+    apiFetch(`${TUTOR_API_BASE_URL}/assignments/${assignmentId}/my-submission`, token, { method: 'DELETE' });

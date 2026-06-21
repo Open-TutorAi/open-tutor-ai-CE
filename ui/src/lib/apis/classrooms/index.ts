@@ -35,3 +35,6 @@ export const enrollStudent = (token: string, classroomId: string, studentId: str
 
 export const getClassroomStudents = (token: string, classroomId: string): Promise<{ student_id: string; name: string; email: string | null; enrolled_at: string }[]> =>
     apiFetch(`${TUTOR_API_BASE_URL}/classrooms/${classroomId}/students`, token);
+
+export const unenrollStudent = (token: string, classroomId: string, studentId: string): Promise<void> =>
+    apiFetch(`${TUTOR_API_BASE_URL}/classrooms/${classroomId}/students/${studentId}`, token, { method: 'DELETE' });

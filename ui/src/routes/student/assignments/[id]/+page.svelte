@@ -3,7 +3,7 @@
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
-	import { getAssignment, getMySubmission, submitAssignment, type Assignment, type Submission } from '$lib/apis/assignments';
+	import { getAssignment, getMySubmission, submitAssignment, cancelSubmission, type Assignment, type Submission } from '$lib/apis/assignments';
 	import { uploadFile } from '$lib/apis/files';
 	import { TUTOR_API_BASE_URL } from '$lib/constants';
 
@@ -79,6 +79,23 @@
 		} catch {
 			toast.error('Download failed');
 		}
+	}
+
+	let cancelling = false;
+	async function handleCancel() {
+		if (!assignment) return;
+		if (!confirm('Cancel your submission? You can resubmit before the deadline.')) return;
+		cancelling = true;
+		try {
+			await cancelSubmission(localStorage.token, assignment.id);
+			submission = null;
+			content = '';
+			attachmentFile = null;
+			attachmentName = '';
+			toast.success('Submission cancelled');
+		} catch (e: any) {
+			toast.error(e?.message ?? 'Failed to cancel submission');
+		} finally { cancelling = false; }
 	}
 
 	async function handleSubmit() {
@@ -267,15 +284,27 @@
 				{/if}
 			</div>
 
-			<button on:click={handleSubmit} disabled={submitting}
-				class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-semibold rounded-xl transition flex items-center justify-center gap-2">
-				{#if submitting}
-					<span class="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-					Submitting…
-				{:else}
-					{submission ? '🔄 Update Submission' : '📤 Submit Assignment'}
+			<div class="flex gap-3">
+				{#if submission}
+					<button on:click={handleCancel} disabled={cancelling}
+						class="px-4 py-3 border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50 font-semibold rounded-xl transition text-sm flex items-center gap-2">
+						{#if cancelling}
+							<span class="h-4 w-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></span>
+						{:else}
+							Cancel Submission
+						{/if}
+					</button>
 				{/if}
-			</button>
+				<button on:click={handleSubmit} disabled={submitting}
+					class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-semibold rounded-xl transition flex items-center justify-center gap-2">
+					{#if submitting}
+						<span class="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+						Submitting…
+					{:else}
+						{submission ? 'Update Submission' : 'Submit Assignment'}
+					{/if}
+				</button>
+			</div>
 			{#if isPastDue(assignment) && !submission}
 				<p class="text-xs text-red-500 text-center mt-2">⚠️ This assignment is past due — your submission will be marked late</p>
 			{/if}

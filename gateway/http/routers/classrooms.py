@@ -100,6 +100,21 @@ def enroll_student(
     return {"id": e.id, "classroom_id": e.classroom_id, "student_id": e.student_id}
 
 
+@router.delete("/{classroom_id}/students/{student_id}", status_code=status.HTTP_204_NO_CONTENT)
+def unenroll_student(
+    classroom_id: str,
+    student_id: str,
+    current_user: User = Depends(get_current_user),
+    svc: ClassroomsService = Depends(_svc),
+):
+    if current_user.role not in ("teacher", "admin"):
+        raise HTTPException(status_code=403, detail="Teachers only")
+    try:
+        svc.unenroll_student(classroom_id, student_id, current_user.id)
+    except (NotFoundError, AuthorizationError) as ex:
+        raise HTTPException(status_code=403, detail=str(ex))
+
+
 @router.get("/{classroom_id}/students")
 def list_students(
     classroom_id: str,

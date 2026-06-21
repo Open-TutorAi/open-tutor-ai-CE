@@ -43,3 +43,12 @@ class ClassroomRepository(BaseRepository[Classroom]):
         self.session.commit()
         self.session.refresh(enrollment)
         return enrollment
+
+    def unenroll(self, classroom_id: str, student_id: str) -> bool:
+        deleted = (
+            self.session.query(Enrollment)
+            .filter(Enrollment.classroom_id == classroom_id, Enrollment.student_id == student_id)
+            .delete()
+        )
+        self.session.commit()
+        return deleted > 0

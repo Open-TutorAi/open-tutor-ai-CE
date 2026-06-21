@@ -3,7 +3,7 @@
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
-	import { getClassroom, getClassroomStudents, enrollStudent, type Classroom } from '$lib/apis/classrooms';
+	import { getClassroom, getClassroomStudents, enrollStudent, unenrollStudent, type Classroom } from '$lib/apis/classrooms';
 	import { TUTOR_API_BASE_URL } from '$lib/constants';
 
 	const i18n = getContext('i18n');
@@ -88,6 +88,17 @@
 	function avatarInitials(name: string) {
 		return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '??';
 	}
+	async function handleUnenroll(student: { student_id: string; name: string }) {
+		if (!confirm(`Remove ${student.name} from this classroom?`)) return;
+		try {
+			await unenrollStudent(localStorage.token, classroomId, student.student_id);
+			students = students.filter(s => s.student_id !== student.student_id);
+			toast.success(`${student.name} removed`);
+		} catch (e: any) {
+			toast.error(e?.message ?? 'Failed to remove student');
+		}
+	}
+
 	function avatarColor(id: string) {
 		const colors = ['bg-indigo-100 text-indigo-700','bg-emerald-100 text-emerald-700','bg-rose-100 text-rose-700','bg-amber-100 text-amber-700'];
 		return colors[id.charCodeAt(0) % colors.length];
@@ -173,7 +184,10 @@
 							{/if}
 							<p class="text-xs text-gray-400">Enrolled {fmtDate(s.enrolled_at)}</p>
 						</div>
-						<span class="px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs font-semibold rounded-full">Active</span>
+						<button on:click={() => handleUnenroll(s)}
+							class="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition" title="Remove student">
+							<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6"/></svg>
+						</button>
 					</div>
 				{/each}
 			</div>

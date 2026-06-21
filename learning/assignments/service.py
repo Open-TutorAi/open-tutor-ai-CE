@@ -116,6 +116,26 @@ class AssignmentsService:
     def get_student_submissions(self, student_id: str) -> List[Submission]:
         return self.sub_repo.get_by_student(student_id)
 
+    def update(self, assignment_id: str, teacher_id: str, **kwargs) -> Assignment:
+        a = self.get_and_check_owner(assignment_id, teacher_id)
+        allowed = {"title", "instructions", "due_date", "attachment_url", "max_score"}
+        fields = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
+        fields["updated_at"] = datetime.utcnow()
+        return self.repo.update(a.id, **fields)
+
+    def delete(self, assignment_id: str, teacher_id: str) -> None:
+        a = self.get_and_check_owner(assignment_id, teacher_id)
+        self.sub_repo.delete_by_assignment(a.id)
+        self.repo.delete(a.id)
+
+    def cancel_submission(self, assignment_id: str, student_id: str) -> bool:
+        sub = self.sub_repo.get_by_student_and_assignment(student_id, assignment_id)
+        if not sub:
+            raise NotFoundError("Submission", assignment_id)
+        if sub.status == "returned":
+            raise AuthorizationError("Cannot cancel a graded submission")
+        return self.sub_repo.delete_by_student_and_assignment(student_id, assignment_id)
+
     def get_status_tracker(self, assignment_id: str, teacher_id: str) -> List[dict]:
         """Returns per-student status: not_submitted | submitted | late | missed."""
         assignment = self.get_and_check_owner(assignment_id, teacher_id)

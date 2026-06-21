@@ -3,7 +3,7 @@
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
-	import { getAssignment, getSubmissions, gradeSubmission, getStatusTracker, type Assignment, type Submission, type StatusRow } from '$lib/apis/assignments';
+	import { getAssignment, getSubmissions, gradeSubmission, getStatusTracker, updateAssignment, deleteAssignment, type Assignment, type Submission, type StatusRow } from '$lib/apis/assignments';
 	import { getClassrooms, getClassroomStudents, type Classroom } from '$lib/apis/classrooms';
 
 	const i18n = getContext('i18n');
@@ -36,6 +36,56 @@
 	let studentNames = new Map<string, string>();
 	let activeTab: Tab = 'submissions';
 	let loading = true;
+
+	// Edit modal
+	let showEditModal = false;
+	let editTitle = '';
+	let editInstructions = '';
+	let editDueDate = '';
+	let editMaxScore = '';
+	let saving = false;
+
+	function openEdit() {
+		if (!assignment) return;
+		editTitle = assignment.title;
+		editInstructions = assignment.instructions ?? '';
+		editDueDate = assignment.due_date.slice(0, 16);
+		editMaxScore = String(assignment.max_score);
+		showEditModal = true;
+	}
+
+	async function handleEdit() {
+		if (!assignment) return;
+		saving = true;
+		try {
+			const updated = await updateAssignment(localStorage.token, assignment.id, {
+				title: editTitle.trim() || undefined,
+				instructions: editInstructions || undefined,
+				due_date: editDueDate ? new Date(editDueDate).toISOString() : undefined,
+				max_score: editMaxScore ? parseInt(editMaxScore) : undefined,
+			});
+			assignment = updated;
+			showEditModal = false;
+			toast.success('Assignment updated');
+		} catch (e: any) {
+			toast.error(e?.message ?? 'Failed to update');
+		} finally { saving = false; }
+	}
+
+	// Delete
+	let deleting = false;
+	async function handleDelete() {
+		if (!assignment) return;
+		if (!confirm(`Delete "${assignment.title}"? This will also delete all submissions.`)) return;
+		deleting = true;
+		try {
+			await deleteAssignment(localStorage.token, assignment.id);
+			toast.success('Assignment deleted');
+			goto('/teacher/assignments');
+		} catch (e: any) {
+			toast.error(e?.message ?? 'Failed to delete');
+		} finally { deleting = false; }
+	}
 
 	// Grade modal
 	let showGradeModal = false;
@@ -157,11 +207,23 @@
 					📚 {classroomName(assignment.classroom_id)} &nbsp;·&nbsp; 📅 Due {fmtDate(assignment.due_date)}
 				</p>
 			</div>
-			{#if isPastDue(assignment)}
-				<span class="px-3 py-1 bg-red-100 text-red-600 text-xs font-semibold rounded-full">Past Due</span>
-			{:else}
-				<span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">Active</span>
-			{/if}
+			<div class="flex items-center gap-2 shrink-0">
+				{#if isPastDue(assignment)}
+					<span class="px-3 py-1 bg-red-100 text-red-600 text-xs font-semibold rounded-full">Past Due</span>
+				{:else}
+					<span class="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-full">Active</span>
+				{/if}
+				<button on:click={openEdit}
+					class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 border border-indigo-200 rounded-xl hover:bg-indigo-50 transition">
+					<svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+					Edit
+				</button>
+				<button on:click={handleDelete} disabled={deleting}
+					class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 border border-red-200 rounded-xl hover:bg-red-50 transition disabled:opacity-50">
+					<svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+					Delete
+				</button>
+			</div>
 		</div>
 
 		<!-- Stats -->
@@ -335,6 +397,58 @@
 				</table>
 			{/if}
 		{/if}
+	</div>
+</div>
+{/if}
+
+<!-- Edit modal -->
+{#if showEditModal && assignment}
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+	on:click|self={() => (showEditModal = false)} role="dialog" aria-modal="true">
+	<div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg p-6">
+		<div class="flex items-center justify-between mb-5">
+			<h3 class="font-bold text-gray-800 dark:text-white">Edit Assignment</h3>
+			<button on:click={() => (showEditModal = false)} class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+				<svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+			</button>
+		</div>
+
+		<div class="space-y-4">
+			<div>
+				<label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Title <span class="text-red-500">*</span></label>
+				<input bind:value={editTitle} type="text" class="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-300"/>
+			</div>
+			<div>
+				<label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Instructions</label>
+				<textarea bind:value={editInstructions} rows="4" class="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300 transition"></textarea>
+			</div>
+			<div class="grid grid-cols-2 gap-4">
+				<div>
+					<label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Due Date</label>
+					<input bind:value={editDueDate} type="datetime-local" class="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-300"/>
+				</div>
+				<div>
+					<label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Max Score</label>
+					<input bind:value={editMaxScore} type="number" min="1" class="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-300"/>
+				</div>
+			</div>
+		</div>
+
+		<div class="flex gap-3 mt-5">
+			<button type="button" on:click={() => (showEditModal = false)}
+				class="flex-1 py-2.5 text-sm font-medium text-gray-600 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
+				Cancel
+			</button>
+			<button on:click={handleEdit} disabled={saving || !editTitle.trim()}
+				class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition flex items-center justify-center gap-2">
+				{#if saving}
+					<span class="h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+					Saving…
+				{:else}
+					Save Changes
+				{/if}
+			</button>
+		</div>
 	</div>
 </div>
 {/if}

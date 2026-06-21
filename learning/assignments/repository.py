@@ -59,3 +59,16 @@ class SubmissionRepository(BaseRepository[Submission]):
             .filter(Submission.student_id == student_id)
             .all()
         )
+
+    def delete_by_assignment(self, assignment_id: str) -> None:
+        self.session.query(Submission).filter(Submission.assignment_id == assignment_id).delete()
+        self.session.commit()
+
+    def delete_by_student_and_assignment(self, student_id: str, assignment_id: str) -> bool:
+        deleted = (
+            self.session.query(Submission)
+            .filter(Submission.student_id == student_id, Submission.assignment_id == assignment_id)
+            .delete()
+        )
+        self.session.commit()
+        return deleted > 0

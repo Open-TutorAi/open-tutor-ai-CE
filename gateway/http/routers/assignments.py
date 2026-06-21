@@ -57,6 +57,14 @@ class CreateAssignmentRequest(BaseModel):
     max_score: int = 20
 
 
+class UpdateAssignmentRequest(BaseModel):
+    title: Optional[str] = None
+    instructions: Optional[str] = None
+    due_date: Optional[datetime] = None
+    attachment_url: Optional[str] = None
+    max_score: Optional[int] = None
+
+
 class SubmitRequest(BaseModel):
     content: Optional[str] = None
     attachment_url: Optional[str] = None
@@ -113,6 +121,36 @@ def get_assignment(
     except NotFoundError as ex:
         raise HTTPException(status_code=404, detail=str(ex))
     return _assignment_out(a)
+
+
+@router.put("/{assignment_id}")
+def update_assignment(
+    assignment_id: str,
+    body: UpdateAssignmentRequest,
+    current_user: User = Depends(get_current_user),
+    svc: AssignmentsService = Depends(_svc),
+):
+    if current_user.role not in ("teacher", "admin"):
+        raise HTTPException(status_code=403, detail="Teachers only")
+    try:
+        a = svc.update(assignment_id, current_user.id, **body.model_dump(exclude_none=True))
+    except (NotFoundError, AuthorizationError) as ex:
+        raise HTTPException(status_code=403, detail=str(ex))
+    return _assignment_out(a)
+
+
+@router.delete("/{assignment_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_assignment(
+    assignment_id: str,
+    current_user: User = Depends(get_current_user),
+    svc: AssignmentsService = Depends(_svc),
+):
+    if current_user.role not in ("teacher", "admin"):
+        raise HTTPException(status_code=403, detail="Teachers only")
+    try:
+        svc.delete(assignment_id, current_user.id)
+    except (NotFoundError, AuthorizationError) as ex:
+        raise HTTPException(status_code=403, detail=str(ex))
 
 
 @router.get("/{assignment_id}/submissions")
@@ -179,6 +217,20 @@ def submit_assignment(
     except (NotFoundError, AuthorizationError) as ex:
         raise HTTPException(status_code=403, detail=str(ex))
     return _submission_out(sub)
+
+
+@router.delete("/{assignment_id}/my-submission", status_code=status.HTTP_204_NO_CONTENT)
+def cancel_submission(
+    assignment_id: str,
+    current_user: User = Depends(get_current_user),
+    svc: AssignmentsService = Depends(_svc),
+):
+    try:
+        svc.cancel_submission(assignment_id, current_user.id)
+    except NotFoundError as ex:
+        raise HTTPException(status_code=404, detail=str(ex))
+    except AuthorizationError as ex:
+        raise HTTPException(status_code=403, detail=str(ex))
 
 
 @router.get("/{assignment_id}/my-submission")
