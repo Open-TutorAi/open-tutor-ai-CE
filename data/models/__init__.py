@@ -7,6 +7,8 @@ from .model import ModelConfig
 from .config import AppConfig
 from .knowledge import KnowledgeBase, KnowledgeFile
 from .guardian import Guardian
+from .classroom import Classroom, Enrollment
+from .assignment import Assignment, Submission
 
 __all__ = [
     "User",
@@ -20,4 +22,8 @@ __all__ = [
     "KnowledgeBase",
     "KnowledgeFile",
     "Guardian",
+    "Classroom",
+    "Enrollment",
+    "Assignment",
+    "Submission",
 ]

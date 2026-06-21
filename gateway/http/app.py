@@ -15,6 +15,8 @@ from .routers import (
     auth,
     supports,
     guardians as guardians_router,
+    classrooms as classrooms_router,
+    assignments as assignments_router,
     self_regulation,
     files,
     app_info,
@@ -132,6 +134,8 @@ def create_app() -> FastAPI:
     app.include_router(folders_router.router, prefix="/api/v1")
     app.include_router(tasks_router.router, prefix="/api/v1")
     app.include_router(guardians_router.router, prefix="/api/v1")
+    app.include_router(classrooms_router.router, prefix="/api/v1")
+    app.include_router(assignments_router.router, prefix="/api/v1")
 
     # Socket.IO — mounted at /realtime; client uses path='/realtime/socket.io'
     app.mount("/realtime", socket_app)

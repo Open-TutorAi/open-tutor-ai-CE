@@ -104,13 +104,18 @@ async def get_file_content(
 ):
     """GET /api/v1/files/{id}/content  ← getFileContentById() in files/index.ts:158"""
     try:
-        svc.require_owned(file_id, current_user.id)
+        record = svc.get(file_id)
+        if not record:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
         data, content_type = svc.read_bytes(file_id)
     except NotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=exc.message)
-    except AuthorizationError as exc:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=exc.message)
-    return Response(content=data, media_type=content_type)
+    filename = record.filename or "attachment"
+    return Response(
+        content=data,
+        media_type=content_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 # ── Update ────────────────────────────────────────────────────────────────────
