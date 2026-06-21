@@ -8,6 +8,10 @@
 		"title": "Arabic (عربي)"
 	},
 	{
+		"code": "de-DE",
+		"title": "German (Germany)"
+	},
+	{
 		"code": "fr-FR",
 		"title": "French (France)"
 	}
