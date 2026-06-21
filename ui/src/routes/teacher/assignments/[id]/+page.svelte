@@ -4,7 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { getAssignment, getSubmissions, gradeSubmission, getStatusTracker, type Assignment, type Submission, type StatusRow } from '$lib/apis/assignments';
-	import { getClassrooms, type Classroom } from '$lib/apis/classrooms';
+	import { getClassrooms, getClassroomStudents, type Classroom } from '$lib/apis/classrooms';
 
 	const i18n = getContext('i18n');
 	$: assignmentId = $page.params.id;
@@ -33,6 +33,7 @@
 	let submissions: Submission[] = [];
 	let statusRows: StatusRow[] = [];
 	let classrooms: Classroom[] = [];
+	let studentNames = new Map<string, string>();
 	let activeTab: Tab = 'submissions';
 	let loading = true;
 
@@ -52,6 +53,10 @@
 				getClassrooms(localStorage.token).catch(() => []),
 			]);
 			statusRows = await getStatusTracker(localStorage.token, assignmentId).catch(() => []);
+			if (assignment?.classroom_id) {
+				const enrolled = await getClassroomStudents(localStorage.token, assignment.classroom_id).catch(() => []);
+				studentNames = new Map(enrolled.map((s: { student_id: string; name: string }) => [s.student_id, s.name]));
+			}
 		} catch {
 			toast.error('Assignment not found');
 			goto('/teacher/assignments');
@@ -75,7 +80,14 @@
 
 	function isPastDue(a: Assignment) { return new Date(a.due_date) < new Date(); }
 
-	function initials(id: string) { return id.slice(0, 2).toUpperCase(); }
+	function initials(id: string) {
+		const name = studentNames.get(id);
+		if (name) return name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2);
+		return id.slice(0, 2).toUpperCase();
+	}
+	function studentLabel(id: string) {
+		return studentNames.get(id) ?? id.slice(0, 8) + '…';
+	}
 
 	function openGrade(sub: Submission) {
 		gradingSub = sub;
@@ -207,7 +219,7 @@
 										<div class="h-7 w-7 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 text-xs font-bold flex items-center justify-center shrink-0">
 											{initials(sub.student_id)}
 										</div>
-										<span class="font-medium text-gray-800 dark:text-white text-xs">{sub.student_id.slice(0,8)}…</span>
+										<span class="font-medium text-gray-800 dark:text-white text-xs">{studentLabel(sub.student_id)}</span>
 									</div>
 								</td>
 								<td class="px-5 py-3 text-gray-500 dark:text-gray-400 hidden sm:table-cell">
@@ -299,7 +311,7 @@
 										<div class="h-7 w-7 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 text-xs font-bold flex items-center justify-center shrink-0">
 											{initials(row.student_id)}
 										</div>
-										<span class="font-medium text-gray-800 dark:text-white text-xs">{row.student_id.slice(0,8)}…</span>
+										<span class="font-medium text-gray-800 dark:text-white text-xs">{studentLabel(row.student_id)}</span>
 									</div>
 								</td>
 								<td class="px-5 py-3">
@@ -345,7 +357,7 @@
 				{initials(gradingSub.student_id)}
 			</div>
 			<div>
-				<p class="font-semibold text-gray-800 dark:text-white text-sm">Student {gradingSub.student_id.slice(0,8)}</p>
+				<p class="font-semibold text-gray-800 dark:text-white text-sm">{studentLabel(gradingSub.student_id)}</p>
 				<p class="text-xs text-gray-500">
 					Submitted {fmtDateTime(gradingSub.submitted_at)} ·
 					<span class="{gradingSub.status === 'late' ? 'text-amber-600' : 'text-green-600'} font-semibold">
@@ -406,7 +418,7 @@
 				Cancel
 			</button>
 			<button on:click={handleGrade} disabled={grading}
-				class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition flex items-center justify-center gap-2">
+				class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition flex items-center justify-center gap-2">
 				{#if grading}
 					<span class="h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
 					Returning…

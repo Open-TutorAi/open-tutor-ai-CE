@@ -33,5 +33,5 @@ export const enrollStudent = (token: string, classroomId: string, studentId: str
         method: 'POST', body: JSON.stringify({ student_id: studentId })
     });
 
-export const getClassroomStudents = (token: string, classroomId: string): Promise<{ student_id: string; enrolled_at: string }[]> =>
+export const getClassroomStudents = (token: string, classroomId: string): Promise<{ student_id: string; name: string; email: string | null; enrolled_at: string }[]> =>
     apiFetch(`${TUTOR_API_BASE_URL}/classrooms/${classroomId}/students`, token);
