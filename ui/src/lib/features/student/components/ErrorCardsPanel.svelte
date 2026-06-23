@@ -5,6 +5,7 @@
         deleteErrorCard,
         type ErrorCard as ErrorCardType
     } from '$lib/apis/supports/error-cards';
+    import { exportErrorCardsToPdf } from './exportErrorCardsPdf';
 
     export let supportId: string;
     export let token: string;
@@ -64,6 +65,20 @@
         <div class="report-meta">
             {#if !loading && cards.length > 0}
                 <span class="badge">{cards.length} erreur{cards.length > 1 ? 's' : ''}</span>
+                <button
+                    class="export-btn"
+                    on:click|stopPropagation={() => exportErrorCardsToPdf(cards)}
+                    title="Télécharger en PDF"
+                    aria-label="Exporter le rapport en PDF"
+                >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    PDF
+                </button>
             {/if}
             <svg class="chevron {expanded ? 'up' : ''}" width="16" height="16"
                  viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -204,6 +219,24 @@
         border-radius: 9999px;
         white-space: nowrap;
     }
+
+    .export-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        background: rgb(245, 158, 11);
+        color: white;
+        border: none;
+        border-radius: 0.375rem;
+        padding: 0.25rem 0.6rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.15s, opacity 0.15s;
+        white-space: nowrap;
+    }
+    .export-btn:hover { background: rgb(217, 119, 6); }
+    .export-btn:active { opacity: 0.8; }
 
     .chevron {
         color: rgb(107, 114, 128);
