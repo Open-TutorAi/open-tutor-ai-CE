@@ -83,7 +83,8 @@
 		stopTask
 	} from '$lib/apis';
 	import { getTools } from '$lib/apis/tools';
-	import { getSupportById } from '$lib/apis/supports';
+	import { getSupportById, updateSupportChatId } from '$lib/apis/supports';
+	import { analyzeExchangeForErrorCard } from '$lib/apis/supports/error-cards';
 	import { getTutorSystemPrompt } from '$lib/apis/configs';
 
 	import Banner from '$lib/ui/Banner.svelte';
@@ -150,6 +151,9 @@
 	};
 
 	let taskId = null;
+
+	// === Error cards: lien chat ↔ support ===
+	let linkedSupportId: string | null = null;
 
 	// Chat Input
 	let prompt = '';
@@ -581,8 +585,17 @@
 			}
 		}
 
+		// Désactive le panneau Artifacts dans le chat étudiant
+		showArtifacts.subscribe((value) => {
+			if (value) {
+				showArtifacts.set(false);
+				showControls.set(false);
+			}
+		});
+
 		showControls.subscribe(async (value) => {
-			if (controlPane && !$mobile) {
+			// ChatControls removed from student chat — subscriber kept to avoid errors
+			if (false && controlPane && !$mobile) {
 				try {
 					if (value) {
 						controlPaneComponent.openPane();
@@ -1103,6 +1116,7 @@
 			try {
 				const supportData = JSON.parse(rawPendingSupport);
 				if (supportData && supportData.id) {
+					linkedSupportId = supportData.id;
 					// Fetch support once — used for both system prompt and file injection
 					const token = localStorage.getItem('token');
 					const supportDetails = token ? await getSupportById(token, supportData.id) : null;
@@ -1225,6 +1239,10 @@
 				params = chatContent?.params ?? {};
 				chatFiles = chatContent?.files ?? [];
 
+				if (chatContent?.support_id && !linkedSupportId) {
+					linkedSupportId = chatContent.support_id;
+				}
+
 				autoScroll = true;
 				await tick();
 
@@ -1298,11 +1316,32 @@
 					messages: messages,
 					history: history,
 					params: params,
-					files: chatFiles
+					files: chatFiles,
+					...(linkedSupportId ? { support_id: linkedSupportId } : {})
 				});
 
 				currentChatPage.set(1);
 				await chats.set(await getChatList(localStorage.token, $currentChatPage));
+			}
+		}
+
+		// Fire-and-forget error card analysis when chat is linked to a support
+		const _supportId = linkedSupportId;
+		if (_supportId && !$isDemo) {
+			const lastAssistant = messages.findLast((m) => m.role === 'assistant');
+			const lastUser = messages.findLast((m) => m.role === 'user');
+			if (lastAssistant?.content && lastUser?.content) {
+				analyzeExchangeForErrorCard(
+					localStorage.token,
+					_supportId,
+					lastUser.content,
+					lastAssistant.content,
+					modelId
+				).then((newCards) => {
+					if (newCards.length > 0) {
+						toast.success($i18n.t(`📚 ${newCards.length} fiche${newCards.length > 1 ? 's' : ''} d'erreur créée${newCards.length > 1 ? 's' : ''}`));
+					}
+				}).catch(() => {});
 			}
 		}
 	};
@@ -1351,7 +1390,8 @@
 					messages: messages,
 					history: history,
 					params: params,
-					files: chatFiles
+					files: chatFiles,
+					...(linkedSupportId ? { support_id: linkedSupportId } : {})
 				});
 
 				currentChatPage.set(1);
@@ -2615,6 +2655,8 @@
 				// Clear pending support data now that the chat is linked to the support
 				if (supportId) {
 					localStorage.removeItem('pendingSupportData');
+					// Persist the link support → chat so "Continue Chat" works on reload
+					updateSupportChatId(localStorage.token, supportId, _chatId).catch(() => {});
 				}
 
 				window.history.replaceState(history.state, '', `/student/c/${_chatId}`);
@@ -2975,30 +3017,6 @@
 				</div>
 			</Pane>
 
-			<ChatControls
-				bind:this={controlPaneComponent}
-				bind:history
-				bind:chatFiles
-				bind:params
-				bind:files
-				bind:pane={controlPane}
-				chatId={$chatId}
-				modelId={selectedModelIds?.at(0) ?? null}
-				models={selectedModelIds.reduce((a, e, i, arr) => {
-					const model = $models.find((m) => m.id === e);
-					if (model) {
-						return [...a, model];
-					}
-					return a;
-				}, [])}
-				{submitPrompt}
-				{stopResponse}
-				{showMessage}
-				{eventTarget}
-				{avatarActive}
-				onAvatarToggle={toggleAvatar}
-				class="shadow-lg"
-			/>
 		</PaneGroup>
 	{:else if loading}
 		<div class=" flex items-center justify-center h-full w-full">

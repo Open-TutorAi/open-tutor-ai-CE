@@ -20,7 +20,12 @@ from pydantic import BaseModel
 from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from config import settings
 from data.models import User
-from gateway.http.dependencies import get_current_user, get_supports_service
+from gateway.http.dependencies import (
+    get_current_user,
+    get_error_cards_service,
+    get_supports_service,
+)
+from learning.supports.error_cards.service import ErrorCardsService
 from learning.supports.service import SupportsService
 
 router = APIRouter(prefix="/supports", tags=["supports"])
@@ -81,6 +86,29 @@ class SupportResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ─── Error Cards: request / response schemas ──────────────────────────────────
+
+
+class AnalyzeExchangeRequest(BaseModel):
+    user_message: str
+    assistant_message: str
+    model: str
+
+
+class ErrorCardResponse(BaseModel):
+    id: str
+    support_id: str
+    user_id: str
+    concept: str
+    error_description: str
+    simple_explanation: str
+    correct_example: str
+    created_at: Optional[str] = None
+
+
+# ─── Helpers ──────────────────────────────────────────────────────────────────
 
 
 def _to_response(support, files=None) -> SupportResponse:
@@ -257,3 +285,59 @@ async def delete_support(
         )
     svc.delete(support_id)
     return JSONResponse(content={"status": "success", "message": "Support deleted"})
+
+
+# ─── Error Cards endpoints ────────────────────────────────────────────────────
+
+
+@router.post("/{support_id}/error-cards/analyze")
+async def analyze_exchange_for_error_card(
+    support_id: str,
+    payload: AnalyzeExchangeRequest,
+    current_user: User = Depends(get_current_user),
+    svc: ErrorCardsService = Depends(get_error_cards_service),
+):
+    """Analyze the latest exchange and create one card per detected error.
+
+    Returns {"cards": [<ErrorCard dict>, ...]} — empty list if no errors.
+    """
+    try:
+        cards = await svc.analyze_exchange(
+            support_id=support_id,
+            user_id=current_user.id,
+            user_message=payload.user_message,
+            assistant_message=payload.assistant_message,
+            model=payload.model,
+        )
+    except NotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=exc.message)
+    except ValidationError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=exc.message)
+    return {"cards": [c.to_dict() for c in cards]}
+
+
+@router.get("/{support_id}/error-cards", response_model=List[ErrorCardResponse])
+async def list_error_cards(
+    support_id: str,
+    current_user: User = Depends(get_current_user),
+    svc: ErrorCardsService = Depends(get_error_cards_service),
+):
+    """List all error cards generated for a support, scoped to the current user."""
+    cards = svc.list_cards(support_id, current_user.id)
+    return [ErrorCardResponse(**c.to_dict()) for c in cards]
+
+
+@router.delete("/{support_id}/error-cards/{card_id}")
+async def delete_error_card(
+    support_id: str,
+    card_id: str,
+    current_user: User = Depends(get_current_user),
+    svc: ErrorCardsService = Depends(get_error_cards_service),
+):
+    """Delete one error card (must belong to the current user)."""
+    success = svc.delete_card(card_id, current_user.id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Error card not found"
+        )
+    return JSONResponse(content={"status": "success"})

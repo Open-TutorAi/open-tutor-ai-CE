@@ -8,6 +8,7 @@
 	import type { Writable } from 'svelte/store';
 	import { browser } from '$app/environment';
 	import ConfirmDialog from '$lib/features/student/components/elements/ConfirmDialog.svelte';
+	import ErrorCardsPanel from '$lib/features/student/components/ErrorCardsPanel.svelte';
 	import { isDemo, demoData } from '$lib/stores';
 
 	// Get i18n from context with proper typing
@@ -63,6 +64,7 @@
 	let support: any = null;
 	let loading = true;
 	let error: string | null = null;
+	let token = '';
 
 	// Confirmation dialog
 	let showDeleteConfirm = false;
@@ -102,7 +104,7 @@
 				return;
 			}
 			
-			const token = localStorage.getItem('token');
+			token = localStorage.getItem('token') ?? '';
 			if (!token) {
 				error = $i18n.t('Authentication required');
 				loading = false;
@@ -637,6 +639,13 @@
 						</div>
 					</div>
 
+					<!-- Error Cards Panel -->
+					{#if token && supportId}
+						<div class="mb-8 error-cards-container">
+							<ErrorCardsPanel {supportId} {token} />
+						</div>
+					{/if}
+
 					<!-- Actions footer -->
 					<div
 						class="flex justify-end space-x-4 border-t border-gray-200 dark:border-gray-700 pt-6 mt-6"
@@ -682,3 +691,17 @@
 		on:cancel={() => (showDeleteConfirm = false)}
 	/>
 {/if}
+
+<style>
+	.error-cards-container {
+		max-height: 600px;
+		overflow-y: auto;
+		border-radius: 0.5rem;
+	}
+	/* On annule la bordure latérale du panneau qui n'a pas de sens en pleine largeur */
+	:global(.error-cards-container > aside) {
+		border-left: none !important;
+		padding-left: 0 !important;
+		padding-right: 0 !important;
+	}
+</style>

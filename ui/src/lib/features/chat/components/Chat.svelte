@@ -75,6 +75,7 @@
 		stopTask
 	} from '$lib/apis';
 	import { getTools } from '$lib/apis/tools';
+	import { analyzeExchangeForErrorCard } from '$lib/apis/supports/error-cards';
 
 	import Banner from '$lib/ui/Banner.svelte';
 	import MessageInput from '$lib/features/chat/components/MessageInput.svelte';
@@ -129,6 +130,22 @@
 	};
 
 	let taskId = null;
+
+	// === Error cards: lien chat ↔ support ===
+	// On lit pendingSupportData (posé par SupportDetails.svelte quand l'élève
+	// arrive depuis la page support) pour savoir si on doit analyser les échanges.
+	let linkedSupportId: string | null = null;
+	if (typeof window !== 'undefined') {
+		try {
+			const raw = localStorage.getItem('pendingSupportData');
+			if (raw) {
+				const parsed = JSON.parse(raw);
+				if (parsed?.id) linkedSupportId = parsed.id;
+			}
+		} catch (e) {
+			console.warn('[error-cards] cannot parse pendingSupportData', e);
+		}
+	}
 
 	// Chat Input
 	let prompt = '';
@@ -855,6 +872,13 @@
 				params = chatContent?.params ?? {};
 				chatFiles = chatContent?.files ?? [];
 
+				// === Error cards: récupère le lien support si déjà persisté en DB ===
+				// (pour les chats existants repris après navigation/rafraîchissement)
+				if (chatContent?.support_id && !linkedSupportId) {
+					linkedSupportId = chatContent.support_id;
+					console.log('[error-cards] linked support from chat:', linkedSupportId);
+				}
+
 				autoScroll = true;
 				await tick();
 
@@ -1255,6 +1279,43 @@
 				message.id,
 				createMessagesList(history, message.id)
 			);
+
+			// === Error card analysis (fire-and-forget) ===
+			// Si ce chat est lié à un support, on analyse l'échange (user → assistant)
+			// en arrière-plan. Une fiche sera créée en DB si une erreur est détectée.
+			if (linkedSupportId && message.parentId) {
+				const userMsg = history.messages[message.parentId];
+				const assistantContent = message.content;
+				const modelId = message.model;
+				if (userMsg?.role === 'user' && userMsg?.content && assistantContent && modelId) {
+					const userContent =
+						typeof userMsg.content === 'string'
+							? userMsg.content
+							: Array.isArray(userMsg.content)
+								? userMsg.content
+										.filter((p: any) => p?.type === 'text')
+										.map((p: any) => p.text)
+										.join('\n')
+								: '';
+					if (userContent) {
+						analyzeExchangeForErrorCard(
+							localStorage.token,
+							linkedSupportId,
+							userContent,
+							assistantContent,
+							modelId
+						)
+							.then((newCards) => {
+								if (newCards.length > 0) {
+									console.log('[error-cards] new cards:', newCards.map((c) => c.concept));
+								}
+							})
+							.catch((err) => {
+								console.warn('[error-cards] analyze failed (non-blocking):', err);
+							});
+					}
+				}
+			}
 		}
 
 		console.log(data);
@@ -2106,7 +2167,10 @@
 					history: history,
 					messages: createMessagesList(history, history.currentId),
 					tags: [],
-					timestamp: Date.now()
+					timestamp: Date.now(),
+					// === Error cards: persiste le lien chat ↔ support pour les reprises ===
+					// (même convention que tutor/Chat.svelte → chat.chat.support_id)
+					...(linkedSupportId ? { support_id: linkedSupportId } : {})
 				});
 
 				_chatId = chat.id;

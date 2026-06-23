@@ -11,19 +11,16 @@ from data.models import User
 from content.files.service import FilesService
 from accounts.users.service import AccountService
 from learning.supports.service import SupportsService
+from learning.supports.error_cards.service import ErrorCardsService
 from governance.self_regulation.service import SelfRegulationService
 
 security = HTTPBearer()
-
-
-# ── Auth guard ────────────────────────────────────────────────────────────────
 
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db),
 ) -> User:
-    """Decode JWT and return the authenticated user."""
     try:
         payload = decode(
             credentials.credentials,
@@ -50,14 +47,9 @@ async def get_current_user(
     return user
 
 
-# ── JWT helper ───────────────────────────────────────────────────────────────
-
-
 def decode_jwt_token(token: str) -> dict | None:
-    """Decode a JWT token string. Returns payload dict or None if invalid."""
     try:
         import jwt
-
         payload = jwt.decode(
             token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
         )
@@ -66,15 +58,16 @@ def decode_jwt_token(token: str) -> dict | None:
         return None
 
 
-# ── Service factories ─────────────────────────────────────────────────────────
-
-
 def get_account_service(db: Session = Depends(get_db)) -> AccountService:
     return AccountService(db)
 
 
 def get_supports_service(db: Session = Depends(get_db)) -> SupportsService:
     return SupportsService(db)
+
+
+def get_error_cards_service(db: Session = Depends(get_db)) -> ErrorCardsService:
+    return ErrorCardsService(db)
 
 
 def get_self_regulation_service(db: Session = Depends(get_db)) -> SelfRegulationService:
