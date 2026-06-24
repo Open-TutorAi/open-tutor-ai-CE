@@ -325,11 +325,23 @@
 							</div>
 						</div>
 
-						<div class="text-center w-16">
-							<span
-								class="text-xs font-black text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-[#1e293b] px-2 py-0.5 rounded-md border border-slate-100 dark:border-slate-800"
-								>{s.note}</span
-							>
+						<div class="text-center w-24 flex flex-col items-center gap-0.5">
+							{#if s.attempts && s.attempts.length > 1}
+								{@const bestScore = s.attempts.reduce((mx, a) => a.score > mx ? a.score : mx, 0)}
+								{#each s.attempts as att}
+									<span
+										class="text-[10px] font-black px-1.5 py-0.5 rounded border {att.score === bestScore ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800' : 'bg-slate-50 dark:bg-[#1e293b] text-slate-500 dark:text-slate-400 border-slate-100 dark:border-slate-800'}"
+										title="Tentative {att.attempt}"
+									>
+										T{att.attempt}: {att.score}/{att.total}{att.score === bestScore ? ' ★' : ''}
+									</span>
+								{/each}
+							{:else}
+								<span
+									class="text-xs font-black text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-[#1e293b] px-2 py-0.5 rounded-md border border-slate-100 dark:border-slate-800"
+									>{s.note}</span
+								>
+							{/if}
 						</div>
 
 						<div class="text-center md:text-left w-24">
@@ -342,7 +354,7 @@
 										? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
 										: 'bg-rose-500/10 text-rose-600 dark:text-rose-400'}"
 							>
-								{s.status}
+								{$i18n.t(s.status)}
 							</span>
 						</div>
 

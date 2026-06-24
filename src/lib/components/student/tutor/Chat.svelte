@@ -1412,6 +1412,14 @@
 						? chatContent.history
 						: convertMessagesToHistory(chatContent.messages);
 
+				// Strip any COURSE_PROGRESS tags that were saved in old messages
+				for (const id in history.messages) {
+					const msg = history.messages[id];
+					if (msg?.role === 'assistant' && msg?.content) {
+						msg.content = stripCourseProgressSignals(msg.content);
+					}
+				}
+
 				chatTitle.set(chatContent.title);
 
 				const userSettings = await getUserSettings(localStorage.token);
@@ -1509,7 +1517,39 @@
 		if ($isDemo) {
 			return;
 		}
-		
+
+		// 1) Strip COURSE_PROGRESS tags FIRST — before sending to backend
+		const token = localStorage.getItem('token') || '';
+		const effectiveCourseId =
+			courseIdProp ||
+			resolveCourseIdForChat({
+				chatId,
+				pathname: typeof window !== 'undefined' ? window.location.pathname : ''
+			});
+
+		const responseMessage = messages.find((m) => m.id === responseMessageId);
+		if (responseMessage && responseMessage.content) {
+			const rawContent = responseMessage.content;
+
+			// Track progress from raw content (tags still present)
+			if (effectiveCourseId) {
+				await handleCourseProgressTracking(rawContent, effectiveCourseId);
+			}
+
+			// Clean tags in-memory immediately so UI and backend both get clean content
+			const cleanedContent = stripCourseProgressSignals(rawContent);
+			responseMessage.content = cleanedContent;
+
+			if (history.messages[responseMessage.id]) {
+				history.messages[responseMessage.id].content = cleanedContent;
+			}
+
+			const msgIdx = messages.findIndex((m) => m.id === responseMessage.id);
+			if (msgIdx !== -1) {
+				messages[msgIdx].content = cleanedContent;
+			}
+		}
+
 		const res = await chatCompleted(localStorage.token, {
 			model: modelId,
 			messages: messages.map((m) => ({
@@ -1536,7 +1576,10 @@
 			// Update chat history with the new messages
 			for (const message of res.messages) {
 				if (message?.id) {
-					// Add null check for message and message.id
+					// Strip tags from backend response content too (safety net)
+					if (message.content) {
+						message.content = stripCourseProgressSignals(message.content);
+					}
 					history.messages[message.id] = {
 						...history.messages[message.id],
 						...(history.messages[message.id].content !== message.content
@@ -1549,33 +1592,6 @@
 		}
 
 		await tick();
-
-		const responseMessage = messages.find((m) => m.id === responseMessageId);
-		const token = localStorage.getItem('token') || '';
-		const effectiveCourseId =
-			courseIdProp || (token ? await resolveCourseIdForChat(token, chatId) : '');
-
-		if (responseMessage && responseMessage.content) {
-			const rawContent = responseMessage.content;
-
-			// 1) Apply progress from RAW content (tags still present)
-			if (effectiveCourseId) {
-				await handleCourseProgressTracking(rawContent, effectiveCourseId);
-			}
-
-			// 2) Clean tags for UI + history + messages payload
-			const cleanedContent = stripCourseProgressSignals(rawContent);
-			responseMessage.content = cleanedContent;
-
-			if (history.messages[responseMessage.id]) {
-				history.messages[responseMessage.id].content = cleanedContent;
-			}
-
-			const msgIdx = messages.findIndex((m) => m.id === responseMessage.id);
-			if (msgIdx !== -1) {
-				messages[msgIdx].content = cleanedContent;
-			}
-		}
 	};
 
 	const chatActionHandler = async (chatId, actionId, modelId, responseMessageId, event = null) => {

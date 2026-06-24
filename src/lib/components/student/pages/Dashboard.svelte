@@ -144,12 +144,7 @@
 			if (role === 'teacher') {
 				endpoint = '/api/v1/quizzes/teacher';
 			} else {
-				let joinedCodes: string[] = [];
-				try {
-					joinedCodes = JSON.parse(localStorage.getItem('joined_quiz_codes') || '[]');
-				} catch (e) {}
-				const codesParam = joinedCodes.join(',');
-				endpoint = `/api/v1/student/assignments${codesParam ? `?codes=${codesParam}` : ''}`;
+				endpoint = '/api/v1/student/assignments';
 			}
 
 			console.log('🔗 [QUIZZES] Fetching from:', endpoint);
@@ -217,64 +212,27 @@
 		}
 	}
 
-	// ── JOIN QUIZ MODAL ─────────────────────────────────────
-	let showJoinQuizModal = false;
-	let joinQuizCode = '';
-	let isJoiningQuiz = false;
-	let joinQuizError = '';
+	// ── REMOVE QUIZ ─────────────────────────────────────────
+	let quizToDelete: any = null;
 
-	function openJoinQuizModal() {
-		joinQuizCode = '';
-		joinQuizError = '';
-		showJoinQuizModal = true;
+	async function confirmRemoveQuiz(quiz: any) {
+		quizToDelete = quiz;
 	}
 
-	function closeJoinQuizModal() {
-		if (isJoiningQuiz) return;
-		showJoinQuizModal = false;
-		joinQuizCode = '';
-		joinQuizError = '';
-	}
-
-	async function handleJoinQuiz() {
-		const code = joinQuizCode.trim().toUpperCase();
-		if (!code) {
-			joinQuizError = $_('Please enter a code');
-			return;
-		}
-		if (code.length !== 6) {
-			joinQuizError = $_('The code must be exactly 6 characters.');
-			return;
-		}
-		isJoiningQuiz = true;
-		joinQuizError = '';
+	async function removeQuiz() {
+		if (!quizToDelete) return;
+		const quizId = quizToDelete.quiz_id ?? quizToDelete.id;
+		const token = localStorage.getItem('token') ?? '';
 		try {
-			const token = localStorage.getItem('token') ?? '';
-			const res = await fetch(`/api/v1/quizzes/join/${code}`, {
+			await fetch(`/api/v1/student/assignments/${quizId}`, {
+				method: 'DELETE',
 				headers: { Authorization: `Bearer ${token}` }
 			});
-			if (!res.ok) {
-				const err = await res.json().catch(() => ({}));
-				throw new Error(err.detail ?? $_('Invalid or expired quiz code'));
-			}
-
-			try {
-				const existingCodes = JSON.parse(localStorage.getItem('joined_quiz_codes') || '[]');
-				if (!existingCodes.includes(code)) {
-					existingCodes.push(code);
-					localStorage.setItem('joined_quiz_codes', JSON.stringify(existingCodes));
-					console.log(`🔐 Quiz code ${code} saved to localStorage`);
-				}
-			} catch (e) {
-				console.warn('Failed to save quiz code to localStorage:', e);
-			}
-
-			showJoinQuizModal = false;
-			goto(`/student/assignments?code=${code}`);
-		} catch (e: any) {
-			joinQuizError = e?.message ?? $_('Code validation error');
+			userQuizzes = userQuizzes.filter((q: any) => (q.quiz_id ?? q.id) !== quizId);
+		} catch (e) {
+			console.error('Failed to remove quiz', e);
 		} finally {
-			isJoiningQuiz = false;
+			quizToDelete = null;
 		}
 	}
 
@@ -958,9 +916,9 @@
 
 					<button
 						class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 rounded-full transition shadow-sm mt-2"
-						on:click={toggleSupportPopup}
+						on:click={() => goto('/student/support/create')}
 					>
-						+ Create a support
+						+ {$_('Create a support')}
 					</button>
 				</div>
 			{:else}
@@ -1084,7 +1042,7 @@
 					<p class="text-xs text-gray-400 dark:text-gray-500">
 						{$_('Join an assessment with a code provided by your teacher')}
 					</p>
-					<button class="btn-join-inline" on:click={openJoinQuizModal}>
+					<button class="btn-join-inline" on:click={() => goto('/student/assignments?openCode=1')}>
 						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="14" height="14">
 							<path
 								stroke-linecap="round"
@@ -1201,12 +1159,23 @@
 										>
 											{quiz.course || 'Quiz'}
 										</span>
-										<span
-											class="text-gray-400 dark:text-gray-500 text-[10px] font-medium whitespace-nowrap ml-2"
-										>
-											{(quiz.total_questions ?? 0) * 10}
-											{$_('points')}
-										</span>
+										<div class="flex items-center gap-1.5">
+											<span
+												class="text-gray-400 dark:text-gray-500 text-[10px] font-medium whitespace-nowrap"
+											>
+												{(quiz.total_questions ?? 0) * 10}
+												{$_('points')}
+											</span>
+											<button
+												class="w-5 h-5 flex items-center justify-center rounded-full text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+												on:click|stopPropagation={() => confirmRemoveQuiz(quiz)}
+												title={$_('Remove')}
+											>
+												<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="11" height="11">
+													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+												</svg>
+											</button>
+										</div>
 									</div>
 
 									<!-- Title -->
@@ -1314,6 +1283,43 @@
 		</div>
 	</div>
 </div>
+{#if quizToDelete}
+	<div
+		class="modal-overlay"
+		role="button"
+		tabindex="0"
+		on:click={() => (quizToDelete = null)}
+		on:keydown={(e) => e.key === 'Escape' && (quizToDelete = null)}
+		in:fade={{ duration: 150 }}
+		out:fade={{ duration: 100 }}
+	>
+		<div
+			class="quiz-delete-modal"
+			role="dialog"
+			aria-modal="true"
+			on:click|stopPropagation
+			on:keydown|stopPropagation
+			in:fly={{ y: 16, duration: 220, easing: cubicOut }}
+		>
+			<div class="quiz-delete-icon">
+				<svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" width="22" height="22">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+				</svg>
+			</div>
+			<h3 class="quiz-delete-title">{$_('Remove this quiz?')}</h3>
+			<p class="quiz-delete-name">«{quizToDelete.title}»</p>
+			<div class="quiz-delete-actions">
+				<button class="quiz-delete-cancel" on:click={() => (quizToDelete = null)}>
+					{$_('Cancel')}
+				</button>
+				<button class="quiz-delete-confirm" on:click={removeQuiz}>
+					{$_('Remove')}
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
 {#if showJoinModal}
 	<div
 		class="modal-overlay"
@@ -1845,6 +1851,75 @@
 		justify-content: center;
 		z-index: 10000;
 	}
+	.quiz-delete-modal {
+		background: white;
+		border-radius: 1.5rem;
+		padding: 2rem 1.75rem;
+		max-width: 360px;
+		width: 92%;
+		box-shadow: 0 24px 48px -8px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.04);
+		text-align: center;
+	}
+	:global(.dark) .quiz-delete-modal {
+		background: #1e293b;
+		border: 1px solid #334155;
+	}
+	.quiz-delete-icon {
+		width: 52px;
+		height: 52px;
+		background: #fef2f2;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin: 0 auto 1.25rem;
+	}
+	:global(.dark) .quiz-delete-icon { background: rgba(239,68,68,0.12); }
+	.quiz-delete-title {
+		font-size: 1rem;
+		font-weight: 700;
+		color: #1e293b;
+		margin: 0 0 .5rem;
+	}
+	:global(.dark) .quiz-delete-title { color: #f1f5f9; }
+	.quiz-delete-name {
+		font-size: .83rem;
+		color: #64748b;
+		margin: 0 0 1.5rem;
+	}
+	.quiz-delete-actions {
+		display: flex;
+		gap: .75rem;
+	}
+	.quiz-delete-cancel,
+	.quiz-delete-confirm {
+		flex: 1;
+		padding: .65rem 1rem;
+		border-radius: .75rem;
+		font-size: .875rem;
+		font-weight: 600;
+		cursor: pointer;
+		white-space: nowrap;
+		transition: background .15s, color .15s;
+	}
+	.quiz-delete-cancel {
+		background: white;
+		border: 1px solid #e2e8f0;
+		color: #64748b;
+	}
+	:global(.dark) .quiz-delete-cancel {
+		background: #1e293b;
+		border-color: #334155;
+		color: #94a3b8;
+	}
+	.quiz-delete-cancel:hover { background: #f8fafc; }
+	:global(.dark) .quiz-delete-cancel:hover { background: #273549; }
+	.quiz-delete-confirm {
+		background: #ef4444;
+		border: none;
+		color: white;
+	}
+	.quiz-delete-confirm:hover { background: #dc2626; }
 	.modal-card {
 		background: white;
 		border-radius: 2rem;

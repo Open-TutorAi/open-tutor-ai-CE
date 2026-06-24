@@ -107,7 +107,10 @@ export const courseCreationData = writable({
 	courseLevel: '',
 	pedagogicalObjectives: '',
 	uploadedFiles: [] as File[],
-	selectedModel: ''
+	selectedModel: '',
+	// Plan généré en mémoire (pas encore sauvegardé en DB)
+	generatedPlan: null as { chapters: any[] } | null,
+	generatedObjectives: '' as string
 });
 
 export type Model = OpenAIModel | OllamaModel;

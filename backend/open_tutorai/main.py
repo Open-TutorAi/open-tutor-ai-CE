@@ -20,10 +20,9 @@ from open_tutorai.routers import (
     supports,
     teacher_courses,
     settings,
-    discussions
+    discussions,
+    student_messages,
 )
-
-
 from open_tutorai.env import (
     CHANGELOG,
 )
@@ -33,12 +32,12 @@ VERSION = "1.0.0"
 TUTORAI_BUILD_HASH = os.getenv("TUTORAI_BUILD_HASH", "dev-build")
 print(
     rf"""
- ██████╗ ██████╗ ███████╗███╗   ██╗    ████████╗██╗   ██╗████████╗ ██████╗ ██████╗    █████╗ ██╗
-██╔═══██╗██╔══██╗██╔════╝████╗  ██║    ╚══██╔══╝██║   ██║╚══██╔══╝██╔═══██╗██╔══██╗  ██╔══██╗██║
-██║   ██║██████╔╝█████╗  ██╔██╗ ██║       ██║   ██║   ██║   ██║   ██║   ██║██████╔╝  ███████║██║
-██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║       ██║   ██║   ██║   ██║   ██║   ██║██╔══██║  ██╔══██║██║
-╚██████╔╝██║     ███████╗██║ ╚████║       ██║   ╚██████╔╝   ██║   ╚██████╔╝██║  ██║  ██║  ██║██║
- ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝       ╚═╝    ╚═════╝    ╚═╝    ╚═════╝ ╚═╝  ╚═╝  ╚═╝  ╚═╝╚═╝
+ ██████╗ ██████╗ ███████╗███╗   ██╗     ████████╗██╗   ██╗████████╗ ██████╗ ██████╗     █████╗ ██╗
+██╔═══██╗██╔══██╗██╔════╝████╗  ██║     ╚══██╔══╝██║   ██║╚══██╔══╝██╔═══██╗██╔══██╗   ██╔══██╗██║
+██║   ██║██████╔╝█████╗  ██╔██╗ ██║        ██║   ██║   ██║   ██║   ██║   ██║██████╔╝   ███████║██║
+██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║        ██║   ██║   ██║   ██║   ██║   ██║██╔══██║   ██╔══██║██║
+╚██████╔╝██║     ███████╗██║ ╚████║        ██║   ╚██████╔╝   ██║   ╚██████╔╝██║  ██║   ██║  ██║██║
+ ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝        ╚═╝    ╚═════╝    ╚═╝    ╚═════╝ ╚═╝  ╚═╝   ╚═╝  ╚═╝╚═╝
 v{VERSION} - empowering education through open-source AI tutoring.
 {f"Commit: {TUTORAI_BUILD_HASH}" if TUTORAI_BUILD_HASH != "dev-build" else ""}
 https://github.com/Open-TutorAi/open-tutor-ai-CE
@@ -94,13 +93,23 @@ app.include_router(
 app.include_router(auths.router, prefix="/auths", tags=["auths"])
 app.include_router(supports.router, prefix="/api/v1", tags=["supports"])
 app.include_router(teacher_courses.router, prefix="/api/v1", tags=["teacher-courses"])
-app.include_router(teacher_courses.analytics_router, prefix="/api/v1", tags=["teacher-analytics"])
-app.include_router(teacher_courses.students_router, prefix="/api/v1", tags=["teacher-students"])
+app.include_router(
+    teacher_courses.analytics_router, prefix="/api/v1", tags=["teacher-analytics"]
+)
+app.include_router(
+    teacher_courses.students_router, prefix="/api/v1", tags=["teacher-students"]
+)
+app.include_router(student_messages.router, prefix="/api/v1", tags=["student-messages"])
 app.include_router(student_courses.router, prefix="/api/v1", tags=["student-courses"])
 app.include_router(quizzes_router, prefix="/api/v1/quizzes", tags=["quizzes"])
-app.include_router(student_assignments_router, prefix="/api/v1", tags=["student-assignments"])
+app.include_router(
+    student_assignments_router, prefix="/api/v1", tags=["student-assignments"]
+)
 app.include_router(settings.router, prefix="/api/v1", tags=["settings"])
-app.include_router(discussions.router, prefix="/api/v1/discussions", tags=["discussions"])
+app.include_router(
+    discussions.router, prefix="/api/v1/discussions", tags=["discussions"]
+)
+
 
 @app.get("/api/changelog")
 async def get_app_changelog():

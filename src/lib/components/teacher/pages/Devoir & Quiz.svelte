@@ -997,20 +997,33 @@
 						{:else}
 							<div class="sub-list">
 								{#each analyticsData.submissions as sub}
-									<div class="sub-row">
-										<!-- Avatar: first letter of student name -->
+									<div class="sub-row {sub.submission_count > 1 ? 'sub-row--retried' : ''}">
 										<div class="avatar">{sub.student_name?.charAt(0)?.toUpperCase() ?? '?'}</div>
 										<div class="sub-info">
 											<div class="sub-name">{sub.student_name}</div>
-											<div class="sub-date">
-												{new Date(sub.submitted_at).toLocaleDateString('en-US', {
-													day: 'numeric',
-													month: 'short',
-													year: 'numeric'
-												})}
-											</div>
+											{#if sub.attempts && sub.attempts.length > 1}
+												<div class="sub-attempts">
+													{#each sub.attempts as att}
+														<span class="sub-attempt-chip {att.score === sub.best_score ? 'best' : ''}">
+															T{att.attempt}: {att.score}/{sub.attempts[0]?.total ?? att.score}
+															{#if att.score === sub.best_score}<span class="chip-star">★</span>{/if}
+														</span>
+													{/each}
+												</div>
+											{:else}
+												<div class="sub-date">
+													{sub.attempts?.[0]?.submitted_at
+														? new Date(sub.attempts[0].submitted_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+														: new Date(sub.submitted_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+												</div>
+											{/if}
 										</div>
-										<div class="sub-score">{sub.score}</div>
+										<div class="sub-score-wrap">
+											<div class="sub-score">{sub.best_score ?? sub.score}</div>
+											{#if sub.submission_count > 1}
+												<div class="sub-best-label">{$i18n.t('Best')}</div>
+											{/if}
+										</div>
 									</div>
 								{/each}
 							</div>
@@ -2303,6 +2316,47 @@
 	:global(.dark) .sub-score {
 		color: #93c5fd;
 	}
+	/* Retake support */
+	.sub-row--retried {
+		border-left: 3px solid #f59e0b;
+	}
+	.sub-score-wrap {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 2px;
+	}
+	.sub-best-label {
+		font-size: 9px;
+		font-weight: 700;
+		color: #10b981;
+		text-transform: uppercase;
+		letter-spacing: .05em;
+	}
+	.sub-attempts {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px;
+		margin-top: 3px;
+	}
+	.sub-attempt-chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 2px;
+		font-size: 10px;
+		font-weight: 600;
+		padding: 1px 6px;
+		border-radius: 999px;
+		background: #e2e8f0;
+		color: #475569;
+	}
+	:global(.dark) .sub-attempt-chip { background: #334155; color: #94a3b8; }
+	.sub-attempt-chip.best {
+		background: #d1fae5;
+		color: #065f46;
+	}
+	:global(.dark) .sub-attempt-chip.best { background: rgba(16,185,129,.18); color: #6ee7b7; }
+	.chip-star { font-size: 9px; }
 
 	/* ============================================================
 	   15. EMPTY & LOADING STATES

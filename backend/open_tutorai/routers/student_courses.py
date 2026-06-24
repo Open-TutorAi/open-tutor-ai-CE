@@ -20,6 +20,7 @@ from open_tutorai.models.database import (
     CourseProgress,
 )
 from open_webui.models.users import Users
+
 log = logging.getLogger(__name__)
 log.setLevel("INFO")
 

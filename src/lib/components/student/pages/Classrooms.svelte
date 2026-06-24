@@ -1,9 +1,9 @@
 <!--
   StudentMesCours.svelte
-  Page "My Courses" for students:
-  - Displays joined courses
-  - "Join a course" button → modal code
-  - Option to leave/delete a course
+  Page "Mes Cours" pour les étudiants :
+  - Affiche les cours rejoints
+  - Bouton "Rejoindre un cours" → modal code
+  - Possibilité de quitter/supprimer un cours
 -->
 <script lang="ts">
 	import { getContext, onMount } from 'svelte';
@@ -11,8 +11,10 @@
 	import { cubicOut } from 'svelte/easing';
 	import { TUTOR_FRONT_URL } from '$lib/constants';
 	import { goto } from '$app/navigation';
+	import type { Writable } from 'svelte/store';
+	import type { i18n as i18nType } from 'i18next';
 
-	const i18n = getContext('i18n');
+	const i18n = getContext<Writable<i18nType>>('i18n');
 
 	// ── TYPES ─────────────────────────────────────────────────────
 	interface EnrolledCourse {
@@ -40,7 +42,7 @@
 	let joinSuccess = false;
 	let newlyJoinedId = '';
 
-	// Modal Delete (Leave)
+	// Modal Delete (Quitter)
 	let showDeleteModal = false;
 	let courseToDelete: string | null = null;
 	let isDeleting = false;
@@ -75,10 +77,10 @@
 
 	function levelLabel(level: string): string {
 		const map: Record<string, string> = {
-			'primary-school': $i18n.t('Primary school'),
-			'middle-school': $i18n.t('Middle school'),
-			'high-school': $i18n.t('High school'),
-			university: $i18n.t('University')
+			'primary-school': $i18n.t('Primaire'),
+			'middle-school': $i18n.t('Collège'),
+			'high-school': $i18n.t('Lycée'),
+			university: $i18n.t('Université')
 		};
 		return map[level] ?? level;
 	}
@@ -110,7 +112,7 @@
 	async function joinCourse() {
 		const code = courseCode.trim();
 		if (!code) {
-			joinError = $i18n.t('Please enter a code');
+			joinError = $i18n.t('Veuillez entrer un code');
 			return;
 		}
 		isJoining = true;
@@ -128,12 +130,12 @@
 			});
 
 			if (res.status === 409) {
-				joinError = $i18n.t('Already enrolled in this course');
+				joinError = $i18n.t('Vous êtes déjà inscrit à ce cours');
 				return;
 			}
 			if (!res.ok) {
 				const err = await res.json().catch(() => ({}));
-				throw new Error(err.detail ?? $i18n.t('Invalid code or course not found'));
+				throw new Error(err.detail ?? $i18n.t('Code invalide ou cours introuvable'));
 			}
 
 			const enrolled: EnrolledCourse = await res.json();
@@ -150,7 +152,7 @@
 				}, 4000);
 			}, 1500);
 		} catch (e: any) {
-			joinError = e?.message ?? $i18n.t('Enrollment error');
+			joinError = e?.message ?? $i18n.t("Erreur lors de l'inscription");
 		} finally {
 			isJoining = false;
 		}
@@ -177,8 +179,6 @@
 
 		try {
 			const token = localStorage.getItem('token') ?? '';
-			// Note: Make sure the DELETE endpoint in the backend is this one.
-			// If different, change it here (e.g., /api/v1/student/courses/${courseToDelete}/enroll)
 			const res = await fetch(`/api/v1/student/courses/${courseToDelete}`, {
 				method: 'DELETE',
 				headers: { Authorization: `Bearer ${token}` }
@@ -186,14 +186,13 @@
 
 			if (!res.ok) {
 				const err = await res.json().catch(() => ({}));
-				throw new Error(err.detail ?? $i18n.t('Error while deleting course'));
+				throw new Error(err.detail ?? $i18n.t('Erreur lors de la suppression du cours'));
 			}
 
-			// Update the list locally after successful deletion
 			courses = courses.filter((c) => c.id !== courseToDelete);
 			closeDeleteModal();
 		} catch (e: any) {
-			deleteError = e?.message ?? $i18n.t('Deletion error');
+			deleteError = e?.message ?? $i18n.t('Erreur lors de la suppression');
 		} finally {
 			isDeleting = false;
 		}
@@ -210,11 +209,11 @@
 			});
 			if (!res.ok) {
 				const err = await res.json().catch(() => ({}));
-				throw new Error(err.detail ?? `Error ${res.status}`);
+				throw new Error(err.detail ?? `Erreur ${res.status}`);
 			}
 			courses = await res.json();
 		} catch (e: any) {
-			fetchError = e?.message ?? $i18n.t('Error while loading');
+			fetchError = e?.message ?? $i18n.t('Erreur lors du chargement');
 		} finally {
 			isLoading = false;
 		}
@@ -251,9 +250,9 @@
 			</div>
 			<div>
 				<h1 class="page-title">
-					{$i18n.t('My')} <span class="title-accent">{$i18n.t('Courses')}</span>
+					{$i18n.t('Mes')} <span class="title-accent">{$i18n.t('Cours')}</span>
 				</h1>
-				<p class="page-sub">{$i18n.t('Find and start your courses')}</p>
+				<p class="page-sub">{$i18n.t('Retrouvez et démarrez vos cours')}</p>
 			</div>
 		</div>
 
@@ -266,7 +265,7 @@
 					d="M12 4v16m8-8H4"
 				/>
 			</svg>
-			{$i18n.t('Join a course')}
+			{$i18n.t('Rejoindre un cours')}
 		</button>
 	</div>
 
@@ -282,7 +281,7 @@
 				/>
 			</svg>
 			{fetchError}
-			<button class="err-retry" on:click={fetchCourses}>{$i18n.t('Try Again')}</button>
+			<button class="err-retry" on:click={fetchCourses}>{$i18n.t('Réessayer')}</button>
 		</div>
 	{/if}
 
@@ -378,8 +377,8 @@
 					/>
 				</svg>
 			</div>
-			<p class="empty-title">{$i18n.t('No courses yet')}</p>
-			<p class="empty-sub">{$i18n.t('Enter a code to join your first course')}</p>
+			<p class="empty-title">{$i18n.t("Aucun cours pour l'instant")}</p>
+			<p class="empty-sub">{$i18n.t('Entrez un code pour rejoindre votre premier cours')}</p>
 			<button class="btn-join" on:click={openJoinModal}>
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16">
 					<path
@@ -389,7 +388,7 @@
 						d="M12 4v16m8-8H4"
 					/>
 				</svg>
-				{$i18n.t('Join a course')}
+				{$i18n.t('Rejoindre un cours')}
 			</button>
 		</div>
 
@@ -404,7 +403,7 @@
 					<!-- NEW badge -->
 					{#if course.id === newlyJoinedId}
 						<div class="new-badge" in:fly={{ x: 12, duration: 280 }}>
-							✨ {$i18n.t('New')}
+							✨ {$i18n.t('Nouveau')}
 						</div>
 					{/if}
 
@@ -423,11 +422,11 @@
 							<span class="cc-lang">{langFlag(course.language)} {course.language}</span>
 						</div>
 
-						<!-- Leave button (Delete) -->
+						<!-- Bouton Quitter (Supprimer) -->
 						<button
 							class="btn-delete-course"
 							on:click|stopPropagation={() => openDeleteModal(course.id)}
-							title={$i18n.t('Leave course')}
+							title={$i18n.t('Quitter le cours')}
 						>
 							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16">
 								<path
@@ -461,7 +460,7 @@
 								{course.teacher_name?.charAt(0)?.toUpperCase() ?? 'P'}
 							{/if}
 						</div>
-						<span class="teacher-name">{course.teacher_name ?? $i18n.t('Professor')}</span>
+						<span class="teacher-name">{course.teacher_name ?? $i18n.t('Professeur')}</span>
 					</div>
 
 					<!-- Divider -->
@@ -477,7 +476,7 @@
 								d="M5 3l14 9-14 9V3z"
 							/>
 						</svg>
-						{$i18n.t('Start the course')}
+						{$i18n.t('Démarrer le cours')}
 						<svg
 							viewBox="0 0 24 24"
 							fill="none"
@@ -515,13 +514,13 @@
 			class="modal-card"
 			role="dialog"
 			aria-modal="true"
-			aria-label={$i18n.t('Join a course')}
+			aria-label={$i18n.t('Rejoindre un cours')}
 			on:click|stopPropagation
 			on:keydown|stopPropagation
 			in:fly={{ y: 20, duration: 300, easing: cubicOut }}
 		>
 			<!-- Close -->
-			<button class="modal-close" on:click={closeJoinModal} aria-label={$i18n.t('Close')}>
+			<button class="modal-close" on:click={closeJoinModal} aria-label={$i18n.t('Fermer')}>
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="18" height="18">
 					<path
 						stroke-linecap="round"
@@ -539,15 +538,15 @@
 						<img src="{TUTOR_FRONT_URL}/static/favicon.png" alt="OT AI" class="modal-logo-img" />
 					</div>
 
-					<h2 class="modal-title">{$i18n.t('Join a course')}</h2>
+					<h2 class="modal-title">{$i18n.t('Rejoindre un cours')}</h2>
 					<p class="modal-subtitle">
-						{$i18n.t('Enter the code provided by your teacher')}
+						{$i18n.t('Entrez le code fourni par votre professeur')}
 					</p>
 
 					<!-- Code input -->
 					<div class="input-group">
 						<label for="courseCodeInput" class="input-label">
-							{$i18n.t('Course code')}
+							{$i18n.t('Code du cours')}
 						</label>
 						<input
 							id="courseCodeInput"
@@ -576,7 +575,7 @@
 					</div>
 
 					<p class="modal-hint">
-						{$i18n.t('No code? Ask your teacher or your institution')}
+						{$i18n.t('Pas de code ? Demandez à votre professeur ou à votre institution')}
 					</p>
 
 					<!-- Join button -->
@@ -597,7 +596,7 @@
 									stroke-dasharray="80 40"
 								/>
 							</svg>
-							{$i18n.t('Enrolling...')}
+							{$i18n.t('Inscription...')}
 						{:else}
 							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="16" height="16">
 								<path
@@ -607,7 +606,7 @@
 									d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
 								/>
 							</svg>
-							{$i18n.t('Join the course')}
+							{$i18n.t('Rejoindre le cours')}
 						{/if}
 					</button>
 				</div>
@@ -624,8 +623,8 @@
 							/>
 						</svg>
 					</div>
-					<h2 class="modal-title">{$i18n.t('Course joined!')}</h2>
-					<p class="modal-subtitle">{$i18n.t('You are now enrolled in the course.')}</p>
+					<h2 class="modal-title">{$i18n.t('Cours rejoint !')}</h2>
+					<p class="modal-subtitle">{$i18n.t('Vous êtes maintenant inscrit au cours.')}</p>
 				</div>
 			{/if}
 		</div>
@@ -663,10 +662,10 @@
 					</svg>
 				</div>
 
-				<h2 class="modal-title">{$i18n.t('Leave this course?')}</h2>
+				<h2 class="modal-title">{$i18n.t('Quitter ce cours ?')}</h2>
 				<p class="modal-subtitle">
 					{$i18n.t(
-						'Are you sure you want to unenroll? You will lose access to all course resources.'
+						"Êtes-vous sûr de vouloir vous désinscrire ? Vous perdrez l'accès à toutes les ressources de ce cours."
 					)}
 				</p>
 
@@ -678,7 +677,7 @@
 
 				<div class="delete-actions">
 					<button class="btn-cancel" on:click={closeDeleteModal} disabled={isDeleting}>
-						{$i18n.t('Cancel')}
+						{$i18n.t('Annuler')}
 					</button>
 					<button class="btn-confirm-delete" on:click={unenrollCourse} disabled={isDeleting}>
 						{#if isDeleting}
@@ -693,9 +692,9 @@
 									stroke-dasharray="80 40"
 								/>
 							</svg>
-							{$i18n.t('Deleting...')}
+							{$i18n.t('Suppression...')}
 						{:else}
-							{$i18n.t('Yes, leave')}
+							{$i18n.t('Oui, quitter')}
 						{/if}
 					</button>
 				</div>

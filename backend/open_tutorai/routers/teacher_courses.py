@@ -2,10 +2,10 @@ import uuid
 import json
 import logging
 import os
+from collections import defaultdict
 
 from datetime import datetime
 from typing import Optional, List
-from open_tutorai.models.database import Course, CourseEnrollment
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Form
 from pydantic import BaseModel, Field
@@ -14,14 +14,16 @@ from sqlalchemy.orm import sessionmaker
 from open_webui.internal.db import engine
 from open_tutorai.utils.auth import get_verified_user
 from open_webui.models.models import Models
-from open_tutorai.models.database import Course, CoursePlan, CourseFile
 from open_tutorai.models.database import (
     Course,
     CourseEnrollment,
-    CourseProgress,
+    CourseFile,
     CoursePlan,
+    CourseProgress,
     Quiz,
+    QuizQuestion,
     QuizSubmission,
+    StudentQuizAccess,
 )
 from open_webui.models.users import Users
 
@@ -419,34 +421,19 @@ async def generate_course_full(
         raise HTTPException(status_code=500, detail="Failed to reach LLM backend")
 
     try:
-        content = r.json()["choices"][0]["message"]["content"].strip()
-
-        # Strip markdown code fences if model wrapped the JSON
-        if content.startswith("```json"):
-            content = content[7:]
-        elif content.startswith("```"):
-            content = content[3:]
-
-        if content.endswith("```"):
-            content = content[:-3]
-
-        content = content.strip()
-        plan = json.loads(content)
-        data = json.loads(content.strip())
+        raw = r.json()["choices"][0]["message"]["content"]
+        start = raw.find("{")
+        end = raw.rfind("}")
+        if start == -1 or end == -1:
+            raise ValueError(f"No JSON object found: {raw[:300]}")
+        data = json.loads(raw[start : end + 1])
 
         if "chapters" not in data:
-            raise ValueError("missing 'chapters' key in plan")
+            raise ValueError(f"missing 'chapters' key, got: {list(data.keys())}")
 
         plan = {"chapters": data.get("chapters", [])}
         ai_objectives = data.get("objectives", objectives)
 
-    except json.JSONDecodeError as je:
-        log.error(f"JSON parsing error: {je}. Raw content: {content[:500]}")
-        course.status = "error"
-        db.commit()
-        raise HTTPException(
-            status_code=500, detail="LLM returned invalid JSON structure"
-        )
     except Exception as e:
         log.error(f"Failed to parse LLM response: {e}")
         course.status = "error"
@@ -478,6 +465,191 @@ async def generate_course_full(
         "plan": plan,
         "objectives": ai_objectives,
         "files_count": len(files),
+    }
+
+
+# ---------------------------------------------------------------
+# 1c. POST /courses/preview-plan – Génère le plan SANS sauvegarder en DB
+# ---------------------------------------------------------------
+@router.post("/preview-plan", response_model=dict)
+async def preview_course_plan(
+    request: Request,
+    title: str = Form(...),
+    language: str = Form(...),
+    category: str = Form(...),
+    level: str = Form(...),
+    objectives: str = Form(...),
+    model: str = Form(...),
+    files: List[UploadFile] = File(...),
+    user=Depends(get_verified_user),
+):
+    """
+    Génère un plan de cours via LLM sans créer d'enregistrement en base.
+    Le cours n'est sauvegardé que lors de l'appel à /save-validated.
+    """
+    if not files:
+        raise HTTPException(status_code=400, detail="No files provided")
+    if not model:
+        raise HTTPException(status_code=400, detail="No model specified")
+
+    # Lire les fichiers en mémoire (pas de sauvegarde sur disque)
+    file_metadata = []
+    for uploaded_file in files:
+        contents = await uploaded_file.read()
+        file_metadata.append(
+            {
+                "filename": uploaded_file.filename or "unknown",
+                "size": len(contents),
+            }
+        )
+
+    # Appel LLM
+    auth_header = request.headers.get("authorization", "")
+    port = int(os.environ.get("PORT", "8080"))
+    user_message = json.dumps(
+        {
+            "title": title,
+            "language": language,
+            "category": category,
+            "level": level,
+            "objectives": objectives,
+            "files": file_metadata,
+        }
+    )
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": COURSE_PLAN_SYSTEM_PROMPT},
+            {"role": "user", "content": user_message},
+        ],
+        "stream": False,
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=300) as client:
+            r = await client.post(
+                f"http://localhost:{port}/api/chat/completions",
+                json=payload,
+                headers={
+                    "Authorization": auth_header,
+                    "Content-Type": "application/json",
+                },
+            )
+        r.raise_for_status()
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=500, detail="LLM generation timed out")
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(
+            status_code=500, detail=f"LLM error: {e.response.status_code}"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to reach LLM backend")
+
+    try:
+        raw = r.json()["choices"][0]["message"]["content"]
+        # Extraire le bloc JSON en cherchant le premier { et le dernier }
+        start = raw.find("{")
+        end = raw.rfind("}")
+        if start == -1 or end == -1:
+            raise ValueError(f"No JSON object found in LLM response: {raw[:300]}")
+        content = raw[start : end + 1]
+        data = json.loads(content)
+        if "chapters" not in data:
+            raise ValueError(f"missing 'chapters' key, got keys: {list(data.keys())}")
+        plan = {"chapters": data.get("chapters", [])}
+        ai_objectives = data.get("objectives", objectives)
+    except Exception as e:
+        log.error(f"Failed to parse LLM response in preview-plan: {e}")
+        raise HTTPException(
+            status_code=500, detail="Could not parse course plan from LLM response"
+        )
+
+    log.info(f"Preview plan generated for teacher {user.id} (not saved to DB)")
+    return {"plan": plan, "objectives": ai_objectives}
+
+
+# ---------------------------------------------------------------
+# 1d. POST /courses/save-validated – Crée le cours + fichiers + plan en DB
+# ---------------------------------------------------------------
+@router.post("/save-validated", response_model=dict)
+async def save_validated_course(
+    title: str = Form(...),
+    language: str = Form(...),
+    category: str = Form(...),
+    custom_category: str = Form(""),
+    level: str = Form(...),
+    objectives: str = Form(...),
+    model: str = Form(""),
+    plan_json: str = Form(...),
+    files: List[UploadFile] = File(...),
+    user=Depends(get_verified_user),
+    db=Depends(get_db),
+):
+    """
+    Crée définitivement le cours en base de données avec le plan fourni
+    (pas d'appel LLM — le plan a déjà été validé par l'enseignant).
+    """
+    course_id = str(uuid.uuid4())
+    course = Course(
+        id=course_id,
+        teacher_id=user.id,
+        title=title,
+        language=language,
+        category=category,
+        custom_category=custom_category or None,
+        level=level,
+        objectives=objectives,
+        model_used=model or None,
+        status="plan_generated",
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+    )
+    db.add(course)
+    db.commit()
+    db.refresh(course)
+
+    # Sauvegarder les fichiers
+    upload_dir = os.path.join("/tmp", "course_uploads", course_id)
+    os.makedirs(upload_dir, exist_ok=True)
+    for uploaded_file in files:
+        try:
+            contents = await uploaded_file.read()
+            file_path = os.path.join(upload_dir, uploaded_file.filename or "unknown")
+            with open(file_path, "wb") as f:
+                f.write(contents)
+            course_file = CourseFile(
+                id=str(uuid.uuid4()),
+                course_id=course_id,
+                filename=uploaded_file.filename or "unknown",
+                file_path=file_path,
+                file_type=uploaded_file.content_type,
+                file_size=len(contents),
+            )
+            db.add(course_file)
+        except Exception as e:
+            log.warning(f"Erreur fichier {uploaded_file.filename}: {e}")
+    db.commit()
+
+    # Sauvegarder le plan fourni
+    try:
+        plan = json.loads(plan_json)
+    except Exception:
+        plan = {"chapters": []}
+
+    course_plan = CoursePlan(
+        id=str(uuid.uuid4()),
+        course_id=course_id,
+        plan_json=plan,
+        generated_at=datetime.utcnow(),
+    )
+    db.add(course_plan)
+    db.commit()
+
+    log.info(f"Cours {course_id} créé et validé par teacher {user.id}")
+    return {
+        "course_id": course_id,
+        "course": _to_response(course),
+        "plan": plan,
     }
 
 
@@ -565,48 +737,61 @@ async def update_course(
 async def delete_course(
     course_id: str, user=Depends(get_verified_user), db=Depends(get_db)
 ):
-    """
-    Supprimer un cours et TOUT ce qui lui est lié :
-    - Enrollments des étudiants (CourseEnrollment)
-    - Fichiers physiques + enregistrements (CourseFile)
-    - Plans du cours (CoursePlan)
-    - Le cours lui-même
-    """
-
     course = _get_course_or_404(db, course_id, user.id)
 
-    # ── 1. Supprimer les enrollments des étudiants ──────────────
-    enrollments_deleted = (
-        db.query(CourseEnrollment)
-        .filter(CourseEnrollment.course_id == course_id)
-        .delete(synchronize_session=False)
+    # ── 1. Progressions étudiants ────────────────────────────────
+    db.query(CourseProgress).filter(CourseProgress.course_id == course_id).delete(
+        synchronize_session=False
     )
-    log.info(f"Cours {course_id} : {enrollments_deleted} enrollment(s) supprimé(s)")
 
-    # ── 2. Supprimer les fichiers physiques + DB ─────────────────
+    # ── 2. Enrollments ───────────────────────────────────────────
+    db.query(CourseEnrollment).filter(CourseEnrollment.course_id == course_id).delete(
+        synchronize_session=False
+    )
+
+    # ── 3. Fichiers physiques + DB ───────────────────────────────
     files = db.query(CourseFile).filter(CourseFile.course_id == course_id).all()
     for f in files:
         try:
             if f.file_path and os.path.exists(f.file_path):
                 os.remove(f.file_path)
-                log.info(f"Fichier supprimé : {f.file_path}")
         except Exception as e:
             log.warning(f"Erreur suppression fichier {f.file_path}: {e}")
-
     db.query(CourseFile).filter(CourseFile.course_id == course_id).delete(
         synchronize_session=False
     )
 
-    # ── 3. Supprimer les plans ───────────────────────────────────
+    # ── 4. Plans ─────────────────────────────────────────────────
     db.query(CoursePlan).filter(CoursePlan.course_id == course_id).delete(
         synchronize_session=False
     )
 
-    # ── 4. Supprimer le cours lui-même ───────────────────────────
+    # ── 5. Quiz et tout ce qui y est lié ─────────────────────────
+    quiz_ids = [
+        q.id for q in db.query(Quiz.id).filter(Quiz.course_id == course_id).all()
+    ]
+    if quiz_ids:
+        db.query(StudentQuizAccess).filter(
+            StudentQuizAccess.quiz_id.in_(quiz_ids)
+        ).delete(synchronize_session=False)
+        db.query(QuizSubmission).filter(QuizSubmission.quiz_id.in_(quiz_ids)).delete(
+            synchronize_session=False
+        )
+        db.query(QuizQuestion).filter(QuizQuestion.quiz_id.in_(quiz_ids)).delete(
+            synchronize_session=False
+        )
+        db.query(Quiz).filter(Quiz.course_id == course_id).delete(
+            synchronize_session=False
+        )
+
+    # ── 6. Supprimer le cours (session expirée pour éviter les
+    #       références résiduelles des bulk deletes précédents) ───
+    db.expire_all()
+    course = _get_course_or_404(db, course_id, user.id)
     db.delete(course)
     db.commit()
 
-    log.info(f"Cours {course_id} supprimé définitivement par teacher {user.id}")
+    log.info(f"Cours {course_id} supprime par teacher {user.id}")
 
 
 # ---------------------------------------------------------------
@@ -932,51 +1117,91 @@ async def get_teacher_reports(
 
         progress_sum += progress_percentage
 
-        # Last Quiz Grade
+        # All Quiz submissions for this student in this course
         quizzes = db.query(Quiz).filter(Quiz.course_id == enrollment.course_id).all()
         quiz_ids = [q.id for q in quizzes]
 
-        grade_str = "-/20"
-        last_score_pct = None
+        grade_str = "-"
+        best_score_pct = None
+        quiz_attempts = []  # [{attempt, score, total, submitted_at, quiz_title}]
+
         if quiz_ids:
-            latest_submission = (
+            all_subs = (
                 db.query(QuizSubmission)
                 .filter(
                     QuizSubmission.quiz_id.in_(quiz_ids),
                     QuizSubmission.student_id == student_id,
                 )
-                .order_by(QuizSubmission.submitted_at.desc())
-                .first()
+                .order_by(QuizSubmission.submitted_at.asc())
+                .all()
             )
-            if latest_submission:
-                q_record = (
-                    db.query(Quiz).filter(Quiz.id == latest_submission.quiz_id).first()
-                )
-                total_q = (
-                    q_record.total_questions
-                    if (q_record and q_record.total_questions)
-                    else 20
-                )
-                if total_q > 0:
-                    grade_str = f"{latest_submission.score}/{total_q}"
-                    last_score_pct = latest_submission.score / total_q
-                else:
-                    grade_str = f"{latest_submission.score}/20"
-                    last_score_pct = latest_submission.score / 20
+            if all_subs:
+                # Group by quiz_id to get per-quiz attempts
+                by_quiz: dict = defaultdict(list)
+                for sub in all_subs:
+                    by_quiz[sub.quiz_id].append(sub)
+
+                all_best_scores = []
+                attempt_num = 1
+                for qid, subs in by_quiz.items():
+                    q_record = db.query(Quiz).filter(Quiz.id == qid).first()
+                    total_q = (
+                        q_record.total_questions
+                        if q_record and q_record.total_questions
+                        else 10
+                    )
+                    for sub in subs:
+                        quiz_attempts.append(
+                            {
+                                "attempt": attempt_num,
+                                "score": sub.score,
+                                "total": total_q,
+                                "submitted_at": (
+                                    sub.submitted_at.isoformat()
+                                    if sub.submitted_at
+                                    else ""
+                                ),
+                                "quiz_title": q_record.title if q_record else "",
+                            }
+                        )
+                        attempt_num += 1
+                    best = max(s.score for s in subs)
+                    all_best_scores.append((best, total_q))
+
+                if all_best_scores:
+                    overall_best = all_best_scores[0][0]
+                    total_q = all_best_scores[0][1]
+                    grade_str = f"{overall_best}/{total_q}"
+                    best_score_pct = overall_best / total_q if total_q else 0
+
+        # Progress: combine course section progress + quiz bonus
+        # If student has quiz submissions but 0 section progress, give credit for quiz activity
+        quiz_bonus = 0
+        if quiz_attempts and progress_percentage == 0:
+            # Each quiz attempt counts as some activity — not full progress
+            quiz_bonus = min(
+                len(quiz_attempts) * 5, 20
+            )  # max 20% bonus from quizzes alone
+        effective_progress = min(progress_percentage + quiz_bonus, 100)
 
         # Dynamic Status Tag
-        if progress_percentage < 10:
+        if effective_progress < 10 and not quiz_attempts:
             student_status = "Inactive"
-        elif last_score_pct is not None and last_score_pct < 0.5:
+        elif best_score_pct is not None and best_score_pct < 0.5:
             student_status = "Struggling"
+        elif effective_progress >= 100:
+            student_status = "Completed"
         else:
             student_status = "Active"
 
         # Apply status filter
         if status and status != "all":
-            if status == "completed" and progress_percentage < 100:
+            if status == "completed" and effective_progress < 100:
                 continue
-            if status == "in_progress" and student_status != "Active":
+            if status == "in_progress" and student_status not in (
+                "Active",
+                "Struggling",
+            ):
                 continue
             if status == "failed" and student_status != "Struggling":
                 continue
@@ -992,8 +1217,12 @@ async def get_teacher_reports(
                 "id": student_id,
                 "name": student_name,
                 "date": enrollment_date,
-                "progress": progress_percentage,
+                "progress": effective_progress,
                 "note": grade_str,
+                "best_score_pct": (
+                    round(best_score_pct * 100) if best_score_pct is not None else None
+                ),
+                "attempts": quiz_attempts,
                 "status": student_status,
             }
         )

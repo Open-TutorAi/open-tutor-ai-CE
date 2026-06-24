@@ -11,8 +11,9 @@
 	import Message from '$lib/components/icons/Messages.svelte';
 	import type { ComponentType } from 'svelte';
 	import { writable, type Writable } from 'svelte/store';
-	import { derived } from 'svelte/store';
-	const i18n: any = getContext('i18n');
+	import type { i18n as i18nType } from 'i18next';
+	const i18n = getContext<Writable<i18nType>>('i18n');
+
 	// Use a simple boolean for sidebar state instead of a store
 	export let isSidebarOpen = true;
 	export let isDarkMode: boolean = false;
@@ -130,11 +131,10 @@
 	const navItemsKeys: NavItems = {
 		teacher: [
 			{ id: 'dashboard', labelKey: 'Dashboard', icon: Dashboard },
-			{ id: 'courses', labelKey: 'My Courses', icon: Classroom },
-			{ id: 'assignments', labelKey: 'Assignments & Quizzes', icon: Assignment },
-			{ id: 'reports', labelKey: 'Tracking & Reports', icon: Dashboard },
+			{ id: 'assignments', labelKey: 'Devoirs & Quiz', icon: Assignment },
+			{ id: 'reports', labelKey: 'Suivi & Rapports', icon: Dashboard },
 			{ id: 'messages', labelKey: 'Messages', icon: Message },
-			{ id: 'settings', labelKey: 'Profile & Settings', icon: Settings }
+			{ id: 'settings', labelKey: 'Profil & paramètres', icon: Settings }
 		],
 		student: [],
 		parent: []
@@ -267,8 +267,8 @@
 	<!-- Overlay to close sidebar when clicked (mobile only) -->
 	{#if isSidebarOpen && isMobile}
 		<div
-			class="fixed inset-0 bg-white/30 backdrop-blur-sm z-20 md:hidden"
-			on:click={toggleSidebar}
+		class="fixed inset-0 bg-white/30 backdrop-blur-sm z-20 md:hidden"
+		on:click={toggleSidebar}
 		></div>
 	{/if}
 </div>

@@ -590,15 +590,30 @@ export async function applyCourseProgressSignalsFromContent(args: {
 
 	console.log(`[CourseProgress] courseId=${courseId} extracted=${updates.length} mapped=${mappedUpdates.length} heuristic=${heuristic.length} toApply=${merged.size}`);
 
-	// Auto-complete previous chapters when learner is already in a later chapter
+	// Auto-complete previous chapters AND previous sections within the same chapter
 	let maxAdvancedChapterIdx = -1;
+
+	// Track the earliest "in-progress" or "completed" section per chapter
+	const activeChapterSections = new Map<string, number>(); // chapterId → earliest active section index
+
 	for (const u of merged.values()) {
-		const idx = planIndex.chaptersOrdered.findIndex((c) => c.chapterId === u.chapter_id);
-		if (idx > maxAdvancedChapterIdx && (u.status === 'in-progress' || u.status === 'completed')) {
-			maxAdvancedChapterIdx = idx;
+		const chIdx = planIndex.chaptersOrdered.findIndex((c) => c.chapterId === u.chapter_id);
+		if (chIdx < 0) continue;
+
+		if (u.status === 'in-progress' || u.status === 'completed') {
+			if (chIdx > maxAdvancedChapterIdx) maxAdvancedChapterIdx = chIdx;
+
+			// Track the section index within this chapter
+			const ch = planIndex.chaptersOrdered[chIdx];
+			const secIdx = ch.sections.indexOf(u.section_id);
+			if (secIdx > 0) {
+				const existing = activeChapterSections.get(u.chapter_id) ?? -1;
+				if (secIdx > existing) activeChapterSections.set(u.chapter_id, secIdx);
+			}
 		}
 	}
 
+	// Complete all sections of previous chapters
 	if (maxAdvancedChapterIdx > 0) {
 		for (let i = 0; i < maxAdvancedChapterIdx; i++) {
 			const ch = planIndex.chaptersOrdered[i];
@@ -613,6 +628,26 @@ export async function applyCourseProgressSignalsFromContent(args: {
 						reason: 'auto-complete-previous-chapters'
 					});
 				}
+			}
+		}
+	}
+
+	// Complete previous sections within the same chapter
+	for (const [chapterId, activeSecIdx] of activeChapterSections.entries()) {
+		const ch = planIndex.chaptersOrdered.find((c) => c.chapterId === chapterId);
+		if (!ch) continue;
+		for (let i = 0; i < activeSecIdx; i++) {
+			const secId = ch.sections[i];
+			if (!secId) continue;
+			const key = `${chapterId}:${secId}`;
+			const current = planIndex.currentStatusMap.get(key);
+			if (current !== 'completed') {
+				merged.set(key, {
+					chapter_id: chapterId,
+					section_id: secId,
+					status: 'completed',
+					reason: 'auto-complete-previous-sections'
+				});
 			}
 		}
 	}

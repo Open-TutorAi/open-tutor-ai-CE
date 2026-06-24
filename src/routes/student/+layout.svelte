@@ -238,7 +238,7 @@
 
 		<!-- Main content with proper scrolling -->
 		<div
-			class="flex-1 overflow-y-auto {$isFullscreenAvatar ? '' : 'p-4 md:p-6'} bg-[#F4F7FE] dark:bg-gray-900 text-gray-800 dark:text-gray-100"
+			class="flex-1 overflow-y-auto {$isFullscreenAvatar || $page.url.pathname.startsWith('/student/messages') ? '' : 'p-4 md:p-6'} bg-[#F4F7FE] dark:bg-gray-900 text-gray-800 dark:text-gray-100"
 		>
 			<slot />
 		</div>

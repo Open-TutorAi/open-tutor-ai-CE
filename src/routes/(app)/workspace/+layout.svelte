@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, getContext } from 'svelte';
+	import { onMount, onDestroy, getContext } from 'svelte';
 	import {
 		TUTOR_NAME,
 		showSidebar,
@@ -19,8 +19,13 @@
 	const i18n = getContext('i18n');
 
 	let loaded = false;
+	let previousLang = '';
 
 	onMount(async () => {
+		if ($i18n.language === 'ar-MA' && $user?.role === 'admin') {
+			previousLang = 'ar-MA';
+			await $i18n.changeLanguage('en-US');
+		}
 		if ($user?.role !== 'admin') {
 			if ($page.url.pathname.includes('/models') && !$user?.permissions?.workspace?.models) {
 				goto('/');
@@ -40,6 +45,12 @@
 		}
 
 		loaded = true;
+	});
+
+	onDestroy(() => {
+		if (previousLang) {
+			$i18n.changeLanguage(previousLang);
+		}
 	});
 </script>
 

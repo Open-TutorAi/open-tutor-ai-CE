@@ -5,7 +5,7 @@
 	import { page } from '$app/stores';
 	import { isFullscreenAvatar } from '$lib/stores';
 	
-	let chatData = {};
+	let chatData: any = {};
 	let isRightBarVisible = false;
 	
 	// Typage ajouté pour résoudre le conflit
@@ -63,7 +63,7 @@
 		<div class="rightbar-container h-full w-80 bg-[#F5F7F9] dark:bg-gray-900 rounded-2xl shadow-sm overflow-y-auto transition-transform duration-300 ease-in-out"
 			class:mobile-visible={isRightBarVisible}
 		>
-			<RightBar {chatData} />
+			<RightBar {...chatData} />
 		</div>
 	{/if}
 </div>

@@ -23,7 +23,6 @@ from open_tutorai.models.database import (
     QuizSubmission,
     Course,
     CoursePlan,
-    CourseEnrollment,
     StudentQuizAccess,
 )
 
@@ -87,7 +86,7 @@ def _quiz_to_dict(quiz: Quiz) -> dict:
                 "question_type": q.question_type,
                 "question_text": q.question_text,
                 "options": q.options,
-                "correct_answer": q.correct_answer,
+                "correct_answer": q.correct_answer_explanation,
             }
         )
     return {
@@ -123,7 +122,7 @@ async def list_teacher_quizzes(
     for q in quizzes:
         qd = _quiz_to_dict(q)
         participants_count = (
-            db.query(func.count(QuizSubmission.id))
+            db.query(func.count(func.distinct(QuizSubmission.student_id)))
             .filter(QuizSubmission.quiz_id == q.id)
             .scalar()
             or 0
@@ -458,6 +457,7 @@ Output ONLY the JSON array."""
             teacher_id=user.id,
             course_id=body.course_id,
             title=body.title,
+            quiz_type=",".join(body.question_types) if body.question_types else "QCM",
             time_limit=body.time_limit,
             total_questions=len(questions_data),
             limit_date=body.limit_date,
@@ -471,10 +471,11 @@ Output ONLY the JSON array."""
             question = QuizQuestion(
                 id=str(uuid.uuid4()),
                 quiz_id=quiz_id,
+                question_number=idx + 1,
                 question_type=q_data.get("question_type", "QCM"),
                 question_text=q_data.get("question_text", ""),
                 options=q_data.get("options", []),
-                correct_answer=str(q_data.get("correct_answer", "")),
+                correct_answer_explanation=str(q_data.get("correct_answer", "")),
             )
             db.add(question)
 
@@ -510,7 +511,7 @@ async def publish_quiz(
         # Delete existing questions
         db.query(QuizQuestion).filter(QuizQuestion.quiz_id == id).delete()
         # Add the updated/manual questions
-        for q_data in body.questions:
+        for idx, q_data in enumerate(body.questions):
             q_id = (
                 q_data.id
                 if q_data.id and not q_data.id.startswith("manual_")
@@ -519,10 +520,11 @@ async def publish_quiz(
             question = QuizQuestion(
                 id=q_id,
                 quiz_id=id,
+                question_number=idx + 1,
                 question_type=q_data.question_type,
                 question_text=q_data.question_text,
                 options=q_data.options or [],
-                correct_answer=q_data.correct_answer,
+                correct_answer_explanation=q_data.correct_answer,
             )
             db.add(question)
         quiz.total_questions = len(body.questions)
@@ -647,17 +649,20 @@ async def submit_quiz(
             detail="Accès interdit. Vous devez d'abord valider le code d'accès pour ce quiz.",
         )
 
-    # Prevent multiple submissions by the same student for the same quiz
-    existing_submission = (
+    # Allow max 2 attempts per student per quiz
+    existing_submissions = (
         db.query(QuizSubmission)
         .filter(
             QuizSubmission.quiz_id == id,
             QuizSubmission.student_id == user.id,
         )
-        .first()
+        .all()
     )
-    if existing_submission:
-        raise HTTPException(status_code=400, detail="Vous avez déjà soumis ce quiz.")
+    if len(existing_submissions) >= 2:
+        raise HTTPException(
+            status_code=400,
+            detail="Vous avez atteint le nombre maximum de tentatives (2) pour ce quiz.",
+        )
 
     score = 0
     total = len(quiz.questions)
@@ -665,7 +670,7 @@ async def submit_quiz(
     # Compute score instantly
     for q in quiz.questions:
         student_ans = str(body.answers.get(q.id, "")).strip().lower()
-        correct_ans = str(q.correct_answer).strip().lower()
+        correct_ans = str(q.correct_answer_explanation or "").strip().lower()
 
         # Soft comparison for True/False translations
         if q.question_type == "True/False":
@@ -684,6 +689,7 @@ async def submit_quiz(
         student_id=user.id,
         answers=body.answers,
         score=score,
+        status="submitted",
         submitted_at=datetime.utcnow(),
     )
     db.add(submission)
@@ -712,10 +718,9 @@ async def get_teacher_analytics(
             status_code=404, detail="Quiz introuvable ou accès non autorisé"
         )
 
-    submissions = quiz.submissions
-    total_participants = len(submissions)
+    all_submissions = quiz.submissions  # all rows, including retakes
 
-    if total_participants == 0:
+    if not all_submissions:
         return {
             "quiz_title": quiz.title,
             "quiz_code": quiz.quiz_code,
@@ -727,22 +732,21 @@ async def get_teacher_analytics(
             "distribution": {},
         }
 
-    scores = [s.score for s in submissions]
-    average_score = sum(scores) / total_participants
-    high_score = max(scores)
-    low_score = min(scores)
+    # Group submissions by student — preserve chronological order
+    from collections import defaultdict
 
-    # Score distribution calculations
-    distribution = {}
-    for s in scores:
-        distribution[s] = distribution.get(s, 0) + 1
+    by_student: dict = defaultdict(list)
+    for s in sorted(all_submissions, key=lambda x: x.submitted_at or datetime.min):
+        by_student[s.student_id].append(s)
 
-    # Format student submissions with names/emails
+    # Build per-student entries; stats use best score per unique student
     submissions_formatted = []
-    for s in submissions:
+    best_scores = []
+
+    for student_id, subs in by_student.items():
         student_name = "Étudiant anonyme"
         try:
-            student = Users.get_user_by_id(s.student_id)
+            student = Users.get_user_by_id(student_id)
             if student:
                 student_name = getattr(student, "name", None) or getattr(
                     student, "email", "Étudiant anonyme"
@@ -750,14 +754,41 @@ async def get_teacher_analytics(
         except Exception:
             pass
 
-        submissions_formatted.append(
+        best_score = max(s.score for s in subs)
+        best_scores.append(best_score)
+
+        attempts = [
             {
-                "id": s.id,
-                "student_name": student_name,
+                "attempt": i + 1,
                 "score": s.score,
                 "submitted_at": s.submitted_at.isoformat() if s.submitted_at else "",
             }
+            for i, s in enumerate(subs)
+        ]
+
+        submissions_formatted.append(
+            {
+                "student_name": student_name,
+                "best_score": best_score,
+                "submission_count": len(subs),
+                "attempts": attempts,
+                # legacy field kept for backward compat
+                "score": best_score,
+                "submitted_at": (
+                    subs[-1].submitted_at.isoformat() if subs[-1].submitted_at else ""
+                ),
+            }
         )
+
+    total_participants = len(submissions_formatted)
+    average_score = sum(best_scores) / total_participants
+    high_score = max(best_scores)
+    low_score = min(best_scores)
+
+    # Distribution based on best score per student
+    distribution = {}
+    for sc in best_scores:
+        distribution[sc] = distribution.get(sc, 0) + 1
 
     return {
         "quiz_title": quiz.title,
@@ -844,21 +875,13 @@ async def join_assignment_by_code(
     }
 
 
-
 @student_assignments_router.get("")
 async def list_student_assignments(
-    codes: Optional[str] = None,
     user=Depends(get_verified_user),
     db=Depends(get_db),
 ):
-    # 1. Fetch enrolled course IDs
-    enrollments = (
-        db.query(CourseEnrollment).filter(CourseEnrollment.student_id == user.id).all()
-    )
-    course_ids = [e.course_id for e in enrollments]
-
-    # Fetch unlocked quiz IDs for the current student
-    # (for standalone quizzes joined by code)
+    # All quizzes require an explicit join via code (StudentQuizAccess record).
+    # Course enrollment alone is NOT enough — the student must enter the quiz code.
     unlocked_accesses = (
         db.query(StudentQuizAccess.quiz_id)
         .filter(StudentQuizAccess.student_id == user.id)
@@ -866,42 +889,17 @@ async def list_student_assignments(
     )
     unlocked_quiz_ids = {a.quiz_id for a in unlocked_accesses}
 
-    # 2a. COURSE QUIZZES: Auto-visible to all enrolled students
-    #     (NO explicit unlock required — enrollment is enough)
-    course_quizzes = (
+    if not unlocked_quiz_ids:
+        return []
+
+    quizzes = (
         db.query(Quiz)
         .filter(
-            Quiz.course_id.in_(course_ids),
+            Quiz.id.in_(unlocked_quiz_ids),
             Quiz.status == "published",
         )
         .all()
-        if course_ids
-        else []
     )
-
-    # 2b. STANDALONE QUIZZES: Require explicit join via code + unlock record
-    standalone_quizzes = []
-    standalone_codes = []
-    if codes:
-        standalone_codes = [c.strip().upper() for c in codes.split(",") if c.strip()]
-
-    if standalone_codes:
-        standalone_quizzes = (
-            db.query(Quiz)
-            .filter(
-                func.upper(Quiz.quiz_code).in_(standalone_codes),
-                Quiz.status == "published",
-                Quiz.id.in_(unlocked_quiz_ids),  # ← unlock required for standalone
-            )
-            .all()
-        )
-
-    # Merge course + standalone quizzes, avoiding duplicates
-    quizzes = list(course_quizzes)
-    existing_quiz_ids = {q.id for q in quizzes}
-    for sq in standalone_quizzes:
-        if sq.id not in existing_quiz_ids:
-            quizzes.append(sq)
 
     # 4. Map each quiz to assignment format
     assignments_list = []
@@ -912,14 +910,17 @@ async def list_student_assignments(
             if course_obj:
                 course_title = course_obj.title
 
-        # Query submission for this student
-        submission = (
+        # Query all submissions for this student (ordered newest first)
+        all_submissions = (
             db.query(QuizSubmission)
             .filter(
                 QuizSubmission.quiz_id == quiz.id, QuizSubmission.student_id == user.id
             )
-            .first()
+            .order_by(QuizSubmission.submitted_at.desc())
+            .all()
         )
+        submission = all_submissions[0] if all_submissions else None
+        submission_count = len(all_submissions)
 
         status = "completed" if submission else "pending"
         # Optional: Check if deadline has passed to set overdue
@@ -945,19 +946,41 @@ async def list_student_assignments(
         submitted_at = None
         time_spent = None
 
-        if submission:
-            score = submission.score
+        attempts = []
+        best_score = None
+
+        if all_submissions:
+            # Build chronological attempts list
+            for i, sub in enumerate(reversed(all_submissions)):  # oldest first
+                ts = sub.submitted_at.isoformat() if sub.submitted_at else None
+                ts_sub = (
+                    sub.answers.get("__time_spent__")
+                    if isinstance(sub.answers, dict)
+                    else None
+                )
+                attempts.append(
+                    {
+                        "attempt": i + 1,
+                        "score": sub.score,
+                        "total": total,
+                        "submitted_at": ts,
+                        "time_spent": ts_sub,
+                    }
+                )
+
+            best_score = max(s.score for s in all_submissions)
+            # For display: use the most recent submission's metadata
+            score = best_score
             submitted_at = (
                 submission.submitted_at.isoformat() if submission.submitted_at else None
             )
-            # Retrieve time_spent from answers under __time_spent__ key
             if isinstance(submission.answers, dict):
                 time_spent = submission.answers.get("__time_spent__")
 
         assignments_list.append(
             {
                 "id": quiz.id,
-                "quiz_id": quiz.id,  # ← Ensure quiz_id is always present
+                "quiz_id": quiz.id,
                 "course": course_title,
                 "points": quiz.total_questions * 10,
                 "title": quiz.title,
@@ -965,17 +988,44 @@ async def list_student_assignments(
                 "status": status,
                 "due": quiz.limit_date if quiz.limit_date else "Pas de date limite",
                 "quiz_code": quiz.quiz_code,
-                # Completed details
-                "score": score,
+                # Scores
+                "score": best_score,  # best score (used for progress)
+                "best_score": best_score,
                 "total": total,
                 "submitted_at": submitted_at,
                 "time_spent": time_spent,
                 "limit_date": quiz.limit_date,
                 "total_questions": quiz.total_questions,
+                "submission_count": submission_count,
+                "attempts": attempts,  # [{attempt, score, total, submitted_at, time_spent}]
             }
         )
 
     return assignments_list
+
+
+# ---------------------------------------------------------------
+# Student removes a quiz from their list (deletes their access record)
+# ---------------------------------------------------------------
+@student_assignments_router.delete("/{quiz_id}", status_code=204)
+async def remove_student_quiz_access(
+    quiz_id: str,
+    user=Depends(get_verified_user),
+    db=Depends(get_db),
+):
+    access = (
+        db.query(StudentQuizAccess)
+        .filter(
+            StudentQuizAccess.student_id == user.id,
+            StudentQuizAccess.quiz_id == quiz_id,
+        )
+        .first()
+    )
+    if access:
+        db.delete(access)
+        db.commit()
+    return None
+
 
 # ---------------------------------------------------------------
 # 6. DELETE /teacher/{quiz_id} - Teacher supprime un quiz
@@ -993,15 +1043,11 @@ async def delete_quiz(
     - Questions du quiz (QuizQuestion)
     - Le quiz lui-même
     """
-    quiz = db.query(Quiz).filter(
-        Quiz.id == quiz_id,
-        Quiz.teacher_id == user.id
-    ).first()
-    
+    quiz = db.query(Quiz).filter(Quiz.id == quiz_id, Quiz.teacher_id == user.id).first()
+
     if not quiz:
         raise HTTPException(
-            status_code=404,
-            detail="Quiz introuvable ou accès non autorisé"
+            status_code=404, detail="Quiz introuvable ou accès non autorisé"
         )
 
     try:
@@ -1009,7 +1055,7 @@ async def delete_quiz(
         submissions_deleted = (
             db.query(QuizSubmission)
             .filter(QuizSubmission.quiz_id == quiz_id)
-            .delete(synchronize_session='fetch')
+            .delete(synchronize_session="fetch")
         )
         log.info(f"Quiz {quiz_id} : {submissions_deleted} soumission(s) supprimée(s)")
 
@@ -1017,7 +1063,7 @@ async def delete_quiz(
         accesses_deleted = (
             db.query(StudentQuizAccess)
             .filter(StudentQuizAccess.quiz_id == quiz_id)
-            .delete(synchronize_session='fetch')
+            .delete(synchronize_session="fetch")
         )
         log.info(f"Quiz {quiz_id} : {accesses_deleted} accès étudiant(s) supprimé(s)")
 
@@ -1032,5 +1078,5 @@ async def delete_quiz(
         log.error(f"Erreur suppression quiz {quiz_id}: {e}")
         raise HTTPException(
             status_code=500,
-            detail=f"Erreur lors de la suppression du quiz: {str(e)[:200]}"
+            detail=f"Erreur lors de la suppression du quiz: {str(e)[:200]}",
         )

@@ -2,6 +2,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import { get, writable, derived } from 'svelte/store';
 
 	import Sidebar from '$lib/components/teacher/elements/Sidebar.svelte';
@@ -100,7 +101,7 @@
 			on:darkModeToggle={toggleDarkMode}
 		/>
 
-		<div class="flex-1 overflow-y-auto p-4 md:p-6 bg-[#F4F7FE] dark:bg-gray-900 text-gray-800 dark:text-gray-100">
+		<div class="flex-1 overflow-y-auto {$page.url.pathname.startsWith('/teacher/messages') ? '' : 'p-4 md:p-6'} bg-[#F4F7FE] dark:bg-gray-900 text-gray-800 dark:text-gray-100">
 			<slot />
 		</div>
 	</div>

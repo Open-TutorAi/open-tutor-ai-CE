@@ -82,7 +82,10 @@
 	onMount(async () => {
 		selectedTheme = localStorage.theme ?? 'system';
 
-		languages = await getLanguages();
+		const allLanguages = await getLanguages();
+		languages = $user?.role === 'admin'
+			? allLanguages.filter((l: { code: string }) => l.code !== 'ar-MA')
+			: allLanguages;
 
 		notificationEnabled = $settings.notificationEnabled ?? false;
 		system = $settings.system ?? '';

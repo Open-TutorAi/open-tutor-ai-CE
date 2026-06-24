@@ -214,6 +214,8 @@ class Quiz(Base):
         index=True,
     )
     title = Column(String, nullable=False)
+    quiz_type = Column(String, nullable=False, default="QCM")
+    passing_score = Column(Integer, nullable=False, default=50)
     time_limit = Column(Integer, nullable=True)  # in minutes
     total_questions = Column(Integer, nullable=False, default=0)
     limit_date = Column(String, nullable=True)
@@ -245,12 +247,13 @@ class QuizQuestion(Base):
         nullable=False,
         index=True,
     )
+    question_number = Column(Integer, nullable=False, default=1)
     question_type = Column(
         String, nullable=False
     )  # "QCM", "True/False", "Short Answer"
     question_text = Column(Text, nullable=False)
-    options = Column(JSONField, nullable=True)  # choices for QCM as array
-    correct_answer = Column(String, nullable=False)
+    options = Column(JSONField, nullable=False, default=list)
+    correct_answer_explanation = Column(Text, nullable=True)
 
     quiz = relationship(
         "Quiz", backref=backref("questions", cascade="all, delete-orphan")
@@ -276,8 +279,9 @@ class QuizSubmission(Base):
     )
     student_id = Column(String, index=True, nullable=False)
     answers = Column(JSONField, nullable=False)  # JSON payload of student responses
-    score = Column(Integer, nullable=False)  # graded score
-    submitted_at = Column(DateTime, nullable=False, server_default=func.now())
+    score = Column(Integer, nullable=True)
+    status = Column(String, nullable=False, default="submitted")
+    submitted_at = Column(DateTime, nullable=True)
 
     quiz = relationship(
         "Quiz", backref=backref("submissions", cascade="all, delete-orphan")
@@ -390,6 +394,7 @@ class UserPreference(Base):
     def __repr__(self):
         return f"<UserPreference(user_id={self.user_id}, language={self.language}, theme={self.theme})>"
 
+
 class DiscussionRoom(Base):
     __tablename__ = "tutorai_discussion_rooms"
 
@@ -400,20 +405,31 @@ class DiscussionRoom(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationship to load history easily
-    messages = relationship("DiscussionMessage", back_populates="room", cascade="all, delete-orphan")
+    messages = relationship(
+        "DiscussionMessage", back_populates="room", cascade="all, delete-orphan"
+    )
+
 
 class DiscussionMessage(Base):
     __tablename__ = "tutorai_discussion_messages"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    room_id = Column(String, ForeignKey("tutorai_discussion_rooms.id", ondelete="CASCADE"), index=True)
-    sender_id = Column(String, nullable=False) # ID processing either teacher or student
-    sender_role = Column(String, nullable=False) # 'teacher' or 'student'
+    room_id = Column(
+        String,
+        ForeignKey("tutorai_discussion_rooms.id", ondelete="CASCADE"),
+        index=True,
+    )
+    sender_id = Column(
+        String, nullable=False
+    )  # ID processing either teacher or student
+    sender_role = Column(String, nullable=False)  # 'teacher' or 'student'
     sender_name = Column(String, nullable=False)
     content = Column(Text, nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow)
 
     room = relationship("DiscussionRoom", back_populates="messages")
+
+
 def init_database():
     """
     Initialize the database tables for OpenTutorAI.
