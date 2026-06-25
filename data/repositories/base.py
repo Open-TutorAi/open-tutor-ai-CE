@@ -16,12 +16,20 @@ class BaseRepository(Generic[T]):
         self.session = session
         self.model = model
 
-    def create(self, **kwargs) -> T:
-        """Create new instance."""
+    def create(self, commit: bool = True, **kwargs) -> T:
+        """Create new instance.
+
+        Pass ``commit=False`` to defer the commit when creating several rows in one
+        unit of work; the caller is then responsible for committing. Defaults preserve
+        the original commit-per-create behaviour.
+        """
         instance = self.model(**kwargs)
         self.session.add(instance)
-        self.session.commit()
-        self.session.refresh(instance)
+        if commit:
+            self.session.commit()
+            self.session.refresh(instance)
+        else:
+            self.session.flush()
         return instance
 
     def get_by_id(self, id: str) -> Optional[T]:

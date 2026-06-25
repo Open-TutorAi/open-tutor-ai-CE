@@ -200,6 +200,41 @@ async def emit_chat_event(user_id: str, data: dict) -> None:
     await sio.emit("chat-events", data, room=f"user:{user_id}")
 
 
+def is_user_online(user_id: str) -> bool:
+    """True if the user has at least one active socket session."""
+    return user_id in get_active_user_ids()
+
+
+async def emit_monitor_set(user_id: str, enabled: bool) -> None:
+    """Emit the E6 monitor (screen-lock) command to a student's room.
+
+    `enabled=False` tells the client to blank/lock the TutorAI screen; `True` restores it.
+    """
+    await sio.emit("monitor:set", {"enabled": enabled}, room=f"user:{user_id}")
+
+
+async def emit_message_new(user_id: str, data: dict) -> None:
+    """Emit a new chat message to a recipient's room (server → client)."""
+    await sio.emit("message:new", data, room=f"user:{user_id}")
+
+
+async def emit_exam_violation(teacher_id: str, data: dict) -> None:
+    """Notify a proctoring teacher of an exam violation (E10), live.
+
+    `data` carries `{assignment_id, student_id, type, violation_count, status}`.
+    """
+    await sio.emit("exam:violation", data, room=f"user:{teacher_id}")
+
+
+async def emit_monitor_student_away(teacher_id: str, data: dict) -> None:
+    """Notify a teacher that a *locked* student left/returned to their screen (E6).
+
+    `data` carries `{student_id, classroom_id, away}` — tab-away accountability, not a
+    block (the web client can't prevent the switch, only report it).
+    """
+    await sio.emit("monitor:student-away", data, room=f"user:{teacher_id}")
+
+
 async def emit_channel_event(channel_id: str, data: dict) -> None:
     """Emit channel-events to the channel's room (server → client)."""
     await sio.emit("channel-events", data, room=f"channel:{channel_id}")

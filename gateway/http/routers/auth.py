@@ -111,8 +111,17 @@ async def signup(
     request: SignUpRequest,
     svc: AccountService = Depends(get_account_service),
 ):
-    """Sign up — first user becomes admin."""
+    """Sign up — first user becomes admin; others self-select an allowed role."""
     is_admin = svc.count_users() == 0
+    # Roles a user may self-assign at signup. `admin` is NOT self-selectable —
+    # it is granted only to the first user (above) to avoid privilege escalation.
+    allowed_self_roles = {"user", "teacher", "parent"}
+    requested = request.role or "user"
+    role = (
+        "admin"
+        if is_admin
+        else (requested if requested in allowed_self_roles else "user")
+    )
     try:
         user = svc.create_user(
             email=request.email,
@@ -120,7 +129,7 @@ async def signup(
             password_plain=request.password,
             profile_image_url=request.profile_image_url,
             is_admin=is_admin,
-            role=request.role or "user",
+            role=role,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))

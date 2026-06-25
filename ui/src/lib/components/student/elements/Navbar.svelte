@@ -3,11 +3,15 @@
 	import { createEventDispatcher, onMount, getContext } from 'svelte';
 	const i18n = getContext('i18n');
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import { user, isDemo, demoData, originalUserData } from '$lib/stores';
 	import { generateDemoData } from '$lib/utils/mockData';
 	import { toast } from 'svelte-sonner';
 	import { generateInitialsImage } from '$lib/utils';
 	import { get } from 'svelte/store';
+
+	// Role-aware base path so this shared Navbar works for student/teacher/parent.
+	$: basePath = $page.url.pathname.split('/')[1] || 'student';
 
 	// Props
 	export let username: string = '';
@@ -148,7 +152,9 @@
 				</span>
 			</h1>
 			<p class={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} hidden sm:block`}>
-				{$i18n.t("Let's learn something new today!")}
+				{basePath === 'teacher'
+					? $i18n.t("Let's teach something new today.")
+					: $i18n.t("Let's learn something new today!")}
 			</p>
 		</div>
 	</div>
@@ -380,7 +386,7 @@
 					</div>
 					<div class="py-1">
 						<a
-							href="/student/settings"
+							href={`/${basePath}/settings`}
 							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
@@ -400,7 +406,7 @@
 							{$i18n.t('My Profile')}
 						</a>
 						<a
-							href="/student/settings"
+							href={`/${basePath}/settings`}
 							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
@@ -608,7 +614,7 @@
 					</div>
 					<div class="py-1">
 						<a
-							href="/student/settings"
+							href={`/${basePath}/settings`}
 							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
@@ -628,7 +634,7 @@
 							{$i18n.t('My Profile')}
 						</a>
 						<a
-							href="/student/settings"
+							href={`/${basePath}/settings`}
 							class={`flex items-center px-4 py-2 text-sm ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'}`}
 						>
 							<svg
