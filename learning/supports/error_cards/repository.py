@@ -1,4 +1,5 @@
 """Repository for ErrorCard CRUD operations."""
+
 from typing import List, Optional
 from sqlalchemy.orm import Session
 
@@ -24,17 +25,23 @@ class ErrorCardRepository(BaseRepository[ErrorCard]):
             .all()
         )
 
-    def get_for_user(self, card_id: str, user_id: str) -> Optional[ErrorCard]:
-        """Get a card by id, but only if it belongs to the given user."""
+    def get_for_user(
+        self, card_id: str, user_id: str, support_id: str
+    ) -> Optional[ErrorCard]:
+        """Get a card by id, scoped to both the owning user and the support."""
         return (
             self.session.query(ErrorCard)
-            .filter(ErrorCard.id == card_id, ErrorCard.user_id == user_id)
+            .filter(
+                ErrorCard.id == card_id,
+                ErrorCard.user_id == user_id,
+                ErrorCard.support_id == support_id,
+            )
             .first()
         )
 
-    def delete_for_user(self, card_id: str, user_id: str) -> bool:
-        """Delete a card only if it belongs to the given user. Returns True if deleted."""
-        card = self.get_for_user(card_id, user_id)
+    def delete_for_user(self, card_id: str, user_id: str, support_id: str) -> bool:
+        """Delete a card only if it belongs to the given user and support. Returns True if deleted."""
+        card = self.get_for_user(card_id, user_id, support_id)
         if not card:
             return False
         self.session.delete(card)

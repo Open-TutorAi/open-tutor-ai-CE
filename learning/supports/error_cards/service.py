@@ -1,4 +1,5 @@
 """Service for generating and managing error cards from student/tutor exchanges."""
+
 import json
 import logging
 import re
@@ -51,9 +52,9 @@ class ErrorCardsService:
     def __init__(self, session: Session):
         self.session = session
         self.repo = ErrorCardRepository(session)
-        self.supports_repo = SupportRepository(session, __import__(
-            "data.models", fromlist=["Support"]
-        ).Support)
+        self.supports_repo = SupportRepository(
+            session, __import__("data.models", fromlist=["Support"]).Support
+        )
         self.providers = ProvidersService(session)
 
     # ---------- Public API ----------
@@ -136,7 +137,12 @@ class ErrorCardsService:
             return []
 
         # 7. Persist one card per detected error
-        required = ["concept", "error_description", "simple_explanation", "correct_example"]
+        required = [
+            "concept",
+            "error_description",
+            "simple_explanation",
+            "correct_example",
+        ]
         created: List[ErrorCard] = []
         for entry in raw_errors:
             if not isinstance(entry, dict):
@@ -156,7 +162,9 @@ class ErrorCardsService:
             )
             log.info(
                 "Error card created for support %s (user %s): %s",
-                support_id, user_id, card.concept,
+                support_id,
+                user_id,
+                card.concept,
             )
             created.append(card)
 
@@ -166,9 +174,9 @@ class ErrorCardsService:
         """List all error cards for a support, scoped to the user."""
         return self.repo.list_by_support(support_id, user_id)
 
-    def delete_card(self, card_id: str, user_id: str) -> bool:
-        """Delete a card if it belongs to the user. Returns True on success."""
-        return self.repo.delete_for_user(card_id, user_id)
+    def delete_card(self, card_id: str, user_id: str, support_id: str) -> bool:
+        """Delete a card if it belongs to the user and the given support. Returns True on success."""
+        return self.repo.delete_for_user(card_id, user_id, support_id)
 
     # ---------- Helpers ----------
 

@@ -42,7 +42,8 @@ async def get_current_user(
     user = AccountService(db).get_user(user_id)
     if user is None:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
         )
     return user
 
@@ -50,6 +51,7 @@ async def get_current_user(
 def decode_jwt_token(token: str) -> dict | None:
     try:
         import jwt
+
         payload = jwt.decode(
             token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
         )

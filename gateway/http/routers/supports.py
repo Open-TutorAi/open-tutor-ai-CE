@@ -15,7 +15,7 @@ from fastapi import (
     status,
 )
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from config import settings
@@ -92,9 +92,9 @@ class SupportResponse(BaseModel):
 
 
 class AnalyzeExchangeRequest(BaseModel):
-    user_message: str
-    assistant_message: str
-    model: str
+    user_message: str = Field(min_length=1, max_length=10000)
+    assistant_message: str = Field(min_length=1, max_length=10000)
+    model: str = Field(min_length=1, max_length=200)
 
 
 class ErrorCardResponse(BaseModel):
@@ -335,7 +335,7 @@ async def delete_error_card(
     svc: ErrorCardsService = Depends(get_error_cards_service),
 ):
     """Delete one error card (must belong to the current user)."""
-    success = svc.delete_card(card_id, current_user.id)
+    success = svc.delete_card(card_id, current_user.id, support_id)
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Error card not found"
