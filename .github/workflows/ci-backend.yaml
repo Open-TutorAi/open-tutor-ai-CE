@@ -4,17 +4,17 @@ on:
   push:
     branches: [main, dev]
     paths:
-      - '**/*.py'
-      - 'requirements*.txt'
-      - 'pyproject.toml'
-      - '.github/workflows/ci-backend.yaml'
+      - "**/*.py"
+      - "requirements*.txt"
+      - "pyproject.toml"
+      - ".github/workflows/ci-backend.yaml"
   pull_request:
     branches: [main, dev]
     paths:
-      - '**/*.py'
-      - 'requirements*.txt'
-      - 'pyproject.toml'
-      - '.github/workflows/ci-backend.yaml'
+      - "**/*.py"
+      - "requirements*.txt"
+      - "pyproject.toml"
+      - ".github/workflows/ci-backend.yaml"
   workflow_dispatch:
 
 concurrency:
@@ -22,24 +22,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-
   lint:
-    name: Black format check
+    name: Ruff lint & format check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
           cache: pip
           cache-dependency-path: requirements-ci.txt
 
       - name: Install CI dependencies
         run: pip install -r requirements-ci.txt
 
+      - name: Lint
+        run: ruff check .
+
       - name: Check formatting
-        run: black . --check --exclude ".venv/|/venv/|ui/"
+        run: ruff format --check .
 
   test:
     name: Pytest
@@ -50,7 +52,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
           cache: pip
           cache-dependency-path: requirements-ci.txt
 

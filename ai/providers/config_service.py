@@ -1,13 +1,12 @@
 """AppConfig-backed provider configuration store."""
 
-import copy
 import os
 from typing import Any, Dict, List
 
 from sqlalchemy.orm import Session
 
-from data.models import AppConfig
 from ai.providers.profiles import REGISTRY
+from data.models import AppConfig
 
 _OPENAI_KEY = "provider_openai_config"
 _OLLAMA_KEY = "provider_ollama_config"

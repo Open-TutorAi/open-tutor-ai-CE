@@ -6,16 +6,16 @@ Custom model configs stored in DB overlay the base model list.
 
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from common.exceptions import NotFoundError, AuthorizationError, ValidationError
-from data.models import ModelConfig
 from ai.model_catalog.repository import ModelRepository
+from common.exceptions import AuthorizationError, NotFoundError, ValidationError
+from data.models import ModelConfig
 
 
 class ModelsService:
-
     def __init__(self, session: Session):
         self.repo = ModelRepository(session, ModelConfig)
 

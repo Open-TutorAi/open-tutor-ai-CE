@@ -1,7 +1,9 @@
 """Memories router — /api/v1/memories/* matching memories/index.ts UI client."""
 
 from typing import Any, Dict
+
 from fastapi import APIRouter, Depends
+
 from data.models import User
 from gateway.http.dependencies import get_current_user
 
