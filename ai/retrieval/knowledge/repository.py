@@ -1,7 +1,9 @@
 """Knowledge base data access."""
 
 from typing import List, Optional
+
 from sqlalchemy.orm import Session
+
 from data.models.knowledge import KnowledgeBase, KnowledgeFile
 
 

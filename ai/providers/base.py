@@ -2,7 +2,7 @@
 """Base provider interface."""
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import Any, Dict
 
 
 class Provider(ABC):

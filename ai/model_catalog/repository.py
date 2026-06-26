@@ -1,12 +1,12 @@
 """Model config repository."""
 
 from typing import List, Optional
+
 from data.models import ModelConfig
 from data.repositories import BaseRepository
 
 
 class ModelRepository(BaseRepository[ModelConfig]):
-
     def get_all_active(self) -> List[ModelConfig]:
         return (
             self.session.query(ModelConfig)

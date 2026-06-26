@@ -1,10 +1,11 @@
 from typing import Any, Dict, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
+from accounts.users.service import AccountService
 from data.models import User
 from gateway.http.dependencies import get_account_service, get_current_user
-from accounts.users.service import AccountService
 
 router = APIRouter(prefix="/users", tags=["users"])
 

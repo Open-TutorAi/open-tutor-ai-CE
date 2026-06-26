@@ -2,9 +2,10 @@
 
 import copy
 from typing import Any, Dict
-from sqlalchemy.orm import Session
-from data.models import AppConfig
 
+from sqlalchemy.orm import Session
+
+from data.models import AppConfig
 
 # Default values for all config keys
 _TUTOR_SYSTEM_PROMPT_DEFAULT = (
@@ -28,7 +29,6 @@ _DEFAULTS: Dict[str, Any] = {
 
 
 class ConfigsService:
-
     def __init__(self, session: Session):
         self.session = session
 

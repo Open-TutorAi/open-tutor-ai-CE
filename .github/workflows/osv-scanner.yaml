@@ -1,0 +1,47 @@
+name: OSV-Scanner
+
+# Scans dependency manifests (requirements*.txt, ui/package-lock.json) against
+# the OSV vulnerability database. Runs on every PR that touches a manifest and
+# on a weekly schedule against main.
+#
+# Detection-only: findings land in the Security tab (Code Scanning), the job
+# does not block merges on pre-existing vulnerabilities so we can patch on
+# our own schedule.
+
+on:
+  pull_request:
+    branches: [main, dev]
+    paths:
+      - 'requirements.txt'
+      - 'requirements-ci.txt'
+      - 'pyproject.toml'
+      - 'ui/package-lock.json'
+      - '.github/workflows/osv-scanner.yaml'
+  push:
+    branches: [main]
+    paths:
+      - 'requirements.txt'
+      - 'requirements-ci.txt'
+      - 'pyproject.toml'
+      - 'ui/package-lock.json'
+  schedule:
+    # Weekly scan — catches CVEs published after merge for unchanged deps.
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  # Required by the reusable workflow to upload SARIF to the Security tab.
+  actions: read
+  contents: read
+  security-events: write
+
+jobs:
+  scan:
+    name: Scan dependency manifests
+    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@9a498708959aeaef5ef730655706c5a1df1edbc2 # v2.3.8
+    with:
+      scan-args: |-
+        --lockfile=requirements.txt
+        --lockfile=requirements-ci.txt
+        --lockfile=ui/package-lock.json
+      fail-on-vuln: false
