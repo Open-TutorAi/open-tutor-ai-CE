@@ -76,7 +76,7 @@ class SupportsService:
 
     def update_chat_id(self, support_id: str, chat_id: str) -> Support:
         return self.repo.update(
-            support_id, chat_id=chat_id, updated_at=datetime.utcnow()
+            support_id, chat_id=chat_id, status="active", updated_at=datetime.utcnow()
         )
 
     def delete(self, support_id: str) -> None:

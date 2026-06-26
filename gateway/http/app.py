@@ -12,6 +12,9 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from config import settings
 from data.database import init_database
 from gateway.http.api_routes import register_api_routes
+from gateway.http.routers.parent_supports import router as parent_supports_router
+from gateway.http.routers.parent_dashboard import router as parent_dashboard_router
+from gateway.http.routers.parent_evaluations import router as parent_evaluations_router
 from gateway.realtime.socket import socket_app
 
 from .routers import (
@@ -164,6 +167,9 @@ def create_app() -> FastAPI:
     app.include_router(groups_router.router, prefix="/api/v1")
     app.include_router(folders_router.router, prefix="/api/v1")
     app.include_router(tasks_router.router, prefix="/api/v1")
+    app.include_router(parent_supports_router, prefix="/api/v1")
+    app.include_router(parent_dashboard_router, prefix="/api/v1")
+    app.include_router(parent_evaluations_router, prefix="/api/v1")
 
     # Socket.IO — mounted at /realtime; client uses path='/realtime/socket.io'
     app.mount("/realtime", socket_app)

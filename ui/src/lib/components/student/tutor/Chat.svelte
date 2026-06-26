@@ -109,6 +109,7 @@
 
 	export let chatIdProp = '';
 
+
 	let loading = false;
 
 	const eventTarget = new EventTarget();
