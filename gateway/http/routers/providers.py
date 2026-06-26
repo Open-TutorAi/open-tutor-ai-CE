@@ -9,29 +9,31 @@ later tasks (see markers below).
 
 import os
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Body, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
-from data.database import get_db
-from data.models import User
-from gateway.http.dependencies import get_current_user
 from ai.providers.ollama_native import (
-    pull_model_stream,
-    create_model_stream,
-    delete_model as ollama_delete_model,
-    upload_model_stream,
     UPLOAD_DIR,
+    create_model_stream,
+    pull_model_stream,
+    upload_model_stream,
+)
+from ai.providers.ollama_native import (
+    delete_model as ollama_delete_model,
 )
 from ai.providers.proxy import (
     proxy_json,
     proxy_stream,
-    resolve_url_key,
     resolve_ollama_url,
+    resolve_url_key,
 )
 from ai.providers.service import ProvidersService
+from data.database import get_db
+from data.models import User
+from gateway.http.dependencies import get_current_user
 
 router = APIRouter(prefix="/providers", tags=["providers"])
 

@@ -106,7 +106,7 @@
 				const customList = JSON.parse(stored);
 				if (Array.isArray(customList)) {
 					customList.forEach((c: any) => {
-						if (c && c.id && !subjects.some(s => s.id === c.id)) {
+						if (c && c.id && !subjects.some((s) => s.id === c.id)) {
 							subjects.push(c);
 						}
 					});
@@ -116,7 +116,6 @@
 			console.error('Failed to load custom subjects', e);
 		}
 	}
-
 
 	// Subject pagination
 	let subjectPageIndex = 0;
@@ -147,7 +146,7 @@
 		const name = customSubject.trim();
 		if (!name) return;
 
-		if (!subjects.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+		if (!subjects.some((s) => s.name.toLowerCase() === name.toLowerCase())) {
 			const id = name.toLowerCase().replace(/\s+/g, '-');
 			const newSubj = { id, name, icon: '⭐️', custom: true };
 			subjects = [...subjects, newSubj];
@@ -198,7 +197,10 @@
 			customSubject = support.custom_subject || '';
 
 			// If a custom subject is present but not yet in the subjects list (e.g. different device), add it so it renders as a card
-			if (customSubject && !subjects.some(s => s.name.toLowerCase() === customSubject.toLowerCase())) {
+			if (
+				customSubject &&
+				!subjects.some((s) => s.name.toLowerCase() === customSubject.toLowerCase())
+			) {
 				const id = customSubject.toLowerCase().replace(/\s+/g, '-');
 				const tempSubj = { id, name: customSubject, icon: '⭐️', custom: true };
 				subjects = [...subjects, tempSubj];

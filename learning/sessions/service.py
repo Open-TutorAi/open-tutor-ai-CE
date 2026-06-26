@@ -12,7 +12,6 @@ from learning.sessions.repository import ChatRepository
 
 
 class ChatsService:
-
     def __init__(self, session: Session):
         self.repo = ChatRepository(session, Chat)
 

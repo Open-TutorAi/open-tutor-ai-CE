@@ -179,8 +179,8 @@
 						<button
 							class="size-6 text-lg border border-gray-100 dark:border-gray-850 hover:bg-gray-50 dark:hover:bg-gray-850 {detailedRating ===
 							rating
-							? 'bg-yellow-400 dark:bg-gray-100'
-							: ''} transition-all duration-150 transform active:scale-90 hover:shadow rounded-full disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-white dark:disabled:bg-gray-900 flex items-center justify-center p-1"
+								? 'bg-yellow-400 dark:bg-gray-100'
+								: ''} transition-all duration-150 transform active:scale-90 hover:shadow rounded-full disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-white dark:disabled:bg-gray-900 flex items-center justify-center p-1"
 							on:click={() => {
 								detailedRating = rating;
 							}}

@@ -57,7 +57,7 @@
 			if (pageFromUrl === 'chat' || pageFromUrl === 'c') {
 				pageFromUrl = 'support';
 			}
-			
+
 			// Mark support nav item as active for support pages
 			// Format: /student/support/ID, /student/support/ID/edit, /student/support/create
 			if (pageFromUrl === 'support') {
@@ -82,12 +82,12 @@
 		const pathSegments = $page.url.pathname.split('/');
 		if (pathSegments.length >= 3) {
 			let pageFromUrl = pathSegments[2];
-			
+
 			// Map chat routes to support
 			if (pageFromUrl === 'chat' || pageFromUrl === 'c') {
 				pageFromUrl = 'support';
 			}
-			
+
 			// Mark support nav item as active for support pages
 			// Format: /student/support/ID, /student/support/ID/edit, /student/support/create
 			if (pageFromUrl === 'support') {
@@ -190,7 +190,7 @@
 				{/if}
 			</svg>
 		</button>
-		
+
 		<slot />
 	</div>
 
@@ -289,8 +289,8 @@
 	<!-- Overlay to close sidebar when clicked (mobile only) -->
 	{#if isSidebarOpen && isMobile}
 		<div
-		class="fixed inset-0 bg-white/30 backdrop-blur-sm z-20 md:hidden"
-		on:click={toggleSidebar}
+			class="fixed inset-0 bg-white/30 backdrop-blur-sm z-20 md:hidden"
+			on:click={toggleSidebar}
 		></div>
 	{/if}
 </div>

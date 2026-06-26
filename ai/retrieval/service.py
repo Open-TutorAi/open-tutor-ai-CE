@@ -1,6 +1,7 @@
 """Retrieval service — config stored in AppConfig KV."""
 
 from sqlalchemy.orm import Session
+
 from data.models.config import AppConfig
 
 _CONFIG_KEY = "retrieval_config"

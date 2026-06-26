@@ -22,7 +22,7 @@ export default defineConfig({
 		openMode: 0
 	},
 	env: {
-		apiUrl: 'http://localhost:5173',
+		apiUrl: 'http://localhost:5173'
 	},
 	video: true,
 	screenshotOnRunFailure: true

@@ -15,8 +15,7 @@
 	import { get, type Unsubscriber, type Writable } from 'svelte/store';
 	import type { i18n as i18nType } from 'i18next';
 	import { TUTOR_BASE_URL, TUTOR_API_BASE_URL } from '$lib/constants';
-	import promptData  from './prompt.json';
-
+	import promptData from './prompt.json';
 
 	import {
 		chatId,
@@ -172,12 +171,12 @@
 			owned_by: 'openai',
 			external: false
 		};
-		
+
 		// Add demo model to models if not already there
-		if (!$models.some(m => m.id === 'demo')) {
+		if (!$models.some((m) => m.id === 'demo')) {
 			models.set([demoModel, ...$models]);
 		}
-		
+
 		// Auto-select demo model if no model selected
 		if (selectedModels.length === 0 || selectedModels.includes('')) {
 			selectedModels = ['demo'];
@@ -189,7 +188,7 @@
 		// Update settings store and localStorage
 		settings.update((s) => {
 			const updatedSettings = { ...s };
-			(updatedSettings as any).avatarEnabled = !(($settings as any)?.avatarEnabled);
+			(updatedSettings as any).avatarEnabled = !($settings as any)?.avatarEnabled;
 			return updatedSettings;
 		});
 		// Save to localStorage for persistence
@@ -227,14 +226,14 @@
 	// Toggle fullscreen mode
 	function toggleFullscreen() {
 		const isCurrentlyFullscreen = $isFullscreenAvatar;
-		
+
 		if (!isCurrentlyFullscreen) {
 			// Enter fullscreen
 			requestFullscreen(document.documentElement)
 				.then(() => {
 					isFullscreenAvatar.set(true);
 				})
-				.catch(err => {
+				.catch((err) => {
 					console.error('Fullscreen request failed:', err);
 					toast.error('Unable to enter fullscreen mode');
 				});
@@ -244,7 +243,7 @@
 				.then(() => {
 					isFullscreenAvatar.set(false);
 				})
-				.catch(err => {
+				.catch((err) => {
 					console.error('Exit fullscreen failed:', err);
 					toast.error('Unable to exit fullscreen mode');
 				});
@@ -257,16 +256,16 @@
 			toggleFullscreen();
 		}
 	};
-	
+
 	// Listen for fullscreen change events (user might press ESC or F11 directly)
 	const handleFullscreenChange = () => {
 		const isFullscreenActive = !!(
-			document.fullscreenElement || 
-			(document as any).webkitFullscreenElement || 
-			(document as any).mozFullScreenElement || 
+			document.fullscreenElement ||
+			(document as any).webkitFullscreenElement ||
+			(document as any).mozFullScreenElement ||
 			(document as any).msFullscreenElement
 		);
-		
+
 		if (!isFullscreenActive && $isFullscreenAvatar) {
 			isFullscreenAvatar.set(false);
 		}
@@ -530,13 +529,13 @@
 
 	onMount(async () => {
 		console.log('mounted');
-		
+
 		// Initialize global event target if it doesn't exist
 		if (typeof window !== 'undefined' && !window.openTutorEvents) {
 			console.log('Creating global openTutorEvents EventTarget');
 			window.openTutorEvents = new EventTarget();
 		}
-		
+
 		// Listen for chat creation errors to cleanup pending supports
 		window.openTutorEvents.addEventListener('chatCreated', (event: CustomEvent) => {
 			if (event.detail && event.detail.success === false) {
@@ -548,7 +547,7 @@
 				}
 			}
 		});
-		
+
 		window.addEventListener('message', onMessageHandler);
 		$socket?.on('chat-events', chatEventHandler);
 
@@ -618,14 +617,14 @@
 		chatIdUnsubscriber?.();
 		window.removeEventListener('message', onMessageHandler);
 		$socket?.off('chat-events', chatEventHandler);
-		
+
 		// Clean up fullscreen event listeners
 		document.removeEventListener('keydown', handleKeyDown);
 		document.removeEventListener('fullscreenchange', handleFullscreenChange);
 		document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
 		document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
 		document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
-		
+
 		// Reset fullscreen state if active
 		if ($isFullscreenAvatar) {
 			isFullscreenAvatar.set(false);
@@ -828,12 +827,12 @@
 			}
 
 			// Use pre-loaded details if available to avoid a second API call
-			const supportDetails = preloadedDetails || await getSupportById(token, supportId);
+			const supportDetails = preloadedDetails || (await getSupportById(token, supportId));
 			if (!supportDetails) {
 				console.error('Failed to fetch support details');
 				return null;
 			}
-						
+
 			// Construct system prompt — base persona from platform config, then session-specific context
 			const _basePrompt = await getTutorSystemPrompt(token);
 			const _fallback = `You are a highly experienced educator, instructional designer, and tutor. You specialize in creating clear, engaging, and progressive step-by-step lessons for any topic and any academic level. You combine best practices in pedagogy (e.g., scaffolding, active recall, formative feedback) with adaptive teaching strategies. Your role is to guide the learner one concept at a time, combining effective teaching strategies, personalized communication style, and the most suitable reasoning method, in a way that is tailored to their needs, level, and learning goals.`;
@@ -845,32 +844,32 @@
 			}
 
 			systemPrompt += `.\n\n`;
-			
+
 			// Add directive to acknowledge context in first response
 			systemPrompt += `IMPORTANT INSTRUCTIONS: This is a learning session about ${supportDetails.title}. In your FIRST response, introduce yourself as a tutor for this specific topic and briefly mention what you'll be covering based on the learning objective. Even if the user's first message is generic (like "hello"), you should respond by acknowledging the course topic and learning goals described below.\n\n`;
-			
+
 			// Important note about not asking for information already provided - STRENGTHENED
 			systemPrompt += `CRITICAL INSTRUCTION: DO NOT ask the student about their educational level, background, prior knowledge, or learning objectives. This information has ALREADY been provided below and you must use it directly without asking the student to repeat it. Your first message should immediately begin teaching based on these details without asking any preliminary questions about the student's goals or background.\n\n`;
-			
+
 			// Add explicit first message format
 			systemPrompt += `Begin your first message by saying: "I'm your tutor for ${supportDetails.title}. We'll be working on ${supportDetails.learning_objective || 'this topic'} today." Then immediately start providing relevant content. Do not ask what they want to learn or what their background is.\n\n`;
-			
+
 			// Add title and description
 			systemPrompt += `TOPIC: ${supportDetails.title}\n`;
-			
+
 			if (supportDetails.short_description) {
 				systemPrompt += `DESCRIPTION: ${supportDetails.short_description}\n`;
 			}
-			
+
 			// Add learning objective
 			if (supportDetails.learning_objective) {
 				systemPrompt += `\nLEARNING OBJECTIVE: ${supportDetails.learning_objective}\n`;
 			}
-			
+
 			// Add learning type
 			if (supportDetails.learning_type) {
 				systemPrompt += `LEARNING TYPE: ${supportDetails.learning_type}\n`;
-				
+
 				// Add specific guidance based on learning type
 				if (supportDetails.learning_type === 'exam') {
 					systemPrompt += `Focus on exam preparation, practice questions, and assessment strategies.\n`;
@@ -880,11 +879,11 @@
 					systemPrompt += `Focus on practical skill-building and application of knowledge.\n`;
 				}
 			}
-			
+
 			// Add education level with stronger emphasis
 			if (supportDetails.level) {
 				systemPrompt += `EDUCATION LEVEL: ${supportDetails.level}\n`;
-				
+
 				// Adjust language and complexity based on level
 				if (supportDetails.level === 'primary') {
 					systemPrompt += `Use simple language and explanations appropriate for young learners.\n`;
@@ -895,42 +894,43 @@
 				} else if (supportDetails.level === 'university') {
 					systemPrompt += `Use advanced concepts and academic language appropriate for university-level education.\n`;
 				}
-				
+
 				// Add explicit note about education level
 				systemPrompt += `NOTE: The student is at the ${supportDetails.level} education level. Do not ask them about their level.\n`;
 			}
-			
+
 			// Add language preference
 			if (supportDetails.content_language) {
 				systemPrompt += `PREFERRED LANGUAGE: ${supportDetails.content_language}\n`;
 				systemPrompt += `Please respond in ${supportDetails.content_language} unless the student asks otherwise.\n`;
 			}
-			
+
 			// Add keywords
 			if (supportDetails.keywords && supportDetails.keywords.length > 0) {
 				systemPrompt += `\nKEY CONCEPTS: ${supportDetails.keywords.join(', ')}\n`;
 			}
-			
+
 			// Check for files and try to enhance context with file content if possible
 			if (supportDetails.files && supportDetails.files.length > 0) {
 				systemPrompt += `\nCOURSE MATERIALS: The student has uploaded ${supportDetails.files.length} file(s) as course materials:\n`;
-				
+
 				// List the files
 				for (const file of supportDetails.files) {
 					systemPrompt += `- ${file.filename} (${file.file_type || 'unknown type'})\n`;
 				}
-				
+
 				// Add a note about using the content of these materials
 				systemPrompt += `\nWhen answering questions, you should reference and use the content from these materials whenever relevant. The content will be made available through the chat interface. If the student asks about content from these materials, prioritize information from them in your answers.\n`;
-				
+
 				// Try to extract text content from text-based files if possible
 				try {
 					for (const file of supportDetails.files) {
-						if (file.file_type && 
-							(file.file_type.includes('text') || 
-							file.file_type.includes('pdf') || 
-							file.file_type.includes('document'))) {
-							
+						if (
+							file.file_type &&
+							(file.file_type.includes('text') ||
+								file.file_type.includes('pdf') ||
+								file.file_type.includes('document'))
+						) {
 							// In a real implementation, you would fetch and process text content from files
 							// For now, we just add a note that the content will be referenced
 							systemPrompt += `\nNote: Content from ${file.filename} will be made available for reference.\n`;
@@ -940,15 +940,15 @@
 					console.error('Error processing file content:', fileError);
 				}
 			}
-			
+
 			// Add estimated duration if available to guide session planning
 			if (supportDetails.estimated_duration) {
 				systemPrompt += `\nESTIMATED DURATION: This learning session is planned for ${supportDetails.estimated_duration}. Please pace your teaching accordingly.\n`;
 			}
-			
+
 			// Add general instruction
 			systemPrompt += `\nYour goal is to help the student achieve their learning objective by providing clear explanations, examples, analogies, and guided practice appropriate for their level. Adjust your teaching style, complexity, and examples based on their interactions. Be engaging, supportive, and patient throughout the learning process.\n\n`;
-			
+
 			//systemPrompt+= promptData;
 			// Add reminder to stay focused on the topic and not ask redundant questions - STRENGTHENED
 			systemPrompt += `FINAL REMINDER: DO NOT ask the student about information they've already provided such as their educational level, background, or learning goals. Instead, directly begin helping them with their learning objective. Always keep your responses relevant to the topic (${supportDetails.title}) and learning objectives described above. Your role is to provide structured guidance on this specific subject matter. If the student says only "hello" or provides a very brief message, jump straight into teaching the topic - don't waste time with preliminary questions.`;
@@ -958,7 +958,7 @@
 			console.error('Error generating support system prompt:', error);
 			return null;
 		}
-	}
+	};
 
 	const initNewChat = async () => {
 		if ($page.url.searchParams.get('models')) {
@@ -1096,7 +1096,7 @@
 
 		const chatInput = document.getElementById('chat-input');
 		setTimeout(() => chatInput?.focus(), 0);
-		
+
 		// Check for pending support data and add system prompt if exists
 		const rawPendingSupport = localStorage.getItem('pendingSupportData');
 		if (rawPendingSupport) {
@@ -1135,7 +1135,6 @@
 							}
 						}
 					}
-
 				}
 				// Note: pendingSupportData is cleared by initChatHandler after chat creation
 			} catch (error) {
@@ -1147,23 +1146,23 @@
 	const loadChat = async () => {
 		if ($isDemo) {
 			if (chatIdProp && chatIdProp.startsWith('demo-chat-')) {
-				const demoChat = $demoData.chats.find(c => c.id === chatIdProp);
+				const demoChat = $demoData.chats.find((c) => c.id === chatIdProp);
 				if (demoChat) {
 					chatId.set(chatIdProp);
 					selectedModels = demoChat.models || [$models[0]?.id || ''];
 					chatTitle.set(demoChat.title);
-					
+
 					// Convert demo messages to history format with proper parent-child relationships
 					const historyObj = {
 						messages: {},
 						currentId: null
 					};
-					
+
 					demoChat.messages.forEach((msg, idx) => {
 						const isLast = idx === demoChat.messages.length - 1;
 						const parentId = idx > 0 ? demoChat.messages[idx - 1].id : null;
 						const childrenIds = !isLast ? [demoChat.messages[idx + 1].id] : [];
-						
+
 						historyObj.messages[msg.id] = {
 							id: msg.id,
 							role: msg.role,
@@ -1174,19 +1173,19 @@
 							childrenIds: childrenIds,
 							models: demoChat.models
 						};
-						
+
 						if (isLast) {
 							historyObj.currentId = msg.id;
 						}
 					});
-					
+
 					history = historyObj;
 					return true;
 				}
 			}
 			return true;
 		}
-		
+
 		chatId.set(chatIdProp);
 		chat = await getChatById(localStorage.token, $chatId).catch(async (error) => {
 			await goto('/');
@@ -1250,7 +1249,7 @@
 		if ($isDemo) {
 			return;
 		}
-		
+
 		const res = await chatCompleted(localStorage.token, {
 			model: modelId,
 			messages: messages.map((m) => ({
@@ -1364,7 +1363,7 @@
 		if ($isDemo) {
 			return null;
 		}
-		
+
 		return setInterval(() => {
 			$socket?.emit('usage', {
 				action: 'chat',
@@ -1380,7 +1379,7 @@
 			toast.error($i18n.t('Model not selected'));
 			return;
 		}
-		
+
 		if (selectedModels.length > 0) {
 			const modelId = selectedModels[0];
 			const model = $models.filter((m) => m.id === modelId).at(0);
@@ -1897,11 +1896,11 @@
 		if ($isDemo) {
 			const responseMessage = _history.messages[responseMessageId];
 			const userMessage = _history.messages[responseMessage.parentId];
-			
+
 			if (avatarActive) {
 				const mockData = generateMockAvatarResponse(userMessage.content);
 				const fullResponse = JSON.stringify(mockData);
-				
+
 				await simulateAIResponse(
 					fullResponse,
 					(chunk) => {
@@ -2003,26 +2002,26 @@
 			Available animation options are:
 
 			1. SIMPLE ANIMATION CODES (use in "animation" object):
-			- facial_expression: 
+			- facial_expression:
 				0=neutral, 1=smile, 2=frown, 3=raised_eyebrows, 4=surprise, 5=wink, 6=sad, 7=angry
-			- head_movement: 
+			- head_movement:
 				0=no_move, 1=nod_small, 2=shake, 3=tilt, 4=look_down, 5=look_up, 6=turn_left, 7=turn_right
-			- hand_gesture: 
+			- hand_gesture:
 				0=no_move, 1=open_hand, 2=pointing, 3=wave, 4=open_palm, 5=thumbs_up, 6=fist, 7=peace_sign, 8=finger_snap
-			- eye_movement: 
+			- eye_movement:
 				0=no_move, 1=look_up, 2=look_down, 3=look_left, 4=look_right, 5=blink, 6=wide_open, 7=squint
-			- body_posture: 
+			- body_posture:
 				0=neutral, 1=forward_lean, 2=lean_back, 3=shoulders_up, 4=rest_arms, 5=hands_on_hips, 6=sit, 7=stand
 
 			2. GLB ANIMATIONS (use in "glbAnimation" field with appropriate category):
 
 			A. EXPRESSION ANIMATIONS ("glbAnimationCategory": "expression")
-					"M_Talking_Variations_001", "M_Talking_Variations_002", "M_Talking_Variations_003", 
-					"M_Talking_Variations_004", "M_Talking_Variations_005", "M_Talking_Variations_006", 
-					"M_Talking_Variations_007", "M_Talking_Variations_008", "M_Talking_Variations_009", 
+					"M_Talking_Variations_001", "M_Talking_Variations_002", "M_Talking_Variations_003",
+					"M_Talking_Variations_004", "M_Talking_Variations_005", "M_Talking_Variations_006",
+					"M_Talking_Variations_007", "M_Talking_Variations_008", "M_Talking_Variations_009",
 					"M_Talking_Variations_010"
-					"M_Standing_Expressions_001", "M_Standing_Expressions_002", "M_Standing_Expressions_004", 
-					"M_Standing_Expressions_005", "M_Standing_Expressions_006", "M_Standing_Expressions_007", 
+					"M_Standing_Expressions_001", "M_Standing_Expressions_002", "M_Standing_Expressions_004",
+					"M_Standing_Expressions_005", "M_Standing_Expressions_006", "M_Standing_Expressions_007",
 					"M_Standing_Expressions_008", "M_Standing_Expressions_009", "M_Standing_Expressions_010",
 					"M_Standing_Expressions_011", "M_Standing_Expressions_012", "M_Standing_Expressions_013",
 					"M_Standing_Expressions_014", "M_Standing_Expressions_015", "M_Standing_Expressions_016",
@@ -2041,7 +2040,7 @@
 					"idle_normal", "idle_shift_weight", "idle_look_around", "idle_stretch", "idle_impatient"
 
 			C. LOCOMOTION ANIMATIONS ("glbAnimationCategory": "locomotion")
-					"M_Walk_001", "M_Walk_002", "M_Walk_Backwards_001", 
+					"M_Walk_001", "M_Walk_002", "M_Walk_Backwards_001",
 					"M_Walk_Strafe_Left_002", "M_Walk_Strafe_Right_002",
 					"M_Walk_Jump_001", "M_Walk_Jump_002", "M_Walk_Jump_003"
 					"M_Jog_001", "M_Jog_003", "M_Jog_Backwards_001",
@@ -2156,7 +2155,7 @@
 		// Extract system messages
 		let systemMessages = [];
 		let conversationMessages = [];
-		
+
 		// Check if we have system messages in the history
 		for (const messageId in _history.messages) {
 			const message = _history.messages[messageId];
@@ -2166,58 +2165,60 @@
 				conversationMessages.push(message);
 			}
 		}
-		
+
 		// Sort system messages by timestamp if available
 		if (systemMessages.length > 0) {
 			systemMessages.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 		}
-		
+
 		// Combine system messages into a single system prompt if there are any
 		let combinedSystemPrompt = '';
 		if (systemMessages.length > 0) {
-			combinedSystemPrompt = systemMessages.map(msg => msg.content).join('\n\n');
+			combinedSystemPrompt = systemMessages.map((msg) => msg.content).join('\n\n');
 		}
 
 		// Create the base system message content
-		const baseSystemContent = avatarActive && avatarPersonality
-			? `${avatarPersonality}\n\n${
-					params?.system || $settings.system
-						? `Additional instructions: ${promptTemplate(
-							params?.system ?? $settings?.system ?? '',
-							$user.name,
-							$settings?.userLocation
-								? await getAndUpdateUserLocation(localStorage.token).catch((err) => {
-										console.error(err);
-										return undefined;
-									})
-								: undefined
-						)}`
-						: ''
-				}${
-					(responseMessage?.userContext ?? null)
-						? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
-						: ''
-				}`
-			: `${promptTemplate(
-					params?.system ?? $settings?.system ?? '',
-					$user.name,
-					$settings?.userLocation
-						? await getAndUpdateUserLocation(localStorage.token).catch((err) => {
-								console.error(err);
-								return undefined;
-							})
-						: undefined
-				)}${
-					(responseMessage?.userContext ?? null)
-						? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
-						: ''
-				}`;
+		const baseSystemContent =
+			avatarActive && avatarPersonality
+				? `${avatarPersonality}\n\n${
+						params?.system || $settings.system
+							? `Additional instructions: ${promptTemplate(
+									params?.system ?? $settings?.system ?? '',
+									$user.name,
+									$settings?.userLocation
+										? await getAndUpdateUserLocation(localStorage.token).catch((err) => {
+												console.error(err);
+												return undefined;
+											})
+										: undefined
+								)}`
+							: ''
+					}${
+						(responseMessage?.userContext ?? null)
+							? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
+							: ''
+					}`
+				: `${promptTemplate(
+						params?.system ?? $settings?.system ?? '',
+						$user.name,
+						$settings?.userLocation
+							? await getAndUpdateUserLocation(localStorage.token).catch((err) => {
+									console.error(err);
+									return undefined;
+								})
+							: undefined
+					)}${
+						(responseMessage?.userContext ?? null)
+							? `\n\nUser Context:\n${responseMessage?.userContext ?? ''}`
+							: ''
+					}`;
 
 		// Merge support context with avatar/base prompt instead of overwriting it.
 		// Avatar persona goes first so support instructions augment it, not replace it.
-		const effectiveSystemContent = combinedSystemPrompt && baseSystemContent
-			? `${baseSystemContent}\n\n${combinedSystemPrompt}`
-			: combinedSystemPrompt || baseSystemContent;
+		const effectiveSystemContent =
+			combinedSystemPrompt && baseSystemContent
+				? `${baseSystemContent}\n\n${combinedSystemPrompt}`
+				: combinedSystemPrompt || baseSystemContent;
 
 		let messages = [
 			{
@@ -2226,11 +2227,11 @@
 			},
 			// Only include non-system messages in the conversation
 			...createMessagesList(_history, responseMessageId)
-				.filter(message => message.role !== 'system')
+				.filter((message) => message.role !== 'system')
 				.map((message) => ({
-				...message,
-				content: removeDetails(message.content, ['reasoning', 'code_interpreter'])
-			}))
+					...message,
+					content: removeDetails(message.content, ['reasoning', 'code_interpreter'])
+				}))
 		].filter((message) => message && message.content && message.content.trim() !== '');
 
 		messages = messages
@@ -2550,12 +2551,12 @@
 		if ($isDemo) {
 			return 'demo-chat-' + Date.now();
 		}
-		
+
 		let _chatId = $chatId;
 
 		try {
 			// Validate models before proceeding
-			if (selectedModels.length === 0 || selectedModels.some(model => !model)) {
+			if (selectedModels.length === 0 || selectedModels.some((model) => !model)) {
 				console.error('Invalid model selection. Setting default model...');
 				if ($models.length > 0) {
 					selectedModels = [$models[0].id];
@@ -2573,7 +2574,7 @@
 					if (pendingSupportData) {
 						const supportData = JSON.parse(pendingSupportData);
 						supportId = supportData?.id || null;
-						
+
 						// Try to get support title to use as chat title
 						if (supportId) {
 							try {
@@ -2591,7 +2592,7 @@
 				} catch (error) {
 					console.error('Error parsing pendingSupportData:', error);
 				}
-				
+
 				chat = await createNewChat(localStorage.token, {
 					id: _chatId,
 					title: supportTitle || $i18n.t('New Chat'),
@@ -2618,17 +2619,17 @@
 				}
 
 				window.history.replaceState(history.state, '', `/student/c/${_chatId}`);
-				
+
 				// Dispatch a global event for chat creation that other components can listen for
 				if (typeof window !== 'undefined' && window.openTutorEvents) {
 					console.log('Dispatching chatCreated event with ID:', _chatId);
 					window.openTutorEvents.dispatchEvent(
-						new CustomEvent('chatCreated', { 
-							detail: { 
+						new CustomEvent('chatCreated', {
+							detail: {
 								chatId: _chatId,
 								timestamp: Date.now(),
 								success: true
-							} 
+							}
 						})
 					);
 				}
@@ -2641,26 +2642,26 @@
 			return _chatId;
 		} catch (error) {
 			console.error('Error in initChatHandler:', error);
-			
+
 			// Clear any pending support data when chat initialization fails
 			if (typeof window !== 'undefined' && window.localStorage) {
 				window.localStorage.removeItem('pendingSupportData');
 			}
-			
+
 			// Notify that chat creation failed
 			if (typeof window !== 'undefined' && window.openTutorEvents) {
 				window.openTutorEvents.dispatchEvent(
-					new CustomEvent('chatCreated', { 
-						detail: { 
+					new CustomEvent('chatCreated', {
+						detail: {
 							chatId: null,
 							timestamp: Date.now(),
 							success: false,
 							error: error?.message || 'Chat initialization failed'
-						} 
+						}
 					})
 				);
 			}
-			
+
 			toast.error($i18n.t('Failed to initialize chat'));
 			return null;
 		}
@@ -2670,7 +2671,7 @@
 		if ($isDemo) {
 			return;
 		}
-		
+
 		if ($chatId == _chatId) {
 			if (!$temporaryChatEnabled) {
 				chat = await updateChatById(localStorage.token, _chatId, {
@@ -2726,7 +2727,8 @@
 />
 
 <div
-	class="h-screen max-h-[100dvh] transition-width duration-200 ease-in-out bg-[#F5F7F9] dark:bg-inherit {($showSidebar && !($isFullscreenAvatar && avatarActive))
+	class="h-screen max-h-[100dvh] transition-width duration-200 ease-in-out bg-[#F5F7F9] dark:bg-inherit {$showSidebar &&
+	!($isFullscreenAvatar && avatarActive)
 		? 'md:max-w-[calc(100%-260px)]'
 		: ''} w-full max-w-full flex flex-col shadow-md"
 	id="chat-container"
@@ -2832,11 +2834,15 @@
 										speaking={avatarSpeaking}
 										on:speechend={() => (avatarSpeaking = false)}
 									/>
-									
+
 									<!-- Floating fullscreen button -->
 									<FullscreenButton onClick={toggleFullscreen} />
 								</div>
-								<div class="absolute bottom-0 left-0 right-0 z-20 animate-float {$isFullscreenAvatar ? 'px-8 pb-8' : ''}">
+								<div
+									class="absolute bottom-0 left-0 right-0 z-20 animate-float {$isFullscreenAvatar
+										? 'px-8 pb-8'
+										: ''}"
+								>
 									<MessageInput
 										{history}
 										{selectedModels}
@@ -2864,7 +2870,9 @@
 								</div>
 							</div>
 						{:else}
-							<div class="flex flex-col w-full h-full flex-auto relative bg-[#F5F7F9] dark:bg-gray-900">
+							<div
+								class="flex flex-col w-full h-full flex-auto relative bg-[#F5F7F9] dark:bg-gray-900"
+							>
 								<div
 									class="pb-2.5 flex-1 flex flex-col w-full overflow-auto max-w-full z-10 scrollbar-hidden"
 									id="messages-container"
