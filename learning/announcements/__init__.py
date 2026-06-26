@@ -1,0 +1,1 @@
+"""Announcements domain boundary."""

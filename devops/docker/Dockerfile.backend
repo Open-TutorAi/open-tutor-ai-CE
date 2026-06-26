@@ -10,7 +10,7 @@ ARG UID=0
 ARG GID=0
 
 # ── Stage 1: build SvelteKit frontend ────────────────────────────────────────
-FROM node:22-alpine AS frontend-builder
+FROM node:22-bullseye-slim AS frontend-builder
 
 WORKDIR /app/ui
 

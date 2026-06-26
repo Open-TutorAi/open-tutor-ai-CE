@@ -34,6 +34,9 @@ from .routers import (
     groups as groups_router,
     folders as folders_router,
     tasks as tasks_router,
+    messages as messages_router,
+    teachers as teachers_router,
+    announcements as announcements_router,
 )
 from gateway.http.api_routes import register_api_routes
 from gateway.realtime.socket import socket_app
@@ -130,6 +133,9 @@ def create_app() -> FastAPI:
     app.include_router(groups_router.router, prefix="/api/v1")
     app.include_router(folders_router.router, prefix="/api/v1")
     app.include_router(tasks_router.router, prefix="/api/v1")
+    app.include_router(messages_router.router, prefix="/api/v1")
+    app.include_router(teachers_router.router, prefix="/api/v1")
+    app.include_router(announcements_router.router, prefix="/api/v1")
 
     # Socket.IO — mounted at /realtime; client uses path='/realtime/socket.io'
     app.mount("/realtime", socket_app)
