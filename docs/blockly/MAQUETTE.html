@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Maquette Blockly — OpenTutorAI</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+  body { background: #f1f5f9; }
+
+  /* Navigation maquette */
+  .nav-tabs {
+    display: flex; gap: 8px; padding: 12px 16px;
+    background: white; border-bottom: 1px solid #e2e8f0;
+  }
+  .tab {
+    padding: 6px 16px; border-radius: 999px; font-size: 12px; font-weight: 600;
+    cursor: pointer; border: none; background: #f1f5f9; color: #64748b; transition: all .2s;
+  }
+  .tab.active { background: #2563eb; color: white; }
+
+  /* Dashboard */
+  .dashboard-card {
+    background: white; border: 1px solid #e2e8f0; border-radius: 14px;
+    padding: 20px 24px; display: flex; align-items: center;
+    justify-content: space-between; margin: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  }
+  .btn-blockly {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px; border-radius: 999px; border: none; cursor: pointer;
+    background: linear-gradient(135deg,#10b981,#0d9488); color: white;
+    font-size: 13px; font-weight: 700; box-shadow: 0 4px 14px rgba(16,185,129,.3);
+  }
+
+  /* Popup formulaire */
+  .popup-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.4); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center; z-index: 100;
+  }
+  .popup {
+    background: white; border-radius: 20px; padding: 28px; width: 480px;
+    max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  }
+  .popup-header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
+  .popup-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    background: linear-gradient(135deg,#10b981,#0d9488);
+    display: flex; align-items: center; justify-content: center; font-size: 26px;
+  }
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 13px; font-weight: 700; color: #374151; margin-bottom: 6px; }
+  .form-input, .form-textarea {
+    width: 100%; padding: 10px 14px; border: 1.5px solid #e5e7eb; border-radius: 10px;
+    font-size: 13px; outline: none; font-family: inherit;
+  }
+  .form-input:focus, .form-textarea:focus { border-color: #10b981; }
+  .form-textarea { resize: none; height: 72px; }
+  .level-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+  .level-btn {
+    padding: 10px 6px; border-radius: 12px; border: 2px solid #e5e7eb;
+    font-size: 12px; font-weight: 700; cursor: pointer; text-align: center; background: white;
+  }
+  .level-btn.selected { border-color: #10b981; background: #ecfdf5; color: #065f46; }
+  .btn-start {
+    width: 100%; padding: 14px; border-radius: 14px; border: none; cursor: pointer;
+    background: linear-gradient(135deg,#10b981,#0d9488); color: white;
+    font-size: 15px; font-weight: 800; margin-top: 16px;
+  }
+  .btn-start:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* Carte exercice */
+  .exercise-card {
+    background: white; border-radius: 16px; max-width: 620px;
+    margin: 30px auto; box-shadow: 0 4px 16px rgba(0,0,0,.08); overflow: hidden;
+  }
+  .ex-bar { height: 4px; background: linear-gradient(90deg,#10b981,#0d9488); }
+  .ex-body { padding: 28px; }
+  .ex-title { font-size: 22px; font-weight: 800; color: #0f172a; margin-bottom: 12px; }
+  .ex-desc { font-size: 14px; color: #475569; line-height: 1.7; margin-bottom: 16px; }
+  .badge { padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+  .badge-green { background: #dcfce7; color: #15803d; }
+  .hints-box {
+    background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px;
+    overflow: hidden; margin-bottom: 20px;
+  }
+  .hints-box summary { padding: 12px 16px; cursor: pointer; font-size: 13px; font-weight: 700; color: #92400e; }
+  .hints-box li { font-size: 13px; color: #b45309; padding: 4px 20px; }
+  .btn-open {
+    width: 100%; padding: 14px; border-radius: 14px; border: none; cursor: pointer;
+    background: linear-gradient(135deg,#10b981,#0d9488); color: white;
+    font-size: 14px; font-weight: 800; display: flex; align-items: center;
+    justify-content: center; gap: 8px;
+  }
+
+  /* Éditeur Blockly */
+  .editor-layout { display: flex; height: calc(100vh - 53px); overflow: hidden; }
+  .editor-navbar {
+    background: white; border-bottom: 1px solid #e2e8f0;
+    padding: 10px 16px; display: flex; align-items: center;
+    justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .left-col { width: 50%; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; }
+  .right-col { width: 50%; display: flex; flex-direction: column; background: #0f172a; }
+
+  /* Énoncé */
+  .enonce { padding: 12px 16px; background: #eff6ff; border-bottom: 1px solid #bfdbfe; flex-shrink: 0; }
+
+  /* Toolbox simulée */
+  .blockly-area { flex: 1; display: flex; overflow: hidden; }
+  .toolbox-sim { width: 140px; background: #1e293b; flex-shrink: 0; }
+  .toolbox-item {
+    padding: 10px 12px; font-size: 12px; font-weight: 600; color: #cbd5e1;
+    border-left: 3px solid transparent; cursor: pointer;
+  }
+  .toolbox-item.active { border-left-color: #2563eb; background: #1d4ed8; color: white; }
+  .canvas-sim {
+    flex: 1; background: white;
+    background-image: radial-gradient(circle, #e2e8f0 1px, transparent 1px);
+    background-size: 20px 20px; position: relative;
+  }
+  .block {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
+    color: white; margin: 4px; cursor: grab; box-shadow: 0 2px 4px rgba(0,0,0,.15);
+  }
+  .b-purple { background: #9333ea; }
+  .b-cyan   { background: #0891b2; }
+  .b-blue   { background: #0284c7; border-radius: 999px; }
+
+  /* Panneaux droite */
+  .panel { display: flex; flex-direction: column; border-bottom: 1px solid #1e293b; }
+  .panel.code     { height: 35%; }
+  .panel.console  { height: 25%; }
+  .panel.feedback { flex: 1; background: white; border: none; }
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; flex-shrink: 0;
+  }
+  .ph-dark   { background: #1e293b; }
+  .ph-darker { background: #0f172a; border-bottom: 1px solid #1e293b; }
+  .ph-light  { background: white; border-bottom: 1px solid #f1f5f9; }
+  .code-area { flex: 1; overflow: auto; padding: 12px; font-family: monospace; font-size: 12px; background: #0f172a; color: #e2e8f0; }
+  .console-area { flex: 1; overflow: auto; padding: 12px; font-family: monospace; font-size: 12px; color: #86efac; }
+  .feedback-area { flex: 1; overflow: auto; padding: 16px; }
+  .feedback-card { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 14px; }
+  .score-badge { padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #dcfce7; color: #15803d; }
+  .btn-sm {
+    padding: 4px 12px; border-radius: 999px; border: none; cursor: pointer;
+    font-size: 11px; font-weight: 700;
+  }
+  .btn-green { background: #16a34a; color: white; }
+  .btn-submit { background: linear-gradient(135deg,#2563eb,#4f46e5); color: white; }
+</style>
+</head>
+<body>
+
+<div class="nav-tabs">
+  <button class="tab active" onclick="show('dashboard')">① Dashboard</button>
+  <button class="tab" onclick="show('popup')">② Popup formulaire</button>
+  <button class="tab" onclick="show('card')">③ Carte exercice</button>
+  <button class="tab" onclick="show('editor')">④ Éditeur Blockly</button>
+</div>
+
+<!-- ① DASHBOARD -->
+<div id="v-dashboard" style="padding:20px">
+  <div class="dashboard-card">
+    <div>
+      <div style="font-size:16px;font-weight:700;color:#1e293b">Bonjour Ikram 👋</div>
+      <div style="font-size:12px;color:#94a3b8;margin-top:2px">Apprenons quelque chose de nouveau !</div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn-blockly" onclick="show('popup')">🧩 Blockly</button>
+      <button style="padding:10px 20px;border-radius:999px;border:none;cursor:pointer;background:linear-gradient(135deg,#2563eb,#4f46e5);color:white;font-weight:700;font-size:13px">+ Soutien</button>
+    </div>
+  </div>
+  <p style="text-align:center;color:#94a3b8;font-size:13px">↑ Cliquez "🧩 Blockly" pour ouvrir le formulaire</p>
+</div>
+
+<!-- ② POPUP FORMULAIRE -->
+<div id="v-popup" style="display:none;min-height:500px;background:#f1f5f9;padding:20px">
+  <div style="max-width:520px;margin:0 auto">
+    <div class="popup">
+      <div class="popup-header">
+        <div class="popup-icon">🧩</div>
+        <div>
+          <div style="font-size:20px;font-weight:800;color:#0f172a">Exercice Blockly</div>
+          <div style="font-size:13px;color:#64748b;margin-top:2px">Apprenez Python avec des blocs visuels</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">📚 Cours / Sujet <span style="color:#ef4444">*</span></label>
+        <input class="form-input" type="text" value="Structures de contrôle Python" placeholder="Ex: Variables, Boucles..."/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">🎯 Objectifs d'apprentissage</label>
+        <textarea class="form-textarea">Comprendre les boucles for et les conditions if/else</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">✅ Prérequis</label>
+        <input class="form-input" type="text" value="Je connais print() et les variables"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">🏆 Niveau de départ</label>
+        <div class="level-grid">
+          <button class="level-btn selected">🌱<br>Débutant</button>
+          <button class="level-btn">🔥<br>Intermédiaire</button>
+          <button class="level-btn">⚡<br>Avancé</button>
+        </div>
+      </div>
+      <button class="btn-start" onclick="show('card')">🚀 Démarrer l'exercice</button>
+    </div>
+  </div>
+</div>
+
+<!-- ③ CARTE EXERCICE -->
+<div id="v-card" style="display:none;background:#f1f5f9;padding:20px">
+  <div class="exercise-card">
+    <div class="ex-bar"></div>
+    <div class="ex-body">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <div class="ex-title">Calcul de la somme</div>
+        <span class="badge badge-green">🌱 Débutant</span>
+      </div>
+      <p class="ex-desc">
+        Programmez un script Python qui calcule la somme de deux nombres
+        et affiche le résultat. Utilisez les blocs Variables et Maths.
+      </p>
+      <div class="hints-box">
+        <details>
+          <summary>💡 Indices (2)</summary>
+          <ul>
+            <li>Utilisez un bloc "définir variable" pour stocker chaque nombre</li>
+            <li>Utilisez le bloc print() pour afficher le résultat final</li>
+          </ul>
+        </details>
+      </div>
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px;margin-bottom:20px">
+        <p style="font-size:11px;font-weight:700;color:#1d4ed8;margin-bottom:4px">🎯 Objectifs</p>
+        <p style="font-size:11px;color:#3b82f6">Comprendre les boucles for et les conditions if/else</p>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-open" onclick="show('editor')">🧩 Ouvrir l'éditeur Blockly</button>
+        <button style="padding:14px 18px;border-radius:14px;border:none;cursor:pointer;background:#f1f5f9;color:#64748b;font-size:13px;font-weight:600">🔄 Autre</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ④ ÉDITEUR BLOCKLY -->
+<div id="v-editor" style="display:none">
+  <!-- Navbar -->
+  <div class="editor-navbar">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button onclick="show('card')" style="padding:6px;border-radius:8px;border:none;background:#f1f5f9;cursor:pointer">
+        <svg width="16" height="16" fill="none" stroke="#64748b" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <div>
+        <div style="font-weight:700;font-size:14px;color:#1e293b">Calcul de la somme</div>
+        <div style="font-size:11px;color:#94a3b8">Structures de contrôle Python</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="display:flex;gap:4px">
+        <div style="width:13px;height:13px;border-radius:50%;background:#2563eb"></div>
+        <div style="width:10px;height:10px;border-radius:50%;background:#e2e8f0;margin-top:1.5px"></div>
+        <div style="width:10px;height:10px;border-radius:50%;background:#e2e8f0;margin-top:1.5px"></div>
+      </div>
+      <span class="badge badge-green">🌱 Débutant</span>
+      <button style="padding:6px 14px;border-radius:999px;border:none;cursor:pointer;background:linear-gradient(135deg,#2563eb,#4f46e5);color:white;font-size:12px;font-weight:700">🔄 Nouvel exercice</button>
+    </div>
+  </div>
+
+  <div class="editor-layout">
+    <!-- Gauche : Blockly -->
+    <div class="left-col">
+      <div class="enonce">
+        <div style="display:flex;gap:10px;align-items:flex-start">
+          <span style="font-size:18px">📝</span>
+          <div>
+            <div style="font-weight:700;font-size:13px;color:#1e40af;margin-bottom:4px">Calcul de la somme</div>
+            <div style="font-size:11px;color:#3b82f6;line-height:1.5">Calculez la somme de deux nombres et affichez le résultat.</div>
+            <details style="margin-top:6px">
+              <summary style="font-size:11px;color:#d97706;cursor:pointer;font-weight:600">💡 Indices</summary>
+              <div style="font-size:11px;color:#92400e;margin-top:4px">• Bloc "définir variable"<br>• Bloc print()</div>
+            </details>
+          </div>
+        </div>
+      </div>
+      <div class="blockly-area">
+        <div class="toolbox-sim">
+          <div class="toolbox-item active">🔵 Logique</div>
+          <div class="toolbox-item">🟢 Boucles</div>
+          <div class="toolbox-item">🟣 Maths</div>
+          <div class="toolbox-item">🟦 Texte</div>
+          <div class="toolbox-item">🔴 Variables</div>
+        </div>
+        <div class="canvas-sim">
+          <div style="position:absolute;top:50px;left:30px">
+            <div><span class="block b-purple">📦 définir somme à</span> <span class="block b-blue">0</span></div>
+            <div style="margin-top:8px"><span class="block b-purple">📦 définir a à</span> <span class="block b-blue">3</span></div>
+            <div style="margin-top:8px"><span class="block b-purple">📦 définir b à</span> <span class="block b-blue">5</span></div>
+            <div style="margin-top:8px"><span class="block b-cyan">🖨️ print</span> <span class="block b-blue">a + b</span></div>
+          </div>
+          <div style="position:absolute;bottom:12px;right:12px;display:flex;flex-direction:column;gap:4px">
+            <button style="width:28px;height:28px;border-radius:6px;border:1px solid #e2e8f0;background:white;cursor:pointer;font-weight:700;font-size:14px">+</button>
+            <button style="width:28px;height:28px;border-radius:6px;border:1px solid #e2e8f0;background:white;cursor:pointer;font-size:12px">◎</button>
+            <button style="width:28px;height:28px;border-radius:6px;border:1px solid #e2e8f0;background:white;cursor:pointer;font-weight:700;font-size:14px">−</button>
+          </div>
+          <div style="position:absolute;bottom:12px;left:12px;font-size:22px;opacity:.4;cursor:pointer">🗑️</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Droite : Code + Console + Feedback -->
+    <div class="right-col">
+      <div class="panel code">
+        <div class="panel-header ph-dark">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="display:flex;gap:5px">
+              <div style="width:11px;height:11px;border-radius:50%;background:#ef4444"></div>
+              <div style="width:11px;height:11px;border-radius:50%;background:#eab308"></div>
+              <div style="width:11px;height:11px;border-radius:50%;background:#22c55e"></div>
+            </div>
+            <span style="color:#94a3b8;font-size:12px;font-weight:600;margin-left:6px">Python généré</span>
+          </div>
+          <button style="background:none;border:none;color:#64748b;font-size:11px;cursor:pointer">🗑 Reset</button>
+        </div>
+        <div class="code-area">
+          <pre style="color:#67e8f9">somme</pre>
+          <pre><span style="color:#c084fc">None</span></pre>
+          <pre><span style="color:#67e8f9">a</span> = <span style="color:#fbbf24">3</span></pre>
+          <pre><span style="color:#67e8f9">b</span> = <span style="color:#fbbf24">5</span></pre>
+          <pre><span style="color:#4ade80">print</span>(<span style="color:#67e8f9">a</span> + <span style="color:#67e8f9">b</span>)</pre>
+        </div>
+      </div>
+
+      <div class="panel console">
+        <div class="panel-header ph-darker">
+          <div style="display:flex;align-items:center;gap:8px;color:#94a3b8;font-size:12px;font-weight:600">
+            <div style="width:8px;height:8px;border-radius:50%;background:#22c55e"></div>
+            Console
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn-sm btn-green">▶ Exécuter</button>
+            <button style="background:none;border:none;color:#64748b;font-size:11px;cursor:pointer">✕</button>
+          </div>
+        </div>
+        <div class="console-area">
+          <div style="color:#64748b;margin-bottom:4px">$ python main.py</div>
+          <div>8</div>
+        </div>
+      </div>
+
+      <div class="panel feedback">
+        <div class="panel-header ph-light">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#64748b">
+            🤖 Feedback IA
+            <span class="score-badge">✅ 85/100</span>
+          </div>
+          <button class="btn-sm btn-submit">📤 Soumettre</button>
+        </div>
+        <div class="feedback-area">
+          <div class="feedback-card">
+            <p style="font-size:13px;color:#1e40af;line-height:1.7">
+              Excellent travail ! Tu as parfaitement utilisé les variables pour stocker
+              les valeurs et l'opérateur + pour les additionner. Pour aller plus loin,
+              essaie d'utiliser une boucle for pour calculer la somme d'une liste de nombres. 🎉
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function show(id) {
+  ['dashboard','popup','card','editor'].forEach(v => {
+    document.getElementById('v-' + v).style.display = 'none';
+  });
+  document.getElementById('v-' + id).style.display = 'block';
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['dashboard','popup','card','editor'][i] === id);
+  });
+}
+document.querySelectorAll('.level-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('selected'));
+    this.classList.add('selected');
+  });
+});
+document.querySelectorAll('.toolbox-item').forEach(item => {
+  item.addEventListener('click', function() {
+    document.querySelectorAll('.toolbox-item').forEach(i => i.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

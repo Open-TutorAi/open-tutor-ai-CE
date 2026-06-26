@@ -2,41 +2,79 @@
 
 import os
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
+
 from config import settings
 from data.database import init_database
-
-from .routers import (
-    health,
-    auth,
-    supports,
-    self_regulation,
-    files,
-    app_info,
-    users,
-    configs as configs_router,
-    models as models_router,
-    providers as providers_router,
-    chats as chats_router,
-    knowledge as knowledge_router,
-    retrieval as retrieval_router,
-    audio as audio_router,
-    images as images_router,
-    tools as tools_router,
-    functions as functions_router,
-    memories as memories_router,
-    prompts as prompts_router,
-    channels as channels_router,
-    groups as groups_router,
-    folders as folders_router,
-    tasks as tasks_router,
-)
 from gateway.http.api_routes import register_api_routes
 from gateway.realtime.socket import socket_app
+
+# ── Routers existants ─────────────────────────────────────────────────────────
+from .routers import (
+    app_info,
+    auth,
+    files,
+    health,
+    self_regulation,
+    supports,
+    users,
+)
+from .routers import (
+    audio as audio_router,
+)
+from .routers import (
+    channels as channels_router,
+)
+from .routers import (
+    chats as chats_router,
+)
+from .routers import (
+    configs as configs_router,
+)
+from .routers import (
+    folders as folders_router,
+)
+from .routers import (
+    functions as functions_router,
+)
+from .routers import (
+    groups as groups_router,
+)
+from .routers import (
+    images as images_router,
+)
+from .routers import (
+    knowledge as knowledge_router,
+)
+from .routers import (
+    memories as memories_router,
+)
+from .routers import (
+    models as models_router,
+)
+from .routers import (
+    prompts as prompts_router,
+)
+from .routers import (
+    providers as providers_router,
+)
+from .routers import (
+    retrieval as retrieval_router,
+)
+from .routers import (
+    tasks as tasks_router,
+)
+from .routers import (
+    tools as tools_router,
+)
+
+# ── Router Blockly (Module d'apprentissage visuel Python) ─────────────────────
+from learning.blockly.router import router as blockly_router
 
 FRONTEND_BUILD_DIR = os.getenv("FRONTEND_BUILD_DIR", "./ui/build")
 
@@ -96,45 +134,55 @@ def create_app() -> FastAPI:
             )
         return await call_next(request)
 
-    # Health — no version prefix, matches Docker healthcheck and compose
+    # ── Health ────────────────────────────────────────────────────────────────
+    # No version prefix — matches Docker healthcheck and compose
     app.include_router(health.router)
 
-    # Top-level /api/* routes (no version prefix) — UI bootstrap contract
+    # ── Top-level /api/* routes ───────────────────────────────────────────────
+    # No version prefix — UI bootstrap contract
     register_api_routes(app)
 
-    # Auth — mounted at BOTH paths:
+    # ── Module Blockly ────────────────────────────────────────────────────────
+    # Endpoints : /api/blockly/execute, /submit, /generate/stream,
+    #             /workspace/save, /workspace/{id}
+    app.include_router(blockly_router)
+
+    # ── Auth ──────────────────────────────────────────────────────────────────
+    # Mounted at BOTH paths :
     #   /auths/*        → TUTOR_BASE_URL calls (signup, user-count)
-    #   /api/v1/auths/* → TUTOR_API_BASE_URL calls (signin, signout, session, …)
+    #   /api/v1/auths/* → TUTOR_API_BASE_URL calls (signin, signout, session…)
     app.include_router(auth.router)
     app.include_router(auth.router, prefix="/api/v1")
 
-    # Supports, evaluations, files — only under /api/v1 (all UI calls use TUTOR_API_BASE_URL)
-    app.include_router(supports.router, prefix="/api/v1")
-    app.include_router(self_regulation.router, prefix="/api/v1")
-    app.include_router(files.router, prefix="/api/v1")
-    app.include_router(app_info.router, prefix="/api/v1")
-    app.include_router(users.router, prefix="/api/v1")
-    app.include_router(configs_router.router, prefix="/api/v1")
-    app.include_router(models_router.router, prefix="/api/v1")
-    app.include_router(providers_router.router, prefix="/api/v1")
-    app.include_router(chats_router.router, prefix="/api/v1")
-    app.include_router(knowledge_router.router, prefix="/api/v1")
-    app.include_router(retrieval_router.router, prefix="/api/v1")
-    app.include_router(audio_router.router, prefix="/api/v1")
-    app.include_router(images_router.router, prefix="/api/v1")
-    app.include_router(tools_router.router, prefix="/api/v1")
-    app.include_router(functions_router.router, prefix="/api/v1")
-    app.include_router(memories_router.router, prefix="/api/v1")
-    app.include_router(prompts_router.router, prefix="/api/v1")
-    app.include_router(channels_router.router, prefix="/api/v1")
-    app.include_router(groups_router.router, prefix="/api/v1")
-    app.include_router(folders_router.router, prefix="/api/v1")
-    app.include_router(tasks_router.router, prefix="/api/v1")
+    # ── Supports, evaluations, files — only under /api/v1 ────────────────────
+    app.include_router(supports.router,           prefix="/api/v1")
+    app.include_router(self_regulation.router,    prefix="/api/v1")
+    app.include_router(files.router,              prefix="/api/v1")
+    app.include_router(app_info.router,           prefix="/api/v1")
+    app.include_router(users.router,              prefix="/api/v1")
+    app.include_router(configs_router.router,     prefix="/api/v1")
+    app.include_router(models_router.router,      prefix="/api/v1")
+    app.include_router(providers_router.router,   prefix="/api/v1")
+    app.include_router(chats_router.router,       prefix="/api/v1")
+    app.include_router(knowledge_router.router,   prefix="/api/v1")
+    app.include_router(retrieval_router.router,   prefix="/api/v1")
+    app.include_router(audio_router.router,       prefix="/api/v1")
+    app.include_router(images_router.router,      prefix="/api/v1")
+    app.include_router(tools_router.router,       prefix="/api/v1")
+    app.include_router(functions_router.router,   prefix="/api/v1")
+    app.include_router(memories_router.router,    prefix="/api/v1")
+    app.include_router(prompts_router.router,     prefix="/api/v1")
+    app.include_router(channels_router.router,    prefix="/api/v1")
+    app.include_router(groups_router.router,      prefix="/api/v1")
+    app.include_router(folders_router.router,     prefix="/api/v1")
+    app.include_router(tasks_router.router,       prefix="/api/v1")
 
-    # Socket.IO — mounted at /realtime; client uses path='/realtime/socket.io'
+    # ── Socket.IO ─────────────────────────────────────────────────────────────
+    # Mounted at /realtime ; client uses path='/realtime/socket.io'
     app.mount("/realtime", socket_app)
 
-    # Serve built frontend last (SPA catch-all must be after all API routes)
+    # ── Frontend SPA ──────────────────────────────────────────────────────────
+    # Must be LAST — catch-all after all API routes
     if os.path.exists(FRONTEND_BUILD_DIR):
         app.mount(
             "/",

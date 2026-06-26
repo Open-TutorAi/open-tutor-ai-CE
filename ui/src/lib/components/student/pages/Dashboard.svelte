@@ -7,160 +7,111 @@
 	import { browser } from '$app/environment';
 	import { chatId as storeChatId, isDemo, demoData } from '$lib/stores';
 	import CourseCard from '../elements/CourseCard.svelte';
-	import {
-		getSupportRequests,
-		type SupportResponse,
-		updateSupportChatId
-	} from '$lib/apis/supports';
+	import { getSupportRequests, type SupportResponse, updateSupportChatId } from '$lib/apis/supports';
 	import { page } from '$app/stores';
 	import { fade, scale } from 'svelte/transition';
 	import { toast } from 'svelte-sonner';
 
 	const i18n = getContext<Writable<i18nType>>('i18n');
 
-	// State for user's support requests
 	let userSupports: SupportResponse[] = [];
 	let isLoading = true;
 
-	$: displaySupports = $isDemo
-		? $demoData.supports.map((s) => ({
-				id: s.id,
-				title: s.title,
-				description: s.description,
-				status: s.progress < 30 ? 'not-started' : s.progress < 100 ? 'in-progress' : 'completed',
-				category: s.category,
-				difficulty: s.difficulty,
-				progress: s.progress
-			}))
-		: userSupports;
+	$: displaySupports = $isDemo ? $demoData.supports.map(s => ({
+		id: s.id, title: s.title, description: s.description,
+		status: s.progress < 30 ? 'not-started' : s.progress < 100 ? 'in-progress' : 'completed',
+		category: s.category, difficulty: s.difficulty, progress: s.progress
+	})) : userSupports;
 
-	// Track pending support and chat linkage
 	let pendingSupportId = '';
 	let chatIdSubscription: Function;
 	let urlCheckInterval: ReturnType<typeof setInterval>;
 	let currentPath = '';
 	let chatIdFromURL = '';
 
-	// Clear chat ID and support data when the dashboard is loaded
+	// ── Blockly popup state ──────────────────────────────────────
+	let showBlocklyPopup = false;
+	let blocklyForm = { course: '', objectives: '', prerequisites: '', level: 'beginner' };
+	let blocklyLoading = false;
+
+	function toggleBlocklyPopup() {
+		showBlocklyPopup = !showBlocklyPopup;
+	}
+
+	async function handleStartBlockly() {
+		if (!blocklyForm.course.trim()) {
+			toast.error('Veuillez entrer un cours');
+			return;
+		}
+		blocklyLoading = true;
+		// Sauvegarder le contexte pour la page Blockly
+		if (browser) {
+			localStorage.setItem('blocklyContext', JSON.stringify(blocklyForm));
+		}
+		showBlocklyPopup = false;
+		blocklyLoading = false;
+		goto('/student/blockly/new');
+	}
+	// ────────────────────────────────────────────────────────────
+
 	onMount(async () => {
 		if (browser) {
-			console.log('Dashboard mounted: clearing chat and support data');
-
-			// Clear chatId from the store
 			storeChatId.set('');
-
-			// Clear any sessionStorage data
-			if (sessionStorage.selectedModels) {
-				sessionStorage.removeItem('selectedModels');
-			}
-
-			// Clear any localStorage data for pending support
-			if (localStorage.getItem('pendingSupportData')) {
-				localStorage.removeItem('pendingSupportData');
-			}
-
-			// Clear any stored chat input data
+			if (sessionStorage.selectedModels) sessionStorage.removeItem('selectedModels');
+			if (localStorage.getItem('pendingSupportData')) localStorage.removeItem('pendingSupportData');
 			const keysToRemove = [];
 			for (let i = 0; i < localStorage.length; i++) {
 				const key = localStorage.key(i);
-				if (key && key.startsWith('chat-input-')) {
-					keysToRemove.push(key);
-				}
+				if (key && key.startsWith('chat-input-')) keysToRemove.push(key);
 			}
+			keysToRemove.forEach(key => localStorage.removeItem(key));
 
-			// Remove the collected keys
-			keysToRemove.forEach((key) => {
-				localStorage.removeItem(key);
-			});
-
-			// Fetch user's support requests
 			if ($isDemo) {
-				// In demo mode, skip API calls
 				isLoading = false;
-				console.log('Demo mode: using mock supports');
 			} else {
 				const token = localStorage.getItem('token');
 				if (token) {
 					try {
 						const supports = await getSupportRequests(token);
-						if (supports && Array.isArray(supports)) {
-							userSupports = supports;
-							console.log('Fetched user supports:', userSupports);
-						}
+						if (supports && Array.isArray(supports)) userSupports = supports;
 					} catch (error) {
-						console.error('Error fetching supports:', error);
 						userSupports = [];
 					} finally {
 						isLoading = false;
 					}
 				} else {
-					console.log('No auth token found');
 					isLoading = false;
 				}
 			}
 
-			// Create a global event handler for chat creation that can be triggered from any component
-			if (!window.openTutorEvents) {
-				window.openTutorEvents = new EventTarget();
-			}
-
-			// Add global event listener for chat creation
+			if (!window.openTutorEvents) window.openTutorEvents = new EventTarget();
 			window.openTutorEvents.addEventListener('chatCreated', ((event: CustomEvent) => {
 				const newChatId = event.detail?.chatId;
-				const timestamp = event.detail?.timestamp;
-				console.log('Received chatCreated event with chatId:', newChatId, 'timestamp:', timestamp);
-
-				if (newChatId && pendingSupportId) {
-					console.log('Immediately updating support with new chat ID from event');
-					updateSupportWithChatId(pendingSupportId, newChatId);
-				}
+				if (newChatId && pendingSupportId) updateSupportWithChatId(pendingSupportId, newChatId);
 			}) as EventListener);
 
-			// Subscribe to the chatId store as a backup
 			chatIdSubscription = storeChatId.subscribe((newChatId) => {
-				console.log('Chat ID store changed:', newChatId);
-				if (newChatId && newChatId !== 'local' && pendingSupportId) {
-					console.log('Detected chat ID change from store:', newChatId);
+				if (newChatId && newChatId !== 'local' && pendingSupportId)
 					updateSupportWithChatId(pendingSupportId, newChatId);
-				}
 			});
 
-			// Set up monitoring for URL changes as another backup
 			urlCheckInterval = setInterval(() => {
-				// Check if there's still a pending support to process
 				try {
 					const pendingSupportData = localStorage.getItem('pendingSupportData');
-					if (!pendingSupportData) {
-						console.log('No pending support data, clearing URL check interval');
-						clearInterval(urlCheckInterval);
-						return;
-					}
-
-					// Check for expiration
+					if (!pendingSupportData) { clearInterval(urlCheckInterval); return; }
 					const supportData = JSON.parse(pendingSupportData);
 					const currentTime = Date.now();
-					const supportTimestamp = supportData.timestamp || 0;
-					const MAX_SUPPORT_AGE_MS = 30 * 60 * 1000; // 30 minutes
-
-					if (currentTime - supportTimestamp >= MAX_SUPPORT_AGE_MS) {
-						console.log('Support expired during URL check, clearing');
+					if (currentTime - (supportData.timestamp || 0) >= 30 * 60 * 1000) {
 						localStorage.removeItem('pendingSupportData');
 						clearInterval(urlCheckInterval);
 						return;
 					}
-
-					// Check for URL changes indicating chat creation
 					const currentURL = window.location.pathname;
 					if (currentURL.startsWith('/student/c/')) {
 						const newChatId = currentURL.split('/student/c/')[1].split('/')[0];
-						if (newChatId && supportData.id) {
-							console.log('Detected chat URL change to:', newChatId);
-							updateSupportWithChatId(supportData.id, newChatId);
-						}
+						if (newChatId && supportData.id) updateSupportWithChatId(supportData.id, newChatId);
 					}
 				} catch (error) {
-					console.error('Error in URL check interval:', error);
-					// On any error, clear the data and interval
 					localStorage.removeItem('pendingSupportData');
 					clearInterval(urlCheckInterval);
 				}
@@ -168,273 +119,121 @@
 		}
 	});
 
-	// Clean up listeners and intervals on component destruction
 	onDestroy(() => {
-		console.log('Dashboard component destroyed');
 		if (browser) {
-			// Remove global event listener
-			window.openTutorEvents.removeEventListener('chatCreated', ((event: CustomEvent) => {
-				// This is just for cleanup, the actual handler is defined in onMount
-			}) as EventListener);
-
-			if (chatIdSubscription) {
-				chatIdSubscription();
-				console.log('Chat ID subscription removed');
-			}
-
-			if (urlCheckInterval) {
-				clearInterval(urlCheckInterval);
-				console.log('URL check interval cleared');
-			}
+			if (chatIdSubscription) chatIdSubscription();
+			if (urlCheckInterval) clearInterval(urlCheckInterval);
 		}
 	});
 
-	// Subscribe to page changes as an additional detection method
 	$: if ($page && $page.url && browser) {
 		currentPath = $page.url.pathname || '';
-
-		// Check for chat creation
 		if (currentPath.startsWith('/student/c/')) {
 			chatIdFromURL = currentPath.replace('/student/c/', '').split('/')[0];
-
-			// Only proceed if we have a valid ID and there's a pending support
 			if (chatIdFromURL && localStorage.getItem('pendingSupportData')) {
 				try {
 					const supportData = JSON.parse(localStorage.getItem('pendingSupportData') || '{}');
 					const supportId = supportData.id;
-
-					// Validate support hasn't expired
 					const currentTime = Date.now();
-					const supportTimestamp = supportData.timestamp || 0;
-					const MAX_SUPPORT_AGE_MS = 30 * 60 * 1000; // 30 minutes
-
-					if (supportId && currentTime - supportTimestamp < MAX_SUPPORT_AGE_MS) {
-						console.log('Detected chat page navigation:', chatIdFromURL);
+					if (supportId && currentTime - (supportData.timestamp || 0) < 30 * 60 * 1000) {
 						updateSupportWithChatId(supportId, chatIdFromURL);
-					} else if (currentTime - supportTimestamp >= MAX_SUPPORT_AGE_MS) {
-						// Support too old, clear it
-						console.log('Support expired during page navigation, clearing');
+					} else {
 						localStorage.removeItem('pendingSupportData');
 					}
 				} catch (error) {
-					console.error('Error handling page navigation:', error);
 					localStorage.removeItem('pendingSupportData');
 				}
 			}
 		}
 	}
 
-	// Function to update a support with a chat ID
 	async function updateSupportWithChatId(supportId: string, chatId: string) {
-		// Only update once and validate inputs
-		if (!supportId || !chatId || !browser || chatId === 'local' || chatId === 'undefined') {
-			console.log('Invalid inputs for updateSupportWithChatId:', { supportId, chatId });
-			return;
-		}
-
-		// Make sure we haven't already processed this
+		if (!supportId || !chatId || !browser || chatId === 'local' || chatId === 'undefined') return;
 		let pendingSupportData;
 		try {
 			pendingSupportData = localStorage.getItem('pendingSupportData');
-			if (!pendingSupportData) {
-				console.log('No pending support data found in localStorage, update already completed');
-				return;
-			}
-
+			if (!pendingSupportData) return;
 			const supportData = JSON.parse(pendingSupportData);
-
-			// Only process if the pending ID matches our input ID
-			if (supportData.id !== supportId) {
-				console.log('Support ID mismatch:', {
-					pendingId: supportData.id,
-					providedId: supportId
-				});
-				return;
-			}
-
-			// Check if support is too old
-			const currentTime = Date.now();
-			const supportTimestamp = supportData.timestamp || 0;
-			const MAX_SUPPORT_AGE_MS = 30 * 60 * 1000; // 30 minutes
-
-			if (currentTime - supportTimestamp >= MAX_SUPPORT_AGE_MS) {
-				console.log('Support too old, ignoring update');
-				localStorage.removeItem('pendingSupportData');
-				return;
+			if (supportData.id !== supportId) return;
+			if (Date.now() - (supportData.timestamp || 0) >= 30 * 60 * 1000) {
+				localStorage.removeItem('pendingSupportData'); return;
 			}
 		} catch (error) {
-			console.error('Error parsing pendingSupportData:', error);
-			localStorage.removeItem('pendingSupportData');
-			return;
+			localStorage.removeItem('pendingSupportData'); return;
 		}
-
 		try {
 			const token = localStorage.getItem('token');
-			if (!token) {
-				console.error('No token found in localStorage');
-				return;
-			}
-
-			console.log(`Updating support ${supportId} with chat ID ${chatId}`);
-			const result = await updateSupportChatId(token, supportId, chatId);
-			console.log('Support update result:', result);
-
-			// Clear the pending support data to prevent duplicate updates
+			if (!token) return;
+			await updateSupportChatId(token, supportId, chatId);
 			localStorage.removeItem('pendingSupportData');
 			pendingSupportId = '';
-			console.log('Support updated successfully with chat ID:', chatId);
 		} catch (error) {
-			console.error('Failed to update support with chat ID:', error);
-
-			// Even on error, clear the pending support after a certain number of attempts
 			try {
 				const supportData = JSON.parse(pendingSupportData || '{}');
 				const attemptCount = (supportData.attempts || 0) + 1;
-
 				if (attemptCount >= 3) {
-					// After 3 failed attempts, give up
-					console.log('Exceeded max attempts to update support, clearing data');
 					localStorage.removeItem('pendingSupportData');
 				} else {
-					// Update attempt count
 					supportData.attempts = attemptCount;
 					localStorage.setItem('pendingSupportData', JSON.stringify(supportData));
-					console.log(`Update failed, attempt ${attemptCount}/3`);
 				}
-			} catch (parseError) {
-				// If we can't even parse/update the attempt count, just clear it
-				localStorage.removeItem('pendingSupportData');
-			}
+			} catch { localStorage.removeItem('pendingSupportData'); }
 		}
 	}
 
-	// State for pagination
 	let currentPage = 0;
 	const cardsPerPage = 4;
-
-	// Calculate total pages
 	$: totalPages = Math.ceil(displaySupports.length / cardsPerPage);
-
-	// Get current page courses/supports
-	$: currentSupports = displaySupports.slice(
-		currentPage * cardsPerPage,
-		(currentPage + 1) * cardsPerPage
-	);
-
-	// Animation direction tracking
-	let animationDirection = 'right'; // 'left' or 'right'
-
-	// Navigation functions
-	function nextPage() {
-		if (currentPage < totalPages - 1) {
-			animationDirection = 'right';
-			currentPage += 1;
-		}
-	}
-
-	function previousPage() {
-		if (currentPage > 0) {
-			animationDirection = 'left';
-			currentPage -= 1;
-		}
-	}
-
+	$: currentSupports = displaySupports.slice(currentPage * cardsPerPage, (currentPage + 1) * cardsPerPage);
+	let animationDirection = 'right';
+	function nextPage() { if (currentPage < totalPages - 1) { animationDirection = 'right'; currentPage += 1; } }
+	function previousPage() { if (currentPage > 0) { animationDirection = 'left'; currentPage -= 1; } }
 	function goToPage(pageIndex: number) {
-		if (pageIndex !== currentPage) {
-			animationDirection = pageIndex > currentPage ? 'right' : 'left';
-			currentPage = pageIndex;
-		}
+		if (pageIndex !== currentPage) { animationDirection = pageIndex > currentPage ? 'right' : 'left'; currentPage = pageIndex; }
 	}
 
-	// State to control the join course popup
 	let showJoinCoursePopup = false;
-
-	// State to control the support popup
 	let showSupportPopup = false;
-
-	// Toggle the popups
-	function toggleJoinCoursePopup() {
-		showJoinCoursePopup = !showJoinCoursePopup;
-		if (showJoinCoursePopup) showSupportPopup = false;
-	}
-
+	function toggleJoinCoursePopup() { showJoinCoursePopup = !showJoinCoursePopup; if (showJoinCoursePopup) showSupportPopup = false; }
 	function toggleSupportPopup() {
-		if (dontShowAgain || (browser && localStorage.getItem('hideSupportPopup') === 'true')) {
-			goto('/student/support/create');
-			return;
-		}
-
+		if (dontShowAgain || (browser && localStorage.getItem('hideSupportPopup') === 'true')) { goto('/student/support/create'); return; }
 		showSupportPopup = !showSupportPopup;
 		if (showSupportPopup) showJoinCoursePopup = false;
 	}
-
-	// Course code input
 	let courseCode = '';
-
-	// Don't show again state
 	let dontShowAgain = false;
-
-	// Load persisted preference
-	if (browser) {
-		const storedFlag = localStorage.getItem('hideSupportPopup') === 'true';
-		if (storedFlag) {
-			dontShowAgain = true;
-		}
-	}
-
-	// Handle joining a course
+	if (browser) { const storedFlag = localStorage.getItem('hideSupportPopup') === 'true'; if (storedFlag) dontShowAgain = true; }
 	function handleJoinCourse() {
-		if (courseCode === '0000') {
-			// Redirect to student chat component if code is 0000
-			goto('/student/chat');
-			showJoinCoursePopup = false;
-		} else if (courseCode.trim() !== '') {
-			// For other valid codes, you would implement the actual join logic here
-			// For now, just close the popup
-			showJoinCoursePopup = false;
-		}
+		if (courseCode === '0000') { goto('/student/chat'); showJoinCoursePopup = false; }
+		else if (courseCode.trim() !== '') { showJoinCoursePopup = false; }
 	}
-
-	// Persist don't show again preference reactively
 	$: if (browser) {
-		if (dontShowAgain) {
-			localStorage.setItem('hideSupportPopup', 'true');
-		} else {
-			localStorage.removeItem('hideSupportPopup');
-		}
+		if (dontShowAgain) localStorage.setItem('hideSupportPopup', 'true');
+		else localStorage.removeItem('hideSupportPopup');
 	}
-
-	// Handle creating support
-	function handleCreateSupport() {
-		// Navigate to student support page
-		goto('/student/support/create');
-		showSupportPopup = false;
-	}
-
-	// Handle card click - open support details page
-	function handleCardClick(support: SupportResponse, index: number) {
-		goto(`/student/support/${support.id}`);
-	}
+	function handleCreateSupport() { goto('/student/support/create'); showSupportPopup = false; }
+	function handleCardClick(support: SupportResponse, index: number) { goto(`/student/support/${support.id}`); }
 </script>
 
 <div class="flex flex-col gap-6">
 	<div class="flex justify-end">
-		<div class="flex gap-4">
+		<div class="flex gap-3">
+			<!-- 🧩 Bouton Blockly -->
 			<button
-				class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white dark:bg-white dark:text-black dark:hover:bg-gray-200 rounded-full transition"
+				class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-full transition shadow-md"
+				on:click={toggleBlocklyPopup}
+			>
+				<span class="text-base">🧩</span>
+				Blockly
+			</button>
+
+			<!-- Bouton Support existant -->
+			<button
+				class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full transition"
 				on:click={toggleSupportPopup}
 			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="h-5 w-5"
-					viewBox="0 0 20 22"
-					fill="currentColor"
-				>
-					<path
-						fill-rule="evenodd"
-						d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-						clip-rule="evenodd"
-					/>
+				<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+					<path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
 				</svg>
 				{$i18n.t('Support')}
 			</button>
@@ -444,100 +243,38 @@
 	<div class="flex flex-col gap-6">
 		{#if isLoading}
 			<div class="flex justify-center items-center py-12">
-				<div
-					class="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"
-				></div>
-				<span class="ml-3 text-gray-600 dark:text-gray-300"
-					>{$i18n.t('Loading your supports...')}</span
-				>
+				<div class="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+				<span class="ml-3 text-gray-600 dark:text-gray-300">{$i18n.t('Loading your supports...')}</span>
 			</div>
 		{:else if displaySupports.length === 0}
 			<div class="flex flex-col items-center justify-center py-6 text-center">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="40"
-					height="40"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="1.5"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					class="text-indigo-400 dark:text-indigo-300 mb-3"
-				>
+				<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-400 dark:text-indigo-300 mb-3">
 					<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
 				</svg>
-				<h3 class="text-lg font-medium text-gray-800 dark:text-white mb-2">
-					{$i18n.t('No supports found')}
-				</h3>
-				<p class="text-sm text-gray-600 dark:text-gray-400">
-					{$i18n.t('Create a support to get personalized learning assistance')}
-				</p>
+				<h3 class="text-lg font-medium text-gray-800 dark:text-white mb-2">{$i18n.t('No supports found')}</h3>
+				<p class="text-sm text-gray-600 dark:text-gray-400">{$i18n.t('Create a support to get personalized learning assistance')}</p>
 			</div>
 		{:else}
 			<div class="relative">
-				<!-- Left arrow -->
 				{#if currentPage > 0}
-					<button
-						class="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-4 sm:-translate-x-6 p-2 rounded-full bg-white dark:bg-gray-700 shadow-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 z-10 transition-all"
-						on:click={previousPage}
-						aria-label={$i18n.t('Previous supports')}
-					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							class="h-5 w-5"
-							viewBox="0 0 20 20"
-							fill="currentColor"
-						>
-							<path
-								fill-rule="evenodd"
-								d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-								clip-rule="evenodd"
-							/>
-						</svg>
-					</button>
+				<button class="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-4 sm:-translate-x-6 p-2 rounded-full bg-white dark:bg-gray-700 shadow-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 z-10 transition-all" on:click={previousPage}>
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+				</button>
 				{/if}
-
-				<!-- Right arrow -->
 				{#if currentPage < totalPages - 1}
-					<button
-						class="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-4 sm:translate-x-6 p-2 rounded-full bg-white dark:bg-gray-700 shadow-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 z-10 transition-all"
-						on:click={nextPage}
-						aria-label={$i18n.t('Next supports')}
-					>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							class="h-5 w-5"
-							viewBox="0 0 20 20"
-							fill="currentColor"
-						>
-							<path
-								fill-rule="evenodd"
-								d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-								clip-rule="evenodd"
-							/>
-						</svg>
-					</button>
+				<button class="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-4 sm:translate-x-6 p-2 rounded-full bg-white dark:bg-gray-700 shadow-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 z-10 transition-all" on:click={nextPage}>
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+				</button>
 				{/if}
-
 				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 card-container">
 					{#each currentSupports as support, index (support.id)}
-						<div
-							class="cursor-pointer card-item h-full"
+						<div class="cursor-pointer card-item h-full"
 							class:card-slide-enter-from-right={animationDirection === 'right'}
 							class:card-slide-enter-from-left={animationDirection === 'left'}
 							on:click={() => handleCardClick(support, index)}
 							on:keypress={(e) => e.key === 'Enter' && handleCardClick(support, index)}
-							tabindex="0"
-							role="button"
-							style="animation-delay: {index * 0.05}s"
-						>
-							<CourseCard
-								title={support.title}
-								subject={support.subject || 'mathematics'}
-								progress={0}
-								href="#"
-							/>
+							tabindex="0" role="button" style="animation-delay: {index * 0.05}s">
+							<CourseCard title={support.title} subject={support.subject || 'mathematics'} progress={0} href="#" />
 						</div>
 					{/each}
 				</div>
@@ -546,251 +283,145 @@
 	</div>
 </div>
 
-<!-- Join Course Popup Modal -->
-{#if showJoinCoursePopup}
-	<div
-		class="fixed inset-0 backdrop-blur-sm bg-white/30 dark:bg-black/30 flex items-center justify-center z-50"
-		role="dialog"
-		aria-modal="true"
-		in:fade
-	>
-		<div
-			class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-11/12 sm:w-full max-w-md mx-auto relative overflow-y-auto max-h-[90vh] ring-1 ring-gray-200 dark:ring-gray-700"
-			transition:scale={{ duration: 200 }}
-		>
-			<!-- Close Button -->
-			<button
-				class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
-				on:click={toggleJoinCoursePopup}
-			>
-				<span class="text-2xl font-light">×</span>
-			</button>
+<!-- ── Blockly Popup ──────────────────────────────────────────────────── -->
+{#if showBlocklyPopup}
+<div class="fixed inset-0 backdrop-blur-sm bg-black/40 flex items-center justify-center z-50" role="dialog" aria-modal="true" in:fade>
+	<div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-11/12 max-w-lg mx-auto relative ring-1 ring-gray-200 dark:ring-gray-700" transition:scale={{ duration: 200 }}>
+		<button class="absolute top-3 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-2xl font-light" on:click={toggleBlocklyPopup}>×</button>
 
-			<!-- OT Logo -->
-			<div class="flex justify-center mb-8">
-				<img src="/favicon.png" alt="OT Logo" class="w-26 h-26" />
+		<!-- Header -->
+		<div class="flex items-center gap-3 mb-6">
+			<div class="w-12 h-12 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-xl flex items-center justify-center text-2xl shadow-md">🧩</div>
+			<div>
+				<h2 class="text-xl font-bold text-gray-900 dark:text-white">Exercice Blockly</h2>
+				<p class="text-sm text-gray-500 dark:text-gray-400">Apprenez à programmer avec des blocs visuels</p>
 			</div>
+		</div>
 
-			<!-- Title and Instructions -->
-			<h2 class="text-center text-xl font-bold mb-2 text-gray-900 dark:text-white">
-				{$i18n.t('Enter the course code provided by your teacher')}
-			</h2>
-			<p class="text-center text-gray-500 dark:text-gray-400 mb-6">
-				{$i18n.t('The code is a 6-8 character alphanumeric string')}
-			</p>
-
-			<!-- Course Code Input -->
-			<div class="mb-6">
+		<!-- Formulaire -->
+		<div class="space-y-4">
+			<!-- Cours -->
+			<div>
+				<label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+					📚 Cours / Sujet <span class="text-red-500">*</span>
+				</label>
 				<input
 					type="text"
-					bind:value={courseCode}
-					placeholder={$i18n.t('Enter Course Code')}
-					class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-					on:keydown={(e) => e.key === 'Enter' && handleJoinCourse()}
+					bind:value={blocklyForm.course}
+					placeholder="Ex: Structures de contrôle, Boucles, Variables..."
+					class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
 				/>
 			</div>
 
-			<!-- Help Text -->
-			<p class="text-center text-gray-500 dark:text-gray-400 mb-6">
-				{$i18n.t('Need a code? Ask your teacher or institution')}
-			</p>
-
-			<!-- Join Button -->
-			<div class="flex justify-center mb-4">
-				<button
-					class="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 text-white py-3 px-8 rounded-full font-medium"
-					on:click={handleJoinCourse}
-				>
-					{$i18n.t('Join Course')}
-				</button>
+			<!-- Objectifs -->
+			<div>
+				<label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+					🎯 Objectifs d'apprentissage
+				</label>
+				<textarea
+					bind:value={blocklyForm.objectives}
+					placeholder="Ex: Comprendre les boucles for, savoir afficher des résultats..."
+					rows="2"
+					class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+				></textarea>
 			</div>
 
-			<!-- Create Course Link -->
-			<div class="text-center">
-				<span class="text-gray-500 dark:text-gray-400">{$i18n.t('or')}</span>
-				<a href="#" class="text-blue-600 dark:text-blue-400 hover:underline"
-					>{$i18n.t('create your own course')}</a
-				>
+			<!-- Prérequis -->
+			<div>
+				<label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+					✅ Prérequis (ce que vous savez déjà)
+				</label>
+				<input
+					type="text"
+					bind:value={blocklyForm.prerequisites}
+					placeholder="Ex: Je connais les variables et print()"
+					class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+				/>
+			</div>
+
+			<!-- Niveau -->
+			<div>
+				<label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">🏆 Niveau de départ</label>
+				<div class="grid grid-cols-3 gap-2">
+					{#each [['beginner','🌱','Débutant'],['intermediate','🔥','Intermédiaire'],['advanced','⚡','Avancé']] as [val, emoji, label]}
+						<button
+							class="py-2 px-3 rounded-xl border-2 text-sm font-medium transition-all {blocklyForm.level === val ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-emerald-300'}"
+							on:click={() => blocklyForm.level = val}
+						>
+							{emoji} {label}
+						</button>
+					{/each}
+				</div>
 			</div>
 		</div>
+
+		<!-- Bouton démarrer -->
+		<button
+			class="mt-6 w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold rounded-xl shadow-md transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+			on:click={handleStartBlockly}
+			disabled={blocklyLoading || !blocklyForm.course.trim()}
+		>
+			{#if blocklyLoading}
+				<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+				Préparation...
+			{:else}
+				🚀 Démarrer l'exercice
+			{/if}
+		</button>
 	</div>
+</div>
 {/if}
 
-<!-- Support Popup Modal -->
-{#if showSupportPopup}
-	<div
-		class="fixed inset-0 backdrop-blur-sm bg-white/30 dark:bg-black/30 flex items-center justify-center z-50"
-		role="dialog"
-		aria-modal="true"
-		in:fade
-	>
-		<div
-			class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 w-11/12 sm:w-full max-w-sm mx-auto relative overflow-y-auto max-h-[90vh] ring-1 ring-gray-200 dark:ring-gray-700"
-			transition:scale={{ duration: 200 }}
-		>
-			<!-- Close Button -->
-			<button
-				class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
-				on:click={toggleSupportPopup}
-			>
-				<span class="text-xl font-light">×</span>
-			</button>
-
-			<!-- OT Logo -->
-			<div class="flex justify-center mb-4">
-				<img src="/favicon.png" alt="OT Logo" class="w-20 h-20" />
-			</div>
-
-			<!-- Title -->
-			<h2 class="text-center text-lg font-bold text-gray-900 dark:text-white mb-4">
-				{$i18n.t('Create Personalized Tutorials for any Subject or Topic')}
-			</h2>
-
-			<!-- Learning Path Section -->
-			<h3 class="text-center text-md font-medium mb-4 text-gray-900 dark:text-white">
-				{$i18n.t('Create Your Learning Path')}
-			</h3>
-
-			<!-- Steps -->
-			<div class="space-y-3 mb-6 px-2">
-				<div class="flex items-center gap-3">
-					<div
-						class="flex-shrink-0 bg-[#004AAD] text-white rounded-full w-6 h-6 flex items-center justify-center"
-					>
-						<span class="font-bold text-sm">1</span>
-					</div>
-					<span class="text-sm text-gray-800 dark:text-gray-200"
-						>{$i18n.t('Choose your topic and level')}</span
-					>
-				</div>
-				<div class="flex items-center gap-3">
-					<div
-						class="flex-shrink-0 bg-[#004AAD] text-white rounded-full w-6 h-6 flex items-center justify-center"
-					>
-						<span class="font-bold text-sm">2</span>
-					</div>
-					<span class="text-sm text-gray-800 dark:text-gray-200"
-						>{$i18n.t('Set your learning objectives')}</span
-					>
-				</div>
-				<div class="flex items-center gap-3">
-					<div
-						class="flex-shrink-0 bg-[#004AAD] text-white rounded-full w-6 h-6 flex items-center justify-center"
-					>
-						<span class="font-bold text-sm">3</span>
-					</div>
-					<span class="text-sm text-gray-800 dark:text-gray-200"
-						>{$i18n.t('Enjoy AI-powered personalized learning')}</span
-					>
-				</div>
-			</div>
-
-			<!-- Create Support Button -->
-			<div class="flex justify-center mb-4">
-				<button
-					class="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 text-white py-2 px-8 rounded-full font-medium text-sm"
-					on:click={handleCreateSupport}
-				>
-					{$i18n.t('Create My support')}
-				</button>
-			</div>
-
-			<!-- Don't Show Again Checkbox -->
-			<div class="flex items-center justify-center gap-2">
-				<input
-					type="checkbox"
-					id="dontShow"
-					bind:checked={dontShowAgain}
-					class="h-3 w-3 text-indigo-600 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-indigo-500"
-				/>
-				<label for="dontShow" class="text-xs text-gray-500 dark:text-gray-400"
-					>{$i18n.t("Don't show me again")}</label
-				>
-			</div>
+<!-- Support Popup existant -->
+{#if showJoinCoursePopup}
+<div class="fixed inset-0 backdrop-blur-sm bg-white/30 dark:bg-black/30 flex items-center justify-center z-50" role="dialog" aria-modal="true" in:fade>
+	<div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6 w-11/12 sm:w-full max-w-md mx-auto relative overflow-y-auto max-h-[90vh] ring-1 ring-gray-200 dark:ring-gray-700" transition:scale={{ duration: 200 }}>
+		<button class="absolute top-3 right-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none" on:click={toggleJoinCoursePopup}><span class="text-2xl font-light">×</span></button>
+		<div class="flex justify-center mb-8"><img src="/favicon.png" alt="OT Logo" class="w-26 h-26" /></div>
+		<h2 class="text-center text-xl font-bold mb-2 text-gray-900 dark:text-white">{$i18n.t('Enter the course code provided by your teacher')}</h2>
+		<p class="text-center text-gray-500 dark:text-gray-400 mb-6">{$i18n.t('The code is a 6-8 character alphanumeric string')}</p>
+		<div class="mb-6">
+			<input type="text" bind:value={courseCode} placeholder={$i18n.t('Enter Course Code')} class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white" on:keydown={(e) => e.key === 'Enter' && handleJoinCourse()} />
+		</div>
+		<div class="flex justify-center mb-4">
+			<button class="bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-8 rounded-full font-medium" on:click={handleJoinCourse}>{$i18n.t('Join Course')}</button>
 		</div>
 	</div>
+</div>
+{/if}
+
+{#if showSupportPopup}
+<div class="fixed inset-0 backdrop-blur-sm bg-white/30 dark:bg-black/30 flex items-center justify-center z-50" role="dialog" aria-modal="true" in:fade>
+	<div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 w-11/12 sm:w-full max-w-sm mx-auto relative overflow-y-auto max-h-[90vh] ring-1 ring-gray-200 dark:ring-gray-700" transition:scale={{ duration: 200 }}>
+		<button class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none" on:click={toggleSupportPopup}><span class="text-xl font-light">×</span></button>
+		<div class="flex justify-center mb-4"><img src="/favicon.png" alt="OT Logo" class="w-20 h-20" /></div>
+		<h2 class="text-center text-lg font-bold text-gray-900 dark:text-white mb-4">{$i18n.t('Create Personalized Tutorials for any Subject or Topic')}</h2>
+		<div class="space-y-3 mb-6 px-2">
+			{#each [['1','Choose your topic and level'],['2','Set your learning objectives'],['3','Enjoy AI-powered personalized learning']] as [num, text]}
+			<div class="flex items-center gap-3">
+				<div class="flex-shrink-0 bg-[#004AAD] text-white rounded-full w-6 h-6 flex items-center justify-center"><span class="font-bold text-sm">{num}</span></div>
+				<span class="text-sm text-gray-800 dark:text-gray-200">{$i18n.t(text)}</span>
+			</div>
+			{/each}
+		</div>
+		<div class="flex justify-center mb-4">
+			<button class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-8 rounded-full font-medium text-sm" on:click={handleCreateSupport}>{$i18n.t('Create My support')}</button>
+		</div>
+		<div class="flex items-center justify-center gap-2">
+			<input type="checkbox" id="dontShow" bind:checked={dontShowAgain} class="h-3 w-3" />
+			<label for="dontShow" class="text-xs text-gray-500 dark:text-gray-400">{$i18n.t("Don't show me again")}</label>
+		</div>
+	</div>
+</div>
 {/if}
 
 <style>
-	/* Card transition animations */
-	.card-container {
-		position: relative;
-		overflow: hidden;
-	}
-
-	.card-item {
-		transform-origin: center center;
-		backface-visibility: hidden;
-		transition: transform 0.2s ease;
-		display: flex; /* Make the card item a flex container */
-	}
-
-	.card-item > :global(*) {
-		flex: 1; /* Make child components expand to fill the space */
-		height: 100%; /* Ensure full height */
-	}
-
-	.card-item:hover {
-		transform: translateY(-3px);
-	}
-
-	.card-slide-enter-from-right {
-		animation: slideInFromRight 0.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
-	}
-
-	.card-slide-enter-from-left {
-		animation: slideInFromLeft 0.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
-	}
-
-	.card-slide-exit-to-right {
-		animation: slideOutToRight 0.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
-	}
-
-	.card-slide-exit-to-left {
-		animation: slideOutToLeft 0.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
-	}
-
-	@keyframes slideInFromRight {
-		from {
-			transform: translateX(30px);
-			opacity: 0;
-		}
-		to {
-			transform: translateX(0);
-			opacity: 1;
-		}
-	}
-
-	@keyframes slideInFromLeft {
-		from {
-			transform: translateX(-30px);
-			opacity: 0;
-		}
-		to {
-			transform: translateX(0);
-			opacity: 1;
-		}
-	}
-
-	@keyframes slideOutToRight {
-		from {
-			transform: translateX(0);
-			opacity: 1;
-		}
-		to {
-			transform: translateX(30px);
-			opacity: 0;
-		}
-	}
-
-	@keyframes slideOutToLeft {
-		from {
-			transform: translateX(0);
-			opacity: 1;
-		}
-		to {
-			transform: translateX(-30px);
-			opacity: 0;
-		}
-	}
+	.card-container { position: relative; overflow: hidden; }
+	.card-item { transform-origin: center center; backface-visibility: hidden; transition: transform 0.2s ease; display: flex; }
+	.card-item > :global(*) { flex: 1; height: 100%; }
+	.card-item:hover { transform: translateY(-3px); }
+	.card-slide-enter-from-right { animation: slideInFromRight 0.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards; }
+	.card-slide-enter-from-left { animation: slideInFromLeft 0.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards; }
+	@keyframes slideInFromRight { from { transform: translateX(30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+	@keyframes slideInFromLeft { from { transform: translateX(-30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 </style>
