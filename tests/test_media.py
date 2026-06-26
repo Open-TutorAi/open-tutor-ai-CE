@@ -103,6 +103,24 @@ class TestAudioApiV1:
             )
         assert r.status_code == 200
 
+    def test_transcriptions_local_fallback_when_no_url(self, client):
+        """With no external STT URL, transcription falls back to local whisper."""
+        import io
+        import ai.media.whisper_stt as w
+
+        h = _user_auth(client)  # no URL configured by default
+        with (
+            patch.object(w, "WHISPER_AVAILABLE", True),
+            patch.object(w, "transcribe_bytes", return_value="local transcription"),
+        ):
+            r = client.post(
+                "/api/v1/audio/transcriptions",
+                files={"file": ("a.wav", io.BytesIO(b"x"), "audio/wav")},
+                headers=h,
+            )
+        assert r.status_code == 200
+        assert r.json()["text"] == "local transcription"
+
     def test_transcriptions_endpoint(self, client):
         import io
 

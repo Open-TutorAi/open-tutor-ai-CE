@@ -70,6 +70,8 @@ class ChatsService:
     def update(self, chat_id: str, user_id: str, chat_data: Dict[str, Any]) -> Chat:
         chat = self._require_owned(chat_id, user_id)
         title = chat_data.get("title", chat.title)
+        # Note: text-engagement is recorded by the frontend on send (so the live
+        # webcam score travels with the message); no engagement hook here.
         return self.repo.update(
             chat_id, title=title, chat=chat_data, updated_at=datetime.utcnow()
         )

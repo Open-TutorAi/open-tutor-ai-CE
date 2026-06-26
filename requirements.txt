@@ -77,6 +77,14 @@ opencv-python-headless==4.11.0.86
 rapidocr-onnxruntime==1.3.24
 rank-bm25==0.2.2
 
+# Engagement tracking — multimodal scoring
+librosa==0.11.0          # voice engagement DSP (RMS, pitch, cadence)
+# Pin to a build that still ships the legacy mp.solutions.face_mesh API used by
+# ai/engagement/video_core.py — newer 0.10.3x builds removed mp.solutions.
+mediapipe==0.10.14       # webcam engagement (face mesh, gaze, head pose)
+# deepface is optional (emotion estimation); it pulls in TensorFlow and is
+# not required — video scoring degrades gracefully when it is absent.
+
 faster-whisper==1.1.1
 
 PyJWT[crypto]==2.10.1

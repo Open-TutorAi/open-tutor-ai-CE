@@ -46,6 +46,10 @@ export const TTSWorker = writable(null);
 export const chatId = writable('');
 export const chatTitle = writable('');
 
+// Live webcam engagement score (0–1) from the Engagement Monitor, or null when
+// the camera is off. Read at send time so it is saved with the message.
+export const videoEngagementScore = writable<number | null>(null);
+
 export const channels = writable([]);
 export const chats = writable([]);
 export const pinnedChats = writable([]);

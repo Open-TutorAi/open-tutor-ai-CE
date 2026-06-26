@@ -8,7 +8,18 @@
 	import { onMount, tick, getContext, createEventDispatcher, onDestroy } from 'svelte';
 	const dispatch = createEventDispatcher();
 
-	import { type Model, mobile, settings, models, config, tools, user as _user } from '$lib/stores';
+	import {
+		type Model,
+		mobile,
+		settings,
+		models,
+		config,
+		tools,
+		chatId,
+		videoEngagementScore,
+		user as _user
+	} from '$lib/stores';
+	import { sendChatEngagement, sendAudioChunk } from '$lib/apis/engagement';
 
 	import { blobToFile, compressImage, createMessagesList, findWordIndices } from '$lib/utils';
 	import { transcribeAudio } from '$lib/apis/audio';
@@ -25,6 +36,7 @@
 
 	import InputMenu from '../chat/MessageInput/InputMenu.svelte';
 	import VoiceRecording from '../chat/MessageInput/VoiceRecording.svelte';
+	import WebcamCapture from '../chat/WebcamCapture.svelte';
 	import FilesOverlay from '../chat/MessageInput/FilesOverlay.svelte';
 	import Commands from '../chat/MessageInput/Commands.svelte';
 
@@ -74,6 +86,8 @@
 
 	let loaded = false;
 	let recording = false;
+	let cameraActive = false; // toggles headless webcam engagement capture
+	let cameraStatus = 'off';
 
 	let chatInputElement;
 
@@ -104,6 +118,43 @@
 			top: element.scrollHeight,
 			behavior: 'smooth'
 		});
+	};
+
+	// Record engagement for the message being sent, attaching the live webcam
+	// score so it is saved together with the chat. Best-effort; never blocks send.
+	const recordTextEngagement = (text) => {
+		if (!text?.trim()) return;
+		sendChatEngagement(localStorage.token, text, {
+			sessionId: $chatId,
+			videoScore: $videoEngagementScore
+		}).catch(() => {});
+	};
+
+	const recordVoiceEngagement = (detail) => {
+		const text = detail?.text ?? '';
+		if (detail?.audio_base64) {
+			sendAudioChunk(
+				localStorage.token,
+				detail.audio_base64,
+				$chatId,
+				detail?.duration_seconds ?? null,
+				text,
+				$videoEngagementScore
+			).catch(() => {});
+		} else if (text) {
+			sendChatEngagement(localStorage.token, text, {
+				sessionId: $chatId,
+				isVoice: true,
+				durationSeconds: detail?.duration_seconds ?? null,
+				videoScore: $videoEngagementScore
+			}).catch(() => {});
+		}
+	};
+
+	// Record text engagement, then submit. Used by every text-send path.
+	const submitText = () => {
+		recordTextEngagement(prompt);
+		dispatch('submit', prompt);
 	};
 
 	const screenCaptureHandler = async () => {
@@ -353,6 +404,10 @@
 
 <FilesOverlay show={dragged} />
 
+<!-- Headless webcam engagement capture (no visible widget). Runs whenever the
+	user has toggled the engagement camera on. -->
+<WebcamCapture active={cameraActive} sessionId={$chatId} bind:cameraStatus />
+
 {#if loaded}
 	<div
 		class="w-full font-primary {transparentBackground
@@ -549,25 +604,25 @@
 								document.getElementById('chat-input')?.focus();
 							}}
 							on:confirm={async (e) => {
-								const { text, filename } = e.detail;
-								prompt = `${prompt}${text} `;
+								const { text } = e.detail ?? {};
+								// Record the voice engagement (audio + live webcam score).
+								recordVoiceEngagement(e.detail);
+								prompt = `${prompt}${text ?? ''} `;
 
 								recording = false;
 
 								await tick();
 								document.getElementById('chat-input')?.focus();
 
-								if ($settings?.speechAutoSend ?? false) {
-									dispatch('submit', prompt);
-								}
+								// Voice messages send instantly.
+								dispatch('submit', prompt);
 							}}
 						/>
 					{:else}
 						<form
 							class="w-full flex gap-1.5"
 							on:submit|preventDefault={() => {
-								// check if selectedModels support image input
-								dispatch('submit', prompt);
+								submitText();
 							}}
 						>
 							<div
@@ -823,7 +878,7 @@
 
 																// Submit the prompt when Enter key is pressed
 																if (prompt !== '' && e.keyCode === 13 && !e.shiftKey) {
-																	dispatch('submit', prompt);
+																	submitText();
 																}
 															}
 														}
@@ -906,7 +961,7 @@
 
 														// Submit the prompt when Enter key is pressed
 														if (prompt !== '' && e.key === 'Enter' && !e.shiftKey) {
-															dispatch('submit', prompt);
+															submitText();
 														}
 													}
 												}}
@@ -1133,6 +1188,58 @@
 
 										{#if !history.currentId || history.messages[history.currentId]?.done == true}
 											<div class="flex items-center">
+												<Tooltip content={$i18n.t('Voice message')}>
+													<button
+														type="button"
+														class="mr-2 bg-transparent hover:bg-gray-100 text-gray-500 dark:text-gray-400 rounded-full p-1.5"
+														on:click={async () => {
+															recording = true;
+															await tick();
+															document.getElementById('chat-input')?.focus();
+														}}
+														title="Record voice message"
+													>
+														<svg
+															xmlns="http://www.w3.org/2000/svg"
+															viewBox="0 0 24 24"
+															fill="currentColor"
+															class="size-5"
+														>
+															<path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3z" />
+															<path
+																d="M19 11a1 1 0 0 0-2 0 5 5 0 0 1-10 0 1 1 0 0 0-2 0 7 7 0 0 0 6 6.92V21a1 1 0 1 0 2 0v-3.08A7 7 0 0 0 19 11z"
+															/>
+														</svg>
+													</button>
+												</Tooltip>
+
+												<Tooltip content={$i18n.t('Engagement camera')}>
+													<button
+														type="button"
+														class="mr-2 bg-transparent hover:bg-gray-100 text-gray-500 dark:text-gray-400 rounded-full p-1.5 {cameraActive
+															? 'text-green-600 dark:text-green-500'
+															: ''}"
+														on:click={() => {
+															cameraActive = !cameraActive;
+														}}
+														title={cameraActive
+															? `Engagement camera: ${cameraStatus}`
+															: 'Enable engagement camera'}
+													>
+														<svg
+															xmlns="http://www.w3.org/2000/svg"
+															viewBox="0 0 24 24"
+															fill="currentColor"
+															class="size-5"
+														>
+															<path
+																d="M12 5.5c-4.142 0-7.5 3.358-7.5 7.5s3.358 7.5 7.5 7.5 7.5-3.358 7.5-7.5-3.358-7.5-7.5-7.5zm0 13a5.5 5.5 0 110-11 5.5 5.5 0 010 11z"
+															/>
+															<circle cx="12" cy="12" r="3" />
+														</svg>
+													</button>
+												</Tooltip>
+
 												<Tooltip content={$i18n.t('Send message')}>
 													<button
 														id="send-message-button"
