@@ -7,6 +7,9 @@ from .model import ModelConfig
 from .support import Support, SupportFile
 from .user import User
 
+from accounts.parents.models import ParentStudentLink
+from .evaluation import Evaluation
+
 __all__ = [
     "User",
     "Support",
@@ -18,4 +21,6 @@ __all__ = [
     "AppConfig",
     "KnowledgeBase",
     "KnowledgeFile",
+    "ParentStudentLink",
+    "Evaluation",
 ]

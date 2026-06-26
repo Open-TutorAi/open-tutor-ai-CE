@@ -168,8 +168,28 @@ async def create_chat(
     body: NewChatRequest,
     current_user: User = Depends(get_current_user),
     svc: ChatsService = Depends(get_chats_service),
+    db: Session = Depends(get_db),
 ):
-    return svc.create(current_user.id, body.chat).to_dict()
+    chat = svc.create(current_user.id, body.chat)
+
+    # Lier automatiquement le chat au soutien si support_id fourni
+    support_id = body.chat.get("support_id")
+    if support_id:
+        try:
+            from data.models import Support
+            from datetime import datetime
+            support = db.query(Support).filter(Support.id == support_id).first()
+            # Le soutien appartient a l'etudiant mais le parent peut aussi le lier
+            if support and (support.user_id == current_user.id or current_user.role in ("parent", "admin")):
+                support.chat_id = chat.id
+                support.status = "active"
+                support.updated_at = datetime.utcnow()
+                db.commit()
+                print(f"Chat {chat.id} lie au soutien {support_id}")
+        except Exception as e:
+            print(f"Support link error: {e}")
+
+    return chat.to_dict()
 
 
 @router.post("/import")
