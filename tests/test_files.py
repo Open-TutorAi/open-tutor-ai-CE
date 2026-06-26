@@ -25,7 +25,6 @@ def _upload(client, token, content=b"hello world", filename="test.txt"):
 
 
 class TestFilesApiV1:
-
     def test_upload_file(self, client):
         """POST /api/v1/files/  ← uploadFile() in files/index.ts:8"""
         token = _signup(client)

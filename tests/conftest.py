@@ -9,10 +9,11 @@ os.environ.setdefault("DEBUG", "true")
 os.environ.setdefault("ENGAGEMENT_DATABASE_URL", "sqlite:///:memory:")
 
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-from fastapi.testclient import TestClient
+
 from data.database import Base, get_db
 from ai.engagement.database import (
     EngagementBase,

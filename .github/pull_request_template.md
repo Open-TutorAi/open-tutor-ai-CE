@@ -1,15 +1,21 @@
 # Pull Request Checklist
 
-### Note to first-time contributors: Please open a discussion post in [Discussions](https://github.com/pr-elhajji/open-tutor-ai-CE/discussions) and describe your changes before submitting a pull request.
+### Note to first-time contributors: Please open a discussion post in [Discussions](https://github.com/Open-TutorAi/open-tutor-ai-CE/discussions) and describe your changes before submitting a pull request.
 
 **Before submitting, make sure you've checked the following:**
 
+- [ ] **Linked issue:** This PR implements a documented issue (`Closes #...`). Features without a prior issue describing the architecture will not be reviewed.
+- [ ] **OpenWebUI-first (UI changes):** The `ui/` frontend is based on OpenWebUI — existing OpenWebUI patterns/components were checked before introducing a new pattern. Never import from `open_webui` at runtime.
+- [ ] **Architecture (DDD):** Backend changes respect the domain boundaries (`accounts`, `learning`, `ai`, `content`, `governance`, `system`) and the repository → service → router layering. No ORM in routers, no business logic in repositories.
+- [ ] **Tests first (TDD):** Tests covering success, auth/ownership, missing resource, and validation were written with (not after) the implementation. The contract test passes if API routes or UI clients changed.
 - [ ] **Target branch:** Please verify that the pull request targets the `dev` branch.
 - [ ] **Description:** Provide a concise description of the changes made in this pull request.
 - [ ] **Changelog:** Ensure a changelog entry following the format of [Keep a Changelog](https://keepachangelog.com/) is added at the bottom of the PR description.
 - [ ] **Documentation:** Have you updated relevant documentation [Open TutorAI Docs](https://github.com/pr-elhajji/open-tutor-ai-docs), or other documentation sources?
 - [ ] **Dependencies:** Are there any new dependencies? Have you updated the dependency versions in the documentation?
 - [ ] **Testing:** Have you written and run sufficient tests for validating the changes?
+- [ ] **AI context:** Does this PR change architecture, tooling, conventions, or domain rules? If yes, update `AGENTS.md`.
+- [ ] **Agent skills:** Does this PR introduce a new repeatable workflow? If yes, add a skill to `.agents/skills/` and import it in `CLAUDE.md`.
 - [ ] **Code review:** Have you performed a self-review of your code, addressing any coding standard issues and ensuring adherence to the project's coding standards?
 - [ ] **Prefix:** To cleary categorize this pull request, prefix the pull request title, using one of the following:
   - **BREAKING CHANGE**: Significant changes that may affect compatibility

@@ -1,7 +1,7 @@
 """User repository for the accounts domain."""
 
 from typing import Any, Dict, List, Optional
-from sqlalchemy.orm import Session
+
 from data.models import User
 from data.repositories import BaseRepository
 

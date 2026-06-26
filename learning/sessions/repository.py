@@ -1,18 +1,16 @@
 """Chat repository."""
 
-import uuid
 from typing import List, Optional
-from sqlalchemy import or_
+
 from data.models import Chat
 from data.repositories import BaseRepository
 
 
 class ChatRepository(BaseRepository[Chat]):
-
     def get_by_user(self, user_id: str, skip: int = 0, limit: int = 50) -> List[Chat]:
         return (
             self.session.query(Chat)
-            .filter(Chat.user_id == user_id, Chat.archived == False)
+            .filter(Chat.user_id == user_id, Chat.archived.is_(False))
             .order_by(Chat.updated_at.desc())
             .offset(skip)
             .limit(limit)
@@ -23,7 +21,9 @@ class ChatRepository(BaseRepository[Chat]):
         return (
             self.session.query(Chat)
             .filter(
-                Chat.user_id == user_id, Chat.pinned == True, Chat.archived == False
+                Chat.user_id == user_id,
+                Chat.pinned.is_(True),
+                Chat.archived.is_(False),
             )
             .order_by(Chat.updated_at.desc())
             .all()
@@ -32,7 +32,7 @@ class ChatRepository(BaseRepository[Chat]):
     def get_archived(self, user_id: str) -> List[Chat]:
         return (
             self.session.query(Chat)
-            .filter(Chat.user_id == user_id, Chat.archived == True)
+            .filter(Chat.user_id == user_id, Chat.archived.is_(True))
             .order_by(Chat.updated_at.desc())
             .all()
         )
@@ -125,7 +125,7 @@ class ChatRepository(BaseRepository[Chat]):
     def archive_all(self, user_id: str) -> int:
         count = (
             self.session.query(Chat)
-            .filter(Chat.user_id == user_id, Chat.archived == False)
+            .filter(Chat.user_id == user_id, Chat.archived.is_(False))
             .count()
         )
         (
