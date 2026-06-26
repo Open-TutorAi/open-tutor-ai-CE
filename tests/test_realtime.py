@@ -3,10 +3,11 @@
 Reference: open-webui/backend/open_webui/socket/main.py
 """
 
+from unittest.mock import AsyncMock, patch
+
 import pytest
-import anyio
-from unittest.mock import AsyncMock, patch, MagicMock
 from fastapi.testclient import TestClient
+
 from gateway.http.app import create_app
 
 
@@ -41,7 +42,7 @@ def test_socket_io_not_mounted_at_old_path(client):
 
 async def test_connect_rejects_missing_token():
     """connect() must return False when no token is provided."""
-    from gateway.realtime.socket import connect, SESSION_POOL
+    from gateway.realtime.socket import SESSION_POOL, connect
 
     SESSION_POOL.clear()
     result = await connect("sid_no_token", {"QUERY_STRING": ""}, auth=None)
@@ -51,7 +52,7 @@ async def test_connect_rejects_missing_token():
 
 async def test_connect_rejects_invalid_token():
     """connect() must return False when the token is invalid."""
-    from gateway.realtime.socket import connect, SESSION_POOL
+    from gateway.realtime.socket import SESSION_POOL, connect
 
     SESSION_POOL.clear()
     with patch("gateway.realtime.socket.decode_jwt_token", return_value=None):
@@ -64,7 +65,7 @@ async def test_connect_rejects_invalid_token():
 
 async def test_connect_accepts_valid_token():
     """connect() must return True and populate SESSION_POOL for a valid token."""
-    from gateway.realtime.socket import connect, SESSION_POOL, sio
+    from gateway.realtime.socket import SESSION_POOL, connect, sio
 
     SESSION_POOL.clear()
     with patch(
@@ -99,7 +100,7 @@ async def test_user_join_adds_to_session_pool():
     with patch(
         "gateway.realtime.socket._broadcast_user_list", new_callable=AsyncMock
     ) as mock_broadcast:
-        with patch.object(sio, "enter_room", new_callable=AsyncMock) as mock_enter_room:
+        with patch.object(sio, "enter_room", new_callable=AsyncMock):
             # Create a mock sid
             sid = "test_sid_user_join"
 
@@ -180,10 +181,9 @@ async def test_usage_updates_usage_pool():
 
 async def test_heartbeat_updates_last_seen():
     """When heartbeat is emitted, last_seen_at should be updated."""
+
     from gateway.realtime import socket as socket_module
     from gateway.realtime.socket import SESSION_POOL
-
-    import time
 
     # Pre-populate session pool
     sid = "test_sid_heartbeat"
@@ -285,7 +285,7 @@ async def test_emit_channel_event_targets_channel_room():
 
 def test_get_active_user_ids_deduplicates():
     """get_active_user_ids must return unique user IDs from SESSION_POOL."""
-    from gateway.realtime.socket import get_active_user_ids, SESSION_POOL
+    from gateway.realtime.socket import SESSION_POOL, get_active_user_ids
 
     SESSION_POOL.clear()
     SESSION_POOL["s1"] = {"user_id": "u1", "email": "a@b.com", "last_seen_at": 1}

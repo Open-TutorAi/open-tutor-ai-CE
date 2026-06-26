@@ -8,7 +8,6 @@ from data.repositories import BaseRepository
 
 
 class FileRepository(BaseRepository[FileRecord]):
-
     def get_by_user(self, user_id: str) -> List[FileRecord]:
         return (
             self.session.query(FileRecord)

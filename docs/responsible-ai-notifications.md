@@ -11,11 +11,11 @@ This note defines a safe implementation shape for learner-facing notifications w
 
 ## Notification levels
 
-| Level | Use when | Learner-facing behavior |
-| --- | --- | --- |
-| `info` | The response is useful but may benefit from source checking or more context. | Show a small inline note such as "Check the provided sources before using this answer." |
-| `caution` | The response is uncertain, partially grounded, or based on weak retrieval evidence. | Show a visible banner explaining why review is recommended and offer a follow-up action. |
-| `blocked` | The request is outside the tutor role or asks for unsupported high-impact advice. | Provide a short refusal or redirection and suggest contacting a qualified person where appropriate. |
+| Level     | Use when                                                                            | Learner-facing behavior                                                                             |
+| --------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `info`    | The response is useful but may benefit from source checking or more context.        | Show a small inline note such as "Check the provided sources before using this answer."             |
+| `caution` | The response is uncertain, partially grounded, or based on weak retrieval evidence. | Show a visible banner explaining why review is recommended and offer a follow-up action.            |
+| `blocked` | The request is outside the tutor role or asks for unsupported high-impact advice.   | Provide a short refusal or redirection and suggest contacting a qualified person where appropriate. |
 
 ## Trigger categories
 
@@ -66,4 +66,3 @@ Notifications should be driven by explicit signals rather than broad keyword mat
 - Keyboard and screen-reader users can perceive the notification and any action buttons.
 - Notifications are included in exported chat transcripts only when they were visible to the learner.
 - Administrators can review aggregate notification rates without exposing unnecessary learner content.
-

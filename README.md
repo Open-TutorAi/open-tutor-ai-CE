@@ -1,18 +1,8 @@
 <div align="center">
-<br/>
-<img src="static/static/splash.png" width="120px" alt="">
-<br/>
 
-# Open TutorAI 👋
+<img src="ui/static/static/splash.png" width="100px" alt="Open TutorAI Logo" />
 
-![GitHub stars](https://img.shields.io/github/stars/Open-TutorAi/open-tutor-ai-CE?style=social)
-![GitHub forks](https://img.shields.io/github/forks/Open-TutorAi/open-tutor-ai-CE?style=social)
-![GitHub watchers](https://img.shields.io/github/watchers/Open-TutorAi/open-tutor-ai-CE?style=social)
-![GitHub repo size](https://img.shields.io/github/repo-size/Open-TutorAi/open-tutor-ai-CE)
-![GitHub language count](https://img.shields.io/github/languages/count/Open-TutorAi/open-tutor-ai-CE)
-![GitHub top language](https://img.shields.io/github/languages/top/Open-TutorAi/open-tutor-ai-CE)
-![GitHub last commit](https://img.shields.io/github/last-commit/Open-TutorAi/open-tutor-ai-CE)
-[![Discord](https://img.shields.io/badge/Discord-Open_TutorAI-blue?logo=discord&logoColor=white)](https://discord.gg/BTQtE2deEm)
+# Open TutorAI
 
 </div>
 <br>
@@ -26,60 +16,62 @@
 
 > Get **enhanced capabilities**, including **custom theming and branding**, **Service Level Agreement (SLA) support**, **Long-Term Support (LTS) versions**, and **more!**
 
-For more information, be sure to check out our [Open TutorAI Documentation](https://opentutorai.com/docs/intro).
+[![GitHub Stars](https://img.shields.io/github/stars/Open-TutorAi/open-tutor-ai-CE?style=social)](https://github.com/Open-TutorAi/open-tutor-ai-CE)
+[![GitHub Forks](https://img.shields.io/github/forks/Open-TutorAi/open-tutor-ai-CE?style=social)](https://github.com/Open-TutorAi/open-tutor-ai-CE)
+[![Repo Size](https://img.shields.io/github/repo-size/Open-TutorAi/open-tutor-ai-CE)](https://github.com/Open-TutorAi/open-tutor-ai-CE)
+[![Last Commit](https://img.shields.io/github/last-commit/Open-TutorAi/open-tutor-ai-CE)](https://github.com/Open-TutorAi/open-tutor-ai-CE/commits)
+[![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?logo=discord&logoColor=white)](https://discord.gg/BTQtE2deEm)
+[![License](https://img.shields.io/badge/License-BSD--3--Clause-blue)](LICENSE)
 
-## ⭐ Key Features of Open TutorAI
+[📖 Documentation](https://opentutorai.com/docs/intro) · [🚀 Roadmap](https://opentutorai.com/docs/roadmap) · [💬 Discord](https://discord.gg/BTQtE2deEm) · [📧 Enterprise Support](mailto:opentutorai@gmail.com)
 
-Open TutorAI-CE is packed with powerful features designed for educational and collaborative AI experiences. Here's what makes it stand out:
+</div>
 
-- 🚀 **Effortless Setup with Docker**
-  Set up your environment in minutes using Docker with support for `:ollama` and `:cuda` tagged images, ensuring a streamlined and hassle-free deployment.
+---
 
-- 🤖 **Ollama & OpenAI API Compatibility**
-  Easily integrate OpenAI-compatible APIs for flexible conversations. Customize the API endpoint to connect with services like **LMStudio**, **GroqCloud**, **Mistral**, **OpenRouter**, and more—alongside local **Ollama** models.
+## Overview
 
-- 🛡️ **Granular Permissions & User Groups**
-  Admins can define detailed roles and permissions, allowing for secure, customized user experiences while promoting accountability and collaboration.
+**OpenTutorAI-CE** (Community Edition) is an open-source, AI-powered educational platform that makes personalized tutoring accessible to everyone. It serves as the foundation for an Enterprise Edition (EE) and is actively maintained by the community.
 
-- 🧑‍💻 **Responsive & Mobile-Optimized Design**
-  Enjoy a smooth user experience across desktops, laptops, and mobile devices with a fully responsive interface.
+> **Enterprise Edition available** — includes custom theming & branding, SLA support, LTS versions, and more. [Contact us →](mailto:opentutorai@gmail.com)
 
-- 📱 **Progressive Web App (PWA) Support**
-  Install Open TutorAI on your mobile device for an app-like experience, including **offline mode** on localhost and full access to core functionality.
+---
 
-- 🎤📹 **Voice, Video & Avatar Discussion Mode**
-  Interact hands-free using integrated **voice and video calls**, or dive into an engaging experience with our **avatar-powered discussion mode**—a lifelike conversational interface that brings your AI to life.
+## ✨ Features
 
-- 🧑‍🏫 **Personalized Learning Experience**
-  Open TutorAI is purpose-built for education:
-  - 🎓 **Customize learning support** to meet individual learner needs.
-  - 🧠 **Generate a personalized LLM**, optionally paired with a user-selected **avatar**, tailored to each learner's style, personality, or curriculum.
+### 🤖 AI & Model Support
 
-- 🛠️ **Model Builder**: Easily create Ollama models. Create and add custom characters/agents, customize chat elements, and import models effortlessly.
+- **Ollama & OpenAI-compatible APIs** — connect to LMStudio, GroqCloud, Mistral, OpenRouter, and more
+- **Multi-model conversations** — engage multiple models in parallel for optimal responses
+- **Model Builder** — create Ollama models, custom agents, and import models with ease
+- **Local RAG** — integrate textbooks, notes, and assignments into context-aware tutoring sessions
+- **Web Search for RAG** — real-time research via Google PSE, SearXNG, Brave, DuckDuckGo, and more
 
-- 📚 **Local RAG Integration for Educational Content**
-  Empower learners and educators with **Retrieval-Augmented Generation (RAG)** tailored for education. Seamlessly integrate textbooks, lecture notes, assignments, and research papers into the chat experience. Students can load documents directly into the conversation or access classroom resources from their document library using the `#` command—enabling **context-aware tutoring**, **assignment help**, and **in-depth discussion of study material**.
+### 🎓 Personalized Learning
 
-- 🔍 **Educational Web Search for RAG**
-  Enhance learning with real-time **web search integration**. Students and educators can perform targeted research using providers like `Google PSE`, `SearXNG`, `Brave`, `DuckDuckGo`, and more—right from the chat. The search results are automatically injected into the conversation, enabling **fact-checking**, **discovery of up-to-date information**, and **exploration of external academic resources** without leaving the tutoring environment.
+- **Adaptive tutoring support** — tailor the experience to each learner's style and curriculum
+- **Personalized LLM + avatar generation** — pair AI personas with individual learner profiles
+- **Avatar discussion mode** — lifelike conversational interface for immersive learning
 
-- 🌐 **Web Browsing Capability**: Seamlessly integrate websites into your chat experience using the `#` command followed by a URL. This feature allows you to incorporate web content directly into your conversations, enhancing the richness and depth of your interactions.
+### 🎙️ Rich Interaction
 
-- 🎨 **Image Generation Integration**: Seamlessly incorporate image generation capabilities using options such as AUTOMATIC1111 API or ComfyUI (local), and OpenAI's DALL-E (external), enriching your chat experience with dynamic visual content.
+- **Voice, video & avatar modes** — hands-free, multimodal interactions
+- **Web browsing** — load live web content into chat using the `#url` command
+- **Image generation** — integrated support for AUTOMATIC1111, ComfyUI, and DALL-E
 
-- ⚙️ **Many Models Conversations**: Effortlessly engage with various models simultaneously, harnessing their unique strengths for optimal responses. Enhance your experience by leveraging a diverse set of models in parallel.
+### 🛡️ Security & Access Control
 
-- 🔐 **Role-Based Access Control (RBAC)**: Ensure secure access with restricted permissions; only authorized individuals can access your Ollama, and exclusive model creation/pulling rights are reserved for administrators.
+- **Role-Based Access Control (RBAC)** — granular permissions and user groups
+- **Human-in-the-loop governance** — LLM response evaluation and self-regulation framework
 
-- 🌐🌍 **Multilingual Support**: Experience Open TutorAI in your preferred language with our internationalization (i18n) support. Join us in expanding our supported languages! We're actively seeking contributors!
+### 🌍 Platform & UX
 
-- 🌟 **Continuous Updates**: We are committed to improving Open TutorAI with regular updates, fixes, and new features.
+- **Docker-first deployment** — single command setup with `:ollama` and `:cuda` images
+- **Progressive Web App (PWA)** — offline mode on localhost, installable on mobile
+- **Responsive design** — optimized across desktop, tablet, and mobile
+- **Multilingual (i18n)** — Arabic, French, English, with community-contributed translations
 
-Want to learn more about Open TutorAI's features? Check out our [Open TutorAI documentation](https://opentutorai.com/docs/intro) for a comprehensive overview!
-
-## 🔗 Also Check Out Open TutorAI Community!
-
-Don't forget to explore our sibling project, [Open TutorAI Community](https://discord.gg/BTQtE2deEm), where you can discover, download, and explore customized Modelfiles. Open TutorAI Community offers a wide range of exciting possibilities for enhancing your chat interactions with Open TutorAI! 🚀
+---
 
 ## 🔄 Backend Request Flow
 
@@ -284,62 +276,56 @@ sequenceDiagram
 
 ```
 open-tutor-ai-CE/
-├── main.py                    ← Python entry point (uvicorn)
 │
-├── ── Application Domains ───────────────────────────────────────────────
-├── accounts/                  ← Auth, users, roles, permissions
-├── learning/                  ← Learners, teachers, classrooms, courses
-│   ├── sessions/              ← Chat sessions, tags, sharing, search
-│   └── supports/              ← Personalized tutoring supports
-├── ai/                        ← LLM, providers, RAG, media, memory, tools
-│   ├── llm/                   ← LLM schemas, service, transports
-│   ├── model_catalog/         ← Model overlays/catalog
-│   ├── providers/             ← OpenAI-compatible + Ollama providers
-│   ├── retrieval/             ← RAG pipeline and knowledge bases
-│   └── media/                 ← Audio (TTS/STT) + image generation
-├── content/                   ← Files, uploads, learning resources
-│   ├── files/                 ← User-owned files and extracted content
-│   └── resources/             ← Learning resources not tied to RAG
-├── governance/                ← HITL governance and LLM response evaluation
-│   └── self_regulation/       ← Self-regulation feedback domain
-├── system/                    ← App-level configs and bootstrap services
-│   ├── configs/               ← Runtime app configuration store
-│   └── app/                   ← App info/bootstrap services
+├── main.py                        # Python entry point (uvicorn)
 │
-├── ── Gateway & Infrastructure ──────────────────────────────────────────
-├── gateway/                   ← Transport layer
-│   ├── http/                  ← FastAPI app, dependencies, routers/
-│   └── realtime/              ← Socket.IO ASGI (/realtime/socket.io)
-├── data/                      ← ORM models, DB engine, base repository
-├── config/                    ← App settings & constants
-├── common/                    ← Shared utilities (exceptions, logging)
-├── tests/                     ← Pytest suite
+├── ── Application Domains ─────────────────────────────────────────
+├── accounts/                      # Auth, users, roles, permissions
+├── learning/                      # Learners, teachers, classrooms, courses
+│   ├── sessions/                  # Chat sessions, tags, sharing, search
+│   └── supports/                  # Personalized tutoring supports
+├── ai/                            # LLM, providers, RAG, media, memory, tools
+│   ├── llm/                       # LLM schemas, service, transports
+│   ├── model_catalog/             # Model overlays/catalog
+│   ├── providers/                 # OpenAI-compatible + Ollama providers
+│   ├── retrieval/                 # RAG pipeline and knowledge bases
+│   └── media/                     # Audio (TTS/STT) + image generation
+├── content/                       # Files, uploads, learning resources
+├── governance/                    # HITL governance and LLM evaluation
+│   └── self_regulation/           # Self-regulation feedback domain
+├── system/                        # App-level configs and bootstrap
 │
-├── ── Frontend ──────────────────────────────────────────────────────────
-├── ui/                        ← SvelteKit application
-│   ├── src/lib/apis/          ← API clients (one folder per domain)
-│   ├── src/lib/components/    ← Reusable Svelte components
-│   ├── src/lib/i18n/          ← Translations (AR / FR / EN)
-│   ├── src/routes/            ← File-based routing
-│   ├── static/                ← Assets (avatars, images, audio)
-│   └── cypress/               ← E2E tests
+├── ── Gateway & Infrastructure ────────────────────────────────────
+├── gateway/
+│   ├── http/                      # FastAPI app, routers, dependencies
+│   └── realtime/                  # Socket.IO ASGI (/realtime/socket.io)
+├── data/                          # ORM models, DB engine, base repository
+├── config/                        # App settings & constants
+├── common/                        # Shared utilities (exceptions, logging)
+├── tests/                         # Pytest suite
 │
-├── ── DevOps ────────────────────────────────────────────────────────────
+├── ── Frontend ────────────────────────────────────────────────────
+├── ui/                            # SvelteKit application
+│   ├── src/lib/apis/              # API clients (one folder per domain)
+│   ├── src/lib/components/        # Reusable Svelte components
+│   ├── src/lib/i18n/              # Translations (AR / FR / EN)
+│   ├── src/routes/                # File-based routing
+│   ├── static/                    # Assets (avatars, images, audio)
+│   └── cypress/                   # E2E tests
+│
+├── ── DevOps ──────────────────────────────────────────────────────
 ├── devops/
-│   ├── docker/                ← Dockerfiles + Docker Compose overlays
-│   └── scripts/               ← Dev & ops shell scripts
+│   ├── docker/                    # Dockerfiles + Compose overlays
+│   └── scripts/                   # Dev & ops shell scripts
 │
-├── ── Project ───────────────────────────────────────────────────────────
-├── docs/                      ← Documentation
-├── kubernetes/                ← Helm charts
-├── .github/workflows/         ← CI/CD
-└── var/                       ← Runtime only, gitignored (DB, uploads, vector_db)
+├── ── Project ─────────────────────────────────────────────────────
+├── docs/                          # Documentation
+├── kubernetes/                    # Helm charts
+├── .github/workflows/             # CI/CD
+└── var/                           # Runtime only, gitignored (DB, uploads, vector_db)
 ```
 
-> Full structure with annotations: [MIGRATION.md](MIGRATION.md)
-
-OpenWebUI and Hermes are used as design references only. OpenTutorAI keeps its own
-domain names and has no runtime dependency on either project.
+> Full annotated structure: [MIGRATION.md](MIGRATION.md)
 
 ---
 
@@ -419,9 +405,9 @@ Use this path when you want hot-reload for active development or contribution.
 
 ---
 
-### 🐳 Docker & Docker Compose Setup (Recommended)
+### 🐳 Docker Compose (Recommended)
 
-For a hassle-free setup without installing Python or Node.js, use Docker. A single container serves both the Python API and the built frontend.
+**Prerequisites:** Docker + Docker Compose · Git · 8 GB RAM recommended
 
 #### Prerequisites
 
@@ -445,13 +431,14 @@ cp .env.example .env
 For **production**, replace the placeholder `SECRET_KEY` in your `.env` with a randomly generated value:
 
 ```bash
-# macOS / Linux — replaces the existing SECRET_KEY line in-place
 sed -i.bak "s/^SECRET_KEY=.*/SECRET_KEY=$(openssl rand -hex 32)/" .env && rm .env.bak
 ```
 
-For **local development**, the defaults in `.env.example` work as-is (`DEBUG=true` bypasses the key check).
+> For **local development**, the `.env.example` defaults work as-is (`DEBUG=true`).
 
-#### Step 3: Start the Stack
+#### 3. Start the Stack
+
+**With Ollama (local models):**
 
 **With Ollama bundled (recommended for local models):**
 
@@ -497,30 +484,63 @@ If the Python API was already running before the model was pulled, restart it:
 docker compose --env-file .env -f devops/docker/docker-compose.yaml restart open-tutorai
 ```
 
-#### Step 5: Access the Application
+#### 5. Open the App
 
-Open **http://localhost:8080** in your browser. The **first account created becomes the administrator**.
+Navigate to **http://localhost:8080** — the **first registered account becomes the administrator**.
 
-#### Stopping the Services
+#### GPU Support
 
 ```bash
+# NVIDIA
+docker compose --env-file .env \
+  -f devops/docker/docker-compose.yaml \
+  -f devops/docker/docker-compose.gpu.yaml up --build
+
+# AMD
+docker compose --env-file .env \
+  -f devops/docker/docker-compose.yaml \
+  -f devops/docker/docker-compose.amdgpu.yaml up --build
+```
+
+#### Stopping / Resetting
+
+```bash
+# Stop services
 docker compose --env-file .env -f devops/docker/docker-compose.yaml down
 
 # Full reset (removes all data volumes)
 docker compose --env-file .env -f devops/docker/docker-compose.yaml down -v
 ```
 
-#### GPU Support
+---
+
+### 🛠️ Local Development
+
+**Prerequisites:** Python 3.11–3.12 · Node.js 18.13–22.x
+
+#### 1. Fork & Clone
 
 ```bash
-# NVIDIA GPU
-docker compose --env-file .env -f devops/docker/docker-compose.yaml -f devops/docker/docker-compose.gpu.yaml up --build
-
-# AMD GPU
-docker compose --env-file .env -f devops/docker/docker-compose.yaml -f devops/docker/docker-compose.amdgpu.yaml up --build
+git clone https://github.com/YOUR_USERNAME/open-tutor-ai-CE.git
+cd open-tutor-ai-CE
 ```
 
----
+#### 2. Backend Setup
+
+```bash
+# Create and activate a virtual environment
+python3 -m venv .venv && source .venv/bin/activate
+# or with conda:
+# conda create -n tutorai-env python=3.11 && conda activate tutorai-env
+
+pip install -r requirements.txt
+cp .env.example .env
+```
+
+Start the API with hot-reload (available at **http://localhost:8080**):
+
+```bash
+uvicorn main:app --reload --port 8080
 
 ### ⚙️ Environment Variables Reference
 
@@ -543,35 +563,78 @@ docker compose --env-file .env -f devops/docker/docker-compose.yaml -f devops/do
 | `IMAGES_ENGINE`       | _(empty)_                                     | Image generation engine (e.g. `openai`). Configure via Admin > Settings > Images. |
 | `GLOBAL_LOG_LEVEL`    | `INFO`                                        | Log level: `DEBUG`, `INFO`, `WARNING`, `ERROR`.                                   |
 
+> Interactive API docs: **http://localhost:8080/docs**
+
+#### 3. Frontend Setup
+
+```bash
+cd ui
+npm install
+npm run dev    # http://localhost:5173
+```
+
+#### 4. Optional: Local Ollama
+
+```bash
+# Install from https://ollama.com, then:
+ollama pull llama3.2
+```
+
+Ensure `OLLAMA_BASE_URL=http://localhost:11434` is set in `.env`.
+
+#### 5. Run Tests
+
+```bash
+pytest -q
+```
+
 ---
 
-### Troubleshooting
+## ⚙️ Environment Variables
 
-Encountering connection issues? See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for common fixes, or visit our [Open TutorAI Documentation](https://opentutorai.com/docs/troubleshooting/). For further assistance, join the [Open TutorAI Discord](https://discord.gg/BTQtE2deEm).
+| Variable              | Default                                       | Description                                                                       |
+| --------------------- | --------------------------------------------- | --------------------------------------------------------------------------------- |
+| `DEBUG`               | `true`                                        | Set `false` in production. Enables `SECRET_KEY` strength check.                   |
+| `SECRET_KEY`          | _(dev placeholder)_                           | JWT signing key. Required in production (`openssl rand -hex 32`).                 |
+| `DATABASE_URL`        | `sqlite:///./var/tutorai.db`                  | SQLAlchemy URL. Use PostgreSQL in production.                                     |
+| `OLLAMA_BASE_URL`     | `http://localhost:11434`                      | Ollama server. Use `http://ollama:11434` inside Docker Compose.                   |
+| `OPENAI_API_BASE_URL` | _(empty)_                                     | OpenAI-compatible API (LMStudio, GroqCloud, Mistral…).                            |
+| `OPENAI_API_KEY`      | _(empty)_                                     | API key for the OpenAI-compatible provider.                                       |
+| `GEMINI_API_KEY`      | _(empty)_                                     | Google Gemini API key.                                                            |
+| `CORS_ALLOW_ORIGIN`   | `http://localhost:3000,http://localhost:5173` | Comma-separated allowed CORS origins.                                             |
+| `UPLOAD_DIR`          | `./var/uploads`                               | Directory for uploaded files.                                                     |
+| `MAX_UPLOAD_SIZE_MB`  | `100`                                         | Maximum upload size in MB.                                                        |
+| `VECTOR_DB_PATH`      | `./var/vector_db`                             | ChromaDB storage path for RAG.                                                    |
+| `EMBEDDING_MODEL`     | `sentence-transformers/all-MiniLM-L6-v2`      | Default embedding model for RAG.                                                  |
+| `AUDIO_TTS_ENGINE`    | _(empty)_                                     | TTS engine (e.g. `openai`). Configure via Admin → Settings → Audio.               |
+| `AUDIO_STT_ENGINE`    | _(empty)_                                     | STT engine. Configure via Admin → Settings → Audio.                               |
+| `IMAGES_ENGINE`       | _(empty)_                                     | Image generation engine (e.g. `openai`). Configure via Admin → Settings → Images. |
+| `GLOBAL_LOG_LEVEL`    | `INFO`                                        | Log verbosity: `DEBUG`, `INFO`, `WARNING`, `ERROR`.                               |
 
-## 🌟 What's Next?
+---
 
-Discover upcoming features on our roadmap in the [Open TutorAI Documentation](https://opentutorai.com/docs/roadmap).
-
-## 📜 License
-
-This project is licensed under the [BSD-3-Clause License](LICENSE) - see the [LICENSE](LICENSE) file for details. 📄
-
-## 💬 Support
-
-If you have any questions, suggestions, or need assistance, please open an issue or join our
-[Open TutorAI Discord community](https://discord.gg/BTQtE2deEm) to connect with us! 🤝
-
-## Star History
+## 🆘 Troubleshooting
 
 <a href="https://www.star-history.com/#Open-TutorAi/open-tutor-ai-CE&Date">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Open-TutorAi/open-tutor-ai-CE&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=Open-TutorAi/open-tutor-ai-CE&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=Open-TutorAi/open-tutor-ai-CE&type=Date" />
- </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Open-TutorAi/open-tutor-ai-CE&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=Open-TutorAi/open-tutor-ai-CE&type=Date" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=Open-TutorAi/open-tutor-ai-CE&type=Date" />
+  </picture>
 </a>
 
 ---
 
-Founded by [Mohamed El Hajji](https://github.com/pr-elhajji) and built by the community - Let's make Open TutorAI even more amazing together! 💪
+## 📜 License
+
+Licensed under the [BSD-3-Clause License](LICENSE).
+
+---
+
+<div align="center">
+
+Founded by [Mohamed El Hajji](https://github.com/pr-elhajji) · Built by the community 💪
+
+**[⭐ Star this repo](https://github.com/Open-TutorAi/open-tutor-ai-CE) · [🐛 Report an issue](https://github.com/Open-TutorAi/open-tutor-ai-CE/issues) · [💬 Join Discord](https://discord.gg/BTQtE2deEm)**
+
+</div>

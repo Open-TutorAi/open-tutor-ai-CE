@@ -1,6 +1,6 @@
 """Self-regulation router — /self_regulation/* routes matching OpenTutorAI vocabulary."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel

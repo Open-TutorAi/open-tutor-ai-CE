@@ -4,20 +4,23 @@ repos:
     hooks:
       - id: conventional-pre-commit
         stages: [commit-msg]
-        args: [feat, fix, refactor, chore, docs, test, ci, build, perf, style, revert]
+        args: [feat, fix, refactor, chore, docs, test, ci, build, perf, style, revert, i18n]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
     hooks:
       - id: trailing-whitespace
+        exclude: ^ui/static/
       - id: end-of-file-fixer
+        exclude: ^ui/static/
       - id: check-merge-conflict
 
-  - repo: https://github.com/psf/black
-    rev: 24.8.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
     hooks:
-      - id: black
-        args: [--exclude, ".venv/|/venv/|ui/"]
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
 
   - repo: local
     hooks:
