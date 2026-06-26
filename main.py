@@ -1,7 +1,7 @@
 """OpenTutorAI application entrypoint."""
 
 from gateway.http.app import create_app
-
+from learning.blockly.router import router as blockly_router
 # Create FastAPI app
 app = create_app()
 
@@ -42,3 +42,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+app.include_router(blockly_router)
