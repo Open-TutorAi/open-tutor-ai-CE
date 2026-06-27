@@ -2,13 +2,18 @@
 
 import os
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
+
 from config import settings
 from data.database import init_database
+
+from gateway.http.api_routes import register_api_routes
+from gateway.realtime.socket import socket_app
 
 from .routers import (
     health,
@@ -38,8 +43,6 @@ from .routers import (
     folders as folders_router,
     tasks as tasks_router,
 )
-from gateway.http.api_routes import register_api_routes
-from gateway.realtime.socket import socket_app
 
 FRONTEND_BUILD_DIR = os.getenv("FRONTEND_BUILD_DIR", "./ui/build")
 

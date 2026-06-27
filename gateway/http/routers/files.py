@@ -6,9 +6,9 @@ from sqlalchemy.orm import Session
 
 from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from config import settings
+from content.files.service import FilesService
 from data.database import get_db
 from data.models import User
-from content.files.service import FilesService
 from gateway.http.dependencies import get_current_user
 
 router = APIRouter(prefix="/files", tags=["files"])
@@ -54,7 +54,7 @@ async def upload_file(
             content_type=file.content_type,
             contents=contents,
         )
-    except ValidationError as exc:
+    except ValidationError:
         raise _too_large
     return record.to_dict()
 

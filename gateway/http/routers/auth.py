@@ -4,13 +4,13 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from pydantic import BaseModel, EmailStr
 from jwt import encode
+from pydantic import BaseModel, EmailStr
 
+from accounts.users.service import AccountService
 from config import settings
 from data.models import User
 from gateway.http.dependencies import get_account_service, get_current_user
-from accounts.users.service import AccountService
 
 router = APIRouter(prefix="/auths", tags=["auth"])
 
@@ -155,6 +155,7 @@ async def add_user(
             password_plain=request.password,
             profile_image_url=request.profile_image_url,
             is_admin=(request.role == "admin"),
+            role=request.role or "user",
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))

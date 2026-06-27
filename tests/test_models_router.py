@@ -56,7 +56,7 @@ def test_toggle_model(client):
     )
     r = client.post("/api/v1/models/model/toggle?id=tog-model", headers=_auth(token))
     assert r.status_code == 200
-    assert r.json()["is_active"] == False
+    assert r.json()["is_active"] is False
 
 
 def test_delete_model(client):

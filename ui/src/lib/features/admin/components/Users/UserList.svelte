@@ -330,12 +330,15 @@
 			{#each filteredUsers as user, userIdx}
 				<tr class="bg-white dark:bg-gray-900 dark:border-gray-850 text-xs">
 					<td class="px-3 py-1 min-w-[7rem] w-28">
-						<button
-							class=" translate-y-0.5"
-							on:click={() => {}}
-						>
+						<button class=" translate-y-0.5" on:click={() => {}}>
 							<Badge
-								type={user.role === 'admin' ? 'info' : user.role === 'teacher' ? 'success' : user.role === 'parent' ? 'warning' : 'muted'}
+								type={user.role === 'admin'
+									? 'info'
+									: user.role === 'teacher'
+										? 'success'
+										: user.role === 'parent'
+											? 'warning'
+											: 'muted'}
 								content={user.role === 'user' ? $i18n.t('student') : $i18n.t(user.role)}
 							/>
 						</button>

@@ -23,8 +23,9 @@
 	export let feedbacks = [];
 
 	// Filter out feedbacks without rating values
-	$: filteredFeedbacks = feedbacks.filter(feedback => 
-		feedback.data && feedback.data.rating !== null && feedback.data.rating !== undefined
+	$: filteredFeedbacks = feedbacks.filter(
+		(feedback) =>
+			feedback.data && feedback.data.rating !== null && feedback.data.rating !== undefined
 	);
 
 	let page = 1;

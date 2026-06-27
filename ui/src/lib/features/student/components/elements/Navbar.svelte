@@ -80,7 +80,7 @@
 			demoData.set(mockData);
 			isDemo.set(true);
 			localStorage.setItem('demoMode', 'true');
-			toast.success($i18n.t('Demo mode activated. You\'re now exploring with sample data.'));
+			toast.success($i18n.t("Demo mode activated. You're now exploring with sample data."));
 		}
 		showUserDropdown = false;
 	}
@@ -144,7 +144,7 @@
 				class={`text-xl font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'} flex items-center gap-2`}
 			>
 				<span class="hidden sm:inline">
-					{username ? $i18n.t('Hello') + ' ' + username + ' 👋': $i18n.t('Hello')}
+					{username ? $i18n.t('Hello') + ' ' + username + ' 👋' : $i18n.t('Hello')}
 				</span>
 			</h1>
 			<p class={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} hidden sm:block`}>
@@ -359,7 +359,12 @@
 				aria-expanded={showUserDropdown}
 				on:click={toggleUserDropdown}
 			>
-				<img src={profileImageUrl} alt="User" crossorigin="anonymous" class="h-full w-full object-cover" />
+				<img
+					src={profileImageUrl}
+					alt="User"
+					crossorigin="anonymous"
+					class="h-full w-full object-cover"
+				/>
 			</button>
 			{#if showUserDropdown}
 				<div
@@ -463,8 +468,12 @@
 								</svg>
 								<span>{$i18n.t('Demo Mode')}</span>
 							</div>
-							<div class={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${$isDemo ? 'bg-blue-600' : isDarkMode ? 'bg-gray-600' : 'bg-gray-300'}`}>
-								<span class={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${$isDemo ? 'translate-x-5' : 'translate-x-1'}`}></span>
+							<div
+								class={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${$isDemo ? 'bg-blue-600' : isDarkMode ? 'bg-gray-600' : 'bg-gray-300'}`}
+							>
+								<span
+									class={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${$isDemo ? 'translate-x-5' : 'translate-x-1'}`}
+								></span>
 							</div>
 						</button>
 					</div>
@@ -576,7 +585,12 @@
 				on:click={toggleMobileMenu}
 				aria-label="User menu"
 			>
-				<img src={profileImageUrl} alt="User" crossorigin="anonymous" class="h-full w-full object-cover" />
+				<img
+					src={profileImageUrl}
+					alt="User"
+					crossorigin="anonymous"
+					class="h-full w-full object-cover"
+				/>
 			</button>
 
 			<!-- Mobile menu (dropdown style instead of slide-in) -->
@@ -682,8 +696,12 @@
 								</svg>
 								<span>{$i18n.t('Demo Mode')}</span>
 							</div>
-							<div class={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${$isDemo ? 'bg-blue-600' : isDarkMode ? 'bg-gray-600' : 'bg-gray-300'}`}>
-								<span class={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${$isDemo ? 'translate-x-5' : 'translate-x-1'}`}></span>
+							<div
+								class={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${$isDemo ? 'bg-blue-600' : isDarkMode ? 'bg-gray-600' : 'bg-gray-300'}`}
+							>
+								<span
+									class={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${$isDemo ? 'translate-x-5' : 'translate-x-1'}`}
+								></span>
 							</div>
 						</button>
 					</div>

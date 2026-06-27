@@ -65,7 +65,7 @@
 		{:else if !thread}
 			<div
 				class="px-5
-			
+
 			{($settings?.widescreenMode ?? null) ? 'max-w-full' : 'max-w-5xl'} mx-auto"
 			>
 				{#if channel}

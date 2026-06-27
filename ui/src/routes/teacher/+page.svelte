@@ -1,12 +1,42 @@
 <script lang="ts">
-	import { getContext } from 'svelte';
+	import { onMount, getContext } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { user } from '$lib/stores';
+
 	const i18n = getContext('i18n');
 
 	$: username = $user?.name?.split(' ')[0] ?? 'Teacher';
+
+	let loading = true;
+	let error = null;
+
+	onMount(async () => {
+		try {
+			if (!$user) {
+				goto('/auth');
+				return;
+			}
+			if ($user.role !== 'teacher') {
+				await goto(`/${$user.role}`);
+				return;
+			}
+			loading = false;
+		} catch (err) {
+			error = err.message || 'An error occurred';
+			loading = false;
+		}
+	});
 </script>
 
+{#if loading}
+	<div class="flex justify-center items-center min-h-screen">
+		<div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+	</div>
+{:else if error}
+	<div class="flex justify-center items-center min-h-screen p-6">
+		<p class="text-red-600">{error}</p>
+	</div>
+{:else}
 <div class="space-y-6">
 
 	<!-- Welcome -->
@@ -64,3 +94,4 @@
 	</div>
 
 </div>
+{/if}

@@ -5,14 +5,16 @@ Verified user: generations.
 """
 
 from typing import List, Optional
+
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+
+from ai.media.images import ImagesService
 from data.database import get_db
 from data.models import User
 from gateway.http.dependencies import get_current_user
-from ai.media.images import ImagesService
 
 router = APIRouter(prefix="/images", tags=["images"])
 

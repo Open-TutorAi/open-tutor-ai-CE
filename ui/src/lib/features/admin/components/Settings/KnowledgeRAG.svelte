@@ -156,7 +156,8 @@
 					bind:value={embeddingEngine}
 					on:change={() => {
 						if (embeddingEngine === 'openai') embeddingModel = 'text-embedding-3-small';
-						else if (embeddingEngine === '') embeddingModel = 'sentence-transformers/all-MiniLM-L6-v2';
+						else if (embeddingEngine === '')
+							embeddingModel = 'sentence-transformers/all-MiniLM-L6-v2';
 						else embeddingModel = '';
 					}}
 				>
@@ -168,19 +169,35 @@
 
 			{#if embeddingEngine === 'openai'}
 				<div class="flex gap-2">
-					<input class="flex-1 rounded-lg py-1.5 px-3 text-xs bg-gray-50 dark:bg-gray-850 outline-none" placeholder={$i18n.t('API Base URL')} bind:value={OpenAIUrl} />
+					<input
+						class="flex-1 rounded-lg py-1.5 px-3 text-xs bg-gray-50 dark:bg-gray-850 outline-none"
+						placeholder={$i18n.t('API Base URL')}
+						bind:value={OpenAIUrl}
+					/>
 					<SensitiveInput placeholder={$i18n.t('API Key')} bind:value={OpenAIKey} />
 				</div>
 			{:else if embeddingEngine === 'ollama'}
 				<div class="flex gap-2">
-					<input class="flex-1 rounded-lg py-1.5 px-3 text-xs bg-gray-50 dark:bg-gray-850 outline-none" placeholder={$i18n.t('API Base URL')} bind:value={OllamaUrl} />
-					<SensitiveInput placeholder={$i18n.t('API Key')} bind:value={OllamaKey} required={false} />
+					<input
+						class="flex-1 rounded-lg py-1.5 px-3 text-xs bg-gray-50 dark:bg-gray-850 outline-none"
+						placeholder={$i18n.t('API Base URL')}
+						bind:value={OllamaUrl}
+					/>
+					<SensitiveInput
+						placeholder={$i18n.t('API Key')}
+						bind:value={OllamaKey}
+						required={false}
+					/>
 				</div>
 			{/if}
 
 			<div class="flex w-full justify-between items-center">
 				<span class="text-xs">{$i18n.t('Model')}</span>
-				<input class="w-56 rounded-lg py-1.5 px-3 text-xs bg-gray-50 dark:bg-gray-850 outline-none text-right" bind:value={embeddingModel} placeholder={$i18n.t('Embedding model name')} />
+				<input
+					class="w-56 rounded-lg py-1.5 px-3 text-xs bg-gray-50 dark:bg-gray-850 outline-none text-right"
+					bind:value={embeddingModel}
+					placeholder={$i18n.t('Embedding model name')}
+				/>
 			</div>
 		</div>
 
@@ -198,18 +215,35 @@
 			{#if querySettings.hybrid}
 				<div class="flex w-full justify-between items-center">
 					<span class="text-xs">{$i18n.t('Reranking Model')}</span>
-					<input class="w-56 rounded-lg py-1.5 px-3 text-xs bg-gray-50 dark:bg-gray-850 outline-none text-right" bind:value={rerankingModel} placeholder={$i18n.t('e.g. BAAI/bge-reranker-v2-m3')} />
+					<input
+						class="w-56 rounded-lg py-1.5 px-3 text-xs bg-gray-50 dark:bg-gray-850 outline-none text-right"
+						bind:value={rerankingModel}
+						placeholder={$i18n.t('e.g. BAAI/bge-reranker-v2-m3')}
+					/>
 				</div>
 			{/if}
 
 			<div class="flex w-full justify-between items-center">
 				<span class="text-xs">{$i18n.t('Top K Results')}</span>
-				<input type="number" min="1" max="100" class="w-20 rounded-lg py-1.5 px-3 text-xs bg-gray-50 dark:bg-gray-850 outline-none text-right" bind:value={querySettings.k} />
+				<input
+					type="number"
+					min="1"
+					max="100"
+					class="w-20 rounded-lg py-1.5 px-3 text-xs bg-gray-50 dark:bg-gray-850 outline-none text-right"
+					bind:value={querySettings.k}
+				/>
 			</div>
 
 			<div class="flex w-full justify-between items-center">
 				<span class="text-xs">{$i18n.t('Relevance Threshold')}</span>
-				<input type="number" min="0" max="1" step="0.01" class="w-20 rounded-lg py-1.5 px-3 text-xs bg-gray-50 dark:bg-gray-850 outline-none text-right" bind:value={querySettings.r} />
+				<input
+					type="number"
+					min="0"
+					max="1"
+					step="0.01"
+					class="w-20 rounded-lg py-1.5 px-3 text-xs bg-gray-50 dark:bg-gray-850 outline-none text-right"
+					bind:value={querySettings.r}
+				/>
 			</div>
 		</div>
 
@@ -248,8 +282,19 @@
 				on:click={() => (showAdvanced = !showAdvanced)}
 			>
 				<span>{$i18n.t('Advanced')}</span>
-				<svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 transition-transform {showAdvanced ? 'rotate-180' : ''}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					class="w-3.5 h-3.5 transition-transform {showAdvanced ? 'rotate-180' : ''}"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M19 9l-7 7-7-7"
+					/>
 				</svg>
 			</button>
 
@@ -257,14 +302,19 @@
 				<div class="px-4 py-3 flex flex-col gap-3">
 					<div class="flex w-full justify-between items-center">
 						<span class="text-xs">{$i18n.t('Full Context Mode')}</span>
-						<Tooltip content={$i18n.t('Inject the full document as context instead of retrieved chunks.')}>
+						<Tooltip
+							content={$i18n.t('Inject the full document as context instead of retrieved chunks.')}
+						>
 							<Switch bind:state={RAG_FULL_CONTEXT} />
 						</Tooltip>
 					</div>
 
 					<div class="flex w-full justify-between items-center">
 						<span class="text-xs">{$i18n.t('Text Splitter')}</span>
-						<select class="dark:bg-gray-900 rounded-sm px-2 py-1 text-xs bg-transparent outline-none text-right" bind:value={textSplitter}>
+						<select
+							class="dark:bg-gray-900 rounded-sm px-2 py-1 text-xs bg-transparent outline-none text-right"
+							bind:value={textSplitter}
+						>
 							<option value="">{$i18n.t('Default')}</option>
 							<option value="character">{$i18n.t('Character')}</option>
 							<option value="token">{$i18n.t('Token')}</option>
@@ -273,17 +323,30 @@
 
 					<div class="flex w-full justify-between items-center">
 						<span class="text-xs">{$i18n.t('Chunk Size')}</span>
-						<input type="number" min="1" class="w-24 rounded-lg py-1.5 px-3 text-xs bg-gray-50 dark:bg-gray-850 outline-none text-right" bind:value={chunkSize} />
+						<input
+							type="number"
+							min="1"
+							class="w-24 rounded-lg py-1.5 px-3 text-xs bg-gray-50 dark:bg-gray-850 outline-none text-right"
+							bind:value={chunkSize}
+						/>
 					</div>
 
 					<div class="flex w-full justify-between items-center">
 						<span class="text-xs">{$i18n.t('Chunk Overlap')}</span>
-						<input type="number" min="0" class="w-24 rounded-lg py-1.5 px-3 text-xs bg-gray-50 dark:bg-gray-850 outline-none text-right" bind:value={chunkOverlap} />
+						<input
+							type="number"
+							min="0"
+							class="w-24 rounded-lg py-1.5 px-3 text-xs bg-gray-50 dark:bg-gray-850 outline-none text-right"
+							bind:value={chunkOverlap}
+						/>
 					</div>
 
 					<div class="flex w-full justify-between items-center">
 						<span class="text-xs">{$i18n.t('Content Extraction Engine')}</span>
-						<select class="dark:bg-gray-900 rounded-sm px-2 py-1 text-xs bg-transparent outline-none text-right" bind:value={contentExtractionEngine}>
+						<select
+							class="dark:bg-gray-900 rounded-sm px-2 py-1 text-xs bg-transparent outline-none text-right"
+							bind:value={contentExtractionEngine}
+						>
 							<option value="default">{$i18n.t('Default')}</option>
 							<option value="tika">{$i18n.t('Apache Tika')}</option>
 						</select>
@@ -292,18 +355,34 @@
 					{#if contentExtractionEngine === 'tika'}
 						<div class="flex w-full justify-between items-center">
 							<span class="text-xs">{$i18n.t('Tika Server URL')}</span>
-							<input class="w-56 rounded-lg py-1.5 px-3 text-xs bg-gray-50 dark:bg-gray-850 outline-none text-right" bind:value={tikaServerUrl} placeholder="http://tika:9998" />
+							<input
+								class="w-56 rounded-lg py-1.5 px-3 text-xs bg-gray-50 dark:bg-gray-850 outline-none text-right"
+								bind:value={tikaServerUrl}
+								placeholder="http://tika:9998"
+							/>
 						</div>
 					{/if}
 
 					<div class="flex w-full justify-between items-center">
 						<span class="text-xs">{$i18n.t('Max File Size (MB)')}</span>
-						<input type="number" min="1" class="w-24 rounded-lg py-1.5 px-3 text-xs bg-gray-50 dark:bg-gray-850 outline-none text-right" bind:value={fileMaxSize} placeholder={$i18n.t('Unlimited')} />
+						<input
+							type="number"
+							min="1"
+							class="w-24 rounded-lg py-1.5 px-3 text-xs bg-gray-50 dark:bg-gray-850 outline-none text-right"
+							bind:value={fileMaxSize}
+							placeholder={$i18n.t('Unlimited')}
+						/>
 					</div>
 
 					<div class="flex w-full justify-between items-center">
 						<span class="text-xs">{$i18n.t('Max File Count')}</span>
-						<input type="number" min="1" class="w-24 rounded-lg py-1.5 px-3 text-xs bg-gray-50 dark:bg-gray-850 outline-none text-right" bind:value={fileMaxCount} placeholder={$i18n.t('Unlimited')} />
+						<input
+							type="number"
+							min="1"
+							class="w-24 rounded-lg py-1.5 px-3 text-xs bg-gray-50 dark:bg-gray-850 outline-none text-right"
+							bind:value={fileMaxCount}
+							placeholder={$i18n.t('Unlimited')}
+						/>
 					</div>
 				</div>
 			{/if}

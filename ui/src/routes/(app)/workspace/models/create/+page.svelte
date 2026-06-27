@@ -59,9 +59,11 @@
 	onMount(async () => {
 		window.addEventListener('message', async (event) => {
 			if (
-				!['https://opentutorai.com', 'https://www.opentutorai.com', 'http://localhost:5173'].includes(
-					event.origin
-				)
+				![
+					'https://opentutorai.com',
+					'https://www.opentutorai.com',
+					'http://localhost:5173'
+				].includes(event.origin)
 			)
 				return;
 			model = JSON.parse(event.data);

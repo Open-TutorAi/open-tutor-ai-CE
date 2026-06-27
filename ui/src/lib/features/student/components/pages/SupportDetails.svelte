@@ -29,7 +29,7 @@
 		{ id: 'geography', name: 'Geography', icon: '🌍' },
 		{ id: 'chemistry', name: 'Chemistry', icon: '🔬' },
 		{ id: 'biology', name: 'Biology', icon: '🌿' },
-		{ id: 'physics', name: 'Physics', icon: '⚛️' },
+		{ id: 'physics', name: 'Physics', icon: '⚛️' }
 	];
 
 	// Subjects including any persisted customs (browser only)
@@ -41,7 +41,7 @@
 				const list = JSON.parse(stored);
 				if (Array.isArray(list)) {
 					list.forEach((s: any) => {
-						if (s && s.id && !subjects.some(d => d.id === s.id)) {
+						if (s && s.id && !subjects.some((d) => d.id === s.id)) {
 							subjects.push(s);
 						}
 					});
@@ -53,7 +53,7 @@
 	}
 
 	function getSubjectInfo(id: string, customName?: string) {
-		const found = subjects.find(s => s.id === id);
+		const found = subjects.find((s) => s.id === id);
 		if (found) return `${found.icon ?? ''} ${found.name}`;
 		if (customName) return `⭐️ ${customName}`;
 		return id;
@@ -82,26 +82,31 @@
 			}
 
 			console.log(`Loading support with ID: ${supportId}`);
-			
+
 			// Check if in demo mode
 			if ($isDemo && supportId.startsWith('demo-')) {
 				// Load from mock data
-				const mockSupport = $demoData.supports.find(s => s.id === supportId);
+				const mockSupport = $demoData.supports.find((s) => s.id === supportId);
 				if (mockSupport) {
 					support = {
 						...mockSupport,
 						short_description: mockSupport.description,
-						status: mockSupport.progress < 30 ? 'not-started' : mockSupport.progress < 100 ? 'in-progress' : 'completed',
+						status:
+							mockSupport.progress < 30
+								? 'not-started'
+								: mockSupport.progress < 100
+									? 'in-progress'
+									: 'completed',
 						created_at: new Date().toISOString(),
 						updated_at: new Date().toISOString()
-				};
-			} else {
+					};
+				} else {
 					error = $i18n.t('Demo support not found');
 				}
 				loading = false;
 				return;
 			}
-			
+
 			const token = localStorage.getItem('token');
 			if (!token) {
 				error = $i18n.t('Authentication required');
@@ -169,9 +174,9 @@
 	// Handle starting a chat for this support
 	function handleStartChat(event: MouseEvent) {
 		if (!support || !support.id) return;
-		
+
 		if ($isDemo) {
-			const demoSupport = $demoData.supports.find(s => s.id === support.id);
+			const demoSupport = $demoData.supports.find((s) => s.id === support.id);
 			if (demoSupport?.chatId) {
 				event.preventDefault();
 				goto(`/student/c/${demoSupport.chatId}`);
@@ -180,17 +185,17 @@
 			}
 			return;
 		}
-		
+
 		// Save support data to localStorage for chat linking
 		const supportData = {
 			id: support.id,
 			timestamp: Date.now(),
 			attempts: 0
 		};
-		
+
 		localStorage.setItem('pendingSupportData', JSON.stringify(supportData));
 		console.log('Saved support ID to localStorage:', support.id);
-		
+
 		// Let the navigation happen normally - the href will take us to the chat page
 	}
 </script>
@@ -287,7 +292,6 @@
 
 					<!-- Status badge and action buttons -->
 					<div class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-
 						<!-- Support Status, Commented For now -->
 						<!-- <span
 							class={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
@@ -450,15 +454,13 @@
 
 					<!-- Description and Learning Objectives -->
 					<div class="mb-8">
-
 						{#if support.short_description}
-						<h3
-							class="text-lg font-semibold text-gray-800 dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-gray-700"
-						>
-							{$i18n.t('Description & Objectives')}
-						</h3>
+							<h3
+								class="text-lg font-semibold text-gray-800 dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-gray-700"
+							>
+								{$i18n.t('Description & Objectives')}
+							</h3>
 
-						
 							<div class="mb-6">
 								<h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
 									{$i18n.t('Description')}
@@ -627,7 +629,11 @@
 												viewBox="0 0 20 20"
 												fill="currentColor"
 											>
-												<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
+												<path
+													fill-rule="evenodd"
+													d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+													clip-rule="evenodd"
+												/>
 											</svg>
 											{$i18n.t('Start a Chat')}
 										</a>
@@ -656,7 +662,9 @@
 									goto(`/student/support/${support.id}/edit`);
 								}
 							}}
-							class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors {$isDemo ? 'opacity-75 cursor-not-allowed' : ''}"
+							class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors {$isDemo
+								? 'opacity-75 cursor-not-allowed'
+								: ''}"
 							on:click={() => goto(`/student/support/${support.id}/edit`)}
 						>
 							{$i18n.t('Edit Support')}
@@ -672,9 +680,7 @@
 {#if showDeleteConfirm}
 	<ConfirmDialog
 		title={$i18n.t('Delete Support')}
-		message={$i18n.t(
-			'Are you sure you want to delete this support? This action cannot be undone.'
-		)}
+		message={$i18n.t('Are you sure you want to delete this support? This action cannot be undone.')}
 		confirmText={$i18n.t('Delete')}
 		cancelText={$i18n.t('Cancel')}
 		confirmButtonClass="bg-red-600 hover:bg-red-700"

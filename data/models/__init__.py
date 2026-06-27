@@ -1,14 +1,14 @@
-from .user import User
-from .support import Support, SupportFile
+from .chat import Chat
+from .config import AppConfig
 from .feedback import Feedback
 from .file import FileRecord
-from .chat import Chat
-from .model import ModelConfig
-from .config import AppConfig
 from .knowledge import KnowledgeBase, KnowledgeFile
 from .guardian import Guardian
 from .classroom import Classroom, Enrollment
 from .assignment import Assignment, Submission
+from .model import ModelConfig
+from .support import Support, SupportFile
+from .user import User
 
 __all__ = [
     "User",

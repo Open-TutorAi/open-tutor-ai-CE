@@ -97,7 +97,6 @@
 	}}
 />
 
-
 <div
 	class="flex w-full user-message justify-end"
 	dir={$settings.chatDirection}

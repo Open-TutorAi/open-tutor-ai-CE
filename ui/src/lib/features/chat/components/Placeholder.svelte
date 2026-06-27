@@ -54,11 +54,11 @@
 	const startChat = async (type: 'text' | 'avatar') => {
 		selectedChatType = type;
 
-		if (selectedModels.length === 0 || selectedModels.every(model => !model || model === '')) {
+		if (selectedModels.length === 0 || selectedModels.every((model) => !model || model === '')) {
 			toast.error($i18n.t('Please select a model before starting a chat'));
 			return;
 		}
-		
+
 		if (typeof window !== 'undefined' && window.sessionStorage) {
 			console.log('Saving selected models to sessionStorage:', selectedModels);
 			window.sessionStorage.setItem('selectedModels', JSON.stringify(selectedModels));
@@ -87,9 +87,9 @@
 				(updatedSettings as any).avatarEnabled = true;
 				return updatedSettings;
 			});
-			
+
 			localStorage.setItem('settings', JSON.stringify($settings));
-			
+
 			showingAvatarSelection = true;
 		}
 	};
@@ -99,26 +99,26 @@
 		// Avatar selection already updated settings, now initialize chat
 		await tick();
 
-		if (selectedModels.length === 0 || selectedModels.every(model => !model || model === '')) {
+		if (selectedModels.length === 0 || selectedModels.every((model) => !model || model === '')) {
 			// No model selected, show error and prevent further actions
 			toast.error($i18n.t('A model must be selected before starting the chat'));
 			showingAvatarSelection = false; // Go back to chat type selection
-			
+
 			if (typeof window !== 'undefined' && window.localStorage) {
 				window.localStorage.removeItem('pendingSupportData');
 			}
-			
+
 			return;
 		}
 
 		const initialPrompt = 'Hello';
-		
+
 		try {
 			dispatch('submit', initialPrompt);
 		} catch (error) {
 			console.error('Error starting chat with avatar:', error);
 			toast.error($i18n.t('Failed to start avatar chat. Please try again.'));
-			
+
 			if (typeof window !== 'undefined' && window.localStorage) {
 				window.localStorage.removeItem('pendingSupportData');
 			}

@@ -1,7 +1,5 @@
 """Contract tests — /api/v1/knowledge/* matches knowledge/index.ts calls."""
 
-import pytest
-
 
 def _auth(client, email="kb@test.com"):
     client.post(
@@ -14,7 +12,6 @@ def _auth(client, email="kb@test.com"):
 
 
 class TestKnowledgeApiV1:
-
     def test_create(self, client):
         h = _auth(client)
         r = client.post(

@@ -3,7 +3,7 @@ import type { DemoData } from '$lib/stores';
 export function generateDemoData(): DemoData {
 	const chats = generateDemoChats();
 	const supports = generateDemoSupports(chats);
-	
+
 	return {
 		dashboard: generateDemoDashboard(supports),
 		chats,
@@ -15,10 +15,11 @@ export function generateDemoData(): DemoData {
 
 function generateDemoDashboard(supports: any[]) {
 	// Calculate average progress from all supports
-	const avgProgress = supports.length > 0
-		? Math.round(supports.reduce((sum, s) => sum + s.progress, 0) / supports.length)
-		: 0;
-	
+	const avgProgress =
+		supports.length > 0
+			? Math.round(supports.reduce((sum, s) => sum + s.progress, 0) / supports.length)
+			: 0;
+
 	return {
 		progress: avgProgress,
 		coursesCompleted: 3,
@@ -212,7 +213,7 @@ function generateDemoAssignments() {
 			id: 'demo-assign-6',
 			title: 'Chemistry Problem Set',
 			description: 'Solve problems 1-20 on stoichiometry and chemical reactions.',
-			due: (new Date(today.getTime() - 2 * 86400000)).toISOString().split('T')[0],
+			due: new Date(today.getTime() - 2 * 86400000).toISOString().split('T')[0],
 			status: 'overdue' as const,
 			points: 60,
 			course: 'Chemistry'
@@ -248,4 +249,3 @@ function generateDemoCourses() {
 		}
 	];
 }
-

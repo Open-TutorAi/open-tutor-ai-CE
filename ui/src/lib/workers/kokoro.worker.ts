@@ -12,7 +12,8 @@ self.onmessage = async (event) => {
 	const { type, payload } = event.data;
 
 	if (type === 'init') {
-		let { model_id, dtype } = payload;
+		let { model_id } = payload;
+		const { dtype } = payload;
 		model_id = model_id || DEFAULT_MODEL_ID; // Use default model if none provided
 
 		self.postMessage({ status: 'init:start' });
@@ -20,7 +21,7 @@ self.onmessage = async (event) => {
 		try {
 			tts = await KokoroTTS.from_pretrained(model_id, {
 				dtype,
-				device: !!navigator?.gpu ? 'webgpu' : 'wasm' // Detect WebGPU
+				device: navigator?.gpu ? 'webgpu' : 'wasm' // Detect WebGPU
 			});
 			isInitialized = true; // Mark as initialized after successful loading
 			self.postMessage({ status: 'init:complete' });
