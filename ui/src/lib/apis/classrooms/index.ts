@@ -16,6 +16,7 @@ async function apiFetch<T>(url: string, token: string, options: RequestInit = {}
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, ...(options.headers ?? {}) }
     });
     if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err?.detail ?? `HTTP ${res.status}`); }
+    if (res.status === 204) return undefined as T;
     return res.json();
 }
 
@@ -38,3 +39,9 @@ export const getClassroomStudents = (token: string, classroomId: string): Promis
 
 export const unenrollStudent = (token: string, classroomId: string, studentId: string): Promise<void> =>
     apiFetch(`${TUTOR_API_BASE_URL}/classrooms/${classroomId}/students/${studentId}`, token, { method: 'DELETE' });
+
+export const updateClassroom = (token: string, id: string, data: { name?: string; description?: string; subject?: string }): Promise<Classroom> =>
+    apiFetch(`${TUTOR_API_BASE_URL}/classrooms/${id}`, token, { method: 'PUT', body: JSON.stringify(data) });
+
+export const deleteClassroom = (token: string, id: string): Promise<void> =>
+    apiFetch(`${TUTOR_API_BASE_URL}/classrooms/${id}`, token, { method: 'DELETE' });

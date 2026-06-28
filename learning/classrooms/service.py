@@ -61,6 +61,21 @@ class ClassroomsService:
     def get_student_classrooms(self, student_id: str) -> List[Enrollment]:
         return self.repo.get_student_classrooms(student_id)
 
+    def update(self, classroom_id: str, teacher_id: str, name: Optional[str] = None, description: Optional[str] = None, subject: Optional[str] = None) -> Classroom:
+        self.get_and_check_owner(classroom_id, teacher_id)
+        updates: dict = {"updated_at": datetime.utcnow()}
+        if name is not None:
+            updates["name"] = name
+        if description is not None:
+            updates["description"] = description
+        if subject is not None:
+            updates["subject"] = subject
+        return self.repo.update(classroom_id, **updates)
+
+    def delete(self, classroom_id: str, teacher_id: str) -> None:
+        self.get_and_check_owner(classroom_id, teacher_id)
+        self.repo.delete(classroom_id)
+
     def unenroll_student(self, classroom_id: str, student_id: str, teacher_id: str) -> None:
         self.get_and_check_owner(classroom_id, teacher_id)
         removed = self.repo.unenroll(classroom_id, student_id)

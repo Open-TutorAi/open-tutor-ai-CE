@@ -37,6 +37,12 @@ class CreateClassroomRequest(BaseModel):
     subject: Optional[str] = None
 
 
+class UpdateClassroomRequest(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    subject: Optional[str] = None
+
+
 class EnrollRequest(BaseModel):
     student_id: str
 
@@ -82,6 +88,40 @@ def get_classroom(
     if current_user.role in ("teacher", "admin") and c.teacher_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not your classroom")
     return _classroom_out(c)
+
+
+@router.put("/{classroom_id}")
+def update_classroom(
+    classroom_id: str,
+    body: UpdateClassroomRequest,
+    current_user: User = Depends(get_current_user),
+    svc: ClassroomsService = Depends(_svc),
+):
+    if current_user.role not in ("teacher", "admin"):
+        raise HTTPException(status_code=403, detail="Teachers only")
+    try:
+        c = svc.update(classroom_id, current_user.id, body.name, body.description, body.subject)
+    except NotFoundError as ex:
+        raise HTTPException(status_code=404, detail=str(ex))
+    except AuthorizationError as ex:
+        raise HTTPException(status_code=403, detail=str(ex))
+    return _classroom_out(c)
+
+
+@router.delete("/{classroom_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_classroom(
+    classroom_id: str,
+    current_user: User = Depends(get_current_user),
+    svc: ClassroomsService = Depends(_svc),
+):
+    if current_user.role not in ("teacher", "admin"):
+        raise HTTPException(status_code=403, detail="Teachers only")
+    try:
+        svc.delete(classroom_id, current_user.id)
+    except NotFoundError as ex:
+        raise HTTPException(status_code=404, detail=str(ex))
+    except AuthorizationError as ex:
+        raise HTTPException(status_code=403, detail=str(ex))
 
 
 @router.post("/{classroom_id}/enroll", status_code=status.HTTP_201_CREATED)
