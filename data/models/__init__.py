@@ -6,6 +6,15 @@ from .knowledge import KnowledgeBase, KnowledgeFile
 from .model import ModelConfig
 from .support import Support, SupportFile
 from .user import User
+from .message import (
+    ParentStudent,
+    TeacherStudent,
+    ParentTeacherConversation,
+    ParentTeacherMessage,
+)
+from .attachment import MessageAttachment
+from .availability import TeacherAvailability
+from .announcement import Announcement, AnnouncementRead
 
 __all__ = [
     "User",
@@ -18,4 +27,12 @@ __all__ = [
     "AppConfig",
     "KnowledgeBase",
     "KnowledgeFile",
+    "ParentStudent",
+    "TeacherStudent",
+    "ParentTeacherConversation",
+    "ParentTeacherMessage",
+    "MessageAttachment",
+    "TeacherAvailability",
+    "Announcement",
+    "AnnouncementRead",
 ]

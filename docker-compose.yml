@@ -1,0 +1,40 @@
+networks:
+  app-network:
+    driver: bridge
+services:
+  open-tutorai:
+    build:
+      context: .
+      dockerfile: devops/docker/Dockerfile.backend
+    image: open-tutorai
+    container_name: open-tutorai
+    ports:
+      - "8080:8080"
+    working_dir: /app
+    volumes:
+      - ./var:/app/var
+    env_file:
+      - .env
+    environment:
+      PYTHONUNBUFFERED: "1"
+      OLLAMA_BASE_URL: "http://ollama:11434"
+      SECRET_KEY: ""
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama:/root/.ollama
+    networks:
+      - app-network
+volumes:
+  ollama:

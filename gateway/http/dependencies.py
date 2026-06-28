@@ -10,6 +10,9 @@ from config import settings
 from content.files.service import FilesService
 from data.database import get_db
 from data.models import User
+from learning.messages.service import MessagesService
+from learning.teachers.service import TeachersService
+from learning.announcements.service import AnnouncementsService
 from governance.self_regulation.service import SelfRegulationService
 from learning.supports.service import SupportsService
 
@@ -83,3 +86,15 @@ def get_self_regulation_service(db: Session = Depends(get_db)) -> SelfRegulation
 
 def get_files_service(db: Session = Depends(get_db)) -> FilesService:
     return FilesService(db)
+
+
+def get_messages_service(db: Session = Depends(get_db)) -> MessagesService:
+    return MessagesService(db)
+
+
+def get_teachers_service(db: Session = Depends(get_db)) -> TeachersService:
+    return TeachersService(db)
+
+
+def get_announcements_service(db: Session = Depends(get_db)) -> AnnouncementsService:
+    return AnnouncementsService(db)

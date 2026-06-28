@@ -198,3 +198,8 @@ sequenceDiagram
 ## Design notes
 
 - [Responsible AI notification design](responsible-ai-notifications.md)
+
+## Feature documentation
+
+- [Parent-teacher communication technical reference](parent-teacher-communication-technical.md)
+- [Parent-teacher communication user guide](parent-teacher-communication-user-guide.md)
