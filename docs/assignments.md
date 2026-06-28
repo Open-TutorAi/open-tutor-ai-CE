@@ -1,6 +1,6 @@
 # Assignments Feature
 
-The assignments system lets teachers create and grade homework, and students submit answers with file attachments.
+The assignments system lets teachers create and grade homework, and students submit answers with file attachments or external links.
 
 ---
 
@@ -41,7 +41,7 @@ classroom_id   UUID  (FK → classrooms)
 title          str   required
 instructions   str   optional
 due_date       datetime
-attachment_url str   optional  — URL of a teacher-uploaded file
+attachment_url str   optional  — internal file URL or any external URL (Google Drive, Docs, etc.)
 max_score      int   default 20
 created_at     datetime
 ```
@@ -52,7 +52,7 @@ id             UUID
 assignment_id  UUID  (FK → assignments)
 student_id     UUID  (FK → users)
 content        str   optional  — text answer
-attachment_url str   optional  — URL of a student-uploaded file
+attachment_url str   optional  — internal file URL or any external URL
 score          int   optional
 feedback       str   optional
 status         enum  submitted | late | returned | missed | not_submitted
@@ -72,6 +72,7 @@ graded_at      datetime
 | `POST` | `/api/v1/classrooms` | teacher | Create a classroom |
 | `GET` | `/api/v1/classrooms/{id}` | teacher | Get classroom details |
 | `POST` | `/api/v1/classrooms/{id}/enroll` | teacher | Enroll a student by ID |
+| `DELETE` | `/api/v1/classrooms/{id}/students/{student_id}` | teacher | Unenroll a student |
 | `GET` | `/api/v1/classrooms/{id}/students` | teacher | List enrolled students with name + email |
 
 **Enroll request body:**
@@ -102,11 +103,14 @@ graded_at      datetime
 | `GET` | `/api/v1/assignments` | teacher / student | List assignments |
 | `POST` | `/api/v1/assignments` | teacher | Create an assignment |
 | `GET` | `/api/v1/assignments/{id}` | any | Get assignment details |
+| `PUT` | `/api/v1/assignments/{id}` | teacher | Edit an assignment |
+| `DELETE` | `/api/v1/assignments/{id}` | teacher | Delete an assignment and all its submissions |
 | `POST` | `/api/v1/assignments/{id}/submit` | student | Submit an answer |
 | `GET` | `/api/v1/assignments/{id}/my-submission` | student | Get own submission |
+| `DELETE` | `/api/v1/assignments/{id}/my-submission` | student | Cancel own submission (before grading) |
 | `GET` | `/api/v1/assignments/{id}/submissions` | teacher | List all submissions |
-| `POST` | `/api/v1/assignments/{id}/grade/{sub_id}` | teacher | Return a grade |
-| `GET` | `/api/v1/assignments/{id}/status-tracker` | teacher | Per-student status overview |
+| `POST` | `/api/v1/assignments/{id}/submissions/{sub_id}/grade` | teacher | Return a grade |
+| `GET` | `/api/v1/assignments/{id}/status` | teacher | Per-student status overview |
 
 **Create assignment body:**
 ```json
@@ -115,7 +119,20 @@ graded_at      datetime
   "title": "Lab Report",
   "instructions": "Write a report and attach your PDF.",
   "due_date": "2026-12-31T23:59:00",
-  "attachment_url": "http://localhost:8080/api/v1/files/<file_id>/content",
+  "attachment_url": "https://drive.google.com/file/d/…",
+  "max_score": 20
+}
+```
+
+`attachment_url` accepts either an internal file URL (`/api/v1/files/<id>/content`) or any external URL (Google Drive, Google Docs, YouTube, etc.).
+
+**Edit assignment body (all fields optional):**
+```json
+{
+  "title": "Updated title",
+  "instructions": "Updated instructions",
+  "due_date": "2026-12-31T23:59:00",
+  "attachment_url": "https://docs.google.com/…",
   "max_score": 20
 }
 ```
@@ -124,10 +141,10 @@ graded_at      datetime
 ```json
 {
   "content": "My written answer...",
-  "attachment_url": "http://localhost:8080/api/v1/files/<file_id>/content"
+  "attachment_url": "https://drive.google.com/file/d/…"
 }
 ```
-Both `content` and `attachment_url` are optional — at least one is required.
+Both `content` and `attachment_url` are optional — at least one is required. `attachment_url` accepts internal file URLs or external links.
 
 **Grade body:**
 ```json
@@ -150,7 +167,7 @@ Authorization: Bearer <token>
 
 The download URL is: `GET /api/v1/files/<file_id>/content`
 
-> **Important:** The files endpoint requires authentication. Use `fetch()` with an `Authorization: Bearer` header to download — a plain `<a href>` will return 401.
+> **Important:** Internal file URLs require authentication. Use `fetch()` with an `Authorization: Bearer` header to download — a plain `<a href>` will return 401.
 
 ```typescript
 const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
@@ -161,6 +178,8 @@ a.download = 'filename.pdf';
 a.click();
 ```
 
+External URLs (Google Drive, Docs, etc.) are opened directly in a new browser tab — no authentication needed.
+
 ---
 
 ## Frontend Routes
@@ -168,11 +187,11 @@ a.click();
 | Path | Role | Description |
 |---|---|---|
 | `/teacher/classrooms` | teacher | List and create classrooms |
-| `/teacher/classrooms/[id]` | teacher | Classroom detail — enrolled students, enroll by email |
+| `/teacher/classrooms/[id]` | teacher | Classroom detail — enrolled students, enroll by email, remove student |
 | `/teacher/assignments` | teacher | List and create assignments |
-| `/teacher/assignments/[id]` | teacher | Submissions list, grade modal, status tracker |
+| `/teacher/assignments/[id]` | teacher | Submissions list, grade modal, status tracker, edit and delete |
 | `/student/assignments` | student | Assignments list (tabs: To Do / Submitted / Late / Missed) |
-| `/student/assignments/[id]` | student | Submit answer + attach file, view returned grade |
+| `/student/assignments/[id]` | student | Submit answer, attach file or paste link, view returned grade |
 
 ---
 
@@ -182,7 +201,7 @@ a.click();
 not_submitted
      │
      ▼  (student submits before due date)
- submitted
+ submitted  ←──────────────────────────────── cancel (DELETE /my-submission)
      │
      ▼  (teacher grades)
   returned
@@ -207,14 +226,14 @@ not_submitted
 
 ```
 Backend
-├── data/models/classroom.py          — ORM models: Classroom, Enrollment, Assignment, Submission
-├── learning/classrooms/repository.py — Data access for classrooms and enrollments
-├── learning/classrooms/service.py    — Business logic: create, enroll, list
-├── learning/assignments/repository.py— Data access for assignments and submissions
-├── learning/assignments/service.py   — Business logic: submit (detects late), grade, status tracker
+├── data/models/classroom.py           — ORM models: Classroom, Enrollment, Assignment, Submission
+├── learning/classrooms/repository.py  — Data access for classrooms and enrollments
+├── learning/classrooms/service.py     — Business logic: create, enroll, unenroll, list
+├── learning/assignments/repository.py — Data access for assignments and submissions
+├── learning/assignments/service.py    — Business logic: submit (detects late), grade, status tracker
 └── gateway/http/routers/
-    ├── classrooms.py                 — REST endpoints for classrooms
-    └── assignments.py                — REST endpoints for assignments
+    ├── classrooms.py                  — REST endpoints for classrooms
+    └── assignments.py                 — REST endpoints for assignments
 
 Frontend
 ├── ui/src/lib/apis/classrooms/index.ts          — API client

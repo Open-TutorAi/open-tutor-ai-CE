@@ -21,6 +21,7 @@
 	let submitting = false;
 	let attachmentFile: File | null = null;
 	let attachmentName = '';
+	let attachmentUrl = '';
 
 	// Inline classroom creation
 	let showClassroomForm = false;
@@ -59,6 +60,7 @@
 		formErrors = { title: '', classroom_id: '', due_date: '' };
 		attachmentFile = null;
 		attachmentName = '';
+		attachmentUrl = '';
 		showClassroomForm = false;
 		showModal = true;
 	}
@@ -91,6 +93,8 @@
 			if (attachmentFile) {
 				const uploaded = await uploadFile(localStorage.token, attachmentFile);
 				attachment_url = `${TUTOR_API_BASE_URL}/files/${uploaded.id}/content`;
+			} else if (attachmentUrl.trim()) {
+				attachment_url = attachmentUrl.trim();
 			}
 			const a = await createAssignment(localStorage.token, {
 				title: form.title.trim(),
@@ -350,6 +354,14 @@
 							accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.png,.jpg,.jpeg"/>
 					</label>
 				{/if}
+				<div class="mt-2 flex items-center gap-2">
+					<div class="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
+					<span class="text-xs text-gray-400 shrink-0">or paste a link</span>
+					<div class="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
+				</div>
+				<input bind:value={attachmentUrl} type="url" placeholder="https://drive.google.com/…"
+					disabled={!!attachmentFile}
+					class="mt-2 w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-300 transition disabled:opacity-50 disabled:cursor-not-allowed" />
 			</div>
 
 			<div class="flex gap-3 pt-1">

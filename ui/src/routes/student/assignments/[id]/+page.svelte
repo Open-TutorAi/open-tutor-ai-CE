@@ -17,6 +17,7 @@
 	let content = '';
 	let attachmentFile: File | null = null;
 	let attachmentName = '';
+	let attachmentUrl = '';
 	let submitting = false;
 
 	onMount(async () => {
@@ -26,6 +27,9 @@
 				getMySubmission(localStorage.token, assignmentId).catch(() => null),
 			]);
 			if (submission?.content) content = submission.content;
+			if (submission?.attachment_url && !submission.attachment_url.startsWith(TUTOR_API_BASE_URL)) {
+				attachmentUrl = submission.attachment_url;
+			}
 		} catch {
 			toast.error('Assignment not found');
 			goto('/student/assignments');
@@ -92,6 +96,7 @@
 			content = '';
 			attachmentFile = null;
 			attachmentName = '';
+			attachmentUrl = '';
 			toast.success('Submission cancelled');
 		} catch (e: any) {
 			toast.error(e?.message ?? 'Failed to cancel submission');
@@ -100,8 +105,8 @@
 
 	async function handleSubmit() {
 		if (!assignment) return;
-		if (!content.trim() && !attachmentFile) {
-			toast.error('Please write an answer or attach a file before submitting');
+		if (!content.trim() && !attachmentFile && !attachmentUrl.trim()) {
+			toast.error('Please write an answer, attach a file, or paste a link before submitting');
 			return;
 		}
 		submitting = true;
@@ -110,6 +115,8 @@
 			if (attachmentFile) {
 				const uploaded = await uploadFile(localStorage.token, attachmentFile);
 				attachment_url = `${TUTOR_API_BASE_URL}/files/${uploaded.id}/content`;
+			} else if (attachmentUrl.trim()) {
+				attachment_url = attachmentUrl.trim();
 			}
 			submission = await submitAssignment(localStorage.token, assignment.id, {
 				content: content.trim() || undefined,
@@ -166,13 +173,23 @@
 		{#if assignment.attachment_url}
 			<div class="pt-4 border-t border-gray-100 dark:border-gray-700">
 				<p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Teacher Attachment</p>
-				<button on:click={() => downloadAttachment(assignment.attachment_url ?? '')}
-					class="inline-flex items-center gap-2 px-4 py-2 border border-indigo-200 dark:border-indigo-700 rounded-xl text-sm text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition font-medium">
-					<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-					</svg>
-					Download Attachment
-				</button>
+				{#if assignment.attachment_url.startsWith(TUTOR_API_BASE_URL)}
+					<button on:click={() => downloadAttachment(assignment.attachment_url ?? '')}
+						class="inline-flex items-center gap-2 px-4 py-2 border border-indigo-200 dark:border-indigo-700 rounded-xl text-sm text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition font-medium">
+						<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+						</svg>
+						Download Attachment
+					</button>
+				{:else}
+					<a href={assignment.attachment_url} target="_blank" rel="noopener noreferrer"
+						class="inline-flex items-center gap-2 px-4 py-2 border border-indigo-200 dark:border-indigo-700 rounded-xl text-sm text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition font-medium">
+						<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+						</svg>
+						Open Link
+					</a>
+				{/if}
 			</div>
 		{/if}
 	</div>
@@ -224,13 +241,23 @@
 			{#if submission.attachment_url}
 				<div class="mt-3">
 					<p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Your Attachment</p>
-					<button on:click={() => downloadAttachment(submission?.attachment_url ?? '')}
-						class="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition font-medium">
-						<svg class="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
-						</svg>
-						Download my submission
-					</button>
+					{#if submission.attachment_url.startsWith(TUTOR_API_BASE_URL)}
+						<button on:click={() => downloadAttachment(submission?.attachment_url ?? '')}
+							class="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition font-medium">
+							<svg class="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+							</svg>
+							Download my submission
+						</button>
+					{:else}
+						<a href={submission.attachment_url} target="_blank" rel="noopener noreferrer"
+							class="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition font-medium">
+							<svg class="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+							</svg>
+							Open my link
+						</a>
+					{/if}
 				</div>
 			{/if}
 		{:else}
@@ -243,23 +270,27 @@
 					class="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-3 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300 transition"></textarea>
 			</div>
 
-			<!-- File attachment -->
+			<!-- File attachment + URL link -->
 			<div class="mb-5">
 				<label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
-					Attach a file <span class="text-xs font-normal text-gray-400">(PDF, Word, image…)</span>
+					Attachment <span class="text-xs font-normal text-gray-400">(file or link — optional)</span>
 				</label>
 
-				{#if submission?.attachment_url && !attachmentFile}
-					<!-- Already has an attachment -->
-					<div class="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900/30">
+				{#if submission?.attachment_url && !submission.attachment_url.startsWith(TUTOR_API_BASE_URL) && !attachmentFile}
+					<div class="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900/30 mb-2">
+						<svg class="h-5 w-5 text-indigo-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+						</svg>
+						<a href={submission.attachment_url} target="_blank" rel="noopener noreferrer" class="text-sm text-indigo-600 dark:text-indigo-400 flex-1 truncate hover:underline">{submission.attachment_url}</a>
+					</div>
+				{:else if submission?.attachment_url && submission.attachment_url.startsWith(TUTOR_API_BASE_URL) && !attachmentFile}
+					<div class="flex items-center gap-3 p-3 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900/30 mb-2">
 						<svg class="h-5 w-5 text-indigo-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
 						</svg>
-						<span class="text-sm text-gray-600 dark:text-gray-300 flex-1">Previous attachment</span>
-						<button type="button" on:click={() => downloadAttachment(submission?.attachment_url ?? '')}
-							class="text-xs text-indigo-600 hover:underline">Download</button>
+						<span class="text-sm text-gray-600 dark:text-gray-300 flex-1">Previous uploaded file</span>
+						<button type="button" on:click={() => downloadAttachment(submission?.attachment_url ?? '')} class="text-xs text-indigo-600 hover:underline">Download</button>
 					</div>
-					<p class="text-xs text-gray-400 mt-1">Upload a new file below to replace it.</p>
 				{/if}
 
 				{#if attachmentFile}
@@ -277,11 +308,19 @@
 						<svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
 						</svg>
-						<span class="text-sm text-gray-500 dark:text-gray-400">Click to attach a file…</span>
+						<span class="text-sm text-gray-500 dark:text-gray-400">Click to upload a file…</span>
 						<input type="file" class="hidden" on:change={handleFileSelect}
 							accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.gif,.zip"/>
 					</label>
 				{/if}
+				<div class="mt-2 flex items-center gap-2">
+					<div class="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
+					<span class="text-xs text-gray-400 shrink-0">or paste a link</span>
+					<div class="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
+				</div>
+				<input bind:value={attachmentUrl} type="url" placeholder="https://drive.google.com/…"
+					disabled={!!attachmentFile}
+					class="mt-2 w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-300 transition disabled:opacity-50 disabled:cursor-not-allowed" />
 			</div>
 
 			<div class="flex gap-3">

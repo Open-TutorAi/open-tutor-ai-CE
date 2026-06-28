@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Assignments feature allows teachers to create and grade homework, and students to submit their work with text answers and file attachments. It is organized around **Classrooms** (groups of students) and **Assignments** (tasks with a due date).
+The Assignments feature allows teachers to create and grade homework, and students to submit their work with text answers, file attachments, or external links (Google Drive, Google Docs, YouTube, etc.). It is organized around **Classrooms** (groups of students) and **Assignments** (tasks with a due date).
 
 ---
 
@@ -21,6 +21,8 @@ The Assignments feature allows teachers to create and grade homework, and studen
 2. Enter the student's email address and click **Search**.
 3. Confirm the student preview card, then click **Enroll**.
 
+To remove a student from a classroom, click the remove icon next to their name in the enrolled students list.
+
 > Students must already have an account on the platform before they can be enrolled.
 
 ### 3. Create an Assignment
@@ -32,29 +34,38 @@ The Assignments feature allows teachers to create and grade homework, and studen
    - **Due Date** (required)
    - **Instructions** — describe what students should do
    - **Max Score** — default is 20
-   - **Attachment** — optional file (PDF, Word, image…) for students to download
+   - **Attachment** — choose one:
+     - Upload a file (PDF, Word, image…) using the file picker
+     - Or paste an external link (Google Drive, Google Docs, YouTube, etc.) in the URL field
 3. Click **Create Assignment**.
 
-### 4. View Submissions
+### 4. Edit or Delete an Assignment
+
+Open an assignment and use the buttons in the header:
+
+- **Edit** (pencil icon) — opens a modal to update the title, instructions, due date, max score, or attachment link.
+- **Delete** (trash icon) — permanently deletes the assignment and all its submissions (confirmation required).
+
+### 5. View Submissions
 
 Open an assignment to see three tabs:
 
 | Tab | What it shows |
 |---|---|
 | **Submissions** | All submitted work with status and grade |
-| **Overview** | Assignment details and attachment |
+| **Overview** | Assignment details, instructions, and attachment link |
 | **Status Tracker** | Every enrolled student's status (submitted / late / missed / not yet) |
 
-A paperclip icon (🖇) next to a submission date means the student attached a file.
+A paperclip icon (🖇) next to a submission date means the student attached a file or link.
 
-### 5. Grade a Submission
+### 6. Grade a Submission
 
 1. Click **Grade** (or **Review**) next to a submission.
 2. In the modal you can see:
    - The student's written answer
-   - A **Download student's attachment** button (if they attached a file)
+   - A **Download** button or **Open Link** button for their attachment (if they submitted one)
 3. Enter a **Score** and optional **Feedback**.
-4. Click **Return Grade** — the student is notified immediately.
+4. Click **Return Grade** — the student sees the result immediately.
 
 ---
 
@@ -74,17 +85,23 @@ Go to **Assignments** in the sidebar. Your assignments are organized in four tab
 ### 2. Submit an Assignment
 
 1. Click on an assignment to open it.
-2. Read the instructions. If the teacher attached a file, click **Download Attachment** to get it.
+2. Read the instructions. If the teacher attached a file, click **Download Attachment** to get it. If they shared a link, click **Open Link** to open it in a new tab.
 3. In the **Your Work** section:
-   - Write your answer in the text box (optional if you attach a file).
-   - Click the file zone to attach a PDF, Word document, image, or zip (optional if you wrote an answer).
+   - Write your answer in the text box (optional if you attach a file or link).
+   - Attach a file using the file picker (optional).
+   - Or paste an external link (Google Drive, Docs, YouTube, etc.) in the URL field.
 4. Click **Submit Assignment**.
+
+At least one of — written answer, file, or link — is required before submitting.
 
 > If you submit after the due date, your submission will be marked **Late**.
 
-### 3. Update Your Submission
+### 3. Update or Cancel Your Submission
 
-You can resubmit before the teacher grades your work. Simply open the assignment again, update your answer or attach a new file, and click **Update Submission**.
+Before the teacher grades your work, you can:
+
+- **Update** — open the assignment, change your answer or attachment, and click **Update Submission**.
+- **Cancel** — click **Cancel Submission** to withdraw your submission entirely and start over.
 
 ### 4. View Your Grade
 
@@ -92,7 +109,7 @@ Once the teacher returns a grade, the assignment shows a **Graded** badge. Open 
 
 - Your **score** out of the maximum points
 - The teacher's **feedback**
-- A **Download my submission** button to retrieve your own attachment
+- A **Download** button or **Open Link** button to view your own submitted attachment
 - The date and time the grade was returned
 
 ---
@@ -109,8 +126,13 @@ Once the teacher returns a grade, the assignment shows a **Graded** badge. Open 
 
 ---
 
-## File Attachments
+## Attachments and Links
 
-- **Accepted formats**: PDF, Word (.doc, .docx), PowerPoint, Excel, plain text, images (PNG, JPG, GIF), ZIP
-- **Both teacher and student** can attach one file per assignment/submission
-- Files require authentication to download — use the in-app download buttons, not direct links
+Both teachers and students can attach one resource per assignment/submission. Two options are supported:
+
+| Type | How to use | How it opens |
+|---|---|---|
+| **Uploaded file** | Pick a file with the file picker (PDF, Word, image, ZIP…) | Downloaded via in-app button (requires login) |
+| **External link** | Paste a URL in the link field (Google Drive, Docs, YouTube…) | Opens in a new browser tab |
+
+> Internal file downloads require authentication — always use the in-app buttons, not direct links.

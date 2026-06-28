@@ -37,6 +37,7 @@ async function apiFetch<T>(url: string, token: string, options: RequestInit = {}
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, ...(options.headers ?? {}) }
     });
     if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err?.detail ?? `HTTP ${res.status}`); }
+    if (res.status === 204) return undefined as T;
     return res.json();
 }
 

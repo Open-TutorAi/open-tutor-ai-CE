@@ -5,6 +5,7 @@
 	import { toast } from 'svelte-sonner';
 	import { getAssignment, getSubmissions, gradeSubmission, getStatusTracker, updateAssignment, deleteAssignment, type Assignment, type Submission, type StatusRow } from '$lib/apis/assignments';
 	import { getClassrooms, getClassroomStudents, type Classroom } from '$lib/apis/classrooms';
+	import { TUTOR_API_BASE_URL } from '$lib/constants';
 
 	const i18n = getContext('i18n');
 	$: assignmentId = $page.params.id;
@@ -43,6 +44,7 @@
 	let editInstructions = '';
 	let editDueDate = '';
 	let editMaxScore = '';
+	let editAttachmentUrl = '';
 	let saving = false;
 
 	function openEdit() {
@@ -51,6 +53,7 @@
 		editInstructions = assignment.instructions ?? '';
 		editDueDate = assignment.due_date.slice(0, 16);
 		editMaxScore = String(assignment.max_score);
+		editAttachmentUrl = assignment.attachment_url ?? '';
 		showEditModal = true;
 	}
 
@@ -63,9 +66,11 @@
 				instructions: editInstructions || undefined,
 				due_date: editDueDate ? new Date(editDueDate).toISOString() : undefined,
 				max_score: editMaxScore ? parseInt(editMaxScore) : undefined,
+				attachment_url: editAttachmentUrl.trim() || undefined,
 			});
 			assignment = updated;
 			showEditModal = false;
+			activeTab = 'overview';
 			toast.success('Assignment updated');
 		} catch (e: any) {
 			toast.error(e?.message ?? 'Failed to update');
@@ -338,13 +343,23 @@
 				{#if assignment.attachment_url}
 				<div class="pt-2">
 					<p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Attachment</p>
-					<button on:click={() => downloadAttachment(assignment.attachment_url ?? '')}
-						class="inline-flex items-center gap-2 px-4 py-2 border border-indigo-200 dark:border-indigo-700 rounded-xl text-sm text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition font-medium">
-						<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-						</svg>
-						Download Attachment
-					</button>
+					{#if assignment.attachment_url.startsWith(TUTOR_API_BASE_URL)}
+						<button on:click={() => downloadAttachment(assignment.attachment_url ?? '')}
+							class="inline-flex items-center gap-2 px-4 py-2 border border-indigo-200 dark:border-indigo-700 rounded-xl text-sm text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition font-medium">
+							<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+							</svg>
+							Download Attachment
+						</button>
+					{:else}
+						<a href={assignment.attachment_url} target="_blank" rel="noopener noreferrer"
+							class="inline-flex items-center gap-2 px-4 py-2 border border-indigo-200 dark:border-indigo-700 rounded-xl text-sm text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition font-medium">
+							<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+							</svg>
+							Open Link
+						</a>
+					{/if}
 				</div>
 				{/if}
 			</div>
@@ -432,6 +447,13 @@
 					<input bind:value={editMaxScore} type="number" min="1" class="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-300"/>
 				</div>
 			</div>
+			<div>
+				<label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">
+					Attachment Link <span class="text-xs font-normal text-gray-400">(optional — paste a URL)</span>
+				</label>
+				<input bind:value={editAttachmentUrl} type="url" placeholder="https://drive.google.com/…"
+					class="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-300 transition"/>
+			</div>
 		</div>
 
 		<div class="flex gap-3 mt-5">
@@ -491,13 +513,23 @@
 					</div>
 				{/if}
 				{#if gradingSub.attachment_url}
-					<button on:click={() => downloadAttachment(gradingSub?.attachment_url ?? '')}
-						class="inline-flex items-center gap-2 px-4 py-2 border border-indigo-200 dark:border-indigo-700 rounded-xl text-sm text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition font-medium">
-						<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
-						</svg>
-						Download student's attachment
-					</button>
+					{#if gradingSub.attachment_url.startsWith(TUTOR_API_BASE_URL)}
+						<button on:click={() => downloadAttachment(gradingSub?.attachment_url ?? '')}
+							class="inline-flex items-center gap-2 px-4 py-2 border border-indigo-200 dark:border-indigo-700 rounded-xl text-sm text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition font-medium">
+							<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+							</svg>
+							Download student's attachment
+						</button>
+					{:else}
+						<a href={gradingSub.attachment_url} target="_blank" rel="noopener noreferrer"
+							class="inline-flex items-center gap-2 px-4 py-2 border border-indigo-200 dark:border-indigo-700 rounded-xl text-sm text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition font-medium">
+							<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+							</svg>
+							Open student's link
+						</a>
+					{/if}
 				{/if}
 			</div>
 		{/if}
