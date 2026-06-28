@@ -3,9 +3,8 @@
 	import { onMount, getContext } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import ForgotPassword from '$lib/components/ForgotPassword.svelte';
-	import TermsOfServiceModal from '$lib/components/legal/TermsOfServiceModal.svelte';
-	import PrivacyPolicyModal from '$lib/components/legal/PrivacyPolicyModal.svelte';
+	import { ForgotPassword } from '$lib/features/auth';
+	import { TermsOfServiceModal, PrivacyPolicyModal } from '$lib/features/legal';
 
 	import { getBackendConfig } from '$lib/apis';
 	import {
@@ -21,9 +20,8 @@
 
 	import { generateInitialsImage, canvasPixelTest } from '$lib/utils';
 
-	import Spinner from '$lib/components/common/Spinner.svelte';
-	import OnBoarding from '$lib/components/OnBoarding.svelte';
-	import RoleSelection from '$lib/components/RoleSelectionPage.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
+	import { OnBoarding, RoleSelection } from '$lib/features/auth';
 
 	const i18n = getContext('i18n');
 

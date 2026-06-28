@@ -62,7 +62,7 @@ def _user_payload(token: str, user: User) -> dict:
         "id": user.id,
         "email": user.email,
         "name": user.name,
-        "role": "admin" if user.is_admin else (user.role or "user"),
+        "role": user.role or ("admin" if user.is_admin else "user"),
         "profile_image_url": user.profile_image_url,
     }
 
@@ -74,7 +74,7 @@ async def get_session_user(current_user: User = Depends(get_current_user)):
         "id": current_user.id,
         "email": current_user.email,
         "name": current_user.name,
-        "role": "admin" if current_user.is_admin else (current_user.role or "user"),
+        "role": current_user.role or ("admin" if current_user.is_admin else "user"),
         "profile_image_url": current_user.profile_image_url,
     }
 
@@ -120,7 +120,7 @@ async def signup(
             password_plain=request.password,
             profile_image_url=request.profile_image_url,
             is_admin=is_admin,
-            role=request.role or "user",
+            role=request.role if not is_admin else "admin",
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
@@ -180,7 +180,7 @@ async def update_profile(
         "id": user.id,
         "email": user.email,
         "name": user.name,
-        "role": "admin" if user.is_admin else (user.role or "user"),
+        "role": user.role or ("admin" if user.is_admin else "user"),
         "profile_image_url": user.profile_image_url,
     }
 

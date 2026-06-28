@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Chat from '$lib/components/student/pages/Chat.svelte';
+	import { StudentChat as Chat } from '$lib/features/student';
 </script>
 
 <Chat />

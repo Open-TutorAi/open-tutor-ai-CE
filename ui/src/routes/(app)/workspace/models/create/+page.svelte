@@ -8,7 +8,7 @@
 	import { createNewModel, getModelById } from '$lib/apis/models';
 	import { getModels } from '$lib/apis';
 
-	import ModelEditor from '$lib/components/workspace/Models/ModelEditor.svelte';
+	import { ModelEditor } from '$lib/features/workspace';
 
 	const i18n = getContext('i18n');
 

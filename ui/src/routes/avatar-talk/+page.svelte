@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import AvatarChat from '$lib/components/chat/AvatarChat.svelte';
-	import { settings } from '$lib/stores';
-	import { generateChatCompletion } from '$lib/apis/ollama';
+    import { onMount } from 'svelte';
+    import { AvatarChat } from '$lib/features/avatar';
+    import { settings } from '$lib/stores';
+    import { generateChatCompletion } from '$lib/apis/ollama';
 
 	// State for classroom settings
 	let useClassroom = true;

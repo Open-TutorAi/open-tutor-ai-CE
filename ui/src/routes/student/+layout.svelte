@@ -5,9 +5,9 @@
 	import { page } from '$app/stores';
 	import { get, writable, derived } from 'svelte/store';
 
-	import Sidebar from '$lib/components/student/elements/Sidebar.svelte';
-	import Navbar from '$lib/components/student/elements/Navbar.svelte';
-	import DemoModeBanner from '$lib/components/DemoModeBanner.svelte';
+	import { Sidebar } from '$lib/features/student';
+	import { Navbar } from '$lib/features/student';
+	import DemoModeBanner from '$lib/ui/DemoModeBanner.svelte';
 
 	import { getModels, getVersionUpdates } from '$lib/apis';
 	import {

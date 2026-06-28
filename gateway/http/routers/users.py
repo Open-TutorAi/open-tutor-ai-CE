@@ -44,6 +44,21 @@ async def get_all_users(
     return [u.to_dict() for u in svc.list_users(limit=10000)]
 
 
+@router.get("/lookup")
+async def lookup_user_by_email(
+    email: str,
+    current_user: User = Depends(get_current_user),
+    svc: AccountService = Depends(get_account_service),
+):
+    """GET /users/lookup?email=...  — teacher looks up a student by email to enroll them."""
+    if current_user.role not in ("teacher", "admin"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Teachers only")
+    user = svc.get_user_by_email(email)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No account found with this email")
+    return {"id": user.id, "name": user.name, "email": user.email, "role": user.role}
+
+
 @router.get("/groups")
 async def get_user_groups(current_user: User = Depends(get_current_user)):
     return []

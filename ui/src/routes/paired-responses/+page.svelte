@@ -1,5 +1,5 @@
 <script lang="ts">
-	import PairedResponses from '$lib/components/chat/PairedResponses.svelte';
+	import { PairedResponses } from '$lib/features/chat';
 </script>
 
 <PairedResponses />
