@@ -574,8 +574,8 @@
 				// to an existing chat
 				storeChatId.set('');
 
-				// After creating the support, redirect to chat selection page
-				goto('/student/chat');
+				// After creating the support, redirect to diagnostic test
+				goto(`/student/support/${supportResponse.id}/diagnostic`);
 			} else {
 				toast.error($i18n.t('Failed to save support request: Unexpected response from server.'));
 			}

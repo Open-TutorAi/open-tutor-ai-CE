@@ -5,6 +5,7 @@
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
 	import { getSupportById, deleteSupport } from '$lib/apis/supports';
+	import { getDiagnosticBySupport } from '$lib/apis/diagnostics';
 	import type { Writable } from 'svelte/store';
 	import { browser } from '$app/environment';
 	import ConfirmDialog from '$lib/components/student/elements/ConfirmDialog.svelte';
@@ -63,6 +64,7 @@
 	let support: any = null;
 	let loading = true;
 	let error: string | null = null;
+	let diagnosticCompleted = false;
 
 	// Confirmation dialog
 	let showDeleteConfirm = false;
@@ -100,6 +102,7 @@
 						created_at: new Date().toISOString(),
 						updated_at: new Date().toISOString()
 					};
+					diagnosticCompleted = true; // demo mode skips diagnostic gate
 				} else {
 					error = $i18n.t('Demo support not found');
 				}
@@ -116,6 +119,19 @@
 
 			support = await getSupportById(token, supportId);
 			console.log('Support data loaded:', support);
+
+			// Guard: diagnostic must be completed before accessing this support
+			try {
+				const diag = await getDiagnosticBySupport(token, supportId);
+				if (!diag || diag.status !== 'completed') {
+					goto(`/student/support/${supportId}/diagnostic`);
+					return;
+				}
+				diagnosticCompleted = true;
+			} catch {
+				goto(`/student/support/${supportId}/diagnostic`);
+				return;
+			}
 		} catch (err: any) {
 			console.error('Error loading support:', err);
 			error = err?.message || $i18n.t('Failed to load support details');
@@ -580,67 +596,101 @@
 							{$i18n.t('Support Chat')}
 						</h3>
 
-						<div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-							<!-- Chat ID -->
-							{#if support.chat_id}
-								<div>
-									<h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-										{$i18n.t('Associated Chat')}
-									</h4>
-									<div class="flex items-center">
-										<span class="text-gray-700 dark:text-gray-300 mr-3 text-sm"
-											>{support.chat_id}</span
-										>
-										<a
-											href={`/student/c/${support.chat_id}`}
-											class="inline-flex items-center text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100 text-sm bg-blue-100 dark:bg-blue-800 px-3 py-1 rounded-full transition-colors"
-										>
-											<svg
-												xmlns="http://www.w3.org/2000/svg"
-												class="h-4 w-4 mr-1"
-												viewBox="0 0 20 20"
-												fill="currentColor"
-											>
-												<path
-													d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"
-												/>
-												<path
-													d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"
-												/>
-											</svg>
-											{$i18n.t('Continue Chat')}
-										</a>
-									</div>
+						{#if !diagnosticCompleted}
+							<!-- Diagnostic not completed: locked state -->
+							<div
+								class="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg"
+							>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									class="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0"
+									viewBox="0 0 20 20"
+									fill="currentColor"
+								>
+									<path
+										fill-rule="evenodd"
+										d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+										clip-rule="evenodd"
+									/>
+								</svg>
+								<div class="flex-1">
+									<p class="text-sm font-medium text-amber-800 dark:text-amber-300">
+										{$i18n.t('Diagnostic test required')}
+									</p>
+									<p class="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+										{$i18n.t('You must complete the diagnostic test before accessing the chat.')}
+									</p>
 								</div>
-							{:else}
-								<div>
-									<h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-										{$i18n.t('No Associated Chat')}
-									</h4>
-									<div class="flex items-center">
-										<a
-											href="/student/chat"
-											on:click={handleStartChat}
-											class="inline-flex items-center text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded-full text-sm"
-										>
-											<svg
-												xmlns="http://www.w3.org/2000/svg"
-												class="h-4 w-4 mr-1"
-												viewBox="0 0 20 20"
-												fill="currentColor"
+								<button
+									on:click={() => goto(`/student/support/${support.id}/diagnostic`)}
+									class="shrink-0 inline-flex items-center px-3 py-1.5 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded-full transition-colors"
+								>
+									{$i18n.t('Take the diagnostic')}
+								</button>
+							</div>
+						{:else}
+							<div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+								<!-- Chat ID -->
+								{#if support.chat_id}
+									<div>
+										<h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+											{$i18n.t('Associated Chat')}
+										</h4>
+										<div class="flex items-center">
+											<span class="text-gray-700 dark:text-gray-300 mr-3 text-sm"
+												>{support.chat_id}</span
 											>
-												<path
-													fill-rule="evenodd"
-													d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
-													clip-rule="evenodd"
-												/>
-											</svg>
-											{$i18n.t('Start a Chat')}
-										</a>
+											<a
+												href={`/student/c/${support.chat_id}`}
+												class="inline-flex items-center text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100 text-sm bg-blue-100 dark:bg-blue-800 px-3 py-1 rounded-full transition-colors"
+											>
+												<svg
+													xmlns="http://www.w3.org/2000/svg"
+													class="h-4 w-4 mr-1"
+													viewBox="0 0 20 20"
+													fill="currentColor"
+												>
+													<path
+														d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"
+													/>
+													<path
+														d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"
+													/>
+												</svg>
+												{$i18n.t('Continue Chat')}
+											</a>
+										</div>
 									</div>
-								</div>
-							{/if}
-						</div>
+								{:else}
+									<div>
+										<h4 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+											{$i18n.t('No Associated Chat')}
+										</h4>
+										<div class="flex items-center">
+											<a
+												href="/student/chat"
+												on:click={handleStartChat}
+												class="inline-flex items-center text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded-full text-sm"
+											>
+												<svg
+													xmlns="http://www.w3.org/2000/svg"
+													class="h-4 w-4 mr-1"
+													viewBox="0 0 20 20"
+													fill="currentColor"
+												>
+													<path
+														fill-rule="evenodd"
+														d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+														clip-rule="evenodd"
+													/>
+												</svg>
+												{$i18n.t('Start a Chat')}
+											</a>
+										</div>
+									</div>
+								{/if}
+							</div>
+						{/if}
 					</div>
 
 					<!-- Actions footer -->
@@ -652,6 +702,13 @@
 							class="px-4 py-2 text-sm font-semibold bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors"
 						>
 							{$i18n.t('Back to List')}
+						</button>
+
+						<button
+							on:click={() => goto(`/student/support/${support.id}/diagnostic`)}
+							class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+						>
+							{$i18n.t('Level Diagnostic')}
 						</button>
 
 						<button

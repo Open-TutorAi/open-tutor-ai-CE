@@ -1,5 +1,6 @@
 from .chat import Chat
 from .config import AppConfig
+from .diagnostic import DiagnosticResult
 from .feedback import Feedback
 from .file import FileRecord
 from .knowledge import KnowledgeBase, KnowledgeFile
@@ -18,4 +19,5 @@ __all__ = [
     "AppConfig",
     "KnowledgeBase",
     "KnowledgeFile",
+    "DiagnosticResult",
 ]

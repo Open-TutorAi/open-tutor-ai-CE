@@ -1,6 +1,9 @@
 import { sveltekit } from '@sveltejs/kit/vite';
+import path from 'path';
 import { defineConfig } from 'vite';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
+
+const rootNodeModules = path.resolve(__dirname, '../node_modules');
 
 /** @type {import('vite').Plugin} */
 const viteServerConfig = {
@@ -46,7 +49,9 @@ export default defineConfig({
 				'./static/avatar',
 				'./static/classroom',
 				'./static/draco',
-				'./static/images/background.jpeg'
+				'./static/images/background.jpeg',
+				rootNodeModules,
+				'./node_modules'
 			]
 		},
 		host: true,

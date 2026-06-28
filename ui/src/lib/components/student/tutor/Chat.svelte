@@ -880,11 +880,43 @@
 				}
 			}
 
-			// Add education level with stronger emphasis
-			if (supportDetails.level) {
+			// Adapt teaching strategy to the learner's diagnosed level
+			if (supportDetails.level === 'débutant') {
+				systemPrompt += `DIAGNOSED KNOWLEDGE LEVEL: Beginner (débutant)\n`;
+				systemPrompt += `The learner has just taken a diagnostic test and scored in the beginner range for this topic. Adapt EVERY aspect of your teaching to this level:\n`;
+				systemPrompt += `- Assume zero prior knowledge. Start from the very first principles.\n`;
+				systemPrompt += `- Introduce ONE concept at a time. Never introduce two new ideas in the same explanation.\n`;
+				systemPrompt += `- Use simple, everyday vocabulary. Define every technical term the first time you use it.\n`;
+				systemPrompt += `- Provide multiple concrete examples for each concept before asking the learner to apply it.\n`;
+				systemPrompt += `- Use real-world analogies to make abstract ideas tangible.\n`;
+				systemPrompt += `- Offer guided, step-by-step exercises. Provide hints and encouragement. Never leave the learner stuck.\n`;
+				systemPrompt += `- Validate understanding with simple comprehension checks before moving forward.\n`;
+				systemPrompt += `- Adopt a warm, patient, and encouraging tone. Celebrate small wins.\n`;
+				systemPrompt += `- Pace: slow and progressive. It is better to cover less and understand deeply than to rush.\n`;
+			} else if (supportDetails.level === 'intermédiaire') {
+				systemPrompt += `DIAGNOSED KNOWLEDGE LEVEL: Intermediate (intermédiaire)\n`;
+				systemPrompt += `The learner has just taken a diagnostic test and scored at an intermediate level for this topic. Adapt your teaching accordingly:\n`;
+				systemPrompt += `- Briefly recall fundamental concepts when necessary, but do not over-explain basics the learner already knows.\n`;
+				systemPrompt += `- Focus on deepening and consolidating understanding: nuances, exceptions, common misconceptions.\n`;
+				systemPrompt += `- Use realistic, moderately complex examples that connect theory to practical situations.\n`;
+				systemPrompt += `- Propose exercises of moderate difficulty that require applying concepts in slightly new contexts.\n`;
+				systemPrompt += `- Encourage the learner to make connections between what they already know and the new material.\n`;
+				systemPrompt += `- Maintain a balanced pace: not too slow (the learner knows some basics) but not rushed.\n`;
+				systemPrompt += `- Ask occasional reflection questions to consolidate learning.\n`;
+			} else if (supportDetails.level === 'avancé') {
+				systemPrompt += `DIAGNOSED KNOWLEDGE LEVEL: Advanced (avancé)\n`;
+				systemPrompt += `The learner has just taken a diagnostic test and scored at an advanced level for this topic. Adapt your teaching to match their expertise:\n`;
+				systemPrompt += `- Skip or only briefly mention foundational concepts the learner has already mastered. Do not waste their time re-explaining what they know.\n`;
+				systemPrompt += `- Focus directly on advanced concepts, complex cases, edge cases, best practices, and subtle nuances.\n`;
+				systemPrompt += `- Use sophisticated, real-world examples, case studies, and professional-level scenarios.\n`;
+				systemPrompt += `- Propose challenging exercises that require synthesis, critical thinking, and creative problem-solving.\n`;
+				systemPrompt += `- Move at a faster pace. The learner can absorb more information per exchange.\n`;
+				systemPrompt += `- Discuss trade-offs, limitations, and the "why" behind design decisions — not just the "how".\n`;
+				systemPrompt += `- Treat the learner as a peer: use technical language freely, assume familiarity with core terminology.\n`;
+				systemPrompt += `- Encourage deep exploration, independent research, and going beyond the standard curriculum.\n`;
+			} else if (supportDetails.level) {
+				// Legacy school-level values (primary, middle, high, university)
 				systemPrompt += `EDUCATION LEVEL: ${supportDetails.level}\n`;
-
-				// Adjust language and complexity based on level
 				if (supportDetails.level === 'primary') {
 					systemPrompt += `Use simple language and explanations appropriate for young learners.\n`;
 				} else if (supportDetails.level === 'middle') {
@@ -894,8 +926,6 @@
 				} else if (supportDetails.level === 'university') {
 					systemPrompt += `Use advanced concepts and academic language appropriate for university-level education.\n`;
 				}
-
-				// Add explicit note about education level
 				systemPrompt += `NOTE: The student is at the ${supportDetails.level} education level. Do not ask them about their level.\n`;
 			}
 
@@ -951,7 +981,7 @@
 
 			//systemPrompt+= promptData;
 			// Add reminder to stay focused on the topic and not ask redundant questions - STRENGTHENED
-			systemPrompt += `FINAL REMINDER: DO NOT ask the student about information they've already provided such as their educational level, background, or learning goals. Instead, directly begin helping them with their learning objective. Always keep your responses relevant to the topic (${supportDetails.title}) and learning objectives described above. Your role is to provide structured guidance on this specific subject matter. If the student says only "hello" or provides a very brief message, jump straight into teaching the topic - don't waste time with preliminary questions.`;
+			systemPrompt += `FINAL REMINDER: DO NOT ask the student about information they've already provided such as their educational level, background, or learning goals. This information comes from a diagnostic test they have ALREADY completed — it is final and must be respected throughout the entire session. Always keep your responses relevant to the topic (${supportDetails.title}) and learning objectives described above. Your role is to provide structured guidance on this specific subject matter, calibrated to the learner's DIAGNOSED KNOWLEDGE LEVEL. If the student says only "hello" or provides a very brief message, jump straight into teaching the topic at the appropriate level — do not waste time with preliminary questions.`;
 			systemPrompt += promptData.prompt;
 			return systemPrompt;
 		} catch (error) {
