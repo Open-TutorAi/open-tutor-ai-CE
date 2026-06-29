@@ -67,6 +67,7 @@ from .routers import (
 )
 from .routers import (
     tasks as tasks_router,
+    teacher,
 )
 from .routers import (
     tools as tools_router,
@@ -141,6 +142,7 @@ def create_app() -> FastAPI:
     #   /api/v1/auths/* → TUTOR_API_BASE_URL calls (signin, signout, session, …)
     app.include_router(auth.router)
     app.include_router(auth.router, prefix="/api/v1")
+    
 
     # Supports, evaluations, files — only under /api/v1 (all UI calls use TUTOR_API_BASE_URL)
     app.include_router(supports.router, prefix="/api/v1")
@@ -164,6 +166,7 @@ def create_app() -> FastAPI:
     app.include_router(groups_router.router, prefix="/api/v1")
     app.include_router(folders_router.router, prefix="/api/v1")
     app.include_router(tasks_router.router, prefix="/api/v1")
+    app.include_router(teacher.router, prefix="/api/v1")
 
     # Socket.IO — mounted at /realtime; client uses path='/realtime/socket.io'
     app.mount("/realtime", socket_app)
