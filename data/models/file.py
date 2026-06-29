@@ -1,8 +1,9 @@
 """File record domain model."""
 
 from datetime import datetime
-from sqlalchemy import Column, String, DateTime, Text, Integer, JSON
-from sqlalchemy.orm import relationship
+
+from sqlalchemy import JSON, Column, DateTime, Integer, String, Text
+
 from data.database import Base
 
 

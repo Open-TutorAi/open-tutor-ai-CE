@@ -1,15 +1,16 @@
 """Chats router — /api/v1/chats/*."""
 
 from typing import Any, Dict, List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from learning.sessions.service import ChatsService
 from common.exceptions import AuthorizationError, NotFoundError
 from data.database import get_db
 from data.models import User
 from gateway.http.dependencies import get_current_user
+from learning.sessions.service import ChatsService
 
 router = APIRouter(prefix="/chats", tags=["chats"])
 

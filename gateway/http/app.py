@@ -2,42 +2,76 @@
 
 import os
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
+
 from config import settings
 from data.database import init_database
+from gateway.http.api_routes import register_api_routes
+from gateway.realtime.socket import socket_app
 
 from .routers import (
-    health,
-    auth,
-    supports,
-    self_regulation,
-    files,
     app_info,
+    auth,
+    files,
+    health,
+    self_regulation,
+    supports,
     users,
-    configs as configs_router,
-    models as models_router,
-    providers as providers_router,
-    chats as chats_router,
-    knowledge as knowledge_router,
-    retrieval as retrieval_router,
+)
+from .routers import (
     audio as audio_router,
-    images as images_router,
-    tools as tools_router,
-    functions as functions_router,
-    memories as memories_router,
-    prompts as prompts_router,
+)
+from .routers import (
     channels as channels_router,
-    groups as groups_router,
+)
+from .routers import (
+    chats as chats_router,
+)
+from .routers import (
+    configs as configs_router,
+)
+from .routers import (
     folders as folders_router,
+)
+from .routers import (
+    functions as functions_router,
+)
+from .routers import (
+    groups as groups_router,
+)
+from .routers import (
+    images as images_router,
+)
+from .routers import (
+    knowledge as knowledge_router,
+)
+from .routers import (
+    memories as memories_router,
+)
+from .routers import (
+    models as models_router,
+)
+from .routers import (
+    prompts as prompts_router,
+)
+from .routers import (
+    providers as providers_router,
+)
+from .routers import (
+    retrieval as retrieval_router,
+)
+from .routers import (
     tasks as tasks_router,
     teacher,
 )
-from gateway.http.api_routes import register_api_routes
-from gateway.realtime.socket import socket_app
+from .routers import (
+    tools as tools_router,
+)
 
 FRONTEND_BUILD_DIR = os.getenv("FRONTEND_BUILD_DIR", "./ui/build")
 

@@ -5,15 +5,17 @@ Verified user: transcriptions, speech, models, voices.
 """
 
 from typing import Optional
+
 import httpx
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+
+from ai.media.audio import AudioService
 from data.database import get_db
 from data.models import User
 from gateway.http.dependencies import get_current_user
-from ai.media.audio import AudioService
 
 router = APIRouter(prefix="/audio", tags=["audio"])
 

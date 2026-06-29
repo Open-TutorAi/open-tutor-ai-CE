@@ -9,6 +9,7 @@ OpenTutorAI has been restructured from a nested `backend/open_tutorai/gateway/` 
 ### File Structure
 
 **Before:**
+
 ```
 backend/
   main.py                    ← Mounted entire OpenWebUI
@@ -32,6 +33,7 @@ backend/
 ```
 
 **After (v1.0.0):**
+
 ```
 open-tutor-ai-CE/
 │
@@ -152,11 +154,13 @@ open-tutor-ai-CE/
 ### Dependency Changes
 
 **Removed:**
+
 - `open_webui` runtime dependency
 - All imports from `open_webui.models`, `open_webui.routers`, `open_webui.utils`
 - `open_webui` patches and configuration
 
 **Added:**
+
 - `fastapi`, `sqlalchemy`, `pydantic` (now explicit)
 - `pyjwt`, `passlib`, `bcrypt` (for auth)
 
@@ -170,43 +174,45 @@ The public route names intentionally keep OpenTutorAI's UI contract (`auths`, `c
 packages use professional domain names: `accounts`, `learning`, `ai`, `content`,
 `governance`, `system`, `gateway`, `data`, `common`, and `config`.
 
-| Domain | Routes | Notes |
-|--------|--------|-------|
-| `health` | `GET /health` | No version prefix. Docker healthcheck. |
-| `accounts (auths)` | `POST /auths/signup`, `GET /auths/user-count` | Root mount — `TUTOR_BASE_URL` |
-| `accounts (auths)` | `POST /api/v1/auths/signin`, `GET /api/v1/auths/`, `GET /api/v1/auths/signout` | `/api/v1` mount |
-| `app_info` | `GET /api/v1/platform/version\|changelog\|banners` | Public route kept for UI contract; no root `platform/` package |
-| `users` | `GET /api/v1/users/`, `GET/POST /api/v1/users/user/settings\|info`, `POST /api/v1/users/update/role`, `GET/POST/{id} DELETE/{id}` | User management (admin-gated list/role/delete) |
-| `system/configs` | `GET/POST /api/v1/configs/models\|banners\|suggestions\|...`, `GET /api/v1/configs/export`, `POST /api/v1/configs/import` | App-level KV config (writes admin-gated) |
-| `ai/model_catalog` | `GET /api/v1/models/`, `POST /api/v1/models/create`, `GET/POST/DELETE /api/v1/models/model?id=`, `POST /api/v1/models/model/toggle` | Model overlays (ownership-gated mutations) |
-| `ai/providers (OpenAI)` | `GET/POST /api/v1/providers/openai/config\|urls\|keys\|verify`, `GET /api/v1/providers/openai/models[/{idx}]`, `POST /api/v1/providers/openai/chat/completions`, `POST /api/v1/providers/openai/audio/speech` | Hermes-style core; model-list TTL cache; admin config, non-admin proxy |
-| `ai/providers (Ollama)` | `GET/POST /api/v1/providers/ollama/config\|urls\|verify`, `GET /api/v1/providers/ollama/api/version[/{idx}]`, `GET /api/v1/providers/ollama/api/tags[/{idx}]`, `POST /api/v1/providers/ollama/api/generate\|embeddings\|chat`, `POST/DELETE /api/v1/providers/ollama/api/pull\|create\|delete[/{idx}]`, `POST /api/v1/providers/ollama/models/download\|upload[/{idx}]` | Native Ollama adapter isolated; model-mgmt admin-only |
-| `learning/sessions` | `GET/POST/DELETE /api/v1/chats/*` | Full chat CRUD + archive/pin/share/tags/folder/search/clone |
-| `learning/supports` | `POST /api/v1/supports/create`, `POST /api/v1/supports/upload-file`, `GET /api/v1/supports/list[?status=]`, `GET/PATCH/DELETE /api/v1/supports/{id}`, `PATCH /api/v1/supports/{id}/update-chat` | Tutoring support requests |
-| `governance/self_regulation` | `GET/POST /api/v1/self_regulation/config\|feedback`, `GET /api/v1/self_regulation/feedbacks/all[/export]`, `GET/DELETE /api/v1/self_regulation/feedback/{id}` | HITL evaluation of LLM responses |
-| `content/files` | `POST /api/v1/files/`, `GET /api/v1/files/`, `GET /api/v1/files/all`, `GET/DELETE /api/v1/files/{id}`, `GET /api/v1/files/{id}/content` | Owned file upload |
-| `ai/retrieval/knowledge` | `GET/POST/DELETE /api/v1/knowledge/*` | Knowledge bases used by RAG |
-| `ai/media` | `GET/POST /api/v1/audio/*`, `GET/POST /api/v1/images/*` | AI audio and image capabilities |
-| `realtime` | Socket.IO ASGI sub-app at `/realtime/socket.io` | JWT auth on connect; replaces `/ws/socket.io` |
+| Domain                       | Routes                                                                                                                                                                                                                                                                                                                                                                  | Notes                                                                  |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `health`                     | `GET /health`                                                                                                                                                                                                                                                                                                                                                           | No version prefix. Docker healthcheck.                                 |
+| `accounts (auths)`           | `POST /auths/signup`, `GET /auths/user-count`                                                                                                                                                                                                                                                                                                                           | Root mount — `TUTOR_BASE_URL`                                          |
+| `accounts (auths)`           | `POST /api/v1/auths/signin`, `GET /api/v1/auths/`, `GET /api/v1/auths/signout`                                                                                                                                                                                                                                                                                          | `/api/v1` mount                                                        |
+| `app_info`                   | `GET /api/v1/platform/version\|changelog\|banners`                                                                                                                                                                                                                                                                                                                      | Public route kept for UI contract; no root `platform/` package         |
+| `users`                      | `GET /api/v1/users/`, `GET/POST /api/v1/users/user/settings\|info`, `POST /api/v1/users/update/role`, `GET/POST/{id} DELETE/{id}`                                                                                                                                                                                                                                       | User management (admin-gated list/role/delete)                         |
+| `system/configs`             | `GET/POST /api/v1/configs/models\|banners\|suggestions\|...`, `GET /api/v1/configs/export`, `POST /api/v1/configs/import`                                                                                                                                                                                                                                               | App-level KV config (writes admin-gated)                               |
+| `ai/model_catalog`           | `GET /api/v1/models/`, `POST /api/v1/models/create`, `GET/POST/DELETE /api/v1/models/model?id=`, `POST /api/v1/models/model/toggle`                                                                                                                                                                                                                                     | Model overlays (ownership-gated mutations)                             |
+| `ai/providers (OpenAI)`      | `GET/POST /api/v1/providers/openai/config\|urls\|keys\|verify`, `GET /api/v1/providers/openai/models[/{idx}]`, `POST /api/v1/providers/openai/chat/completions`, `POST /api/v1/providers/openai/audio/speech`                                                                                                                                                           | Hermes-style core; model-list TTL cache; admin config, non-admin proxy |
+| `ai/providers (Ollama)`      | `GET/POST /api/v1/providers/ollama/config\|urls\|verify`, `GET /api/v1/providers/ollama/api/version[/{idx}]`, `GET /api/v1/providers/ollama/api/tags[/{idx}]`, `POST /api/v1/providers/ollama/api/generate\|embeddings\|chat`, `POST/DELETE /api/v1/providers/ollama/api/pull\|create\|delete[/{idx}]`, `POST /api/v1/providers/ollama/models/download\|upload[/{idx}]` | Native Ollama adapter isolated; model-mgmt admin-only                  |
+| `learning/sessions`          | `GET/POST/DELETE /api/v1/chats/*`                                                                                                                                                                                                                                                                                                                                       | Full chat CRUD + archive/pin/share/tags/folder/search/clone            |
+| `learning/supports`          | `POST /api/v1/supports/create`, `POST /api/v1/supports/upload-file`, `GET /api/v1/supports/list[?status=]`, `GET/PATCH/DELETE /api/v1/supports/{id}`, `PATCH /api/v1/supports/{id}/update-chat`                                                                                                                                                                         | Tutoring support requests                                              |
+| `governance/self_regulation` | `GET/POST /api/v1/self_regulation/config\|feedback`, `GET /api/v1/self_regulation/feedbacks/all[/export]`, `GET/DELETE /api/v1/self_regulation/feedback/{id}`                                                                                                                                                                                                           | HITL evaluation of LLM responses                                       |
+| `content/files`              | `POST /api/v1/files/`, `GET /api/v1/files/`, `GET /api/v1/files/all`, `GET/DELETE /api/v1/files/{id}`, `GET /api/v1/files/{id}/content`                                                                                                                                                                                                                                 | Owned file upload                                                      |
+| `ai/retrieval/knowledge`     | `GET/POST/DELETE /api/v1/knowledge/*`                                                                                                                                                                                                                                                                                                                                   | Knowledge bases used by RAG                                            |
+| `ai/media`                   | `GET/POST /api/v1/audio/*`, `GET/POST /api/v1/images/*`                                                                                                                                                                                                                                                                                                                 | AI audio and image capabilities                                        |
+| `realtime`                   | Socket.IO ASGI sub-app at `/realtime/socket.io`                                                                                                                                                                                                                                                                                                                         | JWT auth on connect; replaces `/ws/socket.io`                          |
 
 **Removed (forbidden namespaces):**
 
-| Old path | Replaced by |
-|----------|-------------|
-| `/openai/*` | `/api/v1/providers/openai/*` |
-| `/ollama/*` | `/api/v1/providers/ollama/*` |
-| `/api/chat/*` | `/api/v1/chats/*` or `/api/v1/providers/*/chat/completions` |
-| `/ws/socket.io` | `/realtime/socket.io` |
-| `WEBUI_SECRET_KEY` | `SECRET_KEY` |
+| Old path           | Replaced by                                                 |
+| ------------------ | ----------------------------------------------------------- |
+| `/openai/*`        | `/api/v1/providers/openai/*`                                |
+| `/ollama/*`        | `/api/v1/providers/ollama/*`                                |
+| `/api/chat/*`      | `/api/v1/chats/*` or `/api/v1/providers/*/chat/completions` |
+| `/ws/socket.io`    | `/realtime/socket.io`                                       |
+| `WEBUI_SECRET_KEY` | `SECRET_KEY`                                                |
 
 ### Database Model Changes
 
 **User Model**
+
 - Moved from `open_webui.models.users` to `data.models.user.User`
 - Added `profile_image_url`, `created_at`, `updated_at` fields
 - Uses direct SQLAlchemy (no open_webui Base)
 
 **Support Model**
+
 - Moved from custom location to `data.models.support.Support`
 - Rich schema aligned with UI: `subject`, `short_description`, `learning_type`, `level`,
   `content_language`, `access_type`, `keywords` (comma-separated), `chat_id`, `avatar_id`, …
@@ -214,6 +220,7 @@ packages use professional domain names: `accounts`, `learning`, `ai`, `content`,
 - `SupportFile` model added for upload attachments (ownership validated in `SupportsService`)
 
 **Feedback Model**
+
 - Moved from `open_webui.models.feedbacks` to `data.models.feedback.Feedback`
 - Renamed context: "response_feedbacks" → "self_regulation"
 - Maintains backward compatibility with response tracking
@@ -237,12 +244,14 @@ CORS_ALLOW_ORIGIN=http://localhost:3000,http://localhost:5173
 ### Running the Application
 
 **Before:**
+
 ```bash
 cd backend
 uvicorn backend.main:app --reload
 ```
 
 **After:**
+
 ```bash
 uvicorn main:app --reload
 # or
@@ -264,7 +273,7 @@ python main.py
 - [x] Verify all imports clean of open_webui/backend references
 - [x] Implement full provider surface (OpenAI + Ollama — config/proxy/discovery/model-mgmt)
 - [x] Socket.IO ASGI sub-mount at /realtime/socket.io
-- [x] Repoint UI base-URL constants to /api/v1/providers/* and /realtime/socket.io
+- [x] Repoint UI base-URL constants to /api/v1/providers/\* and /realtime/socket.io
 - [x] Replace hardcoded contract test with UI-scanner (test_contract_coverage.py)
 - [x] Reorganize root domains into `accounts/`, `learning/`, `ai/`, `content/`, `governance/`, and `system/`
 
@@ -312,6 +321,7 @@ If upgrading from previous OpenTutorAI installation:
 ## Support
 
 For questions or issues with the migration:
+
 - Check `TROUBLESHOOTING.md`
 - Review specific module `__init__.py` files for available exports
 - Ensure all dependencies in `requirements.txt` are installed
