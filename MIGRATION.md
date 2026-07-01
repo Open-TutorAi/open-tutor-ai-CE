@@ -309,6 +309,31 @@ If upgrading from previous OpenTutorAI installation:
 3. Import data into new models (schema may differ)
 4. Verify data integrity
 
+### Schema strategy & the teacher section
+
+This project does **not** use a schema-migration framework (e.g. Alembic). On startup the app
+calls SQLAlchemy's `create_all()`, which **creates any missing tables** but **never alters an
+existing table** (it will not add a column to a table that already exists).
+
+**Teacher section:** it introduces **only new tables** — `classrooms`, `enrollments`,
+`invitations`, `guardian_links`, `assignments`, `submissions`, `class_resources`,
+`assignment_templates`, `monitor_states`, `monitor_away_events`, `conversations`,
+`conversation_participants`, `messages`, `exam_configs`, `exam_sessions`, `exam_violations`. It
+adds **no columns to any pre-existing table**. So on a clean existing install these tables are
+created automatically on the next start — **no manual step, no loss of existing data**.
+
+**General caveat (any future column change, or a DB that already holds an _older_ version of the
+teacher tables):** because there are no migrations, a new/renamed column on an already-created
+table won't be applied, and queries against it will fail. On a **development** database, reset it:
+
+```bash
+rm -f var/tutorai.db   # or the file named by your DATABASE_URL, then restart
+```
+
+⚠️ This **deletes all local data** — development/throwaway installs only, never a database with
+real user data. The long-term fix is to adopt **Alembic** (versioned, in-place migrations); it is
+tracked as a project-wide improvement, independent of the teacher section.
+
 ## Known Differences
 
 1. **Authentication**: Now uses JWT tokens instead of open_webui session tokens
