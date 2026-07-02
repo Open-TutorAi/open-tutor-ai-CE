@@ -396,6 +396,14 @@ def test_finalize_grade_requires_assignment_ownership(db, tmp_path, monkeypatch)
 
 
 def _token(client, role, email):
+    # The very first signup in a fresh DB always becomes role="admin" (first-user
+    # admin behavior, preserved intentionally — see AGENTS.md). Seed a throwaway
+    # admin first so the signup below actually gets the role we ask for.
+    if client.get("/auths/user-count").json()["count"] == 0:
+        client.post(
+            "/auths/signup",
+            json={"email": "seed-admin@t.com", "name": "seed", "password": "pass1234!"},
+        )
     r = client.post(
         "/auths/signup",
         json={"email": email, "name": role, "password": "pass1234!", "role": role},

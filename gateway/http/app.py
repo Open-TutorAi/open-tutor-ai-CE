@@ -24,6 +24,9 @@ from .routers import (
     users,
 )
 from .routers import (
+    assignments as assignments_router,
+)
+from .routers import (
     audio as audio_router,
 )
 from .routers import (
@@ -164,6 +167,7 @@ def create_app() -> FastAPI:
     app.include_router(groups_router.router, prefix="/api/v1")
     app.include_router(folders_router.router, prefix="/api/v1")
     app.include_router(tasks_router.router, prefix="/api/v1")
+    app.include_router(assignments_router.router, prefix="/api/v1")
 
     # Socket.IO — mounted at /realtime; client uses path='/realtime/socket.io'
     app.mount("/realtime", socket_app)
