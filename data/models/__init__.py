@@ -1,3 +1,4 @@
+from .assignment import Assignment, Submission
 from .chat import Chat
 from .config import AppConfig
 from .feedback import Feedback
@@ -18,4 +19,6 @@ __all__ = [
     "AppConfig",
     "KnowledgeBase",
     "KnowledgeFile",
+    "Assignment",
+    "Submission",
 ]
