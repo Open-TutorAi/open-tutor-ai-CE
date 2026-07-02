@@ -1,11 +1,20 @@
 # tests/test_assignments.py
-"""Repository-layer tests for the Assignments domain.
+"""Repository- and service-layer tests for the Assignments domain."""
 
-Written before learning/assignments/repository.py exists (TDD red step).
-"""
+import json as jsonlib
 
+import pytest
+
+from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from data.models import Assignment, Submission
 from learning.assignments.repository import AssignmentRepository, SubmissionRepository
+
+pytestmark = pytest.mark.anyio
+
+
+@pytest.fixture
+def anyio_backend():
+    return "asyncio"
 
 
 def _assignment_repo(db):
@@ -129,3 +138,249 @@ def test_get_submission_by_assignment_and_user(db):
 
     missing = submissions.get_by_assignment_and_user(a1.id, "student-2")
     assert missing is None
+
+
+# ---------------------------------------------------------------------------
+# Service-layer tests.
+#
+# Written before learning/assignments/service.py exists (TDD red step).
+# `extract_pdf_text`, `proxy_json` and `resolve_url_key` are monkeypatched at
+# the module level of learning.assignments.service, so the tests never touch
+# a real PDF parser or a real AI provider.
+# ---------------------------------------------------------------------------
+
+from learning.assignments.service import AssignmentService  # noqa: E402
+
+
+def test_create_assignment_via_service(db):
+    svc = AssignmentService(db)
+
+    assignment = svc.create_assignment(
+        "teacher-1",
+        {
+            "title": "Fractions Practice Set",
+            "description": "Solve the fraction problems.",
+            "rubric": "Correctness + working shown.",
+        },
+    )
+
+    assert assignment.id
+    assert assignment.user_id == "teacher-1"
+    assert assignment.title == "Fractions Practice Set"
+
+
+def test_verify_assignment_ownership_raises_not_found(db):
+    svc = AssignmentService(db)
+
+    with pytest.raises(NotFoundError):
+        svc.verify_assignment_ownership("teacher-1", "missing-id")
+
+
+def test_verify_assignment_ownership_raises_for_other_teacher(db):
+    svc = AssignmentService(db)
+    assignment = svc.create_assignment("teacher-1", {"title": "A", "rubric": "r"})
+
+    with pytest.raises(AuthorizationError):
+        svc.verify_assignment_ownership("teacher-2", assignment.id)
+
+
+def test_verify_assignment_ownership_returns_assignment_when_owned(db):
+    svc = AssignmentService(db)
+    assignment = svc.create_assignment("teacher-1", {"title": "A", "rubric": "r"})
+
+    result = svc.verify_assignment_ownership("teacher-1", assignment.id)
+
+    assert result.id == assignment.id
+
+
+def test_submit_work_extracts_text_when_pdf_readable(db, tmp_path, monkeypatch):
+    import learning.assignments.service as service_module
+
+    monkeypatch.setattr(
+        service_module, "extract_pdf_text", lambda contents: "3/4 + 1/8 = 7/8"
+    )
+
+    svc = AssignmentService(db)
+    assignment = svc.create_assignment("teacher-1", {"title": "A", "rubric": "r"})
+
+    submission = svc.submit_work(
+        "student-1", assignment.id, "answers.pdf", b"%PDF-fake-bytes", str(tmp_path)
+    )
+
+    assert submission.extracted_text == "3/4 + 1/8 = 7/8"
+    assert submission.status == "submitted"
+
+
+def test_submit_work_falls_back_when_extraction_empty(db, tmp_path, monkeypatch):
+    import learning.assignments.service as service_module
+
+    monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: None)
+
+    svc = AssignmentService(db)
+    assignment = svc.create_assignment("teacher-1", {"title": "A", "rubric": "r"})
+
+    submission = svc.submit_work(
+        "student-1", assignment.id, "scan.pdf", b"not-real-pdf-bytes", str(tmp_path)
+    )
+
+    assert submission.extracted_text is None
+    assert submission.status == "needs_manual_review"
+
+
+def test_submit_work_raises_not_found_for_missing_assignment(db, tmp_path):
+    svc = AssignmentService(db)
+
+    with pytest.raises(NotFoundError):
+        svc.submit_work("student-1", "missing-id", "a.pdf", b"bytes", str(tmp_path))
+
+
+def test_verify_submission_ownership_raises_for_other_student(
+    db, tmp_path, monkeypatch
+):
+    import learning.assignments.service as service_module
+
+    monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: "text")
+    svc = AssignmentService(db)
+    assignment = svc.create_assignment("teacher-1", {"title": "A", "rubric": "r"})
+    submission = svc.submit_work(
+        "student-1", assignment.id, "a.pdf", b"bytes", str(tmp_path)
+    )
+
+    with pytest.raises(AuthorizationError):
+        svc.verify_submission_ownership("student-2", submission.id)
+
+
+async def test_request_ai_grade_success(db, tmp_path, monkeypatch):
+    import learning.assignments.service as service_module
+
+    monkeypatch.setattr(
+        service_module, "extract_pdf_text", lambda contents: "3/4 + 1/8 = 7/8"
+    )
+    monkeypatch.setattr(
+        service_module, "resolve_url_key", lambda cfg: ("http://fake", "fake-key")
+    )
+
+    async def fake_proxy_json(url, key, method, path, body=None):
+        return {
+            "choices": [
+                {
+                    "message": {
+                        "content": jsonlib.dumps(
+                            {"score": 78, "feedback": "Good work overall."}
+                        )
+                    }
+                }
+            ]
+        }
+
+    monkeypatch.setattr(service_module, "proxy_json", fake_proxy_json)
+
+    svc = AssignmentService(db)
+    assignment = svc.create_assignment(
+        "teacher-1", {"title": "A", "rubric": "Correctness"}
+    )
+    submission = svc.submit_work(
+        "student-1", assignment.id, "a.pdf", b"bytes", str(tmp_path)
+    )
+
+    graded = await svc.request_ai_grade("teacher-1", assignment.id, submission.id)
+
+    assert graded.ai_score == 78
+    assert graded.ai_feedback == "Good work overall."
+    assert graded.status == "ai_graded"
+
+
+async def test_request_ai_grade_upstream_failure_falls_back_gracefully(
+    db, tmp_path, monkeypatch
+):
+    import learning.assignments.service as service_module
+
+    monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: "text")
+    monkeypatch.setattr(
+        service_module, "resolve_url_key", lambda cfg: ("http://fake", "fake-key")
+    )
+
+    async def failing_proxy_json(*args, **kwargs):
+        raise RuntimeError("upstream unreachable")
+
+    monkeypatch.setattr(service_module, "proxy_json", failing_proxy_json)
+
+    svc = AssignmentService(db)
+    assignment = svc.create_assignment("teacher-1", {"title": "A", "rubric": "r"})
+    submission = svc.submit_work(
+        "student-1", assignment.id, "a.pdf", b"bytes", str(tmp_path)
+    )
+
+    graded = await svc.request_ai_grade("teacher-1", assignment.id, submission.id)
+
+    assert graded.ai_score is None
+    assert graded.status == "ai_grade_failed"
+
+
+async def test_request_ai_grade_rejects_when_no_extracted_text(
+    db, tmp_path, monkeypatch
+):
+    import learning.assignments.service as service_module
+
+    monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: None)
+
+    svc = AssignmentService(db)
+    assignment = svc.create_assignment("teacher-1", {"title": "A", "rubric": "r"})
+    submission = svc.submit_work(
+        "student-1", assignment.id, "a.pdf", b"bytes", str(tmp_path)
+    )
+
+    with pytest.raises(ValidationError):
+        await svc.request_ai_grade("teacher-1", assignment.id, submission.id)
+
+
+async def test_request_ai_grade_requires_assignment_ownership(
+    db, tmp_path, monkeypatch
+):
+    import learning.assignments.service as service_module
+
+    monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: "text")
+
+    svc = AssignmentService(db)
+    assignment = svc.create_assignment("teacher-1", {"title": "A", "rubric": "r"})
+    submission = svc.submit_work(
+        "student-1", assignment.id, "a.pdf", b"bytes", str(tmp_path)
+    )
+
+    with pytest.raises(AuthorizationError):
+        await svc.request_ai_grade("teacher-2", assignment.id, submission.id)
+
+
+def test_finalize_grade_overwrites_with_teacher_values(db, tmp_path, monkeypatch):
+    import learning.assignments.service as service_module
+
+    monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: "text")
+
+    svc = AssignmentService(db)
+    assignment = svc.create_assignment("teacher-1", {"title": "A", "rubric": "r"})
+    submission = svc.submit_work(
+        "student-1", assignment.id, "a.pdf", b"bytes", str(tmp_path)
+    )
+
+    finalized = svc.finalize_grade(
+        "teacher-1", assignment.id, submission.id, 90, "Great job."
+    )
+
+    assert finalized.teacher_score == 90
+    assert finalized.teacher_feedback == "Great job."
+    assert finalized.status == "finalized"
+
+
+def test_finalize_grade_requires_assignment_ownership(db, tmp_path, monkeypatch):
+    import learning.assignments.service as service_module
+
+    monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: "text")
+
+    svc = AssignmentService(db)
+    assignment = svc.create_assignment("teacher-1", {"title": "A", "rubric": "r"})
+    submission = svc.submit_work(
+        "student-1", assignment.id, "a.pdf", b"bytes", str(tmp_path)
+    )
+
+    with pytest.raises(AuthorizationError):
+        svc.finalize_grade("teacher-2", assignment.id, submission.id, 90, "Nope")
