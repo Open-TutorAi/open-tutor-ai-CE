@@ -108,6 +108,29 @@
 		}
 	}
 
+	let quizChoices: string[] = [];
+	let youtubeVideoId: string | null = null;
+	let displayContent = '';
+	$: {
+		quizChoices = [];
+		youtubeVideoId = null;
+		if (message.content) {
+			// Extract [CHOICE: ...] tags
+			let processed = message.content.replace(/\[CHOICE:\s*(.*?)\]/g, (match, p1) => {
+				quizChoices.push(p1);
+				return '';
+			});
+			// Extract [YOUTUBE: VIDEO_ID] tag
+			processed = processed.replace(/\[YOUTUBE:\s*([a-zA-Z0-9_-]{8,15})\]/gi, (match, videoId) => {
+				youtubeVideoId = videoId.trim();
+				return ''; // Remove tag from display text
+			});
+			displayContent = processed;
+		} else {
+			displayContent = '';
+		}
+	}
+
 	export let siblings;
 
 	export let showPreviousMessage: Function;
@@ -206,16 +229,48 @@
 				if (voices.length > 0) {
 					clearInterval(getVoicesLoop);
 
-					const voice =
+					// Auto-detect language of the response text
+					const detectLanguage = (text) => {
+						const frWords = [' le ', ' la ', ' les ', ' de ', ' et ', ' est ', ' en ', ' dans ', ' pour ', ' un ', ' une ', ' qui ', ' que ', ' vous ', ' nous ', ' je ', ' c\'est '];
+						const enWords = [' the ', ' a ', ' an ', ' and ', ' is ', ' in ', ' for ', ' to ', ' of ', ' that ', ' this ', ' you ', ' we ', ' i ', ' it\'s '];
+						
+						const lowerText = ' ' + text.toLowerCase() + ' ';
+						let frCount = 0;
+						let enCount = 0;
+						
+						for (const word of frWords) { if (lowerText.includes(word)) frCount++; }
+						for (const word of enWords) { if (lowerText.includes(word)) enCount++; }
+						
+						if (frCount > enCount) return 'fr';
+						if (enCount > frCount) return 'en';
+						
+						// Fallback to quizLanguage or default to French
+						return $settings?.quizLanguage || 'fr';
+					};
+
+					const detectedLang = detectLanguage(message.content);
+
+					let voice =
 						voices
 							?.filter(
 								(v) => v.voiceURI === ($settings?.audio?.tts?.voice ?? $config?.audio?.tts?.voice)
 							)
 							?.at(0) ?? undefined;
 
+					// Respect the detected Language
+					const langPrefix = detectedLang; // 'fr' or 'en'
+					const matchingVoices = voices?.filter(v => v.lang.toLowerCase().startsWith(langPrefix)) || [];
+					if (matchingVoices.length > 0) {
+						// If the current explicitly chosen voice doesn't match the required language, pick the first one that does
+						if (!voice || !voice.lang.toLowerCase().startsWith(langPrefix)) {
+							voice = matchingVoices.find(v => v.localService) || matchingVoices[0];
+						}
+					}
+
 					console.log(voice);
 
 					const speak = new SpeechSynthesisUtterance(message.content);
+					speak.lang = detectedLang === 'fr' ? 'fr-FR' : 'en-US';
 					speak.rate = $settings.audio?.tts?.playbackRate ?? 1;
 
 					console.log(speak);
@@ -568,6 +623,16 @@
 				{/if}
 
 				<div class="chat-{message.role} w-full min-w-full markdown-prose">
+					<!-- Quiz feedback banner -->
+					{#if message.done && message.content?.includes('<CORRECT>')}
+						<div class="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 text-green-800 dark:text-green-300 font-semibold text-sm">
+							<span class="text-lg">✅</span> Bonne réponse ! / Correct answer!
+						</div>
+					{:else if message.done && message.content?.includes('<INCORRECT>')}
+						<div class="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 text-red-800 dark:text-red-300 font-semibold text-sm">
+							<span class="text-lg">❌</span> Mauvaise réponse — Essayez encore !
+						</div>
+					{/if}
 					<div>
 						{#if (message?.statusHistory ?? [...(message?.status ? [message?.status] : [])]).length > 0}
 							{@const status = (
@@ -716,7 +781,7 @@
 									<ContentRenderer
 										id={message.id}
 										{history}
-										content={message.content}
+										content={displayContent}
 										sources={message.sources}
 										floatingButtons={message?.done}
 										save={!readOnly}
@@ -787,6 +852,99 @@
 
 								{#if message.code_executions}
 									<CodeExecutions codeExecutions={message.code_executions} />
+								{/if}
+
+								{#if quizChoices.length > 0 && isLastMessage && message.done}
+									<div class="flex flex-col gap-2 mt-4">
+										{#each quizChoices as choice}
+											<button 
+												class="w-full bg-blue-50 hover:bg-blue-100 dark:bg-gray-800 dark:hover:bg-gray-700 text-blue-800 dark:text-blue-200 font-semibold py-3 px-4 rounded-xl text-left transition border border-blue-200 dark:border-gray-600 shadow-sm"
+												on:click={() => {
+													if (typeof window !== 'undefined') {
+														window.postMessage({type: 'input:prompt:submit', text: choice}, window.origin);
+													}
+												}}
+											>
+												{choice}
+											</button>
+										{/each}
+									</div>
+								{/if}
+
+								<!-- YouTube video card — shown when AI returns [YOUTUBE: VIDEO_ID] -->
+								{#if youtubeVideoId && message.done}
+									{@const ytId = youtubeVideoId}
+									<!-- Video card: click thumbnail to open inline player (youtube-nocookie.com) -->
+									<div class="youtube-card mt-4 rounded-2xl overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700 bg-black">
+										<!-- Header -->
+										<div class="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-red-600 to-red-500 text-white text-xs font-semibold">
+											<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+											🎥 {$i18n.t('Explanatory Video')} — Micro-Learning (1–3 min)
+										</div>
+										<!-- Thumbnail with play button — opens inline modal -->
+										<button
+											type="button"
+											class="relative w-full group"
+											style="padding-top: 56.25%;"
+											on:click={() => { document.getElementById('yt-modal-' + ytId)?.classList.remove('hidden'); }}
+										>
+											<img
+												class="absolute top-0 left-0 w-full h-full object-cover"
+												src={"https://img.youtube.com/vi/" + ytId + "/hqdefault.jpg"}
+												alt="Video thumbnail"
+												on:error={(e) => { e.currentTarget.src = "https://img.youtube.com/vi/" + ytId + "/default.jpg"; }}
+											/>
+											<!-- Play button overlay -->
+											<div class="absolute inset-0 flex items-center justify-center">
+												<div class="w-16 h-16 bg-red-600 group-hover:bg-red-500 rounded-full flex items-center justify-center shadow-2xl transition-all duration-200 group-hover:scale-110">
+													<svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-white ml-1" viewBox="0 0 24 24" fill="currentColor">
+														<path d="M8 5v14l11-7z"/>
+													</svg>
+												</div>
+											</div>
+											<!-- Click to play text -->
+											<div class="absolute bottom-3 left-0 right-0 text-center text-white text-xs font-semibold opacity-80">
+												{$i18n.t('Cliquez pour lancer')}
+											</div>
+										</button>
+									</div>
+
+									<!-- Lecteur plein écran — iframe youtube-nocookie.com (charge au clic) -->
+									<div
+										id={"yt-modal-" + ytId}
+										class="hidden fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-sm"
+										on:click|self={() => {
+											const modal = document.getElementById('yt-modal-' + ytId);
+											if (modal) {
+												modal.classList.add('hidden');
+												const iframe = modal.querySelector('iframe');
+												if (iframe) iframe.src = iframe.src;
+											}
+										}}
+									>
+										<div class="relative w-full max-w-4xl mx-4">
+											<!-- Bouton fermer -->
+											<button
+												type="button"
+												class="absolute -top-10 right-0 text-white hover:text-red-400 text-2xl font-bold z-10 transition-colors"
+												on:click={() => {
+													const modal = document.getElementById('yt-modal-' + ytId);
+													if (modal) modal.classList.add('hidden');
+												}}
+											>✕ {$i18n.t('Close')}</button>
+											<!-- 16:9 iframe youtube-nocookie.com -->
+											<div class="relative w-full rounded-2xl overflow-hidden shadow-2xl" style="padding-top: 56.25%;">
+												<iframe
+													class="absolute top-0 left-0 w-full h-full"
+													src={"https://www.youtube-nocookie.com/embed/" + ytId + "?rel=0&modestbranding=1&autoplay=1&controls=1&fs=1"}
+													title="Vidéo explicative"
+													frameborder="0"
+													allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+													allowfullscreen
+												></iframe>
+											</div>
+										</div>
+									</div>
 								{/if}
 							</div>
 						{/if}

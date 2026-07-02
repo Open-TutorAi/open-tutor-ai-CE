@@ -31,6 +31,7 @@
 	import XMark from '../icons/XMark.svelte';
 	import GlobeAlt from '../icons/GlobeAlt.svelte';
 	import Photo from '../icons/Photo.svelte';
+	import Mic from '../icons/Mic.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -85,14 +86,28 @@
 	$: visionCapableModels = [...(atSelectedModel ? [atSelectedModel] : selectedModels)].filter(
 		(model) => $models.find((m) => m.id === model)?.info?.meta?.capabilities?.vision ?? true
 	);
-	
-	
+
+
+	let videoModeActive = false; // true when video search or player panel is open
 
 	const handleShortcut = async (event) => {
-		const text = event.detail;
+		const text = typeof event.detail === 'string' ? event.detail : event.detail?.text;
+		const autoSend = typeof event.detail === 'string' ? false : (event.detail?.autoSend === true);
+
+		if (!text) return; // guard: no empty submits
+
 		prompt = text;
 		await tick();
-		document.getElementById('send-message-button')?.click();
+
+		if (autoSend) {
+			// Only click send if the button is actually visible (not in video mode)
+			const sendBtn = document.getElementById('send-message-button');
+			if (sendBtn && !videoModeActive) {
+				sendBtn.click();
+			}
+		} else {
+			document.getElementById('chat-input')?.focus();
+		}
 	};
 
 
@@ -665,9 +680,16 @@
 										{/each}
 									</div>
 								{/if}
-                                <PedagogicalShortcuts on:submit={handleShortcut} />
+                                <PedagogicalShortcuts on:submit={handleShortcut} on:videoMode={(e) => { videoModeActive = e.detail; }} />
 								<div class="flex items-center gap-2 py-2.5 w-full">
-									<div class="flex-1 min-w-0">
+									{#if videoModeActive}
+										<!-- Banner shown when video panel is active -->
+										<div class="flex-1 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-sm text-red-600 dark:text-red-400 select-none">
+											<span class="text-base">🎥</span>
+											<span class="flex-1">{$i18n.t('Tapez le sujet dans le champ de recherche vidéo ci-dessus')}</span>
+										</div>
+									{:else}
+										<div class="flex-1 min-w-0">
 										
 										{#if $settings?.richTextInput ?? true}
 											<div
@@ -1077,8 +1099,38 @@
 											/>
 										{/if}
 									</div>
+									{/if}
 
 									<div class="flex items-center gap-1 shrink-0">
+										<Tooltip content={$settings?.quizLanguage === 'en' ? 'English' : 'Français'}>
+											<button
+												class="bg-transparent hover:bg-gray-100 text-gray-500 dark:text-gray-400 dark:hover:bg-gray-700 transition rounded-full px-2 py-1.5 outline-hidden focus:outline-hidden font-bold text-xs"
+												type="button"
+												aria-label="Toggle TTS Language"
+												on:click={() => {
+													const newLang = ($settings?.quizLanguage === 'en') ? 'fr' : 'en';
+													settings.update(s => ({...s, quizLanguage: newLang}));
+													toast.success(newLang === 'en' ? 'Language: English' : 'Langue: Français');
+												}}
+											>
+												{$settings?.quizLanguage === 'en' ? 'EN' : 'FR'}
+											</button>
+										</Tooltip>
+										{#if !videoModeActive}
+										<Tooltip content={$i18n.t('Record Voice')}>
+											<button
+												class="bg-transparent hover:bg-gray-100 text-gray-500 dark:text-gray-400 dark:hover:bg-gray-700 transition rounded-full p-1.5 outline-hidden focus:outline-hidden"
+												type="button"
+												aria-label="Record Voice"
+												on:click={() => {
+													recording = true;
+												}}
+											>
+												<Mic className="size-5" />
+											</button>
+										</Tooltip>
+										{/if}
+										{#if !videoModeActive}
 										<InputMenu
 											bind:selectedToolIds
 											{screenCaptureHandler}
@@ -1130,7 +1182,9 @@
 												</svg>
 											</button>
 										</InputMenu>
+										{/if}
 
+										{#if !videoModeActive}
 										{#if !history.currentId || history.messages[history.currentId]?.done == true}
 											<div class="flex items-center">
 												<Tooltip content={$i18n.t('Send message')}>
@@ -1181,6 +1235,7 @@
 													</button>
 												</Tooltip>
 											</div>
+										{/if}
 										{/if}
 									</div>
 								</div>

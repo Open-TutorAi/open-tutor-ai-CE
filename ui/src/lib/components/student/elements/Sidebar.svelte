@@ -53,8 +53,8 @@
 		if (pathSegments.length >= 3) {
 			let pageFromUrl = pathSegments[2]; // student/dashboard -> "dashboard"
 
-			// Map chat routes to support
-			if (pageFromUrl === 'chat' || pageFromUrl === 'c') {
+			// Map chat route 'c' to support
+			if (pageFromUrl === 'c') {
 				pageFromUrl = 'support';
 			}
 			
@@ -83,8 +83,8 @@
 		if (pathSegments.length >= 3) {
 			let pageFromUrl = pathSegments[2];
 			
-			// Map chat routes to support
-			if (pageFromUrl === 'chat' || pageFromUrl === 'c') {
+			// Map chat route 'c' to support, but keep 'chat' as its own Quiz section
+			if (pageFromUrl === 'c') {
 				pageFromUrl = 'support';
 			}
 			

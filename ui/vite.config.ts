@@ -10,8 +10,9 @@ const viteServerConfig = {
 			res.setHeader('Access-Control-Allow-Origin', '*');
 			res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
 			res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-			res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-			res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+			// Cross-Origin-Opener-Policy: 'unsafe-none' allows opening YouTube and other external links in new tabs
+			res.setHeader('Cross-Origin-Opener-Policy', 'unsafe-none');
+			// Note: Cross-Origin-Embedder-Policy removed to allow external iframes (YouTube)
 			next();
 		});
 	}
