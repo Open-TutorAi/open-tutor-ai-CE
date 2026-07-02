@@ -71,6 +71,7 @@ from .routers import (
 from .routers import (
     tools as tools_router,
 )
+from .routers import teacher_content
 
 FRONTEND_BUILD_DIR = os.getenv("FRONTEND_BUILD_DIR", "./ui/build")
 
@@ -164,6 +165,7 @@ def create_app() -> FastAPI:
     app.include_router(groups_router.router, prefix="/api/v1")
     app.include_router(folders_router.router, prefix="/api/v1")
     app.include_router(tasks_router.router, prefix="/api/v1")
+    app.include_router(teacher_content.router)  # It defines its own prefix in router setup
 
     # Socket.IO — mounted at /realtime; client uses path='/realtime/socket.io'
     app.mount("/realtime", socket_app)

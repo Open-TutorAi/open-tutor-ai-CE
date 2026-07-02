@@ -6,6 +6,7 @@ from .knowledge import KnowledgeBase, KnowledgeFile
 from .model import ModelConfig
 from .support import Support, SupportFile
 from .user import User
+from .content_resources import ContentResource, QuestionItem
 
 __all__ = [
     "User",
@@ -18,4 +19,6 @@ __all__ = [
     "AppConfig",
     "KnowledgeBase",
     "KnowledgeFile",
+    "ContentResource",
+    "QuestionItem",
 ]
