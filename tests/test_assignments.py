@@ -58,7 +58,9 @@ def test_list_assignments_scoped_to_teacher(db):
 def test_create_submission_persists_fields(db):
     assignments = _assignment_repo(db)
     submissions = _submission_repo(db)
-    assignment = assignments.create(id="a1", user_id="teacher-1", title="A1", rubric="r")
+    assignment = assignments.create(
+        id="a1", user_id="teacher-1", title="A1", rubric="r"
+    )
 
     submission = submissions.create(
         id="s1",
@@ -84,7 +86,9 @@ def test_create_submission_persists_fields(db):
 def test_get_submission_by_id(db):
     assignments = _assignment_repo(db)
     submissions = _submission_repo(db)
-    assignment = assignments.create(id="a1", user_id="teacher-1", title="A1", rubric="r")
+    assignment = assignments.create(
+        id="a1", user_id="teacher-1", title="A1", rubric="r"
+    )
     created = submissions.create(
         id="s1",
         assignment_id=assignment.id,
@@ -106,16 +110,28 @@ def test_list_submissions_by_assignment(db):
     a1 = assignments.create(id="a1", user_id="teacher-1", title="A1", rubric="r")
     a2 = assignments.create(id="a2", user_id="teacher-1", title="A2", rubric="r")
     submissions.create(
-        id="s1", assignment_id=a1.id, user_id="student-1",
-        filename="a.pdf", file_path="/x/a.pdf", status="submitted",
+        id="s1",
+        assignment_id=a1.id,
+        user_id="student-1",
+        filename="a.pdf",
+        file_path="/x/a.pdf",
+        status="submitted",
     )
     submissions.create(
-        id="s2", assignment_id=a1.id, user_id="student-2",
-        filename="b.pdf", file_path="/x/b.pdf", status="submitted",
+        id="s2",
+        assignment_id=a1.id,
+        user_id="student-2",
+        filename="b.pdf",
+        file_path="/x/b.pdf",
+        status="submitted",
     )
     submissions.create(
-        id="s3", assignment_id=a2.id, user_id="student-1",
-        filename="c.pdf", file_path="/x/c.pdf", status="submitted",
+        id="s3",
+        assignment_id=a2.id,
+        user_id="student-1",
+        filename="c.pdf",
+        file_path="/x/c.pdf",
+        status="submitted",
     )
 
     result = submissions.get_by_assignment(a1.id)
@@ -128,8 +144,12 @@ def test_get_submission_by_assignment_and_user(db):
     submissions = _submission_repo(db)
     a1 = assignments.create(id="a1", user_id="teacher-1", title="A1", rubric="r")
     submissions.create(
-        id="s1", assignment_id=a1.id, user_id="student-1",
-        filename="a.pdf", file_path="/x/a.pdf", status="submitted",
+        id="s1",
+        assignment_id=a1.id,
+        user_id="student-1",
+        filename="a.pdf",
+        file_path="/x/a.pdf",
+        status="submitted",
     )
 
     result = submissions.get_by_assignment_and_user(a1.id, "student-1")
@@ -427,7 +447,10 @@ def test_create_assignment_as_teacher_succeeds(client):
 
     r = client.post(
         "/api/v1/assignments",
-        json={"title": "Fractions Practice Set", "rubric": "Correctness + working shown."},
+        json={
+            "title": "Fractions Practice Set",
+            "rubric": "Correctness + working shown.",
+        },
         headers=_auth(token),
     )
 
@@ -455,7 +478,9 @@ def test_get_assignment_not_found(client):
     r = client.get("/api/v1/assignments/missing-id", headers=_auth(token))
 
     assert r.status_code == 404
-    assert r.json()["detail"] != "Not Found"  # must be our own message, not FastAPI's default
+    assert (
+        r.json()["detail"] != "Not Found"
+    )  # must be our own message, not FastAPI's default
 
 
 def test_list_assignments_endpoint_scoped_to_teacher(client):
@@ -506,7 +531,9 @@ def test_submit_work_missing_assignment_returns_404(client, monkeypatch):
     )
 
     assert r.status_code == 404
-    assert r.json()["detail"] != "Not Found"  # must be our own message, not FastAPI's default
+    assert (
+        r.json()["detail"] != "Not Found"
+    )  # must be our own message, not FastAPI's default
 
 
 def test_get_submission_forbidden_for_other_student(client, monkeypatch):
@@ -567,7 +594,11 @@ def test_get_submission_hides_ai_fields_from_owning_student(client, monkeypatch)
     async def fake_proxy_json(url, key, method, path, body=None):
         return {
             "choices": [
-                {"message": {"content": jsonlib.dumps({"score": 78, "feedback": "Nice."})}}
+                {
+                    "message": {
+                        "content": jsonlib.dumps({"score": 78, "feedback": "Nice."})
+                    }
+                }
             ]
         }
 
@@ -782,7 +813,11 @@ def test_get_my_submission_never_exposes_ai_fields(client, monkeypatch):
     async def fake_proxy_json(url, key, method, path, body=None):
         return {
             "choices": [
-                {"message": {"content": jsonlib.dumps({"score": 78, "feedback": "Nice."})}}
+                {
+                    "message": {
+                        "content": jsonlib.dumps({"score": 78, "feedback": "Nice."})
+                    }
+                }
             ]
         }
 
