@@ -384,3 +384,296 @@ def test_finalize_grade_requires_assignment_ownership(db, tmp_path, monkeypatch)
 
     with pytest.raises(AuthorizationError):
         svc.finalize_grade("teacher-2", assignment.id, submission.id, 90, "Nope")
+
+
+# ---------------------------------------------------------------------------
+# Router-layer tests.
+#
+# Written before gateway/http/routers/assignments.py exists (TDD red step).
+# Exercised through the real HTTP client, matching the pattern used across
+# the rest of this test suite (see tests/test_chats.py).
+# ---------------------------------------------------------------------------
+
+
+def _token(client, role, email):
+    r = client.post(
+        "/auths/signup",
+        json={"email": email, "name": role, "password": "pass1234!", "role": role},
+    )
+    return r.json()["token"]
+
+
+def _auth(t):
+    return {"Authorization": f"Bearer {t}"}
+
+
+def _create_assignment(client, teacher_token, **overrides):
+    body = {"title": "Fractions Practice Set", "rubric": "Correctness + working shown."}
+    body.update(overrides)
+    r = client.post("/api/v1/assignments", json=body, headers=_auth(teacher_token))
+    return r.json()
+
+
+def test_create_assignment_as_teacher_succeeds(client):
+    token = _token(client, "teacher", "teacher1@t.com")
+
+    r = client.post(
+        "/api/v1/assignments",
+        json={"title": "Fractions Practice Set", "rubric": "Correctness + working shown."},
+        headers=_auth(token),
+    )
+
+    assert r.status_code == 200
+    data = r.json()
+    assert data["title"] == "Fractions Practice Set"
+    assert data["rubric"] == "Correctness + working shown."
+
+
+def test_create_assignment_as_student_forbidden(client):
+    token = _token(client, "student", "student1@t.com")
+
+    r = client.post(
+        "/api/v1/assignments",
+        json={"title": "Fractions Practice Set", "rubric": "r"},
+        headers=_auth(token),
+    )
+
+    assert r.status_code == 403
+
+
+def test_get_assignment_not_found(client):
+    token = _token(client, "teacher", "teacher2@t.com")
+
+    r = client.get("/api/v1/assignments/missing-id", headers=_auth(token))
+
+    assert r.status_code == 404
+    assert r.json()["detail"] != "Not Found"  # must be our own message, not FastAPI's default
+
+
+def test_list_assignments_endpoint_scoped_to_teacher(client):
+    token1 = _token(client, "teacher", "teacher3@t.com")
+    token2 = _token(client, "teacher", "teacher4@t.com")
+    _create_assignment(client, token1, title="A1")
+    _create_assignment(client, token2, title="A2")
+
+    r = client.get("/api/v1/assignments", headers=_auth(token1))
+
+    assert r.status_code == 200
+    titles = {a["title"] for a in r.json()}
+    assert titles == {"A1"}
+
+
+def test_submit_work_as_student_succeeds(client, monkeypatch):
+    import learning.assignments.service as service_module
+
+    monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: "7/8")
+
+    teacher_token = _token(client, "teacher", "teacher5@t.com")
+    student_token = _token(client, "student", "student2@t.com")
+    assignment = _create_assignment(client, teacher_token)
+
+    r = client.post(
+        f"/api/v1/assignments/{assignment['id']}/submissions",
+        files={"file": ("answers.pdf", b"fake pdf bytes", "application/pdf")},
+        headers=_auth(student_token),
+    )
+
+    assert r.status_code == 200
+    data = r.json()
+    assert data["filename"] == "answers.pdf"
+    assert data["status"] == "submitted"
+
+
+def test_submit_work_missing_assignment_returns_404(client, monkeypatch):
+    import learning.assignments.service as service_module
+
+    monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: "text")
+    student_token = _token(client, "student", "student3@t.com")
+
+    r = client.post(
+        "/api/v1/assignments/missing-id/submissions",
+        files={"file": ("a.pdf", b"bytes", "application/pdf")},
+        headers=_auth(student_token),
+    )
+
+    assert r.status_code == 404
+    assert r.json()["detail"] != "Not Found"  # must be our own message, not FastAPI's default
+
+
+def test_get_submission_forbidden_for_other_student(client, monkeypatch):
+    import learning.assignments.service as service_module
+
+    monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: "text")
+
+    teacher_token = _token(client, "teacher", "teacher6@t.com")
+    student1_token = _token(client, "student", "student4@t.com")
+    student2_token = _token(client, "student", "student5@t.com")
+    assignment = _create_assignment(client, teacher_token)
+    submission = client.post(
+        f"/api/v1/assignments/{assignment['id']}/submissions",
+        files={"file": ("a.pdf", b"bytes", "application/pdf")},
+        headers=_auth(student1_token),
+    ).json()
+
+    r = client.get(
+        f"/api/v1/assignments/{assignment['id']}/submissions/{submission['id']}",
+        headers=_auth(student2_token),
+    )
+
+    assert r.status_code == 403
+
+
+def test_get_submission_allowed_for_owning_teacher(client, monkeypatch):
+    import learning.assignments.service as service_module
+
+    monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: "text")
+
+    teacher_token = _token(client, "teacher", "teacher7@t.com")
+    student_token = _token(client, "student", "student6@t.com")
+    assignment = _create_assignment(client, teacher_token)
+    submission = client.post(
+        f"/api/v1/assignments/{assignment['id']}/submissions",
+        files={"file": ("a.pdf", b"bytes", "application/pdf")},
+        headers=_auth(student_token),
+    ).json()
+
+    r = client.get(
+        f"/api/v1/assignments/{assignment['id']}/submissions/{submission['id']}",
+        headers=_auth(teacher_token),
+    )
+
+    assert r.status_code == 200
+    assert r.json()["id"] == submission["id"]
+
+
+def test_list_submissions_forbidden_for_non_owning_teacher(client, monkeypatch):
+    import learning.assignments.service as service_module
+
+    monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: "text")
+
+    teacher1_token = _token(client, "teacher", "teacher8@t.com")
+    teacher2_token = _token(client, "teacher", "teacher9@t.com")
+    assignment = _create_assignment(client, teacher1_token)
+
+    r = client.get(
+        f"/api/v1/assignments/{assignment['id']}/submissions",
+        headers=_auth(teacher2_token),
+    )
+
+    assert r.status_code == 403
+
+
+def test_ai_grade_endpoint_success(client, monkeypatch):
+    import learning.assignments.service as service_module
+
+    monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: "7/8")
+    monkeypatch.setattr(
+        service_module, "resolve_url_key", lambda cfg: ("http://fake", "fake-key")
+    )
+
+    async def fake_proxy_json(url, key, method, path, body=None):
+        return {
+            "choices": [
+                {
+                    "message": {
+                        "content": jsonlib.dumps(
+                            {"score": 78, "feedback": "Good work overall."}
+                        )
+                    }
+                }
+            ]
+        }
+
+    monkeypatch.setattr(service_module, "proxy_json", fake_proxy_json)
+
+    teacher_token = _token(client, "teacher", "teacher10@t.com")
+    student_token = _token(client, "student", "student7@t.com")
+    assignment = _create_assignment(client, teacher_token)
+    submission = client.post(
+        f"/api/v1/assignments/{assignment['id']}/submissions",
+        files={"file": ("a.pdf", b"bytes", "application/pdf")},
+        headers=_auth(student_token),
+    ).json()
+
+    r = client.post(
+        f"/api/v1/assignments/{assignment['id']}/submissions/{submission['id']}/ai-grade",
+        headers=_auth(teacher_token),
+    )
+
+    assert r.status_code == 200
+    data = r.json()
+    assert data["ai_score"] == 78
+    assert data["ai_feedback"] == "Good work overall."
+
+
+def test_ai_grade_forbidden_for_non_owning_teacher(client, monkeypatch):
+    import learning.assignments.service as service_module
+
+    monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: "7/8")
+
+    teacher1_token = _token(client, "teacher", "teacher11@t.com")
+    teacher2_token = _token(client, "teacher", "teacher12@t.com")
+    student_token = _token(client, "student", "student8@t.com")
+    assignment = _create_assignment(client, teacher1_token)
+    submission = client.post(
+        f"/api/v1/assignments/{assignment['id']}/submissions",
+        files={"file": ("a.pdf", b"bytes", "application/pdf")},
+        headers=_auth(student_token),
+    ).json()
+
+    r = client.post(
+        f"/api/v1/assignments/{assignment['id']}/submissions/{submission['id']}/ai-grade",
+        headers=_auth(teacher2_token),
+    )
+
+    assert r.status_code == 403
+
+
+def test_finalize_grade_endpoint_success(client, monkeypatch):
+    import learning.assignments.service as service_module
+
+    monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: "7/8")
+
+    teacher_token = _token(client, "teacher", "teacher13@t.com")
+    student_token = _token(client, "student", "student9@t.com")
+    assignment = _create_assignment(client, teacher_token)
+    submission = client.post(
+        f"/api/v1/assignments/{assignment['id']}/submissions",
+        files={"file": ("a.pdf", b"bytes", "application/pdf")},
+        headers=_auth(student_token),
+    ).json()
+
+    r = client.put(
+        f"/api/v1/assignments/{assignment['id']}/submissions/{submission['id']}/finalize",
+        json={"score": 90, "feedback": "Great job."},
+        headers=_auth(teacher_token),
+    )
+
+    assert r.status_code == 200
+    data = r.json()
+    assert data["teacher_score"] == 90
+    assert data["teacher_feedback"] == "Great job."
+    assert data["status"] == "finalized"
+
+
+def test_finalize_grade_validation_error_on_bad_payload(client, monkeypatch):
+    import learning.assignments.service as service_module
+
+    monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: "7/8")
+
+    teacher_token = _token(client, "teacher", "teacher14@t.com")
+    student_token = _token(client, "student", "student10@t.com")
+    assignment = _create_assignment(client, teacher_token)
+    submission = client.post(
+        f"/api/v1/assignments/{assignment['id']}/submissions",
+        files={"file": ("a.pdf", b"bytes", "application/pdf")},
+        headers=_auth(student_token),
+    ).json()
+
+    r = client.put(
+        f"/api/v1/assignments/{assignment['id']}/submissions/{submission['id']}/finalize",
+        json={"feedback": "Missing the score field."},
+        headers=_auth(teacher_token),
+    )
+
+    assert r.status_code == 422
