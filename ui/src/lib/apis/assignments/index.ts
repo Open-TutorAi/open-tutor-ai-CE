@@ -25,6 +25,7 @@ export interface SubmissionResponse {
 	user_id: string;
 	filename: string;
 	file_size?: number;
+	extracted_text?: string;
 	ai_score?: number;
 	ai_feedback?: string;
 	teacher_score?: number;

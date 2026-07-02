@@ -490,6 +490,7 @@ def test_submit_work_as_student_succeeds(client, monkeypatch):
     data = r.json()
     assert data["filename"] == "answers.pdf"
     assert data["status"] == "submitted"
+    assert data["extracted_text"] == "7/8"
 
 
 def test_submit_work_missing_assignment_returns_404(client, monkeypatch):

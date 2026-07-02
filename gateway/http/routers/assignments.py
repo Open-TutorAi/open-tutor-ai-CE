@@ -50,6 +50,7 @@ class SubmissionResponse(BaseModel):
     user_id: str
     filename: str
     file_size: Optional[int] = None
+    extracted_text: Optional[str] = None
     ai_score: Optional[int] = None
     ai_feedback: Optional[str] = None
     teacher_score: Optional[int] = None
