@@ -4,6 +4,7 @@
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { toast } from 'svelte-sonner';
+	import { getModels } from '$lib/apis';
 	import {
 		getAssignmentById,
 		getSubmissionById,
@@ -17,6 +18,11 @@
 
 	$: assignmentId = $page.params.assignmentId;
 	$: submissionId = $page.params.submissionId;
+
+	// Same model list the tutor chat uses (GET /api/models) — only models an
+	// enabled provider actually has, so a selection here is guaranteed to work.
+	let models: { id: string; name: string }[] = [];
+	let selectedModelId = '';
 
 	let assignment: AssignmentResponse | null = null;
 	let submission: SubmissionResponse | null = null;
@@ -43,10 +49,12 @@
 
 		loading = true;
 		try {
-			[assignment, submission] = await Promise.all([
+			[assignment, submission, models] = await Promise.all([
 				getAssignmentById(token, assignmentId),
-				getSubmissionById(token, assignmentId, submissionId)
+				getSubmissionById(token, assignmentId, submissionId),
+				getModels(token)
 			]);
+			selectedModelId = models[0]?.id ?? '';
 			fillDraftFromSubmission(submission);
 			error = null;
 		} catch (err) {
@@ -59,10 +67,14 @@
 	async function handleAiSuggest() {
 		const token = localStorage.getItem('token');
 		if (!token || !submission) return;
+		if (!selectedModelId) {
+			toast.error($i18n.t('Choose a model first'));
+			return;
+		}
 
 		requestingAiGrade = true;
 		try {
-			submission = await requestAiGrade(token, assignmentId, submissionId);
+			submission = await requestAiGrade(token, assignmentId, submissionId, selectedModelId);
 			if (submission.status === 'ai_grade_failed') {
 				toast.error($i18n.t("AI grading isn't available right now — grade it manually"));
 			} else {
@@ -184,9 +196,29 @@
 						{$i18n.t('Draft only — review before confirming.')}
 					</p>
 				{:else}
+					<label
+						for="ai-model"
+						class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1"
+						>{$i18n.t('Model')}</label
+					>
+					{#if models.length > 0}
+						<select
+							id="ai-model"
+							bind:value={selectedModelId}
+							class="w-full mb-3 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+						>
+							{#each models as model (model.id)}
+								<option value={model.id}>{model.name}</option>
+							{/each}
+						</select>
+					{:else}
+						<p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+							{$i18n.t('No models configured — add one in admin settings first.')}
+						</p>
+					{/if}
 					<button
 						on:click={handleAiSuggest}
-						disabled={requestingAiGrade || !submission.extracted_text}
+						disabled={requestingAiGrade || !submission.extracted_text || !selectedModelId}
 						class="w-full mb-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
 					>
 						{requestingAiGrade ? $i18n.t('Asking AI…') : $i18n.t('AI Suggest')}

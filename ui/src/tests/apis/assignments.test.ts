@@ -131,16 +131,17 @@ describe('assignments API client', () => {
 		expect(result).toBeNull();
 	});
 
-	it('requestAiGrade posts to the ai-grade action with no body', async () => {
+	it('requestAiGrade posts the chosen model id to the ai-grade action', async () => {
 		mockFetchOnce({ id: 's1', ai_score: 78, ai_feedback: 'Good work.' });
 
-		const result = await requestAiGrade(TOKEN, 'a1', 's1');
+		const result = await requestAiGrade(TOKEN, 'a1', 's1', 'gpt-4o-mini');
 
 		expect(fetch).toHaveBeenCalledWith(
 			`${BASE}/a1/submissions/s1/ai-grade`,
 			expect.objectContaining({
 				method: 'POST',
-				headers: expect.objectContaining({ authorization: `Bearer ${TOKEN}` })
+				headers: expect.objectContaining({ authorization: `Bearer ${TOKEN}` }),
+				body: JSON.stringify({ model: 'gpt-4o-mini' })
 			})
 		);
 		expect(result).toEqual({ id: 's1', ai_score: 78, ai_feedback: 'Good work.' });
