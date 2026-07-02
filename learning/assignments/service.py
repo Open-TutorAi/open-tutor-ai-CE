@@ -121,6 +121,11 @@ class AssignmentService:
         self.verify_assignment_ownership(teacher_id, assignment_id)
         return self.submissions.get_by_assignment(assignment_id)
 
+    def get_my_submission(
+        self, student_id: str, assignment_id: str
+    ) -> Optional[Submission]:
+        return self.submissions.get_by_assignment_and_user(assignment_id, student_id)
+
     def _get_submission_for_assignment(
         self, assignment_id: str, submission_id: str
     ) -> Submission:

@@ -40,6 +40,19 @@ export interface FinalizeGradeRequest {
 	feedback: string;
 }
 
+// A student's own view of their submission — the AI draft fields never appear here.
+export interface MySubmissionResponse {
+	id: string;
+	assignment_id: string;
+	filename: string;
+	file_size?: number;
+	teacher_score?: number;
+	teacher_feedback?: string;
+	status: string;
+	created_at: string;
+	updated_at?: string;
+}
+
 async function handle(res: Response) {
 	if (!res.ok) throw (await res.json()).detail;
 	return res.json();
@@ -161,6 +174,26 @@ export const getSubmissionById = async (
 			}
 		}
 	).then(handle);
+
+	return res;
+};
+
+/**
+ * Get the current student's own submission for an assignment, or null if
+ * they haven't submitted yet. Never includes the AI draft score/feedback.
+ */
+export const getMySubmission = async (
+	token: string,
+	assignmentId: string
+): Promise<MySubmissionResponse | null> => {
+	const res = await fetch(`${TUTOR_API_BASE_URL}/assignments/${assignmentId}/submissions/mine`, {
+		method: 'GET',
+		headers: {
+			Accept: 'application/json',
+			'Content-Type': 'application/json',
+			authorization: `Bearer ${token}`
+		}
+	}).then(handle);
 
 	return res;
 };

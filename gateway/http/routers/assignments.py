@@ -68,6 +68,23 @@ class FinalizeGradeRequest(BaseModel):
     feedback: str
 
 
+class MySubmissionResponse(BaseModel):
+    """A student's own view of their submission — never exposes the AI draft."""
+
+    id: str
+    assignment_id: str
+    filename: str
+    file_size: Optional[int] = None
+    teacher_score: Optional[int] = None
+    teacher_feedback: Optional[str] = None
+    status: str
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
 def _require_teacher(current_user: User) -> None:
     if current_user.role != "teacher":
         raise HTTPException(
@@ -165,14 +182,38 @@ async def list_submissions(
 
 
 @router.get(
-    "/{assignment_id}/submissions/{submission_id}", response_model=SubmissionResponse
+    "/{assignment_id}/submissions/mine",
+    response_model=Optional[MySubmissionResponse],
 )
+async def get_my_submission(
+    assignment_id: str,
+    current_user: User = Depends(get_current_user),
+    svc: AssignmentService = Depends(get_assignment_service),
+):
+    """The current student's own submission for this assignment, if any.
+
+    Registered before the generic {submission_id} route below so the literal
+    "mine" segment isn't swallowed by that route's path parameter.
+    """
+    return svc.get_my_submission(current_user.id, assignment_id)
+
+
+@router.get("/{assignment_id}/submissions/{submission_id}")
 async def get_submission(
     assignment_id: str,
     submission_id: str,
     current_user: User = Depends(get_current_user),
     svc: AssignmentService = Depends(get_assignment_service),
 ):
+    """Return the full submission (with AI draft fields) to the owning teacher,
+    or the AI-free view to the owning student.
+
+    No static response_model here on purpose — the two roles get structurally
+    different shapes (SubmissionResponse vs MySubmissionResponse), so the model
+    to validate against is chosen per-request instead of fixed at declaration
+    time. Each branch still goes through its own Pydantic model, so the shape
+    returned to the client is exactly as strict as any other endpoint here.
+    """
     submission = svc.submissions.get_by_id(submission_id)
     if not submission or submission.assignment_id != assignment_id:
         raise HTTPException(
@@ -190,7 +231,10 @@ async def get_submission(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You cannot view this submission",
         )
-    return submission
+
+    if is_owning_teacher:
+        return SubmissionResponse.model_validate(submission)
+    return MySubmissionResponse.model_validate(submission)
 
 
 @router.post(

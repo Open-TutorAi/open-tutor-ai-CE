@@ -12,6 +12,7 @@ import {
 	submitAssignmentWork,
 	getSubmissions,
 	getSubmissionById,
+	getMySubmission,
 	requestAiGrade,
 	finalizeGrade
 } from '$lib/apis/assignments';
@@ -108,6 +109,26 @@ describe('assignments API client', () => {
 			`${BASE}/a1/submissions/s1`,
 			expect.objectContaining({ method: 'GET' })
 		);
+	});
+
+	it('getMySubmission issues a GET to /assignments/{id}/submissions/mine', async () => {
+		mockFetchOnce({ id: 's1', status: 'submitted' });
+
+		const result = await getMySubmission(TOKEN, 'a1');
+
+		expect(fetch).toHaveBeenCalledWith(
+			`${BASE}/a1/submissions/mine`,
+			expect.objectContaining({ method: 'GET' })
+		);
+		expect(result).toEqual({ id: 's1', status: 'submitted' });
+	});
+
+	it('getMySubmission resolves to null when the student has not submitted yet', async () => {
+		mockFetchOnce(null);
+
+		const result = await getMySubmission(TOKEN, 'a1');
+
+		expect(result).toBeNull();
 	});
 
 	it('requestAiGrade posts to the ai-grade action with no body', async () => {

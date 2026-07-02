@@ -553,6 +553,50 @@ def test_get_submission_allowed_for_owning_teacher(client, monkeypatch):
 
     assert r.status_code == 200
     assert r.json()["id"] == submission["id"]
+    assert "ai_score" in r.json()  # teacher sees the full shape, including AI fields
+
+
+def test_get_submission_hides_ai_fields_from_owning_student(client, monkeypatch):
+    import learning.assignments.service as service_module
+
+    monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: "7/8")
+    monkeypatch.setattr(
+        service_module, "resolve_url_key", lambda cfg: ("http://fake", "fake-key")
+    )
+
+    async def fake_proxy_json(url, key, method, path, body=None):
+        return {
+            "choices": [
+                {"message": {"content": jsonlib.dumps({"score": 78, "feedback": "Nice."})}}
+            ]
+        }
+
+    monkeypatch.setattr(service_module, "proxy_json", fake_proxy_json)
+
+    teacher_token = _token(client, "teacher", "teacher19@t.com")
+    student_token = _token(client, "student", "student16@t.com")
+    assignment = _create_assignment(client, teacher_token)
+    submission = client.post(
+        f"/api/v1/assignments/{assignment['id']}/submissions",
+        files={"file": ("a.pdf", b"bytes", "application/pdf")},
+        headers=_auth(student_token),
+    ).json()
+    client.post(
+        f"/api/v1/assignments/{assignment['id']}/submissions/{submission['id']}/ai-grade",
+        headers=_auth(teacher_token),
+    )
+
+    r = client.get(
+        f"/api/v1/assignments/{assignment['id']}/submissions/{submission['id']}",
+        headers=_auth(student_token),
+    )
+
+    assert r.status_code == 200
+    data = r.json()
+    assert data["id"] == submission["id"]
+    assert "ai_score" not in data
+    assert "ai_feedback" not in data
+    assert "extracted_text" not in data
 
 
 def test_list_submissions_forbidden_for_non_owning_teacher(client, monkeypatch):
@@ -686,3 +730,108 @@ def test_finalize_grade_validation_error_on_bad_payload(client, monkeypatch):
     )
 
     assert r.status_code == 422
+
+
+def test_get_my_submission_returns_none_when_not_submitted(client):
+    teacher_token = _token(client, "teacher", "teacher15@t.com")
+    student_token = _token(client, "student", "student11@t.com")
+    assignment = _create_assignment(client, teacher_token)
+
+    r = client.get(
+        f"/api/v1/assignments/{assignment['id']}/submissions/mine",
+        headers=_auth(student_token),
+    )
+
+    assert r.status_code == 200
+    assert r.json() is None
+
+
+def test_get_my_submission_returns_own_submission(client, monkeypatch):
+    import learning.assignments.service as service_module
+
+    monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: "7/8")
+
+    teacher_token = _token(client, "teacher", "teacher16@t.com")
+    student_token = _token(client, "student", "student12@t.com")
+    assignment = _create_assignment(client, teacher_token)
+    client.post(
+        f"/api/v1/assignments/{assignment['id']}/submissions",
+        files={"file": ("answers.pdf", b"bytes", "application/pdf")},
+        headers=_auth(student_token),
+    )
+
+    r = client.get(
+        f"/api/v1/assignments/{assignment['id']}/submissions/mine",
+        headers=_auth(student_token),
+    )
+
+    assert r.status_code == 200
+    data = r.json()
+    assert data["filename"] == "answers.pdf"
+    assert data["status"] == "submitted"
+
+
+def test_get_my_submission_never_exposes_ai_fields(client, monkeypatch):
+    import learning.assignments.service as service_module
+
+    monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: "7/8")
+    monkeypatch.setattr(
+        service_module, "resolve_url_key", lambda cfg: ("http://fake", "fake-key")
+    )
+
+    async def fake_proxy_json(url, key, method, path, body=None):
+        return {
+            "choices": [
+                {"message": {"content": jsonlib.dumps({"score": 78, "feedback": "Nice."})}}
+            ]
+        }
+
+    monkeypatch.setattr(service_module, "proxy_json", fake_proxy_json)
+
+    teacher_token = _token(client, "teacher", "teacher17@t.com")
+    student_token = _token(client, "student", "student13@t.com")
+    assignment = _create_assignment(client, teacher_token)
+    submission = client.post(
+        f"/api/v1/assignments/{assignment['id']}/submissions",
+        files={"file": ("answers.pdf", b"bytes", "application/pdf")},
+        headers=_auth(student_token),
+    ).json()
+    client.post(
+        f"/api/v1/assignments/{assignment['id']}/submissions/{submission['id']}/ai-grade",
+        headers=_auth(teacher_token),
+    )
+
+    r = client.get(
+        f"/api/v1/assignments/{assignment['id']}/submissions/mine",
+        headers=_auth(student_token),
+    )
+
+    assert r.status_code == 200
+    data = r.json()
+    assert "ai_score" not in data
+    assert "ai_feedback" not in data
+    assert "extracted_text" not in data
+
+
+def test_get_my_submission_does_not_leak_other_students_work(client, monkeypatch):
+    import learning.assignments.service as service_module
+
+    monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: "7/8")
+
+    teacher_token = _token(client, "teacher", "teacher18@t.com")
+    student1_token = _token(client, "student", "student14@t.com")
+    student2_token = _token(client, "student", "student15@t.com")
+    assignment = _create_assignment(client, teacher_token)
+    client.post(
+        f"/api/v1/assignments/{assignment['id']}/submissions",
+        files={"file": ("student1.pdf", b"bytes", "application/pdf")},
+        headers=_auth(student1_token),
+    )
+
+    r = client.get(
+        f"/api/v1/assignments/{assignment['id']}/submissions/mine",
+        headers=_auth(student2_token),
+    )
+
+    assert r.status_code == 200
+    assert r.json() is None
