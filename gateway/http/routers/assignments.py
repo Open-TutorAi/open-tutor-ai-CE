@@ -68,6 +68,10 @@ class FinalizeGradeRequest(BaseModel):
     feedback: str
 
 
+class AiGradeRequest(BaseModel):
+    model: str
+
+
 class MySubmissionResponse(BaseModel):
     """A student's own view of their submission — never exposes the AI draft."""
 
@@ -244,11 +248,14 @@ async def get_submission(
 async def ai_grade_submission(
     assignment_id: str,
     submission_id: str,
+    data: AiGradeRequest,
     current_user: User = Depends(get_current_user),
     svc: AssignmentService = Depends(get_assignment_service),
 ):
     try:
-        return await svc.request_ai_grade(current_user.id, assignment_id, submission_id)
+        return await svc.request_ai_grade(
+            current_user.id, assignment_id, submission_id, data.model
+        )
     except NotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=exc.message)
     except AuthorizationError as exc:

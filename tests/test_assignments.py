@@ -164,12 +164,26 @@ def test_get_submission_by_assignment_and_user(db):
 # Service-layer tests.
 #
 # Written before learning/assignments/service.py exists (TDD red step).
-# `extract_pdf_text`, `proxy_json` and `resolve_url_key` are monkeypatched at
+# `extract_pdf_text`, `proxy_json` and `ProvidersService` are monkeypatched at
 # the module level of learning.assignments.service, so the tests never touch
 # a real PDF parser or a real AI provider.
 # ---------------------------------------------------------------------------
 
 from learning.assignments.service import AssignmentService  # noqa: E402
+
+
+class _FakeProvidersService:
+    """Stands in for ai.providers.service.ProvidersService in tests."""
+
+    def __init__(self, session):
+        pass
+
+    async def resolve_provider(self, model_id):
+        return "http://fake", "fake-key", "chat/completions"
+
+
+def _mock_provider_resolution(monkeypatch, service_module):
+    monkeypatch.setattr(service_module, "ProvidersService", _FakeProvidersService)
 
 
 def test_create_assignment_via_service(db):
@@ -276,9 +290,7 @@ async def test_request_ai_grade_success(db, tmp_path, monkeypatch):
     monkeypatch.setattr(
         service_module, "extract_pdf_text", lambda contents: "3/4 + 1/8 = 7/8"
     )
-    monkeypatch.setattr(
-        service_module, "resolve_url_key", lambda cfg: ("http://fake", "fake-key")
-    )
+    _mock_provider_resolution(monkeypatch, service_module)
 
     async def fake_proxy_json(url, key, method, path, body=None):
         return {
@@ -303,7 +315,9 @@ async def test_request_ai_grade_success(db, tmp_path, monkeypatch):
         "student-1", assignment.id, "a.pdf", b"bytes", str(tmp_path)
     )
 
-    graded = await svc.request_ai_grade("teacher-1", assignment.id, submission.id)
+    graded = await svc.request_ai_grade(
+        "teacher-1", assignment.id, submission.id, "test-model"
+    )
 
     assert graded.ai_score == 78
     assert graded.ai_feedback == "Good work overall."
@@ -316,9 +330,7 @@ async def test_request_ai_grade_upstream_failure_falls_back_gracefully(
     import learning.assignments.service as service_module
 
     monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: "text")
-    monkeypatch.setattr(
-        service_module, "resolve_url_key", lambda cfg: ("http://fake", "fake-key")
-    )
+    _mock_provider_resolution(monkeypatch, service_module)
 
     async def failing_proxy_json(*args, **kwargs):
         raise RuntimeError("upstream unreachable")
@@ -331,7 +343,9 @@ async def test_request_ai_grade_upstream_failure_falls_back_gracefully(
         "student-1", assignment.id, "a.pdf", b"bytes", str(tmp_path)
     )
 
-    graded = await svc.request_ai_grade("teacher-1", assignment.id, submission.id)
+    graded = await svc.request_ai_grade(
+        "teacher-1", assignment.id, submission.id, "test-model"
+    )
 
     assert graded.ai_score is None
     assert graded.status == "ai_grade_failed"
@@ -351,7 +365,9 @@ async def test_request_ai_grade_rejects_when_no_extracted_text(
     )
 
     with pytest.raises(ValidationError):
-        await svc.request_ai_grade("teacher-1", assignment.id, submission.id)
+        await svc.request_ai_grade(
+            "teacher-1", assignment.id, submission.id, "test-model"
+        )
 
 
 async def test_request_ai_grade_requires_assignment_ownership(
@@ -368,7 +384,9 @@ async def test_request_ai_grade_requires_assignment_ownership(
     )
 
     with pytest.raises(AuthorizationError):
-        await svc.request_ai_grade("teacher-2", assignment.id, submission.id)
+        await svc.request_ai_grade(
+            "teacher-2", assignment.id, submission.id, "test-model"
+        )
 
 
 def test_finalize_grade_overwrites_with_teacher_values(db, tmp_path, monkeypatch):
@@ -587,9 +605,7 @@ def test_get_submission_hides_ai_fields_from_owning_student(client, monkeypatch)
     import learning.assignments.service as service_module
 
     monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: "7/8")
-    monkeypatch.setattr(
-        service_module, "resolve_url_key", lambda cfg: ("http://fake", "fake-key")
-    )
+    _mock_provider_resolution(monkeypatch, service_module)
 
     async def fake_proxy_json(url, key, method, path, body=None):
         return {
@@ -614,6 +630,7 @@ def test_get_submission_hides_ai_fields_from_owning_student(client, monkeypatch)
     ).json()
     client.post(
         f"/api/v1/assignments/{assignment['id']}/submissions/{submission['id']}/ai-grade",
+        json={"model": "test-model"},
         headers=_auth(teacher_token),
     )
 
@@ -651,9 +668,7 @@ def test_ai_grade_endpoint_success(client, monkeypatch):
     import learning.assignments.service as service_module
 
     monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: "7/8")
-    monkeypatch.setattr(
-        service_module, "resolve_url_key", lambda cfg: ("http://fake", "fake-key")
-    )
+    _mock_provider_resolution(monkeypatch, service_module)
 
     async def fake_proxy_json(url, key, method, path, body=None):
         return {
@@ -681,6 +696,7 @@ def test_ai_grade_endpoint_success(client, monkeypatch):
 
     r = client.post(
         f"/api/v1/assignments/{assignment['id']}/submissions/{submission['id']}/ai-grade",
+        json={"model": "test-model"},
         headers=_auth(teacher_token),
     )
 
@@ -707,6 +723,7 @@ def test_ai_grade_forbidden_for_non_owning_teacher(client, monkeypatch):
 
     r = client.post(
         f"/api/v1/assignments/{assignment['id']}/submissions/{submission['id']}/ai-grade",
+        json={"model": "test-model"},
         headers=_auth(teacher2_token),
     )
 
@@ -806,9 +823,7 @@ def test_get_my_submission_never_exposes_ai_fields(client, monkeypatch):
     import learning.assignments.service as service_module
 
     monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: "7/8")
-    monkeypatch.setattr(
-        service_module, "resolve_url_key", lambda cfg: ("http://fake", "fake-key")
-    )
+    _mock_provider_resolution(monkeypatch, service_module)
 
     async def fake_proxy_json(url, key, method, path, body=None):
         return {
@@ -833,6 +848,7 @@ def test_get_my_submission_never_exposes_ai_fields(client, monkeypatch):
     ).json()
     client.post(
         f"/api/v1/assignments/{assignment['id']}/submissions/{submission['id']}/ai-grade",
+        json={"model": "test-model"},
         headers=_auth(teacher_token),
     )
 

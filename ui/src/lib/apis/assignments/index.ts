@@ -204,7 +204,8 @@ export const getMySubmission = async (
 export const requestAiGrade = async (
 	token: string,
 	assignmentId: string,
-	submissionId: string
+	submissionId: string,
+	modelId: string
 ): Promise<SubmissionResponse> => {
 	const res = await fetch(
 		`${TUTOR_API_BASE_URL}/assignments/${assignmentId}/submissions/${submissionId}/ai-grade`,
@@ -214,7 +215,8 @@ export const requestAiGrade = async (
 				Accept: 'application/json',
 				'Content-Type': 'application/json',
 				authorization: `Bearer ${token}`
-			}
+			},
+			body: JSON.stringify({ model: modelId })
 		}
 	).then(handle);
 

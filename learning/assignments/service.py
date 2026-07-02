@@ -8,13 +8,12 @@ from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
 
-from ai.providers.config_service import ProviderConfigService
-from ai.providers.proxy import proxy_json, resolve_url_key
+from ai.providers.proxy import proxy_json
+from ai.providers.service import ProvidersService
 from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from data.models import Assignment, Submission
 from learning.assignments.repository import AssignmentRepository, SubmissionRepository
 
-GRADING_MODEL = "gpt-4o-mini"
 GRADING_SYSTEM_PROMPT = (
     "You are a grading assistant helping a teacher. Given a grading rubric and a "
     "student's submission, suggest a score out of 100 and specific, concrete "
@@ -136,8 +135,15 @@ class AssignmentService:
 
     # ── AI-assisted grading ──────────────────────────────────────────────
     async def request_ai_grade(
-        self, teacher_id: str, assignment_id: str, submission_id: str
+        self, teacher_id: str, assignment_id: str, submission_id: str, model_id: str
     ) -> Submission:
+        """Grade with the teacher-selected model — same resolution path as chat.
+
+        Uses ProvidersService.resolve_provider(), the same routing the tutor
+        chat uses, so a chosen model must actually exist on an enabled
+        provider (Ollama or OpenAI-compatible) or this fails clearly instead
+        of silently guessing a model name.
+        """
         assignment = self.verify_assignment_ownership(teacher_id, assignment_id)
         submission = self._get_submission_for_assignment(assignment_id, submission_id)
 
@@ -147,10 +153,8 @@ class AssignmentService:
                 field="submission",
             )
 
-        cfg = ProviderConfigService(self.session).get_openai()
-        url, key = resolve_url_key(cfg)
         body = {
-            "model": GRADING_MODEL,
+            "model": model_id,
             "messages": [
                 {"role": "system", "content": GRADING_SYSTEM_PROMPT},
                 {
@@ -164,7 +168,10 @@ class AssignmentService:
         }
 
         try:
-            result = await proxy_json(url, key, "POST", "chat/completions", body=body)
+            base_url, api_key, path = await ProvidersService(
+                self.session
+            ).resolve_provider(model_id)
+            result = await proxy_json(base_url, api_key, "POST", path, body=body)
             content = result["choices"][0]["message"]["content"]
             parsed = json.loads(content)
             score = int(parsed["score"])
