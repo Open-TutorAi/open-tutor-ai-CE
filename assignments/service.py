@@ -16,7 +16,8 @@ from assignments.repository import AssignmentRepository, SubmissionRepository
 from classrooms.repository import ClassroomRepository, EnrollmentRepository
 from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from content.files.service import FilesService
-from data.models import Assignment, Classroom, Enrollment, Submission
+from data.models import Assignment, Classroom, Enrollment, ExamSession, Submission
+from exams.repository import ExamSessionRepository
 
 
 class AssignmentsService:
@@ -30,6 +31,7 @@ class AssignmentsService:
         self.enrollments = EnrollmentRepository(session, Enrollment)
         self.identity = IdentityService(session)
         self.files = FilesService(session)
+        self.exam_sessions = ExamSessionRepository(session, ExamSession)
 
     # ── internal helpers ─────────────────────────────────────────────────────
 
@@ -73,16 +75,28 @@ class AssignmentsService:
 
     @staticmethod
     def _student_status(
-        assignment: Assignment, submission: Optional[Submission]
+        assignment: Assignment,
+        submission: Optional[Submission],
+        exam_terminated: bool = False,
     ) -> str:
         """Compute a student's standing on an assignment (read model)."""
+        if submission is not None and submission.grade is not None:
+            return "graded"
+        if exam_terminated:
+            # The proctoring policy ended the exam — even if the auto-submitted
+            # answer was empty (no submission row), the exam is over for this
+            # student. Surfaced distinctly so nobody mistakes it for a normal
+            # hand-in, and so the UI never re-offers the exam gate.
+            return "auto_submitted"
         if submission is not None:
-            if submission.grade is not None:
-                return "graded"
             return "late" if submission.is_late else "submitted"
         if assignment.due_date and assignment.due_date < datetime.utcnow():
             return "missing"
         return "pending"
+
+    def _exam_terminated(self, assignment_id: str, student_id: str) -> bool:
+        sess = self.exam_sessions.get(assignment_id, student_id)
+        return sess is not None and sess.status == "terminated"
 
     # ── teacher: authoring ───────────────────────────────────────────────────
 
@@ -153,7 +167,11 @@ class AssignmentsService:
                     "student_id": enrollment.student_id,
                     "name": student.name if student else None,
                     "email": student.email if student else None,
-                    "status": self._student_status(assignment, submission),
+                    "status": self._student_status(
+                        assignment,
+                        submission,
+                        self._exam_terminated(assignment.id, enrollment.student_id),
+                    ),
                     "submission": self._with_attachment(
                         submission.to_dict() if submission else None
                     ),
@@ -178,7 +196,23 @@ class AssignmentsService:
         self._owned_assignment(assignment_id, teacher_id)
         submission = self.submissions.get(assignment_id, student_id)
         if not submission:
-            raise NotFoundError("Submission", student_id)
+            if self._exam_terminated(assignment_id, student_id):
+                # A terminated exam may have recovered no answer (the student
+                # wrote nothing before it ended). The teacher still grades the
+                # attempt — record the grade on an empty submission instead of
+                # refusing.
+                submission = self.submissions.create(
+                    id=str(uuid.uuid4()),
+                    assignment_id=assignment_id,
+                    student_id=student_id,
+                    content=None,
+                    attachment_id=None,
+                    submitted_at=datetime.utcnow(),
+                    is_late=False,
+                    status="submitted",
+                )
+            else:
+                raise NotFoundError("Submission", student_id)
         submission.grade = grade
         submission.feedback = feedback or None
         submission.graded_at = datetime.utcnow()
@@ -204,7 +238,11 @@ class AssignmentsService:
                     {
                         **assignment.to_dict(),
                         "class_name": room.name if room else None,
-                        "status": self._student_status(assignment, submission),
+                        "status": self._student_status(
+                            assignment,
+                            submission,
+                            self._exam_terminated(assignment.id, student_id),
+                        ),
                         "submission": self._with_attachment(
                             submission.to_dict() if submission else None
                         ),
@@ -232,6 +270,13 @@ class AssignmentsService:
         now = datetime.utcnow()
         is_late = bool(assignment.due_date and now > assignment.due_date)
         existing = self.submissions.get(assignment_id, student_id)
+
+        # Proctored exams accept a single hand-in: the one the exam shell sends when
+        # the session ends. Once the exam is over and work exists, replacing it would
+        # defeat the proctoring (polish-at-home-and-resubmit).
+        sess = self.exam_sessions.get(assignment_id, student_id)
+        if sess is not None and sess.status != "in_progress" and existing:
+            raise ValidationError("This exam has ended — answers cannot be replaced")
         if existing:
             existing.content = content
             existing.attachment_id = attachment_id

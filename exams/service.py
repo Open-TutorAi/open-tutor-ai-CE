@@ -85,7 +85,7 @@ class ExamsService:
         time_limit = self._positive_or_none(
             data.get("time_limit_minutes"), "time_limit_minutes"
         )
-        # Warnings before auto-submit: 1..MAX_WARNINGS, default MAX_WARNINGS.
+        # The N-th warning ends the exam: 1..MAX_WARNINGS, default MAX_WARNINGS.
         max_violations = (
             self._positive_or_none(data.get("max_violations"), "max_violations")
             or MAX_WARNINGS
@@ -155,12 +155,18 @@ class ExamsService:
     # ── student: session lifecycle ───────────────────────────────────────────
 
     def start_session(self, assignment_id: str, student_id: str) -> Dict[str, Any]:
-        """Begin (or resume) the student's exam attempt."""
+        """Begin (or resume) the student's exam attempt.
+
+        One attempt per student: an in-progress session resumes, but a finished one
+        (submitted or terminated) can never be restarted.
+        """
         self._enrolled_assignment(assignment_id, student_id)
         cfg = self.configs.get_for_assignment(assignment_id)
         if not cfg:
             raise ValidationError("This assignment is not an exam")
         sess = self.sessions.get(assignment_id, student_id)
+        if sess and sess.status != "in_progress":
+            raise ValidationError("This exam has ended and cannot be retaken")
         if not sess:
             sess = self.sessions.create(
                 id=str(uuid.uuid4()),
@@ -177,11 +183,11 @@ class ExamsService:
     ) -> Dict[str, Any]:
         """Record a proctoring event and apply the policy.
 
-        Each of the first `max_violations` warnings is *graced*: the student has
-        `grace_seconds` (60 → 30 → 10) to return before the exam auto-submits (the
-        client enforces the countdown via `terminate_session`). The warning *after* the
-        allowance is exhausted terminates immediately. Returns the action
-        (warn | terminated), the grace window, and the teacher to notify live.
+        `max_violations` = N means the exam ends on the N-th warning. Warnings
+        1..N-1 are *graced*: the student has `grace_seconds` (60 → 30 → 10) to
+        return before the exam auto-submits (the client enforces the countdown via
+        `terminate_session`). The N-th warning terminates immediately. Returns the
+        action (warn | terminated), the grace window, and the teacher to notify live.
         """
         self._enrolled_assignment(assignment_id, student_id)
         cfg = self.configs.get_for_assignment(assignment_id)
@@ -205,8 +211,8 @@ class ExamsService:
             sess.violation_count += 1
             n = sess.violation_count
             limit = cfg.max_violations or MAX_WARNINGS
-            if n > limit:
-                # Warnings exhausted — a further infraction ends the exam now.
+            if n >= limit:
+                # The N-th warning exhausts the allowance and ends the exam now.
                 sess.status = "terminated"
                 sess.submitted_at = datetime.utcnow()
                 action = "terminated"

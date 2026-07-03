@@ -181,17 +181,18 @@ def test_violation_grace_schedule(client, db):
     teacher, student, cls, a = _setup(client, db)
     _configure(client, teacher["token"], cls["id"], a["id"], max_violations=3)
     _start(client, student["token"], a["id"])
-    # Each graced warning shrinks the time-to-return: 60 → 30 → 10.
+    # Graced warnings shrink the time-to-return (60 → 30); the N-th ends the exam.
     r1 = _violation(client, student["token"], a["id"], "left_page")
     assert r1.status_code == 200, r1.text
     assert r1.json()["action"] == "warn"
     assert r1.json()["grace_seconds"] == 60
     assert r1.json()["session"]["violation_count"] == 1
     r2 = _violation(client, student["token"], a["id"], "left_page")
+    assert r2.json()["action"] == "warn"
     assert r2.json()["grace_seconds"] == 30
     r3 = _violation(client, student["token"], a["id"], "left_page")
-    assert r3.json()["grace_seconds"] == 10
-    assert r3.json()["session"]["status"] == "in_progress"
+    assert r3.json()["action"] == "terminated"
+    assert r3.json()["session"]["status"] == "terminated"
 
 
 def test_terminates_after_warnings_exhausted(client, db):
@@ -199,11 +200,139 @@ def test_terminates_after_warnings_exhausted(client, db):
     _configure(client, teacher["token"], cls["id"], a["id"], max_violations=2)
     _start(client, student["token"], a["id"])
     assert _violation(client, student["token"], a["id"]).json()["action"] == "warn"
-    assert _violation(client, student["token"], a["id"]).json()["action"] == "warn"
-    # The warning after the allowance ends the exam.
-    third = _violation(client, student["token"], a["id"])
-    assert third.json()["action"] == "terminated"
-    assert third.json()["session"]["status"] == "terminated"
+    # max_violations = N means the N-th warning ends the exam (2 of 2 here).
+    second = _violation(client, student["token"], a["id"])
+    assert second.json()["action"] == "terminated"
+    assert second.json()["session"]["status"] == "terminated"
+    assert second.json()["session"]["violation_count"] == 2
+
+
+def test_terminated_exam_shows_auto_submitted_in_student_feed(client, db):
+    """After a proctoring termination the client submits the work; the student's
+    assignments feed must surface it as `auto_submitted`, not a normal hand-in.
+    A teacher grade still wins afterwards."""
+    teacher, student, cls, a = _setup(client, db)
+    _configure(client, teacher["token"], cls["id"], a["id"], max_violations=1)
+    _start(client, student["token"], a["id"])
+    assert (
+        _violation(client, student["token"], a["id"]).json()["action"] == "terminated"
+    )
+    # The exam shell submits whatever the student had written.
+    r = client.post(
+        f"/api/v1/assignments/{a['id']}/submit",
+        json={"content": "partial work"},
+        headers=_auth(student["token"]),
+    )
+    assert r.status_code == 201, r.text
+
+    r = client.get("/api/v1/assignments", headers=_auth(student["token"]))
+    row = next(x for x in r.json() if x["id"] == a["id"])
+    assert row["status"] == "auto_submitted"
+
+    # Grading the auto-submitted work flips the status to graded as usual.
+    r = client.post(
+        f"/api/v1/classrooms/{cls['id']}/assignments/{a['id']}/grade",
+        json={"student_id": student["id"], "grade": 5},
+        headers=_auth(teacher["token"]),
+    )
+    assert r.status_code == 200, r.text
+    r = client.get("/api/v1/assignments", headers=_auth(student["token"]))
+    row = next(x for x in r.json() if x["id"] == a["id"])
+    assert row["status"] == "graded"
+
+
+def test_terminated_exam_with_empty_answer_still_auto_submitted(client, db):
+    """Termination with nothing written: the shell's auto-submit fails validation
+    (no content), so no submission row exists — the feed must still show
+    auto_submitted, never falling back to 'pending' (which would re-offer the exam)."""
+    teacher, student, cls, a = _setup(client, db)
+    _configure(client, teacher["token"], cls["id"], a["id"], max_violations=1)
+    _start(client, student["token"], a["id"])
+    assert (
+        _violation(client, student["token"], a["id"]).json()["action"] == "terminated"
+    )
+
+    r = client.get("/api/v1/assignments", headers=_auth(student["token"]))
+    row = next(x for x in r.json() if x["id"] == a["id"])
+    assert row["status"] == "auto_submitted"
+    assert row["submission"] is None
+
+
+def test_finished_exam_cannot_be_restarted(client, db):
+    teacher, student, cls, a = _setup(client, db)
+    _configure(client, teacher["token"], cls["id"], a["id"], max_violations=1)
+    _start(client, student["token"], a["id"])
+    assert (
+        _violation(client, student["token"], a["id"]).json()["action"] == "terminated"
+    )
+    r = _start(client, student["token"], a["id"])
+    assert r.status_code == 422
+    assert "retaken" in r.json()["detail"]
+
+
+def test_ended_exam_submission_cannot_be_replaced(client, db):
+    """The one auto-submit from the shell lands; any further submit is rejected."""
+    teacher, student, cls, a = _setup(client, db)
+    _configure(client, teacher["token"], cls["id"], a["id"], max_violations=1)
+    _start(client, student["token"], a["id"])
+    assert (
+        _violation(client, student["token"], a["id"]).json()["action"] == "terminated"
+    )
+    # The shell's single post-termination submit is accepted…
+    r = client.post(
+        f"/api/v1/assignments/{a['id']}/submit",
+        json={"content": "what I had written"},
+        headers=_auth(student["token"]),
+    )
+    assert r.status_code == 201, r.text
+    # …but replacing it afterwards is not.
+    r = client.post(
+        f"/api/v1/assignments/{a['id']}/submit",
+        json={"content": "polished at home"},
+        headers=_auth(student["token"]),
+    )
+    assert r.status_code == 422
+
+
+def test_teacher_detail_shows_auto_submitted_and_grades_empty_termination(client, db):
+    """Teacher's per-student breakdown must mirror the student view: a terminated
+    exam shows auto_submitted (not pending), and is gradable even when no answer
+    was recovered (the grade lands on an empty submission)."""
+    teacher, student, cls, a = _setup(client, db)
+    _configure(client, teacher["token"], cls["id"], a["id"], max_violations=1)
+    _start(client, student["token"], a["id"])
+    assert (
+        _violation(client, student["token"], a["id"]).json()["action"] == "terminated"
+    )
+
+    # Teacher sees auto_submitted, not pending — consistent with proctoring.
+    r = client.get(
+        f"/api/v1/classrooms/{cls['id']}/assignments/{a['id']}",
+        headers=_auth(teacher["token"]),
+    )
+    row = next(x for x in r.json()["submissions"] if x["student_id"] == student["id"])
+    assert row["status"] == "auto_submitted"
+    assert row["submission"] is None  # nothing was recovered
+
+    # Grading the attempt works despite the missing copy.
+    r = client.post(
+        f"/api/v1/classrooms/{cls['id']}/assignments/{a['id']}/grade",
+        json={"student_id": student["id"], "grade": 0},
+        headers=_auth(teacher["token"]),
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["grade"] == 0
+
+    # Both views now show graded.
+    r = client.get(
+        f"/api/v1/classrooms/{cls['id']}/assignments/{a['id']}",
+        headers=_auth(teacher["token"]),
+    )
+    row = next(x for x in r.json()["submissions"] if x["student_id"] == student["id"])
+    assert row["status"] == "graded"
+    r = client.get("/api/v1/assignments", headers=_auth(student["token"]))
+    row = next(x for x in r.json() if x["id"] == a["id"])
+    assert row["status"] == "graded"
 
 
 def test_terminate_session_endpoint(client, db):

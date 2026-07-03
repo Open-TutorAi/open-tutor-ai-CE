@@ -91,6 +91,7 @@
 	const statusStyle: Record<string, string> = {
 		graded: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
 		submitted: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+		auto_submitted: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
 		late: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
 		missing: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
 		pending: 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
@@ -98,6 +99,7 @@
 	const statusLabel: Record<string, string> = {
 		graded: 'Graded',
 		submitted: 'Submitted',
+		auto_submitted: 'Auto-submitted',
 		late: 'Submitted late',
 		missing: 'Missing',
 		pending: 'To do'
@@ -107,9 +109,14 @@
 		return ts ? new Date(ts).toLocaleDateString() : '—';
 	}
 
+	// An ended session (submitted or terminated) can never be retaken — even if the
+	// feed status lags, the Start-exam gate must not reappear.
+	$: examEnded = !!examInfo?.session && examInfo.session.status !== 'in_progress';
 	// Show the proctored-exam gate when this assignment is an exam the student hasn't taken.
 	$: isExamGate =
-		!!examInfo?.is_exam && (active?.status === 'pending' || active?.status === 'missing');
+		!!examInfo?.is_exam &&
+		!examEnded &&
+		(active?.status === 'pending' || active?.status === 'missing');
 
 	async function load() {
 		loading = true;
@@ -313,7 +320,13 @@
 				<div
 					class="mt-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/40 p-4 text-sm text-gray-700 dark:text-gray-200"
 				>
-					✅ {$i18n.t('You have completed this exam. Exam answers cannot be resubmitted.')}
+					{#if active.status === 'auto_submitted'}
+						⏱ {$i18n.t(
+							'This exam ended and your work was submitted automatically. Exams cannot be retaken.'
+						)}
+					{:else}
+						✅ {$i18n.t('You have completed this exam. Exam answers cannot be resubmitted.')}
+					{/if}
 					{#if active.submission?.content}
 						<div class="mt-3 whitespace-pre-wrap text-gray-600 dark:text-gray-300">
 							{active.submission.content}

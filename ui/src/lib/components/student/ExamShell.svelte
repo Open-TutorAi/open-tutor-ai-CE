@@ -103,8 +103,22 @@
 		}
 	}
 
+	// One warning per acknowledged cycle: while the current warning is unacknowledged
+	// (the student hasn't clicked "Return to exam" yet), leaving again does NOT report
+	// a new violation — it only restarts the same grace countdown, so away time stays
+	// bounded but the count can't run up. The next leave counts only after acknowledging.
+	let unacknowledged = false;
+	let lastGraceSeconds = 0;
+	let flagging = false; // in-flight guard: visibility + fullscreen can fire together
+
 	async function flag(type: string) {
 		if (ended) return;
+		if (unacknowledged) {
+			if (lastGraceSeconds > 0 && !graceDeadline) startGrace(lastGraceSeconds);
+			return;
+		}
+		if (flagging) return;
+		flagging = true;
 		try {
 			const res = await reportViolation(token(), assignment.id, type);
 			violations = res.session.violation_count;
@@ -118,6 +132,8 @@
 				dispatch('done', { terminated: true });
 			} else {
 				// Graced warning: a deadline starts; returning to compliance clears it.
+				unacknowledged = true;
+				lastGraceSeconds = res.grace_seconds;
 				if (res.grace_seconds > 0) startGrace(res.grace_seconds);
 				warning = max
 					? $i18n
@@ -128,10 +144,15 @@
 							.t('You left the exam — this was recorded ({{n}}).')
 							.replace('{{n}}', String(violations));
 			}
-		} catch (_) {}
+		} catch (_) {
+		} finally {
+			flagging = false;
+		}
 	}
 
 	function dismissWarning() {
+		unacknowledged = false;
+		lastGraceSeconds = 0;
 		clearGrace();
 		warning = '';
 		// If fullscreen is required and we're out of it, the click re-enters it.

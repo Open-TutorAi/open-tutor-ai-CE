@@ -33,7 +33,13 @@ export interface Submission {
 	status: string;
 }
 
-export type SubmissionStatus = 'pending' | 'submitted' | 'late' | 'missing' | 'graded';
+export type SubmissionStatus =
+	| 'pending'
+	| 'submitted'
+	| 'auto_submitted'
+	| 'late'
+	| 'missing'
+	| 'graded';
 
 export interface SubmissionRow {
 	student_id: string;

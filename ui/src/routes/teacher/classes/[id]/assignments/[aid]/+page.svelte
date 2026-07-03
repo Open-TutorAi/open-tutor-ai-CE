@@ -53,9 +53,13 @@
 	const statusStyle: Record<string, string> = {
 		graded: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
 		submitted: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+		auto_submitted: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
 		late: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
 		missing: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
 		pending: 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+	};
+	const statusLabel: Record<string, string> = {
+		auto_submitted: 'Auto-submitted'
 	};
 
 	function fmtDate(ts?: string | null): string {
@@ -273,18 +277,24 @@
 								<td class="px-5 py-3 text-gray-800 dark:text-white">{r.name ?? r.email ?? '—'}</td>
 								<td class="px-5 py-3"
 									><span class={`text-xs px-2 py-0.5 rounded-full ${statusStyle[r.status]}`}
-										>{$i18n.t(r.status)}</span
+										>{$i18n.t(statusLabel[r.status] ?? r.status)}</span
 									></td
 								>
 								<td class="px-5 py-3 text-gray-600 dark:text-gray-300"
 									>{r.submission?.grade != null ? r.submission.grade : '—'}</td
 								>
 								<td class="px-5 py-3 text-right">
-									{#if r.submission}
-										{#if r.submission.attachment_id}
+									{#if r.submission || r.status === 'auto_submitted'}
+										{#if r.submission?.attachment_id}
 											<button
 												class="text-gray-500 dark:text-gray-400 text-xs hover:underline mr-3"
 												on:click={() => getSubmissionFile(r)}>📎 {$i18n.t('File')}</button
+											>
+										{/if}
+										{#if !r.submission}
+											<!-- Exam ended before any answer was recovered — gradable anyway. -->
+											<span class="text-xs text-gray-400 mr-3"
+												>{$i18n.t('No answer recovered')}</span
 											>
 										{/if}
 										<button
