@@ -414,3 +414,14 @@ The application **never displays a raw YouTube URL** as a clickable link in norm
 | Lazy-load player | Thumbnail → iframe on click | `PedagogicalShortcuts.svelte` |
 | Fullscreen modal | CSS + DOM toggle | `ResponseMessage.svelte` |
 | Embed fix (nocookie) | `youtube-nocookie.com` | Both Svelte components |
+
+---
+
+## Related Documentation
+
+| File | Description |
+|---|---|
+| [`uml_diagrams.md`](./uml_diagrams.md) | UML class, activity, and sequence diagrams for both features (Mermaid — render with VS Code extension or GitHub preview) |
+| [`voice-video-user-guide.md`](./voice-video-user-guide.md) | Step-by-step student user guide: how to use the mic, video search, and navigation |
+
+> **Tip**: To view the Mermaid diagrams in `uml_diagrams.md`, install the VS Code extension **"Markdown Preview Mermaid Support"** and press `Ctrl+Shift+V`, or open the file directly on GitHub (which renders Mermaid natively).
