@@ -8,6 +8,7 @@
 	import Sidebar from '$lib/components/student/elements/Sidebar.svelte';
 	import Navbar from '$lib/components/student/elements/Navbar.svelte';
 	import DemoModeBanner from '$lib/components/DemoModeBanner.svelte';
+	import FocusOrchestrator from '$lib/components/student/dashboard/FocusOrchestrator.svelte';
 
 	import { getModels, getVersionUpdates } from '$lib/apis';
 	import {
@@ -164,6 +165,9 @@
 			<Sidebar {isSidebarOpen} {activePage} isDarkMode={currentIsDarkMode} />
 		</div>
 	{/if}
+
+	<!-- Global focus timer orchestrator — invisible, persiste entre toutes les pages -->
+	<FocusOrchestrator />
 
 	<!-- Main content area with navbar and slot -->
 	<div class="flex-1 flex flex-col overflow-hidden relative z-10 bg-[#F4F7FE] dark:bg-gray-900">

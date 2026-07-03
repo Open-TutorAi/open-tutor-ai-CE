@@ -1,10 +1,15 @@
-<!-- Dashboard.svelte -->
+<!-- Dashboard Étudiant — Performance & Productivité -->
 <script lang="ts">
 	import { getContext, onMount, onDestroy } from 'svelte';
 	import type { Writable } from 'svelte/store';
 	import type { i18n as i18nType } from 'i18next';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
+ main
+	import { chatId as storeChatId, isDemo, demoData, user } from '$lib/stores';
+	import { dashboardTab } from '$lib/stores/focusTimer';
+	import { getSupportRequests, type SupportResponse, updateSupportChatId } from '$lib/apis/supports';
+
 	import { chatId as storeChatId, isDemo, demoData } from '$lib/stores';
 	import CourseCard from '../elements/CourseCard.svelte';
 	import {
@@ -12,13 +17,30 @@
 		type SupportResponse,
 		updateSupportChatId
 	} from '$lib/apis/supports';
+ main
 	import { page } from '$app/stores';
 	import { fade, scale } from 'svelte/transition';
 	import { toast } from 'svelte-sonner';
 
+	import PerformanceTab from '../dashboard/PerformanceTab.svelte';
+	import ProductivityTab from '../dashboard/ProductivityTab.svelte';
+
 	const i18n = getContext<Writable<i18nType>>('i18n');
 
-	// State for user's support requests
+	// ── Greeting ───────────────────────────────────────────────────────────────
+	$: firstName = $user?.name?.split(' ')[0] ?? '';
+
+	function formatDateFR(): string {
+		const now = new Date();
+		const days = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+		const months = [
+			'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+			'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+		];
+		return `${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+	}
+
+	// ── Support request management (existing logic preserved) ─────────────────
 	let userSupports: SupportResponse[] = [];
 	let isLoading = true;
 
@@ -34,16 +56,27 @@
 			}))
 		: userSupports;
 
+ main
+
 	// Track pending support and chat linkage
+ main
 	let pendingSupportId = '';
 	let chatIdSubscription: Function;
 	let urlCheckInterval: ReturnType<typeof setInterval>;
 	let currentPath = '';
 	let chatIdFromURL = '';
 
-	// Clear chat ID and support data when the dashboard is loaded
 	onMount(async () => {
 		if (browser) {
+ main
+			storeChatId.set('');
+			sessionStorage.removeItem('selectedModels');
+
+			if (localStorage.getItem('pendingSupportData')) {
+				localStorage.removeItem('pendingSupportData');
+			}
+			const keysToRemove: string[] = [];
+
 			console.log('Dashboard mounted: clearing chat and support data');
 
 			// Clear chatId from the store
@@ -61,12 +94,15 @@
 
 			// Clear any stored chat input data
 			const keysToRemove = [];
+ main
 			for (let i = 0; i < localStorage.length; i++) {
 				const key = localStorage.key(i);
-				if (key && key.startsWith('chat-input-')) {
-					keysToRemove.push(key);
-				}
+				if (key && key.startsWith('chat-input-')) keysToRemove.push(key);
 			}
+ main
+			keysToRemove.forEach((k) => localStorage.removeItem(k));
+
+
 
 			// Remove the collected keys
 			keysToRemove.forEach((key) => {
@@ -74,30 +110,32 @@
 			});
 
 			// Fetch user's support requests
+ main
 			if ($isDemo) {
-				// In demo mode, skip API calls
 				isLoading = false;
-				console.log('Demo mode: using mock supports');
 			} else {
 				const token = localStorage.getItem('token');
 				if (token) {
 					try {
 						const supports = await getSupportRequests(token);
-						if (supports && Array.isArray(supports)) {
-							userSupports = supports;
-							console.log('Fetched user supports:', userSupports);
-						}
-					} catch (error) {
-						console.error('Error fetching supports:', error);
+						if (supports && Array.isArray(supports)) userSupports = supports;
+					} catch {
 						userSupports = [];
 					} finally {
 						isLoading = false;
 					}
 				} else {
-					console.log('No auth token found');
 					isLoading = false;
 				}
 			}
+
+ main
+			if (!window.openTutorEvents) window.openTutorEvents = new EventTarget();
+			window.openTutorEvents.addEventListener('chatCreated', ((event: CustomEvent) => {
+				const newChatId = event.detail?.chatId;
+				if (newChatId && pendingSupportId) updateSupportWithChatId(pendingSupportId, newChatId);
+			}) as EventListener);
+
 
 			// Create a global event handler for chat creation that can be triggered from any component
 			if (!window.openTutorEvents) {
@@ -117,19 +155,24 @@
 			}) as EventListener);
 
 			// Subscribe to the chatId store as a backup
+ main
 			chatIdSubscription = storeChatId.subscribe((newChatId) => {
-				console.log('Chat ID store changed:', newChatId);
-				if (newChatId && newChatId !== 'local' && pendingSupportId) {
-					console.log('Detected chat ID change from store:', newChatId);
+				if (newChatId && newChatId !== 'local' && pendingSupportId)
 					updateSupportWithChatId(pendingSupportId, newChatId);
-				}
 			});
 
+ main
+
 			// Set up monitoring for URL changes as another backup
+ main
 			urlCheckInterval = setInterval(() => {
-				// Check if there's still a pending support to process
 				try {
 					const pendingSupportData = localStorage.getItem('pendingSupportData');
+ main
+					if (!pendingSupportData) { clearInterval(urlCheckInterval); return; }
+					const supportData = JSON.parse(pendingSupportData);
+					if (Date.now() - (supportData.timestamp || 0) >= 30 * 60 * 1000) {
+
 					if (!pendingSupportData) {
 						console.log('No pending support data, clearing URL check interval');
 						clearInterval(urlCheckInterval);
@@ -144,23 +187,22 @@
 
 					if (currentTime - supportTimestamp >= MAX_SUPPORT_AGE_MS) {
 						console.log('Support expired during URL check, clearing');
+ main
 						localStorage.removeItem('pendingSupportData');
 						clearInterval(urlCheckInterval);
 						return;
 					}
+ main
+
 
 					// Check for URL changes indicating chat creation
+ main
 					const currentURL = window.location.pathname;
 					if (currentURL.startsWith('/student/c/')) {
 						const newChatId = currentURL.split('/student/c/')[1].split('/')[0];
-						if (newChatId && supportData.id) {
-							console.log('Detected chat URL change to:', newChatId);
-							updateSupportWithChatId(supportData.id, newChatId);
-						}
+						if (newChatId && supportData.id) updateSupportWithChatId(supportData.id, newChatId);
 					}
-				} catch (error) {
-					console.error('Error in URL check interval:', error);
-					// On any error, clear the data and interval
+				} catch {
 					localStorage.removeItem('pendingSupportData');
 					clearInterval(urlCheckInterval);
 				}
@@ -168,10 +210,12 @@
 		}
 	});
 
-	// Clean up listeners and intervals on component destruction
 	onDestroy(() => {
-		console.log('Dashboard component destroyed');
 		if (browser) {
+ main
+			if (chatIdSubscription) chatIdSubscription();
+			if (urlCheckInterval) clearInterval(urlCheckInterval);
+
 			// Remove global event listener
 			window.openTutorEvents.removeEventListener('chatCreated', ((event: CustomEvent) => {
 				// This is just for cleanup, the actual handler is defined in onMount
@@ -186,22 +230,33 @@
 				clearInterval(urlCheckInterval);
 				console.log('URL check interval cleared');
 			}
+ main
 		}
 	});
 
-	// Subscribe to page changes as an additional detection method
 	$: if ($page && $page.url && browser) {
 		currentPath = $page.url.pathname || '';
+ main
+		if (currentPath.startsWith('/student/c/')) {
+			chatIdFromURL = currentPath.replace('/student/c/', '').split('/')[0];
+
 
 		// Check for chat creation
 		if (currentPath.startsWith('/student/c/')) {
 			chatIdFromURL = currentPath.replace('/student/c/', '').split('/')[0];
 
 			// Only proceed if we have a valid ID and there's a pending support
+ main
 			if (chatIdFromURL && localStorage.getItem('pendingSupportData')) {
 				try {
 					const supportData = JSON.parse(localStorage.getItem('pendingSupportData') || '{}');
 					const supportId = supportData.id;
+ main
+					const age = Date.now() - (supportData.timestamp || 0);
+					if (supportId && age < 30 * 60 * 1000) updateSupportWithChatId(supportId, chatIdFromURL);
+					else if (age >= 30 * 60 * 1000) localStorage.removeItem('pendingSupportData');
+				} catch {
+
 
 					// Validate support hasn't expired
 					const currentTime = Date.now();
@@ -218,14 +273,24 @@
 					}
 				} catch (error) {
 					console.error('Error handling page navigation:', error);
+ main
 					localStorage.removeItem('pendingSupportData');
 				}
 			}
 		}
 	}
 
-	// Function to update a support with a chat ID
 	async function updateSupportWithChatId(supportId: string, chatId: string) {
+ main
+		if (!supportId || !chatId || !browser || chatId === 'local' || chatId === 'undefined') return;
+		let pendingSupportData: string | null;
+		try {
+			pendingSupportData = localStorage.getItem('pendingSupportData');
+			if (!pendingSupportData) return;
+			const supportData = JSON.parse(pendingSupportData);
+			if (supportData.id !== supportId) return;
+			if (Date.now() - (supportData.timestamp || 0) >= 30 * 60 * 1000) {
+
 		// Only update once and validate inputs
 		if (!supportId || !chatId || !browser || chatId === 'local' || chatId === 'undefined') {
 			console.log('Invalid inputs for updateSupportWithChatId:', { supportId, chatId });
@@ -259,14 +324,28 @@
 
 			if (currentTime - supportTimestamp >= MAX_SUPPORT_AGE_MS) {
 				console.log('Support too old, ignoring update');
+ main
 				localStorage.removeItem('pendingSupportData');
 				return;
 			}
-		} catch (error) {
-			console.error('Error parsing pendingSupportData:', error);
+		} catch {
 			localStorage.removeItem('pendingSupportData');
 			return;
 		}
+ main
+		try {
+			const token = localStorage.getItem('token');
+			if (!token) return;
+			await updateSupportChatId(token, supportId, chatId);
+			localStorage.removeItem('pendingSupportData');
+			pendingSupportId = '';
+		} catch {
+			try {
+				const supportData = JSON.parse(pendingSupportData || '{}');
+				const attemptCount = (supportData.attempts || 0) + 1;
+				if (attemptCount >= 3) localStorage.removeItem('pendingSupportData');
+				else {
+=======
 
 		try {
 			const token = localStorage.getItem('token');
@@ -297,65 +376,27 @@
 					localStorage.removeItem('pendingSupportData');
 				} else {
 					// Update attempt count
+ main
 					supportData.attempts = attemptCount;
 					localStorage.setItem('pendingSupportData', JSON.stringify(supportData));
-					console.log(`Update failed, attempt ${attemptCount}/3`);
 				}
-			} catch (parseError) {
-				// If we can't even parse/update the attempt count, just clear it
+			} catch {
 				localStorage.removeItem('pendingSupportData');
 			}
 		}
 	}
 
-	// State for pagination
-	let currentPage = 0;
-	const cardsPerPage = 4;
-
-	// Calculate total pages
-	$: totalPages = Math.ceil(displaySupports.length / cardsPerPage);
-
-	// Get current page courses/supports
-	$: currentSupports = displaySupports.slice(
-		currentPage * cardsPerPage,
-		(currentPage + 1) * cardsPerPage
-	);
-
-	// Animation direction tracking
-	let animationDirection = 'right'; // 'left' or 'right'
-
-	// Navigation functions
-	function nextPage() {
-		if (currentPage < totalPages - 1) {
-			animationDirection = 'right';
-			currentPage += 1;
-		}
-	}
-
-	function previousPage() {
-		if (currentPage > 0) {
-			animationDirection = 'left';
-			currentPage -= 1;
-		}
-	}
-
-	function goToPage(pageIndex: number) {
-		if (pageIndex !== currentPage) {
-			animationDirection = pageIndex > currentPage ? 'right' : 'left';
-			currentPage = pageIndex;
-		}
-	}
-
-	// State to control the join course popup
-	let showJoinCoursePopup = false;
-
-	// State to control the support popup
+	// ── Support popup ──────────────────────────────────────────────────────────
 	let showSupportPopup = false;
+	let dontShowAgain = false;
 
-	// Toggle the popups
-	function toggleJoinCoursePopup() {
-		showJoinCoursePopup = !showJoinCoursePopup;
-		if (showJoinCoursePopup) showSupportPopup = false;
+	if (browser) {
+		dontShowAgain = localStorage.getItem('hideSupportPopup') === 'true';
+	}
+
+	$: if (browser) {
+		if (dontShowAgain) localStorage.setItem('hideSupportPopup', 'true');
+		else localStorage.removeItem('hideSupportPopup');
 	}
 
 	function toggleSupportPopup() {
@@ -363,53 +404,24 @@
 			goto('/student/support/create');
 			return;
 		}
-
 		showSupportPopup = !showSupportPopup;
-		if (showSupportPopup) showJoinCoursePopup = false;
 	}
 
-	// Course code input
-	let courseCode = '';
-
-	// Don't show again state
-	let dontShowAgain = false;
-
-	// Load persisted preference
-	if (browser) {
-		const storedFlag = localStorage.getItem('hideSupportPopup') === 'true';
-		if (storedFlag) {
-			dontShowAgain = true;
-		}
-	}
-
-	// Handle joining a course
-	function handleJoinCourse() {
-		if (courseCode === '0000') {
-			// Redirect to student chat component if code is 0000
-			goto('/student/chat');
-			showJoinCoursePopup = false;
-		} else if (courseCode.trim() !== '') {
-			// For other valid codes, you would implement the actual join logic here
-			// For now, just close the popup
-			showJoinCoursePopup = false;
-		}
-	}
-
-	// Persist don't show again preference reactively
-	$: if (browser) {
-		if (dontShowAgain) {
-			localStorage.setItem('hideSupportPopup', 'true');
-		} else {
-			localStorage.removeItem('hideSupportPopup');
-		}
-	}
-
-	// Handle creating support
 	function handleCreateSupport() {
-		// Navigate to student support page
 		goto('/student/support/create');
 		showSupportPopup = false;
 	}
+ main
+</script>
+
+<!-- ── Page header ── -->
+<div class="mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+	<div>
+		<h1 class="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+			Bonjour, {firstName} 👋
+		</h1>
+		<p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{formatDateFR()}</p>
+
 
 	// Handle card click - open support details page
 	function handleCardClick(support: SupportResponse, index: number) {
@@ -439,7 +451,51 @@
 				{$i18n.t('Support')}
 			</button>
 		</div>
+ main
 	</div>
+	<button
+		class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full transition shadow-sm shadow-blue-200 dark:shadow-blue-900/30 self-start"
+		on:click={toggleSupportPopup}
+	>
+		<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+			<path fill-rule="evenodd"
+				d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+				clip-rule="evenodd" />
+		</svg>
+		{$i18n.t('Support')}
+	</button>
+</div>
+
+ main
+<!-- ── Performance section header ── -->
+<div class="mb-4">
+	<h2 class="text-base font-semibold text-gray-700 dark:text-gray-200">Votre performance</h2>
+	<p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+		{new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+	</p>
+</div>
+
+<!-- ── Tab navigation ── -->
+<div class="flex gap-1 mb-5 border border-gray-200 dark:border-gray-700 rounded-full p-0.5 w-fit bg-white dark:bg-gray-800 shadow-sm">
+	<button
+		class="px-5 py-1.5 rounded-full text-sm font-medium transition
+			{$dashboardTab === 'performance'
+				? 'bg-white dark:bg-gray-700 text-gray-800 dark:text-white shadow-sm border border-gray-200 dark:border-gray-600'
+				: 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
+		on:click={() => dashboardTab.set('performance')}
+	>
+		Performance
+	</button>
+	<button
+		class="px-5 py-1.5 rounded-full text-sm font-medium transition
+			{$dashboardTab === 'productivity'
+				? 'bg-white dark:bg-gray-700 text-gray-800 dark:text-white shadow-sm border border-gray-200 dark:border-gray-600'
+				: 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
+		on:click={() => dashboardTab.set('productivity')}
+	>
+		Productivité
+	</button>
+</div>
 
 	<div class="flex flex-col gap-6">
 		{#if isLoading}
@@ -604,19 +660,16 @@
 					{$i18n.t('Join Course')}
 				</button>
 			</div>
+ main
 
-			<!-- Create Course Link -->
-			<div class="text-center">
-				<span class="text-gray-500 dark:text-gray-400">{$i18n.t('or')}</span>
-				<a href="#" class="text-blue-600 dark:text-blue-400 hover:underline"
-					>{$i18n.t('create your own course')}</a
-				>
-			</div>
-		</div>
-	</div>
+<!-- ── Tab content ── -->
+{#if $dashboardTab === 'performance'}
+	<PerformanceTab />
+{:else}
+	<ProductivityTab />
 {/if}
 
-<!-- Support Popup Modal -->
+<!-- ── Support popup ── -->
 {#if showSupportPopup}
 	<div
 		class="fixed inset-0 backdrop-blur-sm bg-white/30 dark:bg-black/30 flex items-center justify-center z-50"
@@ -628,88 +681,70 @@
 			class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 w-11/12 sm:w-full max-w-sm mx-auto relative overflow-y-auto max-h-[90vh] ring-1 ring-gray-200 dark:ring-gray-700"
 			transition:scale={{ duration: 200 }}
 		>
-			<!-- Close Button -->
 			<button
 				class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
-				on:click={toggleSupportPopup}
+				on:click={() => (showSupportPopup = false)}
 			>
 				<span class="text-xl font-light">×</span>
 			</button>
 
-			<!-- OT Logo -->
 			<div class="flex justify-center mb-4">
 				<img src="/favicon.png" alt="OT Logo" class="w-20 h-20" />
 			</div>
 
-			<!-- Title -->
 			<h2 class="text-center text-lg font-bold text-gray-900 dark:text-white mb-4">
 				{$i18n.t('Create Personalized Tutorials for any Subject or Topic')}
 			</h2>
-
-			<!-- Learning Path Section -->
 			<h3 class="text-center text-md font-medium mb-4 text-gray-900 dark:text-white">
 				{$i18n.t('Create Your Learning Path')}
 			</h3>
 
-			<!-- Steps -->
 			<div class="space-y-3 mb-6 px-2">
-				<div class="flex items-center gap-3">
-					<div
-						class="flex-shrink-0 bg-[#004AAD] text-white rounded-full w-6 h-6 flex items-center justify-center"
-					>
-						<span class="font-bold text-sm">1</span>
+				{#each [
+					$i18n.t('Choose your topic and level'),
+					$i18n.t('Set your learning objectives'),
+					$i18n.t('Enjoy AI-powered personalized learning')
+				] as step, idx}
+					<div class="flex items-center gap-3">
+						<div class="flex-shrink-0 bg-[#004AAD] text-white rounded-full w-6 h-6 flex items-center justify-center">
+							<span class="font-bold text-sm">{idx + 1}</span>
+						</div>
+						<span class="text-sm text-gray-800 dark:text-gray-200">{step}</span>
 					</div>
-					<span class="text-sm text-gray-800 dark:text-gray-200"
-						>{$i18n.t('Choose your topic and level')}</span
-					>
-				</div>
-				<div class="flex items-center gap-3">
-					<div
-						class="flex-shrink-0 bg-[#004AAD] text-white rounded-full w-6 h-6 flex items-center justify-center"
-					>
-						<span class="font-bold text-sm">2</span>
-					</div>
-					<span class="text-sm text-gray-800 dark:text-gray-200"
-						>{$i18n.t('Set your learning objectives')}</span
-					>
-				</div>
-				<div class="flex items-center gap-3">
-					<div
-						class="flex-shrink-0 bg-[#004AAD] text-white rounded-full w-6 h-6 flex items-center justify-center"
-					>
-						<span class="font-bold text-sm">3</span>
-					</div>
-					<span class="text-sm text-gray-800 dark:text-gray-200"
-						>{$i18n.t('Enjoy AI-powered personalized learning')}</span
-					>
-				</div>
+				{/each}
 			</div>
 
-			<!-- Create Support Button -->
 			<div class="flex justify-center mb-4">
 				<button
-					class="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 text-white py-2 px-8 rounded-full font-medium text-sm"
+					class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-8 rounded-full font-medium text-sm transition"
 					on:click={handleCreateSupport}
 				>
 					{$i18n.t('Create My support')}
 				</button>
 			</div>
 
-			<!-- Don't Show Again Checkbox -->
 			<div class="flex items-center justify-center gap-2">
 				<input
 					type="checkbox"
-					id="dontShow"
+					id="dontShowDash"
 					bind:checked={dontShowAgain}
-					class="h-3 w-3 text-indigo-600 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-indigo-500"
+					class="h-3 w-3 text-indigo-600 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded"
 				/>
+ main
+				<label for="dontShowDash" class="text-xs text-gray-500 dark:text-gray-400">
+					{$i18n.t("Don't show me again")}
+				</label>
+
 				<label for="dontShow" class="text-xs text-gray-500 dark:text-gray-400"
 					>{$i18n.t("Don't show me again")}</label
 				>
+ main
 			</div>
 		</div>
 	</div>
 {/if}
+ main
+
 
 <style>
 	/* Card transition animations */
@@ -794,3 +829,4 @@
 		}
 	}
 </style>
+ main

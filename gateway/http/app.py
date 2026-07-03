@@ -67,6 +67,7 @@ from .routers import (
 )
 from .routers import (
     tasks as tasks_router,
+    dashboard as dashboard_router,
 )
 from .routers import (
     tools as tools_router,
@@ -164,6 +165,7 @@ def create_app() -> FastAPI:
     app.include_router(groups_router.router, prefix="/api/v1")
     app.include_router(folders_router.router, prefix="/api/v1")
     app.include_router(tasks_router.router, prefix="/api/v1")
+    app.include_router(dashboard_router.router, prefix="/api/v1")
 
     # Socket.IO — mounted at /realtime; client uses path='/realtime/socket.io'
     app.mount("/realtime", socket_app)

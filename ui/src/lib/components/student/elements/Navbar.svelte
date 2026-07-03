@@ -4,6 +4,7 @@
 	const i18n = getContext('i18n');
 	import { goto } from '$app/navigation';
 	import { user, isDemo, demoData, originalUserData } from '$lib/stores';
+	import { focusTimeDisplay, isFocusVisible, isBreakActive, dashboardTab } from '$lib/stores/focusTimer';
 	import { generateDemoData } from '$lib/utils/mockData';
 	import { toast } from 'svelte-sonner';
 	import { generateInitialsImage } from '$lib/utils';
@@ -151,6 +152,21 @@
 				{$i18n.t("Let's learn something new today!")}
 			</p>
 		</div>
+
+		<!-- Mini-timer Focus — visible à droite du nom, à gauche de la zone de recherche -->
+		{#if $isFocusVisible}
+			<button
+				on:click={() => { dashboardTab.set('productivity'); goto('/student/dashboard'); }}
+				class="ml-4 hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-semibold transition-opacity hover:opacity-80
+					{$isBreakActive
+						? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+						: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'}"
+				title="Mode Focus actif — cliquer pour accéder"
+			>
+				<span>{$isBreakActive ? '☕' : '🎯'}</span>
+				<span>{$focusTimeDisplay}</span>
+			</button>
+		{/if}
 	</div>
 
 	<!-- Desktop Navigation Menu -->

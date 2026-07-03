@@ -11,6 +11,8 @@
 	import Message from '$lib/components/icons/Messages.svelte';
 	import type { ComponentType } from 'svelte';
 	import { writable, type Writable } from 'svelte/store';
+	import { toast } from 'svelte-sonner';
+	import { isBreakActive, focusTimeDisplay } from '$lib/stores/focusTimer';
 	const i18n = getContext('i18n');
 
 	// Use a simple boolean for sidebar state instead of a store
@@ -121,6 +123,15 @@
 	}
 
 	function setActivePage(role: string, page: string) {
+		// Block navigation during break session
+		if ($isBreakActive) {
+			toast.warning(
+				`Pause en cours ! Navigation désactivée. Encore ${$focusTimeDisplay} de repos. 🛑`,
+				{ duration: 3000 }
+			);
+			return;
+		}
+
 		// First close the sidebar on mobile to avoid black overlay issue
 		if (isMobile) {
 			isSidebarOpen = false;
