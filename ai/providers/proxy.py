@@ -9,7 +9,7 @@ from fastapi.responses import StreamingResponse
 
 log = logging.getLogger(__name__)
 
-TIMEOUT_DEFAULT = 30.0
+TIMEOUT_DEFAULT = 120.0
 TIMEOUT_STREAM = 300.0
 
 
