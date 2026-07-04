@@ -50,8 +50,9 @@ Settings are centralized in `config/settings.py` and loaded from `.env` via `pyt
 - `DEBUG`: enables development behavior and allows the dev JWT secret fallback. Production requires `SECRET_KEY`.
 - `GLOBAL_LOG_LEVEL`: controls Uvicorn log level when running `main.py`.
 - `SECRET_KEY`: JWT signing key; required when `DEBUG=false`.
+- `AUTH_COOKIE_SECURE`: adds `Secure` to the HttpOnly session cookie; set `true` on any HTTPS deployment, `false` (default) for plain-HTTP local dev.
 - `DATABASE_URL`: defaults to `sqlite:///./var/tutorai.db`; non-SQLite URLs use SQLAlchemy defaults.
-- `CORS_ALLOW_ORIGIN`: comma-separated origins; `*` is handled through CORS regex.
+- `CORS_ALLOW_ORIGIN`: comma-separated origins; `*` is handled through CORS regex. Also trusted by the cookie-session CSRF check, so in production set it to the real deployed origin(s) or cookie-authenticated POSTs will be rejected.
 - `UPLOAD_DIR`: defaults to `./var/uploads`.
 - `MAX_UPLOAD_SIZE_MB`: integer upload size limit, default `100`.
 - `VECTOR_DB_PATH`: defaults to `./var/vector_db`.

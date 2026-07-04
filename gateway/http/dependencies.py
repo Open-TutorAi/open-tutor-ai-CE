@@ -1,6 +1,6 @@
 """FastAPI dependency injection — auth guard + service factories."""
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import InvalidTokenError, decode
 from sqlalchemy.orm import Session
@@ -13,20 +13,37 @@ from data.models import User
 from governance.self_regulation.service import SelfRegulationService
 from learning.supports.service import SupportsService
 
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 
 # ── Auth guard ────────────────────────────────────────────────────────────────
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
     db: Session = Depends(get_db),
 ) -> User:
-    """Decode JWT and return the authenticated user."""
+    """Decode the JWT and return the authenticated user.
+
+    An explicit `Authorization: Bearer` token wins (tests, tools, API clients
+    state exactly who they are); otherwise the HttpOnly session cookie — the
+    browser channel — is used. Legacy UI code that still sends the literal
+    strings "null"/"undefined" (from a now-empty localStorage) is treated as
+    sending nothing, so those requests fall through to the cookie.
+    """
+    bearer = credentials.credentials if credentials else None
+    if bearer in ("null", "undefined", ""):
+        bearer = None
+    token = bearer or request.cookies.get(settings.AUTH_COOKIE_NAME)
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
     try:
         payload = decode(
-            credentials.credentials,
+            token,
             settings.JWT_SECRET_KEY,
             algorithms=[settings.JWT_ALGORITHM],
         )

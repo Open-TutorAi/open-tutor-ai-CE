@@ -82,15 +82,18 @@ export const updateAdminConfig = async (token: string, body: object) => {
 	return res;
 };
 
-export const getSessionUser = async (token: string) => {
+export const getSessionUser = async (token?: string) => {
 	let error = null;
+
+	// Only send the Authorization header when we actually have a token; otherwise
+	// the request authenticates via the HttpOnly session cookie. Sending an empty
+	// `Bearer ` header would be ambiguous for the server to parse.
+	const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+	if (token) headers.Authorization = `Bearer ${token}`;
 
 	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/`, {
 		method: 'GET',
-		headers: {
-			'Content-Type': 'application/json',
-			Authorization: `Bearer ${token}`
-		},
+		headers,
 		credentials: 'include'
 	})
 		.then(async (res) => {
@@ -343,6 +346,36 @@ export const userSignUp = async (
 		.catch((err) => {
 			console.log(err);
 			error = err.detail;
+			return null;
+		});
+
+	if (error) {
+		throw error;
+	}
+
+	return res;
+};
+
+export const establishCookieSession = async (token: string) => {
+	let error = null;
+
+	const res = await fetch(`${TUTOR_API_BASE_URL}/auths/cookie`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${token}`
+		},
+		credentials: 'include'
+	})
+		.then(async (res) => {
+			if (!res.ok) throw await res.json();
+			return res.json();
+		})
+		.catch((err) => {
+			console.log(err);
+			// Surface a message even for non-JSON failures (network errors, thrown
+			// strings) so a failed cookie exchange can't be silently ignored.
+			error = err?.detail ?? 'Could not establish a session';
 			return null;
 		});
 

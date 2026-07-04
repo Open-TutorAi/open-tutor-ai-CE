@@ -71,7 +71,10 @@ class TestFilesApiV1:
         """Content endpoint requires authentication — no anonymous access."""
         token = _signup(client, "noauth@test.com")
         file_id = _upload(client, token).json()["id"]
-        assert client.get(f"/api/v1/files/{file_id}/content").status_code == 403
+        # Drop the cookie session the signup established — this request must be
+        # truly anonymous (no cookie, no bearer).
+        client.cookies.clear()
+        assert client.get(f"/api/v1/files/{file_id}/content").status_code == 401
 
     def test_update_file_content(self, client):
         """POST /api/v1/files/{id}/data/content/update  ← updateFileDataContentById() in files/index.ts:124"""

@@ -3,14 +3,17 @@ import { browser, dev } from '$app/environment';
 
 export const APP_NAME = 'Open TutorAI';
 
-// Backend server for API calls
-export const TUTOR_HOSTNAME = browser ? (dev ? `${location.hostname}:8080` : ``) : '';
+// Backend API calls are always same-origin: in production FastAPI serves the
+// SPA, and in dev the Vite proxy forwards /api, /auths and /realtime to the
+// backend. Same-origin means the HttpOnly session cookie rides along on every
+// request without per-fetch `credentials` handling.
+export const TUTOR_HOSTNAME = '';
 
 // Frontend server for static assets (Vite dev server)
 export const TUTOR_FRONT_HOSTNAME = browser ? (dev ? `${location.hostname}:5173` : ``) : '';
 export const TUTOR_FRONT_URL = browser ? (dev ? `http://${TUTOR_FRONT_HOSTNAME}` : ``) : ``;
 
-export const TUTOR_BASE_URL = browser ? (dev ? `http://${TUTOR_HOSTNAME}` : ``) : ``;
+export const TUTOR_BASE_URL = '';
 export const TUTOR_API_BASE_URL = `${TUTOR_BASE_URL}/api/v1`;
 
 export const OLLAMA_API_BASE_URL = `${TUTOR_API_BASE_URL}/providers/ollama`;
