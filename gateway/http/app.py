@@ -14,6 +14,7 @@ from .routers import (
     health,
     auth,
     supports,
+    paths,
     self_regulation,
     files,
     app_info,
@@ -110,6 +111,7 @@ def create_app() -> FastAPI:
 
     # Supports, evaluations, files — only under /api/v1 (all UI calls use TUTOR_API_BASE_URL)
     app.include_router(supports.router, prefix="/api/v1")
+    app.include_router(paths.router, prefix="/api")
     app.include_router(self_regulation.router, prefix="/api/v1")
     app.include_router(files.router, prefix="/api/v1")
     app.include_router(app_info.router, prefix="/api/v1")

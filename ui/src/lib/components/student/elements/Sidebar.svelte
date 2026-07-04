@@ -5,6 +5,7 @@
 	import { page } from '$app/stores';
 	import { onMount, getContext } from 'svelte';
 	import Settings from '$lib/components/icons/Settings.svelte';
+	import Path from '$lib/components/icons/Path.svelte';
 	import Dashboard from '$lib/components/icons/Dashboard.svelte';
 	import Classroom from '$lib/components/icons/Classroom.svelte';
 	import Assignment from '$lib/components/icons/Assignment.svelte';
@@ -150,14 +151,15 @@
 
 	// Navigation items organized by role
 	const navItems: NavItems = {
-		student: [
-			{ id: 'dashboard', label: 'Dashboard', icon: Dashboard },
-			{ id: 'classrooms', label: 'My Classrooms', icon: Classroom },
-			{ id: 'supports', label: 'Support', icon: Classroom },
-			{ id: 'assignments', label: 'Assignments', icon: Assignment },
-			{ id: 'messages', label: 'Messages', icon: Message },
-			{ id: 'settings', label: 'Profile & Settings', icon: Settings }
-		],
+    student: [
+        { id: 'dashboard', label: 'Dashboard', icon: Dashboard },
+        { id: 'paths', label: 'Learning Paths', icon: Path },
+        { id: 'classrooms', label: 'My Classrooms', icon: Classroom },
+        { id: 'supports', label: 'Support', icon: Classroom },
+        { id: 'assignments', label: 'Assignments', icon: Assignment },
+        { id: 'messages', label: 'Messages', icon: Message },
+        { id: 'settings', label: 'Profile & Settings', icon: Settings }
+    ],
 		teacher: [],
 		parent: []
 	};
