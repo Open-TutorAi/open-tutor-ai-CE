@@ -1,16 +1,18 @@
 """Socket.IO ASGI sub-application mounted at /realtime.
 
 The client connects to TUTOR_BASE_URL with path='/realtime/socket.io'.
-Authentication is via JWT token passed as `token` query parameter or
-Authorization header.
+Authentication is via the HttpOnly session cookie (browser flow) or a JWT
+passed in the Socket.IO auth payload / `token` query parameter (tools, tests).
 """
 
 import logging
 import time
+from http.cookies import SimpleCookie
 from typing import Any
 
 import socketio
 
+from config import settings
 from gateway.http.dependencies import decode_jwt_token
 
 log = logging.getLogger(__name__)
@@ -58,16 +60,37 @@ async def _broadcast_usage():
     log.debug("Broadcast usage: %s", models)
 
 
+def _token_from_cookie(environ: dict) -> str | None:
+    """Extract the session JWT from the HTTP cookie header of the handshake."""
+    raw = environ.get("HTTP_COOKIE")
+    if not raw:
+        return None
+    cookie = SimpleCookie()
+    try:
+        cookie.load(raw)
+    except Exception:
+        return None
+    morsel = cookie.get(settings.AUTH_COOKIE_NAME)
+    return morsel.value if morsel else None
+
+
 @sio.event
 async def connect(sid: str, environ: dict, auth: dict | None = None):
     """Authenticate on connect. Disconnect immediately if no valid token."""
     token = None
 
-    # 1. Try auth dict (from Socket.IO client auth option)
+    # 1. Try auth dict (from Socket.IO client auth option). Older clients may
+    #    send the literal strings "null"/"undefined" when nothing is stored.
     if auth and isinstance(auth, dict):
         token = auth.get("token")
+        if token in ("null", "undefined", ""):
+            token = None
 
-    # 2. Fall back to query string: ?token=<jwt>
+    # 2. HttpOnly session cookie — the browser flow (JS never sees the token).
+    if not token:
+        token = _token_from_cookie(environ)
+
+    # 3. Fall back to query string: ?token=<jwt>
     if not token:
         qs = environ.get("QUERY_STRING", "")
         for part in qs.split("&"):

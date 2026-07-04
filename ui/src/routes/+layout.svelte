@@ -63,7 +63,9 @@
 			randomizationFactor: 0.5,
 			path: '/realtime/socket.io',
 			transports: enableWebsocket ? ['websocket'] : ['polling', 'websocket'],
-			auth: { token: localStorage.token }
+			// The handshake is authenticated by the HttpOnly session cookie, which
+			// the browser attaches automatically on this same-origin connection.
+			withCredentials: true
 		});
 
 		await socket.set(_socket);
@@ -483,43 +485,37 @@
 			if ($config) {
 				await setupSocket($config.features?.enable_websocket ?? true);
 
-				if (localStorage.token) {
-					// Get Session User Info
-					const sessionUser = await getSessionUser(localStorage.token).catch((error) => {
-						toast.error(`${error}`);
-						return null;
-					});
+				// Probe the session — the HttpOnly cookie (sent automatically) decides
+				// whether we're signed in; nothing is read from localStorage.
+				const sessionUser = await getSessionUser('').catch(() => null);
 
-					if (sessionUser) {
-						// Save Session User to Store
-						$socket.emit('user-join', { auth: { token: sessionUser.token } });
+				if (sessionUser) {
+					// Save Session User to Store
+					$socket.emit('user-join', { auth: { token: sessionUser.token } });
 
-						$socket?.on('chat-events', chatEventHandler);
-						$socket?.on('channel-events', channelEventHandler);
+					$socket?.on('chat-events', chatEventHandler);
+					$socket?.on('channel-events', channelEventHandler);
 
-						await user.set(sessionUser);
-						await config.set(await getBackendConfig());
+					await user.set(sessionUser);
+					await config.set(await getBackendConfig());
 
-						// Role-based redirection
-						if ($page.url.pathname === '/') {
-							if (sessionUser.role === 'admin') {
-								await goto('/');
-							} else if (sessionUser.role === 'user') {
-								await goto('/student/dashboard');
-							} else if (sessionUser.role === 'parent') {
-								await goto('/parent');
-							} else if (sessionUser.role === 'teacher') {
-								await goto('/teacher');
-							}
+					// Role-based redirection
+					if ($page.url.pathname === '/') {
+						if (sessionUser.role === 'admin') {
+							await goto('/');
+						} else if (sessionUser.role === 'user') {
+							await goto('/student/dashboard');
+						} else if (sessionUser.role === 'parent') {
+							await goto('/parent');
+						} else if (sessionUser.role === 'teacher') {
+							await goto('/teacher');
 						}
-					} else {
-						// Redirect Invalid Session User to /auth Page
-						localStorage.removeItem('token');
-						await goto('/auth');
 					}
 				} else {
-					// Don't redirect if we're already on the auth page
-					// Needed because we pass in tokens from OAuth logins via URL fragments
+					// No valid cookie session. Clear any legacy token left from the
+					// pre-cookie era; don't redirect while on /auth itself (OAuth
+					// fragments land there).
+					localStorage.removeItem('token');
 					if ($page.url.pathname !== '/auth') {
 						await goto('/auth');
 					}

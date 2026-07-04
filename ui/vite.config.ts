@@ -56,24 +56,23 @@ export default defineConfig({
 			usePolling: true
 		},
 		proxy: {
+			// Dev requests are same-origin (relative URLs in constants.ts) and are
+			// proxied to the backend here — that way the HttpOnly session cookie is
+			// first-party and attached automatically, mirroring production where
+			// FastAPI serves the SPA itself. BACKEND_URL overrides the target for
+			// Docker (e.g. http://open-tutor-backend:8080).
 			'/api': {
-				target: 'http://open-tutor-backend:8080',
+				target: process.env.BACKEND_URL ?? 'http://localhost:8080',
 				changeOrigin: true,
-				secure: false,
-				configure: (proxy, _options) => {
-					proxy.on('error', (err, _req, _res) => {
-						console.log('proxy error', err);
-					});
-					proxy.on('proxyReq', (proxyReq, req, _res) => {
-						console.log('Sending Request to the Target:', req.method, req.url);
-					});
-					proxy.on('proxyRes', (proxyRes, req, _res) => {
-						console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
-					});
-				}
+				secure: false
 			},
-			'/ws': {
-				target: 'ws://open-tutor-backend:8080',
+			'/auths': {
+				target: process.env.BACKEND_URL ?? 'http://localhost:8080',
+				changeOrigin: true,
+				secure: false
+			},
+			'/realtime': {
+				target: process.env.BACKEND_URL ?? 'http://localhost:8080',
 				ws: true,
 				changeOrigin: true
 			}

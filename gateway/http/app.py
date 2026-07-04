@@ -130,6 +130,33 @@ def create_app() -> FastAPI:
             )
         return await call_next(request)
 
+    @app.middleware("http")
+    async def csrf_origin_check(request: Request, call_next):
+        """CSRF guard for cookie-authenticated state changes.
+
+        The session cookie is attached by the browser automatically, so a
+        malicious site could otherwise trigger authenticated mutations. On any
+        non-safe method carrying the session cookie, the Origin header must
+        match this host or a configured CORS origin. Bearer-authenticated
+        clients (tests, curl, SDKs) send no cookie and are unaffected;
+        SameSite=Lax on the cookie is the first line of defence — this is the
+        second.
+        """
+        if request.method not in ("GET", "HEAD", "OPTIONS") and request.cookies.get(
+            settings.AUTH_COOKIE_NAME
+        ):
+            origin = request.headers.get("origin")
+            if origin:
+                allowed = origin in settings.cors_origins_list or origin == (
+                    f"{request.url.scheme}://{request.url.netloc}"
+                )
+                if not allowed:
+                    return JSONResponse(
+                        status_code=403,
+                        content={"detail": "Origin not allowed"},
+                    )
+        return await call_next(request)
+
     # Health — no version prefix, matches Docker healthcheck and compose
     app.include_router(health.router)
 

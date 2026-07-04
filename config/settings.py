@@ -46,6 +46,16 @@ class Settings:
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRATION_HOURS: int = 24
 
+    # Session cookie (HttpOnly) — the browser-facing auth channel. The JWT is
+    # still accepted via Authorization: Bearer for tests, tools, and API clients.
+    AUTH_COOKIE_NAME: str = "token"
+    # Secure requires HTTPS; local dev and LAN testing run plain HTTP, so it is
+    # opt-in via env for deployments behind TLS.
+    AUTH_COOKIE_SECURE: bool = (
+        os.getenv("AUTH_COOKIE_SECURE", "false").lower() == "true"
+    )
+    AUTH_COOKIE_SAMESITE: str = "lax"
+
     # File upload configuration
     UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", "./var/uploads")
     _upload_mb = os.getenv("MAX_UPLOAD_SIZE_MB", "100")

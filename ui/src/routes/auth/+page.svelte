@@ -13,7 +13,8 @@
 		getSessionUser,
 		userSignIn,
 		userSignUp,
-		getUserCount
+		getUserCount,
+		establishCookieSession
 	} from '$lib/apis/auths';
 
 	import { TUTOR_FRONT_URL, TUTOR_BASE_URL } from '$lib/constants';
@@ -56,9 +57,8 @@
 		if (sessionUser) {
 			console.log('Session user received:', sessionUser);
 			toast.success($i18n.t(`You're now logged in.`));
-			if (sessionUser.token) {
-				localStorage.token = sessionUser.token;
-			}
+			// The session now lives in an HttpOnly cookie set by the backend at
+			// signin/signup — nothing is persisted where page scripts can read it.
 
 			if ($socket) {
 				$socket.emit('user-join', { auth: { token: sessionUser.token } });
@@ -163,7 +163,9 @@
 		if (!sessionUser) {
 			return;
 		}
-		localStorage.token = token;
+		// Exchange the fragment token for an HttpOnly cookie session instead of
+		// persisting it anywhere page scripts could read it.
+		await establishCookieSession(token).catch(() => {});
 		await setSessionUser(sessionUser);
 	};
 

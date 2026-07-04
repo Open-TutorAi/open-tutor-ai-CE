@@ -55,6 +55,25 @@ def _create_token(user_id: str) -> str:
     )
 
 
+def _set_auth_cookie(response: Response, token: str) -> None:
+    """Attach the session JWT as an HttpOnly cookie — the browser auth channel.
+
+    HttpOnly keeps the token out of reach of any script running on the page
+    (XSS cannot exfiltrate it); SameSite=Lax stops the browser attaching it to
+    cross-site requests. `Secure` is enabled via AUTH_COOKIE_SECURE on TLS
+    deployments.
+    """
+    response.set_cookie(
+        key=settings.AUTH_COOKIE_NAME,
+        value=token,
+        max_age=settings.JWT_EXPIRATION_HOURS * 3600,
+        httponly=True,
+        secure=settings.AUTH_COOKIE_SECURE,
+        samesite=settings.AUTH_COOKIE_SAMESITE,
+        path="/",
+    )
+
+
 def _user_payload(token: str, user: User) -> dict:
     return {
         "token": token,
@@ -82,9 +101,10 @@ async def get_session_user(current_user: User = Depends(get_current_user)):
 @router.post("/signin")
 async def sign_in(
     request: SignInRequest,
+    response: Response,
     svc: AccountService = Depends(get_account_service),
 ):
-    """Sign in — UI calls /auths/signin."""
+    """Sign in — UI calls /auths/signin. Sets the HttpOnly session cookie."""
     user = svc.authenticate(request.email, request.password)
     if not user:
         raise HTTPException(
@@ -94,24 +114,28 @@ async def sign_in(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Account inactive"
         )
-    return _user_payload(_create_token(user.id), user)
+    token = _create_token(user.id)
+    _set_auth_cookie(response, token)
+    return _user_payload(token, user)
 
 
 @router.post("/login")
 async def login(
     request: SignInRequest,
+    response: Response,
     svc: AccountService = Depends(get_account_service),
 ):
     """Login alias — kept for internal/tool use."""
-    return await sign_in(request, svc)
+    return await sign_in(request, response, svc)
 
 
 @router.post("/signup")
 async def signup(
     request: SignUpRequest,
+    response: Response,
     svc: AccountService = Depends(get_account_service),
 ):
-    """Sign up — first user becomes admin."""
+    """Sign up — first user becomes admin. Sets the HttpOnly session cookie."""
     is_admin = svc.count_users() == 0
     try:
         user = svc.create_user(
@@ -124,13 +148,29 @@ async def signup(
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
-    return _user_payload(_create_token(user.id), user)
+    token = _create_token(user.id)
+    _set_auth_cookie(response, token)
+    return _user_payload(token, user)
+
+
+@router.post("/cookie")
+async def establish_cookie_session(
+    response: Response,
+    current_user: User = Depends(get_current_user),
+):
+    """Exchange a Bearer-authenticated request for an HttpOnly cookie session.
+
+    Used by flows that receive a token out-of-band (e.g. OAuth URL fragments)
+    so the browser can continue with cookie auth instead of storing the token.
+    """
+    _set_auth_cookie(response, _create_token(current_user.id))
+    return {"status": "success"}
 
 
 @router.get("/signout")
 async def sign_out(response: Response):
-    """Sign out — clears session cookie."""
-    response.delete_cookie("token")
+    """Sign out — clears the session cookie."""
+    response.delete_cookie(settings.AUTH_COOKIE_NAME, path="/")
     return {"status": "success"}
 
 
