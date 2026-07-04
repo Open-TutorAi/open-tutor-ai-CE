@@ -8,11 +8,11 @@ New messages are delivered live over the existing Socket.IO layer (`message:new`
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from data.models import User
+from gateway.http.attachments import attachment_response
 from gateway.http.dependencies import (
     Pagination,
     get_current_user,
@@ -114,8 +114,4 @@ def download_message_attachment(
         )
     except (NotFoundError, AuthorizationError) as exc:
         raise _http_from_domain(exc)
-    return Response(
-        content=data,
-        media_type=content_type,
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
+    return attachment_response(data, content_type, filename)

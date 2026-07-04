@@ -19,12 +19,12 @@ from fastapi import (
     UploadFile,
     status,
 )
-from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from config import settings
 from data.models import User
+from gateway.http.attachments import attachment_response
 from gateway.http.dependencies import (
     Pagination,
     get_current_user,
@@ -91,14 +91,15 @@ async def upload_material(
         status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
         detail=f"File exceeds the {settings.MAX_UPLOAD_SIZE_MB} MB limit",
     )
-    contents = b""
+    buffer = bytearray()
     while True:
         chunk = await file.read(64 * 1024)
         if not chunk:
             break
-        contents += chunk
-        if len(contents) > max_bytes:
+        buffer.extend(chunk)
+        if len(buffer) > max_bytes:
             raise _too_large
+    contents = bytes(buffer)
     try:
         return svc.upload_material(
             id,
@@ -138,11 +139,9 @@ def download_material(
         data, content_type, filename = svc.read_material(id, rid, current_user.id)
     except (NotFoundError, AuthorizationError) as exc:
         raise _http_from_domain(exc)
-    return Response(
-        content=data,
-        media_type=content_type or "application/octet-stream",
-        headers={"Content-Disposition": f'inline; filename="{filename}"'},
-    )
+    # `attachment` (never inline) stops an uploaded text/html material from
+    # executing as stored XSS in the app's origin; the filename is sanitised.
+    return attachment_response(data, content_type, filename)
 
 
 @router.delete("/{id}/resources/{rid}")

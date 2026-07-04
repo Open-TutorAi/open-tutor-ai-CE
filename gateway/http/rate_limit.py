@@ -9,12 +9,16 @@ For a multi-process / multi-host deployment this in-memory store is per-process;
 store (Redis) would be the next step, but this already bounds abuse on a single node.
 """
 
+import hashlib
 import time
 from collections import defaultdict, deque
 from typing import Deque, Dict
 
 from fastapi import Request
 from fastapi.responses import JSONResponse
+
+from config import settings
+from gateway.http.dependencies import decode_jwt_token
 
 
 class SlidingWindowLimiter:
@@ -47,10 +51,27 @@ _SENSITIVE_SUFFIXES = (
 
 
 def _client_key(request: Request) -> str:
-    # Prefer the authenticated bearer token (per-user); fall back to client IP.
-    auth = request.headers.get("authorization", "")
-    if auth.lower().startswith("bearer "):
-        return "tok:" + auth[7:][:32]
+    """A stable per-caller key.
+
+    The token is taken from the session cookie or `Authorization: Bearer`, then
+    keyed on its `sub` (user id) claim. Slicing the raw JWT would NOT work: the
+    first ~36 chars are the base64 header, identical for every user this app
+    issues — so a prefix slice collapses everyone into one shared bucket. When
+    there's no valid token (or it can't be decoded) we fall back to the client IP.
+    """
+    token = request.cookies.get(getattr(settings, "AUTH_COOKIE_NAME", "token"))
+    if not token:
+        auth = request.headers.get("authorization", "")
+        if auth.lower().startswith("bearer "):
+            token = auth[7:]
+    if token:
+        payload = decode_jwt_token(token)
+        sub = payload.get("sub") if payload else None
+        if sub:
+            return "user:" + sub
+        # Undecodable token: hash the whole thing so distinct tokens stay distinct
+        # (never a fixed prefix, which would alias different users together).
+        return "tok:" + hashlib.sha256(token.encode()).hexdigest()[:32]
     client = request.client
     return "ip:" + (client.host if client else "unknown")
 

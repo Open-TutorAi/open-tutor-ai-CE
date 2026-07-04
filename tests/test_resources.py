@@ -183,6 +183,46 @@ def test_download_material_enrolled_student(client, db):
     assert r.content == b"HELLO-BLOB"
 
 
+def test_download_material_forces_attachment(client, db):
+    """Materials must download as `attachment`, never render inline — otherwise an
+    uploaded HTML file would execute as stored XSS in the app's origin."""
+    teacher, student, cls = _setup(client, db)
+    rid = _upload(client, teacher["token"], cls["id"]).json()["id"]
+    r = client.get(
+        f"/api/v1/classrooms/{cls['id']}/resources/{rid}/content",
+        headers=_auth(student["token"]),
+    )
+    assert r.status_code == 200
+    assert r.headers["content-disposition"].startswith("attachment")
+
+
+def test_upload_rejects_html_material(client, db):
+    """text/html is no longer allowlisted — the XSS payload vector is closed at
+    upload time (defence in depth alongside the attachment download)."""
+    teacher = _make_teacher(client, db)
+    cls = _create_class(client, teacher["token"])
+    r = client.post(
+        f"/api/v1/classrooms/{cls['id']}/resources",
+        files={"file": ("x.html", b"<script>alert(1)</script>", "text/html")},
+        data={"title": "Bad", "description": "x"},
+        headers=_auth(teacher["token"]),
+    )
+    assert r.status_code == 415
+
+
+def test_upload_allows_safe_text_material(client, db):
+    """Safe, non-executable text types (plain/csv/markdown) remain allowed."""
+    teacher = _make_teacher(client, db)
+    cls = _create_class(client, teacher["token"])
+    r = client.post(
+        f"/api/v1/classrooms/{cls['id']}/resources",
+        files={"file": ("notes.csv", b"a,b,c", "text/csv")},
+        data={"title": "Data", "description": "x"},
+        headers=_auth(teacher["token"]),
+    )
+    assert r.status_code == 201, r.text
+
+
 def test_download_material_outsider_403(client, db):
     teacher, student, cls = _setup(client, db)
     outsider = _signup(client, "outsider@t.com", "Outsider")

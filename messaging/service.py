@@ -130,16 +130,23 @@ class MessagingService:
                 participant.last_read_at if participant else None,
             )
 
+        # One unit of work: the conversation and both participant rows commit
+        # together, so a failure can't leave a half-created conversation.
         conversation = self.conversations.create(
-            id=str(uuid.uuid4()), created_at=datetime.utcnow(), last_message_at=None
+            commit=False,
+            id=str(uuid.uuid4()),
+            created_at=datetime.utcnow(),
+            last_message_at=None,
         )
         for uid in (initiator_id, recipient_id):
             self.participants.create(
+                commit=False,
                 id=str(uuid.uuid4()),
                 conversation_id=conversation.id,
                 user_id=uid,
                 last_read_at=None,
             )
+        self.session.commit()
         return self._conversation_dict(conversation, initiator_id, None)
 
     def list_conversations(self, user_id: str) -> List[Dict[str, Any]]:

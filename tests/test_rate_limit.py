@@ -4,7 +4,10 @@ The middleware itself is disabled under DEBUG (and the suite runs with DEBUG=tru
 test the counting logic directly with an injected clock — no app/server needed.
 """
 
-from gateway.http.rate_limit import SlidingWindowLimiter
+import jwt as _jwt
+
+from config import settings
+from gateway.http.rate_limit import SlidingWindowLimiter, _client_key
 
 
 def test_allows_up_to_the_limit_then_blocks():
@@ -32,3 +35,46 @@ def test_keys_are_independent():
     assert limiter.allow("user-a", now=1.0) is False
     # A different caller has its own budget.
     assert limiter.allow("user-b", now=1.0) is True
+
+
+# ── per-caller key derivation (regression: shared-bucket bug) ────────────────
+
+
+class _FakeRequest:
+    """Minimal stand-in for starlette Request: headers, cookies, client.host."""
+
+    class _Client:
+        host = "10.0.0.9"
+
+    def __init__(self, *, bearer=None, cookie=None):
+        self.headers = {"authorization": f"Bearer {bearer}"} if bearer else {}
+        # The limiter reads the session cookie by AUTH_COOKIE_NAME (default "token")
+        # so it keeps working once cookie auth lands; bearer-only on this branch.
+        cookie_name = getattr(settings, "AUTH_COOKIE_NAME", "token")
+        self.cookies = {cookie_name: cookie} if cookie else {}
+        self.client = self._Client()
+
+
+def _token(sub):
+    return _jwt.encode({"sub": sub}, settings.JWT_SECRET_KEY, algorithm="HS256")
+
+
+def test_client_key_is_distinct_per_user():
+    """Regression: keying on a JWT prefix aliased everyone into one bucket because
+    the header is identical across tokens. The key must track the `sub` claim."""
+    a = _client_key(_FakeRequest(bearer=_token("user-a")))
+    b = _client_key(_FakeRequest(bearer=_token("user-b")))
+    assert a != b
+    assert a == "user:user-a"
+    # Same user via the cookie channel keys identically to the bearer channel.
+    assert _client_key(_FakeRequest(cookie=_token("user-a"))) == a
+
+
+def test_client_key_falls_back_to_ip_without_token():
+    assert _client_key(_FakeRequest()) == "ip:10.0.0.9"
+
+
+def test_client_key_hashes_undecodable_token_distinctly():
+    a = _client_key(_FakeRequest(bearer="garbage-token-A"))
+    b = _client_key(_FakeRequest(bearer="garbage-token-B"))
+    assert a != b and a.startswith("tok:")

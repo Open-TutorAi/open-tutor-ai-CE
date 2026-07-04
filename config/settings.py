@@ -55,9 +55,14 @@ class Settings:
         raise ValueError(f"MAX_UPLOAD_SIZE_MB must be a number, got: {_upload_mb}")
 
     # Server-side MIME allowlist for teacher-uploaded class materials / attachments.
-    # Exact types plus the prefixes below (image/*, text/*). Keeps executables, scripts
-    # and other risky payloads out of the materials library. Tunable via env (comma-list).
-    ALLOWED_MATERIAL_MIME_PREFIXES = ("image/", "text/")
+    # Exact types plus the prefixes below (image/*). Keeps executables, scripts and
+    # other risky payloads out of the materials library. Tunable via env (comma-list).
+    #
+    # NOTE: the broad `text/` prefix was intentionally removed — it admitted
+    # `text/html`, which combined with an inline download let an uploaded page run
+    # as stored XSS. Only the safe, non-executable text types below are allowed, and
+    # downloads are served as `attachment` (never rendered) as a second layer.
+    ALLOWED_MATERIAL_MIME_PREFIXES = ("image/",)
     _default_material_mime = (
         "application/pdf,"
         "application/msword,"
@@ -69,7 +74,8 @@ class Settings:
         "application/vnd.oasis.opendocument.text,"
         "application/vnd.oasis.opendocument.spreadsheet,"
         "application/vnd.oasis.opendocument.presentation,"
-        "application/rtf,application/json,application/zip"
+        "application/rtf,application/json,application/zip,"
+        "text/plain,text/csv,text/markdown"
     )
     ALLOWED_MATERIAL_MIME = frozenset(
         t.strip()

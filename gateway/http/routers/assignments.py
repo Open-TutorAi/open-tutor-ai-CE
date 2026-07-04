@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 from assignments.service import AssignmentsService
 from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from data.models import User
+from gateway.http.attachments import attachment_response
 from gateway.http.dependencies import (
     Pagination,
     get_assignments_service,
@@ -60,13 +61,13 @@ def _http_from_domain(exc: Exception) -> HTTPException:
 
 
 def _attachment_response(result: tuple) -> Response:
-    """(bytes, content_type, filename) → a download Response with a sane filename."""
+    """(bytes, content_type, filename) → a forced-download Response.
+
+    Serves `attachment` with a header-sanitised filename (see
+    gateway.http.attachments) so a crafted name can't break the response header.
+    """
     data, content_type, filename = result
-    return Response(
-        content=data,
-        media_type=content_type,
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
+    return attachment_response(data, content_type, filename)
 
 
 # ── teacher: authoring ─────────────────────────────────────────────────────────
