@@ -61,7 +61,11 @@
 			// signin/signup — nothing is persisted where page scripts can read it.
 
 			if ($socket) {
-				$socket.emit('user-join', { auth: { token: sessionUser.token } });
+				// The socket first connected on /auth before we were logged in (an
+				// anonymous, rejected handshake). Reconnect so the handshake re-runs
+				// carrying the freshly-set session cookie — no token passed to JS.
+				$socket.disconnect();
+				$socket.connect();
 			}
 			await user.set(sessionUser);
 			await config.set(await getBackendConfig());
@@ -164,8 +168,14 @@
 			return;
 		}
 		// Exchange the fragment token for an HttpOnly cookie session instead of
-		// persisting it anywhere page scripts could read it.
-		await establishCookieSession(token).catch(() => {});
+		// persisting it anywhere page scripts could read it. If this fails there is
+		// no session — surface it and stop rather than appearing logged in.
+		try {
+			await establishCookieSession(token);
+		} catch (err) {
+			toast.error(`${err}`);
+			return;
+		}
 		await setSessionUser(sessionUser);
 	};
 

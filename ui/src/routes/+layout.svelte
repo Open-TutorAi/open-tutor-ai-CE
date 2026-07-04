@@ -487,12 +487,11 @@
 
 				// Probe the session — the HttpOnly cookie (sent automatically) decides
 				// whether we're signed in; nothing is read from localStorage.
-				const sessionUser = await getSessionUser('').catch(() => null);
+				const sessionUser = await getSessionUser().catch(() => null);
 
 				if (sessionUser) {
-					// Save Session User to Store
-					$socket.emit('user-join', { auth: { token: sessionUser.token } });
-
+					// The socket is already authenticated by the cookie in connect(),
+					// so no user-join token emit is needed here.
 					$socket?.on('chat-events', chatEventHandler);
 					$socket?.on('channel-events', channelEventHandler);
 

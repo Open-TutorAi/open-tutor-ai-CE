@@ -2,9 +2,9 @@
 """HttpOnly cookie sessions — the browser auth channel.
 
 Signin/signup set an HttpOnly, SameSite=Lax session cookie; `get_current_user`
-reads the cookie first and falls back to `Authorization: Bearer` (tests, tools).
-A CSRF origin check guards cookie-authenticated mutations, and the Socket.IO
-handshake accepts the cookie as well.
+prefers an explicit `Authorization: Bearer` token (tests, tools) and otherwise
+authenticates via the cookie. A CSRF origin check guards *cookie-only*
+mutations, and the Socket.IO handshake accepts the cookie as well.
 """
 
 from config import settings
@@ -12,6 +12,10 @@ from gateway.realtime.socket import _token_from_cookie
 
 
 def _signup(client, email="cookie@t.com", name="Cookie", password="pass1234!"):
+    # Signup happens while logged out — clear any prior session cookie so the
+    # request is anonymous (mirrors a browser, and avoids the cookie-only CSRF
+    # guard firing on a bodyless-origin test request).
+    client.cookies.clear()
     r = client.post(
         "/auths/signup", json={"email": email, "name": name, "password": password}
     )
@@ -114,38 +118,55 @@ def test_bearer_to_cookie_exchange(client):
 # ── CSRF origin check ────────────────────────────────────────────────────────
 
 
-def test_csrf_blocks_cookie_mutation_from_foreign_origin(client):
-    _signup(client)
-    r = client.post(
+def _pw_update(client, **headers):
+    return client.post(
         "/api/v1/auths/update/password",
         json={"password": "pass1234!", "new_password": "other5678!"},
-        headers={"Origin": "https://evil.example"},
+        headers=headers,
     )
+
+
+def test_csrf_blocks_cookie_mutation_from_foreign_origin(client):
+    _signup(client)
+    r = _pw_update(client, Origin="https://evil.example")
     assert r.status_code == 403
-    assert r.json()["detail"] == "Origin not allowed"
+    assert r.json()["detail"] == "Origin check failed"
+
+
+def test_csrf_blocks_cookie_mutation_with_missing_origin(client):
+    """A cookie-only unsafe request with NO Origin/Referer is rejected too —
+    closes the "no Origin header" bypass."""
+    _signup(client)
+    r = _pw_update(client)
+    assert r.status_code == 403
 
 
 def test_csrf_allows_configured_origin(client):
     _signup(client)
-    r = client.post(
-        "/api/v1/auths/update/password",
-        json={"password": "pass1234!", "new_password": "other5678!"},
-        headers={"Origin": "http://localhost:5173"},  # default CORS origin
+    r = _pw_update(client, Origin="http://localhost:5173")  # default CORS origin
+    assert r.status_code == 200, r.text
+
+
+def test_csrf_allows_same_origin_via_forwarded_proto(client):
+    """Behind a TLS-terminating proxy the app sees http internally; the check
+    must honour X-Forwarded-Proto/Host so the real https origin matches."""
+    _signup(client)
+    r = _pw_update(
+        client,
+        Origin="https://tutor.example.com",
+        **{"X-Forwarded-Proto": "https", "X-Forwarded-Host": "tutor.example.com"},
     )
     assert r.status_code == 200, r.text
 
 
 def test_csrf_does_not_affect_bearer_clients(client):
-    """No cookie → no CSRF exposure → foreign Origin is fine for API clients."""
-    data = _signup(client)
-    client.cookies.clear()
-    r = client.post(
-        "/api/v1/auths/update/password",
-        json={"password": "pass1234!", "new_password": "other5678!"},
-        headers={
-            "Authorization": f"Bearer {data['token']}",
-            "Origin": "https://anywhere.example",
-        },
+    """A bearer token isn't a CSRF vector — foreign Origin is fine for API clients,
+    even when a cookie is also present."""
+    data = _signup(client)  # client keeps the cookie too
+    r = _pw_update(
+        client,
+        Authorization=f"Bearer {data['token']}",
+        Origin="https://anywhere.example",
     )
     assert r.status_code == 200, r.text
 
