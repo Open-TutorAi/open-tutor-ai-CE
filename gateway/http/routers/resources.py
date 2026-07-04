@@ -23,6 +23,7 @@ from pydantic import BaseModel, Field
 
 from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from config import settings
+from content.resources.service import ResourcesService
 from data.models import User
 from gateway.http.attachments import attachment_response
 from gateway.http.dependencies import (
@@ -32,7 +33,6 @@ from gateway.http.dependencies import (
     pagination,
     require_teacher,
 )
-from resources.service import ResourcesService
 
 # Class-scoped material routes live under /classrooms; the flat library + templates
 # live at the top level. Both register under /api/v1.

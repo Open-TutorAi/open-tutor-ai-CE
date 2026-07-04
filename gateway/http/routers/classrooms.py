@@ -9,7 +9,6 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr, Field
 
-from classrooms.service import ClassroomsService
 from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from data.models import User
 from gateway.http.dependencies import (
@@ -19,6 +18,7 @@ from gateway.http.dependencies import (
     pagination,
     require_teacher,
 )
+from learning.classrooms.service import ClassroomsService
 
 router = APIRouter(prefix="/classrooms", tags=["classrooms"])
 # Invitee-facing acceptance lives outside the /classrooms (teacher) tree.

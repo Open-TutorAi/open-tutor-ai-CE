@@ -13,7 +13,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
-from assignments.service import AssignmentsService
 from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from data.models import User
 from gateway.http.attachments import attachment_response
@@ -24,6 +23,7 @@ from gateway.http.dependencies import (
     pagination,
     require_teacher,
 )
+from learning.assignments.service import AssignmentsService
 
 # Teacher-facing authoring/grading lives under the /classrooms tree.
 router = APIRouter(prefix="/classrooms", tags=["assignments"])

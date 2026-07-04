@@ -12,13 +12,6 @@ from typing import Any, Dict, List
 from sqlalchemy.orm import Session
 
 from accounts.users.service import AccountService as IdentityService
-from classrooms.repository import (
-    ClassroomRepository,
-    EnrollmentRepository,
-    InvitationRepository,
-    MonitorAwayEventRepository,
-    MonitorStateRepository,
-)
 from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from data.models import (
     Classroom,
@@ -28,7 +21,14 @@ from data.models import (
     MonitorState,
 )
 from governance.self_regulation.service import SelfRegulationService
-from guardians.service import GuardiansService
+from learning.classrooms.repository import (
+    ClassroomRepository,
+    EnrollmentRepository,
+    InvitationRepository,
+    MonitorAwayEventRepository,
+    MonitorStateRepository,
+)
+from learning.guardians.service import GuardiansService
 from learning.supports.service import SupportsService
 
 INVITE_EXPIRY_DAYS = 14

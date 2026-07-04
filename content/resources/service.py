@@ -12,20 +12,20 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy.orm import Session
 
-from assignments.service import AssignmentsService
-from classrooms.repository import ClassroomRepository, EnrollmentRepository
 from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from content.files.service import FilesService
+from content.resources.repository import (
+    AssignmentTemplateRepository,
+    ClassResourceRepository,
+)
 from data.models import (
     AssignmentTemplate,
     ClassResource,
     Classroom,
     Enrollment,
 )
-from resources.repository import (
-    AssignmentTemplateRepository,
-    ClassResourceRepository,
-)
+from learning.assignments.service import AssignmentsService
+from learning.classrooms.repository import ClassroomRepository, EnrollmentRepository
 
 
 class ResourcesService:

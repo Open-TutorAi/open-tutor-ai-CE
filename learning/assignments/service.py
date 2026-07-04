@@ -12,12 +12,12 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy.orm import Session
 
 from accounts.users.service import AccountService as IdentityService
-from assignments.repository import AssignmentRepository, SubmissionRepository
-from classrooms.repository import ClassroomRepository, EnrollmentRepository
 from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from content.files.service import FilesService
 from data.models import Assignment, Classroom, Enrollment, ExamSession, Submission
-from exams.repository import ExamSessionRepository
+from learning.assignments.repository import AssignmentRepository, SubmissionRepository
+from learning.classrooms.repository import ClassroomRepository, EnrollmentRepository
+from learning.exams.repository import ExamSessionRepository
 
 
 class AssignmentsService:

@@ -14,12 +14,12 @@ from pydantic import BaseModel, Field
 
 from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from data.models import User
-from exams.service import ExamsService
 from gateway.http.dependencies import (
     get_current_user,
     get_exams_service,
     require_teacher,
 )
+from learning.exams.service import ExamsService
 
 router = APIRouter(prefix="/classrooms", tags=["exams"])
 student_router = APIRouter(prefix="/assignments", tags=["exams"])

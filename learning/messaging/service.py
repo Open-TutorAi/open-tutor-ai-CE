@@ -13,7 +13,6 @@ from typing import Any, Dict, List
 from sqlalchemy.orm import Session
 
 from accounts.users.service import AccountService as IdentityService
-from classrooms.repository import ClassroomRepository, EnrollmentRepository
 from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from content.files.service import FilesService
 from data.models import (
@@ -23,7 +22,8 @@ from data.models import (
     Enrollment,
     Message,
 )
-from messaging.repository import (
+from learning.classrooms.repository import ClassroomRepository, EnrollmentRepository
+from learning.messaging.repository import (
     ConversationRepository,
     MessageRepository,
     ParticipantRepository,

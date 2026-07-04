@@ -8,18 +8,18 @@ from jwt import InvalidTokenError, decode
 from sqlalchemy.orm import Session
 
 from accounts.users.service import AccountService
-from assignments.service import AssignmentsService
-from classrooms.service import ClassroomsService
 from config import settings
 from content.files.service import FilesService
+from content.resources.service import ResourcesService
 from data.database import get_db
 from data.models import User
-from exams.service import ExamsService
 from governance.self_regulation.service import SelfRegulationService
-from guardians.service import GuardiansService
+from learning.assignments.service import AssignmentsService
+from learning.classrooms.service import ClassroomsService
+from learning.exams.service import ExamsService
+from learning.guardians.service import GuardiansService
+from learning.messaging.service import MessagingService
 from learning.supports.service import SupportsService
-from messaging.service import MessagingService
-from resources.service import ResourcesService
 
 security = HTTPBearer()
 

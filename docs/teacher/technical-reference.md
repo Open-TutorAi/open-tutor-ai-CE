@@ -11,14 +11,14 @@ API endpoints and data models for the teacher section. Companion to the plain-la
 
 ## Bounded contexts
 
-| Context       | Directory      | Responsibility                                              |
-| ------------- | -------------- | ----------------------------------------------------------- |
-| `classrooms`  | `classrooms/`  | Classes, roster, invitations, progress, screen-control (E6) |
-| `guardians`   | `guardians/`   | Parent ↔ student guardian links                            |
-| `assignments` | `assignments/` | Assignment authoring, submission, grading                   |
-| `resources`   | `resources/`   | Class-materials library + assignment templates              |
-| `messaging`   | `messaging/`   | 1:1 teacher ↔ student conversations                        |
-| `exams`       | `exams/`       | Proctored-exam config, sessions, violations                 |
+| Context       | Directory               | Responsibility                                              |
+| ------------- | ----------------------- | ----------------------------------------------------------- |
+| `classrooms`  | `learning/classrooms/`  | Classes, roster, invitations, progress, screen-control (E6) |
+| `guardians`   | `learning/guardians/`   | Parent ↔ student guardian links                            |
+| `assignments` | `learning/assignments/` | Assignment authoring, submission, grading                   |
+| `resources`   | `content/resources/`    | Class-materials library + assignment templates              |
+| `messaging`   | `learning/messaging/`   | 1:1 teacher ↔ student conversations                        |
+| `exams`       | `learning/exams/`       | Proctored-exam config, sessions, violations                 |
 
 ## Endpoints
 

@@ -19,7 +19,7 @@ from gateway.http.dependencies import (
     get_messaging_service,
     pagination,
 )
-from messaging.service import MessagingService
+from learning.messaging.service import MessagingService
 
 router = APIRouter(prefix="/conversations", tags=["messaging"])
 

@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from accounts.users.service import AccountService as IdentityService
 from common.exceptions import ValidationError
 from data.models import GuardianLink
-from guardians.repository import GuardianRepository
+from learning.guardians.repository import GuardianRepository
 
 
 class GuardiansService:

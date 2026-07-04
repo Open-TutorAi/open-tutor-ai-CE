@@ -13,8 +13,6 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy.orm import Session
 
 from accounts.users.service import AccountService as IdentityService
-from assignments.repository import AssignmentRepository
-from classrooms.repository import ClassroomRepository, EnrollmentRepository
 from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from data.models import (
     Assignment,
@@ -24,7 +22,9 @@ from data.models import (
     ExamSession,
     ExamViolation,
 )
-from exams.repository import (
+from learning.assignments.repository import AssignmentRepository
+from learning.classrooms.repository import ClassroomRepository, EnrollmentRepository
+from learning.exams.repository import (
     ExamConfigRepository,
     ExamSessionRepository,
     ExamViolationRepository,
