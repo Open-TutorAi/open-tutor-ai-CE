@@ -19,9 +19,7 @@
 		);
 	});
 
-	let currentIsDarkMode = false;
 	isDarkMode.subscribe((value) => {
-		currentIsDarkMode = value;
 		document.documentElement.classList.toggle('dark', value);
 	});
 

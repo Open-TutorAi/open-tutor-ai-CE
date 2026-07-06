@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, getContext } from 'svelte';
+	const i18n = getContext('i18n');
 	import { user } from '$lib/stores';
 	import {
 		getIASessions,
@@ -131,7 +132,7 @@
 		<span class="text-2xl">🤖</span>
 		<div>
 			<p class="text-2xl font-bold text-gray-800 dark:text-white">{stats.total}</p>
-			<p class="text-xs text-gray-500">Sessions ce mois</p>
+			<p class="text-xs text-gray-500">{$i18n.t('Sessions this month')}</p>
 		</div>
 	</div>
 	<div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm flex items-center gap-3">
@@ -140,21 +141,21 @@
 			<p class="text-2xl font-bold text-gray-800 dark:text-white">
 				{heures}h{mins > 0 ? mins : ''}
 			</p>
-			<p class="text-xs text-gray-500">Temps total IA</p>
+			<p class="text-xs text-gray-500">{$i18n.t('Total AI time')}</p>
 		</div>
 	</div>
 	<div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm flex items-center gap-3">
 		<span class="text-2xl">⭐</span>
 		<div>
 			<p class="text-2xl font-bold {scoreColor(stats.score_moyen)}">{stats.score_moyen}</p>
-			<p class="text-xs text-gray-500">Score qualité moy.</p>
+			<p class="text-xs text-gray-500">{$i18n.t('Avg quality score')}</p>
 		</div>
 	</div>
 	<div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm flex items-center gap-3">
 		<span class="text-2xl">💬</span>
 		<div>
 			<p class="text-2xl font-bold text-gray-800 dark:text-white">{totalQuestions}</p>
-			<p class="text-xs text-gray-500">Questions posées</p>
+			<p class="text-xs text-gray-500">{$i18n.t('Questions asked')}</p>
 		</div>
 	</div>
 </div>
@@ -209,12 +210,12 @@
 {:else if visibleSessions.length === 0}
 	<div class="text-center py-16 text-gray-400">
 		<p class="text-4xl mb-3">📚</p>
-		<p>Aucune session trouvée.</p>
+		<p>{$i18n.t('No sessions found.')}</p>
 	</div>
 {:else}
 	<!-- Grille 4 colonnes -->
 	<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-		{#each visibleSessions as session}
+		{#each visibleSessions as session (session.id)}
 			<div
 				class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-5 flex flex-col gap-3 hover:shadow-md transition cursor-pointer"
 				on:click={() => openDetail(session)}
