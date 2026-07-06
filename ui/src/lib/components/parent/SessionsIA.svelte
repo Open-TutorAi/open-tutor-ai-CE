@@ -1,5 +1,11 @@
 <script lang="ts">
 	import { onMount, getContext } from 'svelte';
+	import Robot from '$lib/components/icons/Robot.svelte';
+	import Clock from '$lib/components/icons/Clock.svelte';
+	import Star from '$lib/components/icons/Star.svelte';
+	import ChartBar from '$lib/components/icons/ChartBar.svelte';
+	import AlertTriangle from '$lib/components/icons/AlertTriangle.svelte';
+	import ChatBubble from '$lib/components/icons/ChatBubble.svelte';
 	const i18n = getContext('i18n');
 	import { user } from '$lib/stores';
 	import {
@@ -129,14 +135,14 @@
 <!-- ── KPI Cards ──────────────────────────────────────────────────────────── -->
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
 	<div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm flex items-center gap-3">
-		<span class="text-2xl">🤖</span>
+		<Robot className="size-8 text-blue-600" />
 		<div>
 			<p class="text-2xl font-bold text-gray-800 dark:text-white">{stats.total}</p>
 			<p class="text-xs text-gray-500">{$i18n.t('Sessions this month')}</p>
 		</div>
 	</div>
 	<div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm flex items-center gap-3">
-		<span class="text-2xl">⏱</span>
+		<Clock className="size-8 text-blue-600" />
 		<div>
 			<p class="text-2xl font-bold text-gray-800 dark:text-white">
 				{heures}h{mins > 0 ? mins : ''}
@@ -145,14 +151,14 @@
 		</div>
 	</div>
 	<div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm flex items-center gap-3">
-		<span class="text-2xl">⭐</span>
+		<Star className="size-8 text-yellow-500" />
 		<div>
 			<p class="text-2xl font-bold {scoreColor(stats.score_moyen)}">{stats.score_moyen}</p>
 			<p class="text-xs text-gray-500">{$i18n.t('Avg quality score')}</p>
 		</div>
 	</div>
 	<div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm flex items-center gap-3">
-		<span class="text-2xl">💬</span>
+		<ChartBar className="size-8 text-purple-600" />
 		<div>
 			<p class="text-2xl font-bold text-gray-800 dark:text-white">{totalQuestions}</p>
 			<p class="text-xs text-gray-500">{$i18n.t('Questions asked')}</p>
@@ -198,7 +204,7 @@
 <!-- ── Contenu ────────────────────────────────────────────────────────────── -->
 {#if loading}
 	<div class="flex justify-center py-16">
-		<div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
+		<div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-gray-300 dark:border-gray-600"></div>
 	</div>
 {:else if error}
 	<div class="bg-red-50 dark:bg-red-900/20 border border-red-200 rounded-xl p-6 text-center">
@@ -313,7 +319,7 @@
 				<div
 					class="flex items-center justify-between pt-1 border-t border-gray-100 dark:border-gray-700"
 				>
-					<span class="text-xs text-blue-500 hover:underline">Voir la transcription →</span>
+					<span class="text-xs text-gray-600 dark:text-gray-400 hover:underline">Voir la transcription →</span>
 					<span
 						class="text-xs {session.statut === 'terminee' ? 'text-green-500' : 'text-orange-400'}"
 					>
