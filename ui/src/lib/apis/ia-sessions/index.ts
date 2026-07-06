@@ -5,20 +5,20 @@ import { TUTOR_API_BASE_URL } from '$lib/constants';
 export interface Metriques {
 	engagement: number;
 	comprehension: number;
-	autonomie: number;
+	autonomy: number;
 }
 
 export interface SessionSummary {
 	id: string;
-	matiere: string;
-	duree_minutes: number;
+	subject: string;
+	duration_minutes: number;
 	quality_score: number;
-	alerte_difficulte: boolean;
+	difficulty_alert: boolean;
 	themes: string[];
 	questions: string[];
 	resume?: string;
 	metriques?: Metriques;
-	statut: string;
+	status: string;
 }
 
 export interface SessionStats {
