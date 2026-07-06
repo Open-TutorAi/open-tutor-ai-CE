@@ -94,16 +94,87 @@ class IASessionsService:
         subject: Optional[str] = None,
         period: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """GET /sessions?child_id=X — steps 5→11 du diagramme de séquence."""
+        """GET /sessions?child_id=X — charge les vraies sessions depuis la DB."""
         self._require_parent_access(parent_id, child_id)
 
-        sessions = self._get_demo_sessions(child_id, subject=subject)
+        # Charger les vraies sessions depuis la DB via les chats liés aux soutiens
+        from data.models import Support, Chat
+
+        supports = self.db.query(Support).filter(
+            Support.user_id == child_id,
+            Support.chat_id.isnot(None),
+        ).all()
+
+        sessions = []
+        for support in supports:
+            chat = self.db.query(Chat).filter(Chat.id == support.chat_id).first()
+            if not chat or not chat.chat:
+                continue
+
+            chat_data = chat.chat if isinstance(chat.chat, dict) else {}
+            messages_raw = chat_data.get("messages", {})
+            if isinstance(messages_raw, dict):
+                messages_list = list(messages_raw.values())
+            elif isinstance(messages_raw, list):
+                messages_list = messages_raw
+            else:
+                messages_list = []
+
+            ai_messages = [m for m in messages_list if isinstance(m, dict) and m.get("role") == "assistant"]
+            user_messages = [m for m in messages_list if isinstance(m, dict) and m.get("role") == "user"]
+
+            if not ai_messages:
+                continue
+
+            avg_len = sum(len(str(m.get("content", ""))) for m in ai_messages) / max(len(ai_messages), 1)
+            quality_score = min(round(avg_len / 200, 1), 10.0)
+            alerte = quality_score < 6.0
+
+            questions = []
+            for m in user_messages[:3]:
+                content = m.get("content", "")
+                if isinstance(content, list):
+                    content = " ".join(c.get("text", "") for c in content if isinstance(c, dict))
+                if content and len(content) > 3:
+                    # GDPR : tronquer à 60 chars
+                    questions.append(str(content)[:60] + "..." if len(str(content)) > 60 else str(content))
+
+            last_content = ai_messages[-1].get("content", "") if ai_messages else ""
+            if isinstance(last_content, list):
+                last_content = " ".join(c.get("text", "") for c in last_content if isinstance(c, dict))
+            resume = str(last_content)[:150] + "..." if last_content and len(str(last_content)) > 150 else str(last_content)
+
+            matiere = support.subject or support.custom_subject or "Général"
+            if subject and matiere.lower() != subject.lower():
+                continue
+
+            engagement = min(quality_score + 0.5, 10.0)
+            comprehension = min(quality_score - 0.2, 10.0)
+            autonomie = min(quality_score - 0.8, 10.0)
+
+            sessions.append({
+                "id": chat.id,
+                "matiere": matiere,
+                "duree_minutes": len(ai_messages) * 2,
+                "quality_score": quality_score,
+                "alerte_difficulte": alerte,
+                "themes": [matiere],
+                "questions": questions,
+                "resume": resume or "Session en cours.",
+                "metriques": {
+                    "engagement": engagement,
+                    "comprehension": comprehension,
+                    "autonomie": autonomie,
+                },
+                "statut": "terminee" if len(ai_messages) >= 10 else "en_cours",
+            })
+
+        sessions.sort(key=lambda s: s.get("id", ""), reverse=True)
 
         avec_alerte = sum(1 for s in sessions if s["alerte_difficulte"])
         score_moyen = (
             round(sum(s["quality_score"] for s in sessions) / len(sessions), 2)
-            if sessions
-            else 0.0
+            if sessions else 0.0
         )
 
         return {

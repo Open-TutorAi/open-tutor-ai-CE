@@ -1,9 +1,9 @@
 """Router Sessions IA — /api/v1/ia-sessions/* (US-P04)."""
 
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from common.exceptions import AuthorizationError, NotFoundError
 from data.models import User

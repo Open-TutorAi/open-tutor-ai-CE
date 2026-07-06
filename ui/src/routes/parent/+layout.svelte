@@ -2,10 +2,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { get, writable, derived } from 'svelte/store';
+	import { get, derived } from 'svelte/store';
 	import { user, theme } from '$lib/stores';
 	import { page } from '$app/stores';
-	import { getContext } from 'svelte';
 	import { TUTOR_FRONT_URL } from '$lib/constants';
 
 	let isSidebarOpen = true;
@@ -50,7 +49,7 @@
 		goto(`/parent/${id}`);
 	}
 
-	onMount(async () => {
+	onMount(() => {
 		const currentUser = get(user);
 		if (!currentUser) {
 			goto('/auth');

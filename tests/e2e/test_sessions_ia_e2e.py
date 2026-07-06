@@ -1,4 +1,9 @@
+import os
 import pytest
+
+if not os.getenv("RUN_E2E"):
+    pytest.skip("Skipping Playwright E2E tests (set RUN_E2E=1 to enable).", allow_module_level=True)
+
 from playwright.sync_api import Page, expect
 
 
