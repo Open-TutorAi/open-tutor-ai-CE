@@ -83,3 +83,9 @@ def get_self_regulation_service(db: Session = Depends(get_db)) -> SelfRegulation
 
 def get_files_service(db: Session = Depends(get_db)) -> FilesService:
     return FilesService(db)
+
+
+def get_ia_sessions_service(db: Session = Depends(get_db)):
+    from learning.sessions.ia_service import IASessionsService
+
+    return IASessionsService(db)
