@@ -9,7 +9,7 @@ from fastapi.responses import StreamingResponse
 
 log = logging.getLogger(__name__)
 
-TIMEOUT_DEFAULT = 30.0
+TIMEOUT_DEFAULT = 120.0
 TIMEOUT_STREAM = 300.0
 
 
@@ -69,7 +69,7 @@ async def proxy_json(
     except HTTPException:
         raise
     except Exception as exc:
-        log.warning("Proxy error %s %s: %s", method, url, exc)
+        log.warning("Proxy error %s %s: %r (type=%s)", method, url, exc, type(exc).__name__)
         raise HTTPException(status_code=502, detail=f"Upstream unreachable: {exc}")
 
 
@@ -104,7 +104,7 @@ async def proxy_stream(
         raise
     except Exception as exc:
         await client.aclose()
-        log.warning("Proxy stream error %s %s: %s", method, url, exc)
+        log.warning("Proxy stream error %s %s: %r (type=%s)", method, url, exc, type(exc).__name__)
         raise HTTPException(status_code=502, detail=f"Upstream unreachable: {exc}")
 
     content_type = response.headers.get("content-type", "application/octet-stream")

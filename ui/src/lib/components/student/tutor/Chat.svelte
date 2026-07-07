@@ -1400,14 +1400,13 @@
 			};
 
 			const responseMessage = {
-				id: responseMessageId,
-				parentId: userMessageId,
-				childrenIds: [],
-				role: 'assistant',
-				content: `[RESPONSE] ${responseMessageId}`,
-				done: true,
-
-				model: modelId,
+    id: responseMessageId,
+    parentId: userMessageId,
+    childrenIds: [],
+    role: 'assistant',
+    content: '',
+    done: false,
+    model: modelId,
 				modelName: model.name ?? model.id,
 				modelIdx: 0,
 				timestamp: Math.floor(Date.now() / 1000)

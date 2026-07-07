@@ -666,7 +666,15 @@
 										{/each}
 									</div>
 								{/if}
-								<PedagogicalShortcuts on:submit={handleShortcut} />
+								<PedagogicalShortcuts on:submit={handleShortcut} conversationContext={
+  history?.messages
+    ? Object.values(history.messages)
+        .filter(m => m?.role && m?.content)
+        .slice(-8)
+        .map(m => (m.role === 'user' ? 'Etudiant: ' : 'IA: ') + (typeof m.content === 'string' ? m.content : m.content?.[0]?.text || ''))
+        .join('\n')
+    : ''
+} />
 								<div class="flex items-center gap-2 py-2.5 w-full">
 									<div class="flex-1 min-w-0">
 										{#if $settings?.richTextInput ?? true}
