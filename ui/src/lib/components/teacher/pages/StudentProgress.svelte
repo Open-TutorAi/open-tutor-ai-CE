@@ -2,6 +2,7 @@
 	import { onMount, getContext } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { getStudentProgress, type StudentProgress } from '$lib/apis/classrooms';
+	import { fmtDateTime as fmt } from '$lib/utils/format';
 	import GuardiansModal from '$lib/components/teacher/elements/GuardiansModal.svelte';
 
 	const i18n: any = getContext('i18n');
@@ -12,10 +13,6 @@
 	let loading = true;
 	let loadError = '';
 	let showGuardians = false;
-
-	function fmt(ts: string | null | undefined): string {
-		return ts ? new Date(ts).toLocaleString() : '—';
-	}
 
 	onMount(async () => {
 		try {

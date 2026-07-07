@@ -29,6 +29,11 @@
 		deleteMaterial,
 		type ClassMaterial
 	} from '$lib/apis/resources';
+	import {
+		activityStatusStyle as statusStyle,
+		activityStatusLabel as statusLabel
+	} from '$lib/utils/status';
+	import { fmtDate, fmtSize, fmtDateTime as fmtTime } from '$lib/utils/format';
 	import { monitorAway } from '$lib/stores';
 	import AddStudentModal from '$lib/components/teacher/elements/AddStudentModal.svelte';
 	import InviteModal from '$lib/components/teacher/elements/InviteModal.svelte';
@@ -58,16 +63,6 @@
 	let presenceTotal = 0;
 	let showPresence = false;
 
-	const statusStyle: Record<string, string> = {
-		active: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-		idle: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
-		not_started: 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
-	};
-	const statusLabel: Record<string, string> = {
-		active: 'active',
-		idle: 'idle',
-		not_started: 'not started'
-	};
 	let tab: 'Roster' | 'Progress' | 'Assignments' | 'Resources' | 'Invitations' | 'Control' =
 		'Roster';
 	let loading = true;
@@ -132,15 +127,6 @@
 	async function onAssignmentCreated(e: CustomEvent<AssignmentSummary>) {
 		assignments = [e.detail, ...assignments];
 		showCreateAssignment = false;
-	}
-	function fmtDate(ts?: string | null): string {
-		return ts ? new Date(ts).toLocaleDateString() : '—';
-	}
-	function fmtSize(bytes: number | null): string {
-		if (bytes == null) return '—';
-		if (bytes < 1024) return `${bytes} B`;
-		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-		return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 	}
 	function onMaterialUploaded(e: CustomEvent<ClassMaterial>) {
 		materials = [e.detail, ...materials];
@@ -220,10 +206,6 @@
 			loadAwayLog();
 		}
 	}
-	const fmtTime = (iso: string) => {
-		const d = new Date(iso);
-		return isNaN(d.getTime()) ? '' : d.toLocaleString();
-	};
 
 	// Clear stale tab-away state when a student's lock changes: unlocking drops it
 	// entirely; a fresh lock resets to "present" until the student reports otherwise

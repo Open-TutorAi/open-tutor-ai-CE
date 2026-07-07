@@ -3,6 +3,7 @@
 	import { onMount, getContext } from 'svelte';
 	import { getMyTeachers } from '$lib/apis/classrooms';
 	import { getClassMaterials, downloadMaterial, type ClassMaterial } from '$lib/apis/resources';
+	import { fmtDate, fmtSize } from '$lib/utils/format';
 
 	const i18n: any = getContext('i18n');
 	const token = () => localStorage.getItem('token') ?? '';
@@ -18,16 +19,6 @@
 			(classFilter === 'all' || m.classroom_id === classFilter) &&
 			m.title.toLowerCase().includes(query.toLowerCase())
 	);
-
-	function fmtSize(bytes: number | null): string {
-		if (bytes == null) return '—';
-		if (bytes < 1024) return `${bytes} B`;
-		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-		return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-	}
-	function fmtDate(ts?: string | null): string {
-		return ts ? new Date(ts).toLocaleDateString() : '—';
-	}
 
 	async function load() {
 		loading = true;

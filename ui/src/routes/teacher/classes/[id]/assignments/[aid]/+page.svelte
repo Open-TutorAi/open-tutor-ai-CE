@@ -14,6 +14,11 @@
 	} from '$lib/apis/assignments';
 	import { getExam, getProctoring, type ProctorRow } from '$lib/apis/exams';
 	import GradeModal from '$lib/components/teacher/elements/GradeModal.svelte';
+	import {
+		submissionStatusStyle as statusStyle,
+		submissionStatusLabel as statusLabel
+	} from '$lib/utils/status';
+	import { fmtDate, downloadBlob as saveBlob } from '$lib/utils/format';
 
 	const i18n: any = getContext('i18n');
 	const token = () => localStorage.getItem('token') ?? '';
@@ -50,30 +55,6 @@
 		);
 	}
 
-	const statusStyle: Record<string, string> = {
-		graded: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-		submitted: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-		auto_submitted: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
-		late: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
-		missing: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
-		pending: 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
-	};
-	const statusLabel: Record<string, string> = {
-		auto_submitted: 'Auto-submitted'
-	};
-
-	function fmtDate(ts?: string | null): string {
-		return ts ? new Date(ts).toLocaleDateString() : '—';
-	}
-
-	function saveBlob(blob: Blob, filename: string) {
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = filename;
-		a.click();
-		URL.revokeObjectURL(url);
-	}
 	async function getAssignmentFile() {
 		if (!data?.attachment_id) return;
 		try {

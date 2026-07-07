@@ -7,6 +7,7 @@
 		type ClassMaterial,
 		type AssignmentTemplate
 	} from '$lib/apis/resources';
+	import { fmtDate, fmtSize } from '$lib/utils/format';
 	import TemplateModal from '$lib/components/teacher/elements/TemplateModal.svelte';
 
 	const i18n: any = getContext('i18n');
@@ -17,16 +18,6 @@
 	let loading = true;
 	let tab: 'materials' | 'templates' = 'materials';
 	let showTemplate = false;
-
-	function fmtSize(bytes: number | null): string {
-		if (bytes == null) return '—';
-		if (bytes < 1024) return `${bytes} B`;
-		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-		return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-	}
-	function fmtDate(ts?: string | null): string {
-		return ts ? new Date(ts).toLocaleDateString() : '—';
-	}
 
 	async function load() {
 		loading = true;

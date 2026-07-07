@@ -2,6 +2,11 @@
 	import { onMount, getContext } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { getStudentsDirectory, type DirectoryStudent } from '$lib/apis/classrooms';
+	import {
+		activityStatusStyle as statusStyle,
+		activityStatusLabel as statusLabel
+	} from '$lib/utils/status';
+	import { fmtDate } from '$lib/utils/format';
 
 	const i18n: any = getContext('i18n');
 	const token = () => localStorage.getItem('token') ?? '';
@@ -20,20 +25,6 @@
 			(s.name ?? s.email ?? '').toLowerCase().includes(query.toLowerCase())
 	);
 
-	const statusStyle: Record<string, string> = {
-		active: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-		idle: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
-		not_started: 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
-	};
-	const statusLabel: Record<string, string> = {
-		active: 'active',
-		idle: 'idle',
-		not_started: 'not started'
-	};
-
-	function fmtDate(ts: string | null): string {
-		return ts ? new Date(ts).toLocaleDateString() : '—';
-	}
 	function openStudent(s: DirectoryStudent) {
 		// Open the student in the context of their first class.
 		if (s.classes.length) goto(`/teacher/classes/${s.classes[0].id}/students/${s.student_id}`);

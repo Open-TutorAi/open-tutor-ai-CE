@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { getStudentsDirectory, type DirectoryStudent } from '$lib/apis/classrooms';
+	import { fmtDateTime as fmtDate } from '$lib/utils/format';
 
 	const i18n: any = getContext('i18n');
 	const token = () => localStorage.getItem('token') ?? '';
@@ -20,8 +21,6 @@
 			loading = false;
 		}
 	});
-
-	const fmtDate = (iso: string | null): string => (iso ? new Date(iso).toLocaleString() : '—');
 </script>
 
 <div class="flex flex-col gap-6">
