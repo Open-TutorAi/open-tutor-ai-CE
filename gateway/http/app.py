@@ -9,8 +9,10 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from config import settings
 from data.database import init_database
+from gateway.http.routers import courses
 
 from .routers import (
+    courses,
     health,
     auth,
     supports,
@@ -112,6 +114,7 @@ def create_app() -> FastAPI:
     # Supports, evaluations, files — only under /api/v1 (all UI calls use TUTOR_API_BASE_URL)
     app.include_router(supports.router, prefix="/api/v1")
     app.include_router(paths.router, prefix="/api")
+    app.include_router(courses.router, prefix="/api/v1")
     app.include_router(self_regulation.router, prefix="/api/v1")
     app.include_router(files.router, prefix="/api/v1")
     app.include_router(app_info.router, prefix="/api/v1")

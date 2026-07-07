@@ -35,25 +35,25 @@ async def generate_learning_path(
         raise HTTPException(status_code=400, detail="Subject is required")
 
     # Build the prompt for the AI
-    prompt = f"""Tu es un expert pédagogique. Crée un cours complet et détaillé.
+    prompt = f"""Tu es un expert pédagogique. Crée un cours clair et concis.
 
 **Sujet** : {subject}
 **Niveau** : {level}  
 **Objectif** : {objective}
 
-Crée 3 chapitres progressifs avec du contenu RICHE et DÉTAILLÉ (explications claires, exemples concrets, cas pratiques).
+Crée 2 chapitres progressifs avec du contenu clair (environ 200 mots par chapitre).
 
 Format JSON strict :
 {{
     "title": "Titre du cours",
-    "description": "Description en 2-3 phrases",
+    "description": "Description en 1 phrase",
     "chapters": [
         {{
             "id": 1,
             "title": "Titre chapitre 1",
-            "introduction": "2-3 phrases d'intro",
-            "content": "Contenu détaillé avec explications, exemples, cas pratiques (plusieurs paragraphes)",
-            "summary": "Résumé en 2-3 phrases",
+            "introduction": "1 phrase d'intro",
+            "content": "Contenu clair avec explications et 1 exemple concret (200 mots)",
+            "summary": "Résumé en 1 phrase",
             "quiz": [
                 {{"question": "Question ?", "options": ["A", "B", "C", "D"], "correct": 0}}
             ]
@@ -62,8 +62,8 @@ Format JSON strict :
 }}
 
 Règles :
-- Contenu pédagogique de qualité (explications claires, exemples concrets)
-- 3-5 questions de quiz pertinentes par chapitre
+- Contenu pédagogique clair et concis
+- 2 questions de quiz par chapitre
 - Réponds UNIQUEMENT avec le JSON, rien d'autre"""
 
 
