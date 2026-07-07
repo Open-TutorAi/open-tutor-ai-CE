@@ -10,13 +10,13 @@ consistent formatting across all application modules.
 """
 
 from .exceptions import (
-    TutorAIException,
     AuthenticationError,
     AuthorizationError,
-    ValidationError,
-    NotFoundError,
     DatabaseError,
     FileOperationError,
+    NotFoundError,
+    TutorAIException,
+    ValidationError,
 )
 from .logging import get_logger
 

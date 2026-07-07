@@ -47,17 +47,23 @@
 		{
 			label: $i18n.t('Open Ended'),
 			icon: '💬',
-			prompt: $i18n.t('Ask me one challenging open-ended question that requires a detailed explanation to test my memory and comprehension of what we just discussed.')
+			prompt: $i18n.t(
+				'Ask me one challenging open-ended question that requires a detailed explanation to test my memory and comprehension of what we just discussed.'
+			)
 		},
 		{
 			label: $i18n.t('Multiple Choice'),
 			icon: '🧩',
-			prompt: $i18n.t('Provide 3 Multiple Choice Questions with distinct options to test if I can identify the correct logic among common misconceptions.')
+			prompt: $i18n.t(
+				'Provide 3 Multiple Choice Questions with distinct options to test if I can identify the correct logic among common misconceptions.'
+			)
 		},
 		{
 			label: $i18n.t('Concept Link'),
 			icon: '🔗',
-			prompt: $i18n.t('Pick two distinct concepts we just discussed and ask me to explain the relationship or connection between them to test my ability to synthesize the information.')
+			prompt: $i18n.t(
+				'Pick two distinct concepts we just discussed and ask me to explain the relationship or connection between them to test my ability to synthesize the information.'
+			)
 		}
 	];
 
@@ -300,8 +306,13 @@
         align-items: center;
     }
 
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+	.no-scrollbar::-webkit-scrollbar {
+		display: none;
+	}
+	.no-scrollbar {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
+	}
 
     .nav-button {
         flex: 0 0 auto;

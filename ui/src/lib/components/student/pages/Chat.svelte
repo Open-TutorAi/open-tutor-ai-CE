@@ -6,7 +6,7 @@
 	import { page } from '$app/stores';
 	import { isFullscreenAvatar, settings } from '$lib/stores';
 	import { get } from 'svelte/store';
-	
+
 	let chatData = {};
 	let isRightBarVisible = false;
 	let sidebarKey = 0;
@@ -24,7 +24,8 @@
 	}
 
 	function handleChatEvent(event) {
-		chatData = {...chatData, ...event.detail};
+		// Process chat events and update rightbar if needed
+		chatData = { ...chatData, ...event.detail };
 	}
 
 	function toggleRightBar() {
@@ -52,8 +53,8 @@
 	<!-- ── Main Chat area ── -->
 	<div class="chat-container flex-1 h-full overflow-hidden bg-[#F5F7F9] dark:bg-gray-900 {$isFullscreenAvatar ? '' : 'rounded-r-2xl shadow-sm mr-2'}">
 		<Chat chatIdProp={$page.params.id} chatMode="quiz" on:chatEvent={handleChatEvent} />
-		
-		<!-- Toggle button for mobile RightBar -->
+
+		<!-- Toggle button for mobile - hide in fullscreen -->
 		{#if !$isFullscreenAvatar}
 			<button
 				class="toggle-rightbar hidden max-[1210px]:block fixed right-4 bottom-4 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-2 shadow-lg z-99999"
@@ -70,7 +71,7 @@
 			</button>
 		{/if}
 	</div>
-	
+
 	<!-- ── Right bar ── -->
 	{#if !$isFullscreenAvatar}
 		<div
@@ -87,11 +88,13 @@
 		height: 100%;
 		width: 100%;
 	}
-	
-	.chat-container, .rightbar-container {
+
+	.chat-container,
+	.rightbar-container {
+		/* Ensure proper scroll containment */
 		height: 100%;
 	}
-	
+
 	/* Mobile styles */
 	@media (max-width: 1210px) {
 		.rightbar-container {

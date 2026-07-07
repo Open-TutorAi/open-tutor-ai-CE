@@ -91,25 +91,27 @@ export const processResponseContent = (content: string) => {
 		// Unescape the extracted content
 		return directResponseMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n');
 	}
-	
+
 	// Check for markdown code blocks with JSON
 	if (content.trim().startsWith('```json') || content.includes('```json')) {
 		console.log('processResponseContent: Found markdown code block with JSON');
 		// Extract JSON content from code block
 		let jsonText = '';
-		
+
 		// Pattern 1: Standard markdown code block
 		const codeBlockMatch = content.match(/```json\s*([\s\S]*?)```/);
 		if (codeBlockMatch && codeBlockMatch[1]) {
 			jsonText = codeBlockMatch[1].trim();
 			console.log('processResponseContent: Extracted JSON from standard code block');
-		} 
+		}
 		// Pattern 2: If the closing ``` is missing
 		else if (content.includes('```json')) {
 			jsonText = content.split('```json')[1].trim();
-			console.log('processResponseContent: Extracted JSON from code block without closing backticks');
+			console.log(
+				'processResponseContent: Extracted JSON from code block without closing backticks'
+			);
 		}
-		
+
 		if (jsonText) {
 			try {
 				const parsedJson = JSON.parse(jsonText);
@@ -123,7 +125,7 @@ export const processResponseContent = (content: string) => {
 			}
 		}
 	}
-	
+
 	// Check if the content is raw JSON
 	if (content.trim().startsWith('{') && content.trim().endsWith('}')) {
 		console.log('processResponseContent: Content appears to be raw JSON');
@@ -149,7 +151,7 @@ export const processResponseContent = (content: string) => {
 			}
 		}
 	}
-	
+
 	// Check if the content might be an array containing JSON objects
 	if (content.trim().startsWith('[') && content.trim().endsWith(']')) {
 		console.log('processResponseContent: Content appears to be a JSON array');
@@ -167,7 +169,7 @@ export const processResponseContent = (content: string) => {
 			// If parsing fails, continue with original content
 		}
 	}
-	
+
 	// Final check for any JSON-like structure in the content
 	const jsonObjectMatch = content.match(/\{[\s\S]*?\}/);
 	if (jsonObjectMatch) {

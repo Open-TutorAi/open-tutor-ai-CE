@@ -175,7 +175,7 @@ async def upload_support_file(
         )
     except (NotFoundError, AuthorizationError) as exc:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=exc.message)
-    except ValidationError as exc:
+    except ValidationError:
         raise _too_large
     return {"id": record.id, "filename": record.filename, "status": "success"}
 

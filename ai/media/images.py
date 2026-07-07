@@ -1,6 +1,7 @@
 """Images service — config + proxy to image generation provider."""
 
 from sqlalchemy.orm import Session
+
 from data.models.config import AppConfig
 
 _KEY = "images_config"

@@ -16,7 +16,12 @@
 	import { generateAutoCompletion } from '$lib/apis';
 	import { deleteFileById } from '$lib/apis/files';
 
-	import { TUTOR_FRONT_URL, TUTOR_BASE_URL, TUTOR_API_BASE_URL, PASTED_TEXT_CHARACTER_LIMIT } from '$lib/constants';
+	import {
+		TUTOR_FRONT_URL,
+		TUTOR_BASE_URL,
+		TUTOR_API_BASE_URL,
+		PASTED_TEXT_CHARACTER_LIMIT
+	} from '$lib/constants';
 
 	import InputMenu from '../chat/MessageInput/InputMenu.svelte';
 	import VoiceRecording from '../chat/MessageInput/VoiceRecording.svelte';
@@ -86,7 +91,6 @@
 	$: visionCapableModels = [...(atSelectedModel ? [atSelectedModel] : selectedModels)].filter(
 		(model) => $models.find((m) => m.id === model)?.info?.meta?.capabilities?.vision ?? true
 	);
-
 
 	let videoModeActive = false; // true when video search or player panel is open
 	let videoView: string | null = null; // 'video-search' | 'video-player' | null
@@ -799,7 +803,7 @@
 										</div>
 									{:else}
 										<div class="flex-1 min-w-0">
-										
+
 										{#if $settings?.richTextInput ?? true}
 											<div
 												class="scrollbar-hidden text-left bg-transparent dark:text-gray-100 outline-hidden w-full resize-none max-h-80 overflow-y-auto break-words"

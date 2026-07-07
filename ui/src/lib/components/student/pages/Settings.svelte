@@ -11,7 +11,6 @@
 	import { settings, theme } from '$lib/stores';
 	import { getLanguages } from '$lib/i18n';
 
-
 	const i18n = getContext('i18n');
 
 	export let saveHandler: Function = () => {};
@@ -48,7 +47,6 @@
 		applyTheme(_theme);
 		selectedTheme = _theme;
 	};
-
 
 	const submitHandler = async () => {
 		if (name !== $user.name) {
@@ -88,7 +86,9 @@
 	});
 </script>
 
-<div class="flex flex-col h-full justify-between text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-5">
+<div
+	class="flex flex-col h-full justify-between text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-5"
+>
 	<div class="space-y-4 overflow-y-scroll max-h-[28rem] lg:max-h-full custom-scrollbar">
 		<input
 			id="profile-image-input"
@@ -175,7 +175,9 @@
 							<div
 								class="absolute flex justify-center rounded-full bottom-0 left-0 right-0 top-0 h-full w-full overflow-hidden bg-gray-700 bg-fixed opacity-0 transition duration-300 ease-in-out hover:opacity-50"
 							>
-								<div class="absolute flex justify-center items-center inset-0 rounded-full bg-black/50 opacity-0 hover:opacity-100 transition duration-300">
+								<div
+									class="absolute flex justify-center items-center inset-0 rounded-full bg-black/50 opacity-0 hover:opacity-100 transition duration-300"
+								>
 									<svg
 										xmlns="http://www.w3.org/2000/svg"
 										viewBox="0 0 20 20"
@@ -193,7 +195,9 @@
 				</div>
 
 				<div class="flex-1 flex flex-col self-center gap-1">
-					<div class="text-sm font-semibold text-gray-700 dark:text-gray-300">{$i18n.t('Profile Image')}</div>
+					<div class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+						{$i18n.t('Profile Image')}
+					</div>
 
 					<div class="flex gap-2 flex-wrap">
 						<button
@@ -226,12 +230,10 @@
 									toast.error('Failed to load Gravatar image');
 								}
 								profileImageInputElement.value = '';
-								}}
-							>
+							}}
+						>
 							{$i18n.t('Use Gravatar')}
 						</button>
-
-
 
 						<button
 							class="text-xs text-red-600 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-lg hover:bg-red-100 dark:hover:bg-red-900 transition"
@@ -245,7 +247,9 @@
 
 			<div class="pt-2">
 				<div class="flex flex-col w-full">
-					<div class="mb-1 text-xs font-semibold text-gray-600 dark:text-gray-400">{$i18n.t('Name')}</div>
+					<div class="mb-1 text-xs font-semibold text-gray-600 dark:text-gray-400">
+						{$i18n.t('Name')}
+					</div>
 
 					<div class="flex-1">
 						<input
@@ -300,7 +304,6 @@
 		</div>
 
 		<hr class="border-t border-gray-200 dark:border-gray-700 my-4" />
-
 	</div>
 
 	<div class="flex justify-end pt-4">

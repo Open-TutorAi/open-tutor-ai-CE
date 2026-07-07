@@ -1,7 +1,8 @@
 # providers/registry.py
 """Provider registry for managing available providers."""
 
-from typing import Dict, Type, Optional
+from typing import Dict, Optional, Type
+
 from ai.providers.base import Provider
 
 

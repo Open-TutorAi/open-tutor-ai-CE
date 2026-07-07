@@ -2,9 +2,11 @@
 
 import uuid
 from typing import Any, Dict, List
+
 from sqlalchemy.orm import Session
-from common.exceptions import NotFoundError
+
 from ai.retrieval.knowledge.repository import KnowledgeRepository
+from common.exceptions import NotFoundError
 
 
 class KnowledgeService:

@@ -10,8 +10,7 @@ import time
 from typing import Any
 
 import socketio
-from config import settings
-from data.database import SessionLocal
+
 from gateway.http.dependencies import decode_jwt_token
 
 log = logging.getLogger(__name__)
@@ -169,7 +168,7 @@ async def usage(sid: str, data: dict):
 
     # Store usage data
     USAGE_POOL[model_id] = {
-        **((USAGE_POOL.get(model_id) or {})),
+        **(USAGE_POOL.get(model_id) or {}),
         sid: {"updated_at": current_time},
     }
 

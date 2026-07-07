@@ -1,10 +1,10 @@
 <script>
 	import { onMount, getContext } from 'svelte';
 	import { createEventDispatcher } from 'svelte';
-	
+
 	// Event dispatcher to communicate with parent component
 	const dispatch = createEventDispatcher();
-	const i18n = getContext('i18n'); 
+	const i18n = getContext('i18n');
 
 	// Role data structure
 	const roles = [
@@ -62,18 +62,23 @@
 	});
 </script>
 
-<div class="min-h-screen bg-[#F0F9FF] border border-blue-200 flex flex-col justify-center items-center p-4 overflow-auto">
-
+<div
+	class="min-h-screen bg-[#F0F9FF] border border-blue-200 flex flex-col justify-center items-center p-4 overflow-auto"
+>
 	<main class="w-full max-w-6xl mx-auto pt-16">
 		<div class="text-center mb-8">
-			<h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2">{$i18n.t('Choose Your Role')}</h1>
+			<h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+				{$i18n.t('Choose Your Role')}
+			</h1>
 			<p class="text-gray-600">{$i18n.t('Select the role that best describes you')}</p>
 		</div>
 
 		<!-- Role cards container -->
 		<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
 			{#each roles as role, i}
-				<div class="bg-white rounded-lg shadow-md p-6 flex flex-col items-center border transition-transform">
+				<div
+					class="bg-white rounded-lg shadow-md p-6 flex flex-col items-center border transition-transform"
+				>
 					<div
 						class="w-16 h-16 rounded-full {role.iconBgColor} flex items-center justify-center mb-4 text-3xl"
 					>
@@ -104,7 +109,9 @@
 		<!-- Note -->
 		<div class="text-center max-w-xl mx-auto">
 			<p class="text-sm text-gray-600">
-				{$i18n.t('Note: Your role determines the features and access levels available to you. You can request a role change later if needed.')}
+				{$i18n.t(
+					'Note: Your role determines the features and access levels available to you. You can request a role change later if needed.'
+				)}
 			</p>
 		</div>
 	</main>

@@ -1,8 +1,9 @@
 """Pydantic models for feedback API."""
 
-from typing import Optional
-from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel
 
 
 class SubmitFeedbackRequest(BaseModel):

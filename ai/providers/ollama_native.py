@@ -8,7 +8,7 @@ model-management concerns.
 import hashlib
 import logging
 import os
-from typing import AsyncIterator, Optional
+from typing import AsyncIterator
 
 import httpx
 

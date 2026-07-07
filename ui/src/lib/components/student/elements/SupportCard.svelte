@@ -1,7 +1,7 @@
 <!-- src/lib/components/student/elements/SupportCard.svelte -->
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	
+
 	export let support: any;
 	export let i18n: any;
 
@@ -45,9 +45,7 @@
 			</div>
 
 			<div class="flex items-center sm:flex-col sm:items-end text-sm">
-				<div
-					class="flex items-center text-gray-500 dark:text-gray-400 mr-4 sm:mr-0 sm:mb-2"
-				>
+				<div class="flex items-center text-gray-500 dark:text-gray-400 mr-4 sm:mr-0 sm:mb-2">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						class="h-4 w-4 mr-1"
@@ -205,4 +203,4 @@
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 	}
-</style> 
+</style>
