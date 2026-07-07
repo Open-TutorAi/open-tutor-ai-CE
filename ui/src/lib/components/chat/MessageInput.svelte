@@ -36,6 +36,7 @@
 	import XMark from '../icons/XMark.svelte';
 	import GlobeAlt from '../icons/GlobeAlt.svelte';
 	import Photo from '../icons/Photo.svelte';
+	import Mic from '../icons/Mic.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -91,12 +92,90 @@
 		(model) => $models.find((m) => m.id === model)?.info?.meta?.capabilities?.vision ?? true
 	);
 
+	let videoModeActive = false; // true when video search or player panel is open
+	let videoView: string | null = null; // 'video-search' | 'video-player' | null
+	let pedagogicalShortcutsRef;
+
+	// ── Video search bar (bottom, replaces the prompt while searching) ──
+	let videoBarQuery = '';
+	let videoBarMicListening = false;
+	let videoBarMicRecognizer: any = null;
+
+	function submitVideoSearch() {
+		if (!videoBarQuery.trim()) return;
+		pedagogicalShortcutsRef?.launchVideoSearch(videoBarQuery.trim());
+	}
+
+	function cancelVideoSearch() {
+		videoBarQuery = '';
+		pedagogicalShortcutsRef?.closeVideoPlayer();
+	}
+
+	function toggleVideoBarMic() {
+		if (videoBarMicListening) {
+			videoBarMicRecognizer?.stop();
+			videoBarMicListening = false;
+			return;
+		}
+		const SpeechRecognition =
+			(window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+		if (!SpeechRecognition) {
+			toast.error($i18n.t('Reconnaissance vocale non supportée par ce navigateur.'));
+			return;
+		}
+		const lang =
+			($settings as any)?.quizLanguage === 'en' ? 'en-US' :
+			($settings as any)?.quizLanguage === 'fr' ? 'fr-FR' :
+			navigator.language || 'fr-FR';
+
+		videoBarMicRecognizer = new SpeechRecognition();
+		videoBarMicRecognizer.lang = lang;
+		videoBarMicRecognizer.interimResults = true;
+		videoBarMicRecognizer.continuous = false;
+
+		let finalTranscript = '';
+		videoBarMicRecognizer.onstart = () => { videoBarMicListening = true; };
+		videoBarMicRecognizer.onresult = (event: any) => {
+			let interim = '';
+			for (let i = event.resultIndex; i < event.results.length; i++) {
+				if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript + ' ';
+				else interim = event.results[i][0].transcript;
+			}
+			videoBarQuery = (finalTranscript + interim).trimStart();
+		};
+		videoBarMicRecognizer.onend = () => {
+			videoBarMicListening = false;
+			videoBarQuery = finalTranscript.trim() || videoBarQuery.trim();
+		};
+		videoBarMicRecognizer.onerror = () => { videoBarMicListening = false; };
+		videoBarMicRecognizer.start();
+	}
+
 	const handleShortcut = async (event) => {
-		const text = event.detail;
+		const text = typeof event.detail === 'string' ? event.detail : event.detail?.text;
+		const autoSend = typeof event.detail === 'string' ? false : (event.detail?.autoSend === true);
+
+		if (!text) return; // guard: no empty submits
+
 		prompt = text;
 		await tick();
-		document.getElementById('send-message-button')?.click();
+
+		if (autoSend) {
+			// Only click send if the button is actually visible (not in video mode)
+			const sendBtn = document.getElementById('send-message-button');
+			if (sendBtn && !videoModeActive) {
+				sendBtn.click();
+			}
+		} else {
+			document.getElementById('chat-input')?.focus();
+		}
 	};
+
+	$: if (videoView !== 'video-search') {
+		videoBarMicRecognizer?.stop();
+		videoBarMicListening = false;
+		videoBarQuery = '';
+	}
 
 	const scrollToBottom = () => {
 		const element = document.getElementById('messages-container');
@@ -666,9 +745,65 @@
 										{/each}
 									</div>
 								{/if}
-								<PedagogicalShortcuts on:submit={handleShortcut} />
+                                <PedagogicalShortcuts
+									bind:this={pedagogicalShortcutsRef}
+									on:submit={handleShortcut}
+									on:videoMode={(e) => { videoModeActive = e.detail.active; videoView = e.detail.view; }}
+								/>
 								<div class="flex items-center gap-2 py-2.5 w-full">
-									<div class="flex-1 min-w-0">
+									{#if videoView === 'video-search'}
+										<!-- Video search bar replaces the prompt while searching for a video -->
+										<div class="flex-1 flex items-center gap-2">
+											<input
+												type="text"
+												bind:value={videoBarQuery}
+												on:keydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); submitVideoSearch(); } }}
+												placeholder={$i18n.t('Ex: algorithmes et pseudocode, protocole TCP...')}
+												class="flex-1 px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-800 dark:text-gray-100 outline-hidden focus:border-blue-400 dark:focus:border-blue-500 transition"
+												autofocus
+											/>
+											<button
+												type="button"
+												on:click={toggleVideoBarMic}
+												title={videoBarMicListening ? $i18n.t('Arrêter l\'écoute') : $i18n.t('Dicter le sujet')}
+												class="shrink-0 size-9 flex items-center justify-center rounded-full border transition {videoBarMicListening ? 'bg-blue-500 border-blue-500 text-white animate-pulse' : 'border-blue-400/50 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10'}"
+											>
+												{#if videoBarMicListening}
+													<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+														<rect x="6" y="6" width="12" height="12" rx="2"/>
+													</svg>
+												{:else}
+													<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+														<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+														<path d="M19 10v2a7 7 0 0 1-14 0v-2H3v2a9 9 0 0 0 8 8.94V22H9v2h6v-2h-2v-1.06A9 9 0 0 0 21 12v-2h-2z"/>
+													</svg>
+												{/if}
+											</button>
+											<button
+												type="button"
+												on:click={submitVideoSearch}
+												class="shrink-0 px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-400 dark:bg-blue-400 dark:hover:bg-blue-300 text-white text-sm font-medium transition"
+											>
+												▶ {$i18n.t('Rechercher')}
+											</button>
+											<button
+												type="button"
+												on:click={cancelVideoSearch}
+												title={$i18n.t('Annuler')}
+												class="shrink-0 size-9 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+											>
+												✕
+											</button>
+										</div>
+									{:else if videoView === 'video-player'}
+										<!-- Banner shown while the video is playing -->
+										<div class="flex-1 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 text-sm text-blue-600 dark:text-blue-400 select-none">
+											<span class="text-base">🎥</span>
+											<span class="flex-1">{$i18n.t('Vidéo en cours de lecture ci-dessus')}</span>
+										</div>
+									{:else}
+										<div class="flex-1 min-w-0">
+
 										{#if $settings?.richTextInput ?? true}
 											<div
 												class="scrollbar-hidden text-left bg-transparent dark:text-gray-100 outline-hidden w-full resize-none max-h-80 overflow-y-auto break-words"
@@ -1077,8 +1212,38 @@
 											/>
 										{/if}
 									</div>
+									{/if}
 
 									<div class="flex items-center gap-1 shrink-0">
+										<Tooltip content={$settings?.quizLanguage === 'en' ? 'English' : 'Français'}>
+											<button
+												class="bg-transparent hover:bg-gray-100 text-gray-500 dark:text-gray-400 dark:hover:bg-gray-700 transition rounded-full px-2 py-1.5 outline-hidden focus:outline-hidden font-bold text-xs"
+												type="button"
+												aria-label="Toggle TTS Language"
+												on:click={() => {
+													const newLang = ($settings?.quizLanguage === 'en') ? 'fr' : 'en';
+													settings.update(s => ({...s, quizLanguage: newLang}));
+													toast.success(newLang === 'en' ? 'Language: English' : 'Langue: Français');
+												}}
+											>
+												{$settings?.quizLanguage === 'en' ? 'EN' : 'FR'}
+											</button>
+										</Tooltip>
+										{#if !videoModeActive}
+										<Tooltip content={$i18n.t('Record Voice')}>
+											<button
+												class="bg-transparent hover:bg-gray-100 text-gray-500 dark:text-gray-400 dark:hover:bg-gray-700 transition rounded-full p-1.5 outline-hidden focus:outline-hidden"
+												type="button"
+												aria-label="Record Voice"
+												on:click={() => {
+													recording = true;
+												}}
+											>
+												<Mic className="size-5" />
+											</button>
+										</Tooltip>
+										{/if}
+										{#if !videoModeActive}
 										<InputMenu
 											bind:selectedToolIds
 											{screenCaptureHandler}
@@ -1130,7 +1295,9 @@
 												</svg>
 											</button>
 										</InputMenu>
+										{/if}
 
+										{#if !videoModeActive}
 										{#if !history.currentId || history.messages[history.currentId]?.done == true}
 											<div class="flex items-center">
 												<Tooltip content={$i18n.t('Send message')}>
@@ -1181,6 +1348,7 @@
 													</button>
 												</Tooltip>
 											</div>
+										{/if}
 										{/if}
 									</div>
 								</div>

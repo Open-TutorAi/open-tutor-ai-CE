@@ -16,6 +16,7 @@
 	import type { i18n as i18nType } from 'i18next';
 	import { TUTOR_BASE_URL, TUTOR_API_BASE_URL } from '$lib/constants';
 	import promptData from './prompt.json';
+	import quizPromptData from './quiz_prompt.json';
 
 	import {
 		chatId,
@@ -108,6 +109,7 @@
 	}
 
 	export let chatIdProp = '';
+	export let chatMode = 'support';
 
 	let loading = false;
 
@@ -141,6 +143,7 @@
 	let webSearchEnabled = false;
 	let codeInterpreterEnabled = false;
 	let chat = null;
+	let correctAnswersCount = 0;
 	let tags = [];
 
 	let history = {
@@ -157,9 +160,11 @@
 	let params = {};
 
 	// Make avatarActive reactive to settings changes
-	// This ensures avatarActive updates whenever settings.avatarEnabled changes
+	// For historical chats (chatIdProp set), default to false to show messages first
 	$: avatarActive =
-		($settings as any)?.avatarEnabled !== undefined ? ($settings as any).avatarEnabled : true;
+		($settings as any)?.avatarEnabled !== undefined
+			? ($settings as any).avatarEnabled
+			: !chatIdProp; // default: true for new chats, false for historical chats
 	let avatarSpeaking = false;
 	let currentAvatarMessage = '';
 
@@ -520,7 +525,7 @@
 		if (event.data.type === 'input:prompt:submit') {
 			console.debug(event.data.text);
 
-			if (prompt !== '') {
+			if (event.data.text !== '') {
 				await tick();
 				submitPrompt(event.data.text);
 			}
@@ -529,6 +534,24 @@
 
 	onMount(async () => {
 		console.log('mounted');
+
+		// Ensure audio settings are correctly enabled for the student space
+		try {
+			if ($settings) {
+				let newSettings = { ...$settings };
+				if (!newSettings.audio) newSettings.audio = {};
+				if (!newSettings.audio.stt) newSettings.audio.stt = {};
+				newSettings.audio.stt.engine = 'web';
+
+				if (!newSettings.audio.tts) newSettings.audio.tts = { engine: '' };
+
+				// Removed auto-playback override to respect user's manual choice
+				// newSettings.responseAutoPlayback = true;
+				settings.set(newSettings);
+			}
+		} catch (e) {
+			console.error("Failed to initialize audio settings", e);
+		}
 
 		// Initialize global event target if it doesn't exist
 		if (typeof window !== 'undefined' && !window.openTutorEvents) {
@@ -952,7 +975,18 @@
 			//systemPrompt+= promptData;
 			// Add reminder to stay focused on the topic and not ask redundant questions - STRENGTHENED
 			systemPrompt += `FINAL REMINDER: DO NOT ask the student about information they've already provided such as their educational level, background, or learning goals. Instead, directly begin helping them with their learning objective. Always keep your responses relevant to the topic (${supportDetails.title}) and learning objectives described above. Your role is to provide structured guidance on this specific subject matter. If the student says only "hello" or provides a very brief message, jump straight into teaching the topic - don't waste time with preliminary questions.`;
-			systemPrompt += promptData.prompt;
+			
+			const currentPromptData = chatMode === 'quiz' ? quizPromptData : promptData;
+			systemPrompt += currentPromptData.prompt;
+
+			// Inject language preference from UI settings (FR/EN flag toggle)
+			const uiLanguage = ($settings as any)?.quizLanguage ?? 'en';
+			const langName = uiLanguage === 'fr' ? 'French (Français)' : 'English';
+			const langInstruction = uiLanguage === 'fr'
+				? '\n\n🌍 LANGUAGE OVERRIDE (ABSOLUTE PRIORITY): Tu DOIS répondre UNIQUEMENT en français, quelle que soit la langue du message de l\'élève. Ne réponds JAMAIS en anglais.'
+				: '\n\n🌍 LANGUAGE OVERRIDE (ABSOLUTE PRIORITY): You MUST respond ONLY in English, regardless of the language the learner uses.';
+			systemPrompt += langInstruction;
+
 			return systemPrompt;
 		} catch (error) {
 			console.error('Error generating support system prompt:', error);
@@ -1598,6 +1632,23 @@
 		if (done) {
 			message.done = true;
 
+			// Remediation logic - only in Quiz mode
+			if (chatMode === 'quiz') {
+				if (message.content.includes('<CORRECT>')) {
+					correctAnswersCount++;
+					if (correctAnswersCount >= 3) {
+						toast.success($i18n.t('Notion acquise ! Passage à la notion suivante...'));
+						correctAnswersCount = 0;
+						
+						setTimeout(() => {
+							submitPrompt("J'ai répondu correctement 3 fois de suite ! La notion est acquise, passons au concept suivant s'il te plaît.");
+						}, 1500);
+					}
+				} else if (message.content.includes('<INCORRECT>')) {
+					correctAnswersCount = 0;
+				}
+			}
+
 			if ($settings.responseAutoCopy) {
 				copyToClipboard(message.content);
 			}
@@ -2215,10 +2266,21 @@
 
 		// Merge support context with avatar/base prompt instead of overwriting it.
 		// Avatar persona goes first so support instructions augment it, not replace it.
-		const effectiveSystemContent =
-			combinedSystemPrompt && baseSystemContent
-				? `${baseSystemContent}\n\n${combinedSystemPrompt}`
-				: combinedSystemPrompt || baseSystemContent;
+		let effectiveSystemContent = combinedSystemPrompt && baseSystemContent
+			? `${baseSystemContent}\n\n${combinedSystemPrompt}`
+			: combinedSystemPrompt || baseSystemContent;
+
+		if (chatMode === 'quiz') {
+			effectiveSystemContent += `\n\n${quizPromptData.prompt}`;
+		}
+
+		// Inject language from the FR/EN toggle (applies to ALL chat modes)
+		const _uiLang = ($settings as any)?.quizLanguage ?? 'en';
+		if (_uiLang === 'fr') {
+			effectiveSystemContent += `\n\n🌍 INSTRUCTION DE LANGUE OBLIGATOIRE: Tu DOIS répondre UNIQUEMENT et ENTIÈREMENT en français dans TOUS tes messages. N'utilise JAMAIS l'anglais, quelle que soit la langue du message reçu.`;
+		} else {
+			effectiveSystemContent += `\n\n🌍 MANDATORY LANGUAGE INSTRUCTION: You MUST respond ONLY and ENTIRELY in English in ALL your messages. NEVER use French or any other language.`;
+		}
 
 		let messages = [
 			{
@@ -2969,12 +3031,7 @@
 									} else {
 										// Even with no prompt, create a new chat with default state
 										await initNewChat();
-										// After a moment, navigate to ensure the chat interface appears
-										setTimeout(() => {
-											const initialMessage = 'Hello';
-											prompt = initialMessage;
-											submitPrompt(initialMessage);
-										}, 300);
+										// Do not send Hello automatically
 									}
 								}}
 							/>

@@ -643,6 +643,48 @@
 						</div>
 					</div>
 
+					<!-- Quiz Section -->
+					<div class="mb-8">
+						<h3
+							class="text-lg font-semibold text-gray-800 dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-gray-700"
+						>
+							{$i18n.t('Quiz')}
+						</h3>
+
+						<div class="flex items-start gap-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-xl p-4 border border-indigo-100 dark:border-indigo-800">
+							<!-- Icon -->
+							<div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
+								<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+									<path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+								</svg>
+							</div>
+							<!-- Text + Button -->
+							<div class="flex-1">
+								<h4 class="font-semibold text-gray-800 dark:text-white mb-1">{$i18n.t('Test your knowledge')}</h4>
+								<p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
+									{$i18n.t('Launch an interactive quiz session with voice support and AI-powered feedback on this subject.')}
+								</p>
+								<a
+									href="/student/chat"
+									class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white text-sm font-semibold rounded-full shadow-md transition-all duration-200 active:scale-95"
+								>
+									<!-- Sparkle icon -->
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+										<path d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+									</svg>
+									{$i18n.t('Start Quiz')}
+									<!-- Microphone icon -->
+									<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+										<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+										<path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+										<line x1="12" y1="19" x2="12" y2="23"/>
+										<line x1="8" y1="23" x2="16" y2="23"/>
+									</svg>
+								</a>
+							</div>
+						</div>
+					</div>
+
 					<!-- Actions footer -->
 					<div
 						class="flex justify-end space-x-4 border-t border-gray-200 dark:border-gray-700 pt-6 mt-6"

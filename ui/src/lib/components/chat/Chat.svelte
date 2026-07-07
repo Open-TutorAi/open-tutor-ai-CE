@@ -2437,12 +2437,7 @@
 									} else {
 										// Even with no prompt, create a new chat with default state
 										await initNewChat();
-										// After a moment, navigate to ensure the chat interface appears
-										setTimeout(() => {
-											const initialMessage = 'Hello';
-											prompt = initialMessage;
-											submitPrompt(initialMessage);
-										}, 300);
+										// Do not send Hello automatically
 									}
 								}}
 							/>
