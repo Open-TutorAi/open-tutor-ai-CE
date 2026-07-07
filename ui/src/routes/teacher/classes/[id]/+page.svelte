@@ -750,12 +750,6 @@
 					</ul>
 				{/if}
 			</div>
-		{:else}
-			<div
-				class="rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 bg-white/60 dark:bg-gray-800/40 p-12 text-center text-gray-500 dark:text-gray-400"
-			>
-				{$i18n.t(tab)} — {$i18n.t('coming soon')}.
-			</div>
 		{/if}
 	{/if}
 </div>
