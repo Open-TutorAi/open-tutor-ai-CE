@@ -3,7 +3,7 @@
 	import { functions } from '$lib/stores';
 
 	import { getFunctions } from '$lib/apis/functions';
-	import Functions from '$lib/features/admin/components/Functions.svelte';
+	import Functions from '$lib/components/admin/Functions.svelte';
 
 	onMount(async () => {
 		await Promise.all([
