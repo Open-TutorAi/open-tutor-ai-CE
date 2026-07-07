@@ -53,8 +53,7 @@
 	$: mins = totalMinutes % 60;
 
 	onMount(async () => {
-		await loadLinkedStudent();
-		if (CHILD_ID) await loadSessions();
+		await loadSessions();
 	});
 
 	async function loadSessions() {

@@ -100,8 +100,10 @@ class IASessionsService:
         # Charger les vraies sessions depuis la DB via les chats liés aux soutiens
         from data.models import Support, Chat
 
+        # SÉCURITÉ : charger les soutiens du parent lui-même
+        # (le parent crée les soutiens sur son propre compte)
         supports = self.db.query(Support).filter(
-            Support.user_id == child_id,
+            Support.user_id == parent_id,
             Support.chat_id.isnot(None),
         ).all()
 

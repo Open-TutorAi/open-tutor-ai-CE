@@ -60,7 +60,7 @@ class TranscriptResponse(BaseModel):
 
 @router.get("/", response_model=SessionListResponse)
 async def list_ia_sessions(
-    child_id: str = Query(..., description="UUID de l'enfant — SÉCURITÉ: anti-IDOR"),
+    child_id: Optional[str] = Query(None, description="UUID de l'enfant (optionnel)"),
     subject: Optional[str] = Query(None, max_length=100),
     period: Optional[str] = Query(None, max_length=20),
     current_user: User = Depends(get_current_user),
@@ -73,7 +73,7 @@ async def list_ia_sessions(
     """
     try:
         result = svc.get_session_summaries(
-            child_id=child_id,
+            child_id=child_id or current_user.id,
             parent_id=current_user.id,
             subject=subject,
             period=period,
@@ -102,7 +102,7 @@ async def get_ia_session_detail(
         return svc.get_session_detail(
             session_id=session_id,
             parent_id=current_user.id,
-            child_id=child_id,
+            child_id=child_id or current_user.id,
         )
     except NotFoundError:
         raise HTTPException(
@@ -131,7 +131,7 @@ async def get_ia_session_transcript(
         return svc.get_session_transcript(
             session_id=session_id,
             parent_id=current_user.id,
-            child_id=child_id,
+            child_id=child_id or current_user.id,
         )
     except NotFoundError:
         raise HTTPException(
