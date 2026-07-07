@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, getContext } from 'svelte';
 	import { TUTOR_NAME, showSidebar, functions } from '$lib/stores';
-	import MenuLines from '$lib/components/icons/MenuLines.svelte';
+	import MenuLines from '$lib/icons/MenuLines.svelte';
 	import { page } from '$app/stores';
 
 	const i18n = getContext('i18n');

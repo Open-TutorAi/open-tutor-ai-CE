@@ -7,8 +7,8 @@
 	import { config, functions, models, settings } from '$lib/stores';
 	import { updateFunctionById, getFunctions, getFunctionById } from '$lib/apis/functions';
 
-	import FunctionEditor from '$lib/components/admin/Functions/FunctionEditor.svelte';
-	import Spinner from '$lib/components/common/Spinner.svelte';
+	import FunctionEditor from '$lib/features/admin/components/Functions/FunctionEditor.svelte';
+	import Spinner from '$lib/ui/Spinner.svelte';
 	import { getModels } from '$lib/apis';
 	import { compareVersion, extractFrontmatter } from '$lib/utils';
 	import { TUTOR_VERSION } from '$lib/constants';

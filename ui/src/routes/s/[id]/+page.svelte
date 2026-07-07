@@ -10,8 +10,8 @@
 
 	import { getChatByShareId, cloneSharedChatById } from '$lib/apis/chats';
 
-	import Messages from '$lib/components/chat/Messages.svelte';
-	import Navbar from '$lib/components/layout/Navbar.svelte';
+	import Messages from '$lib/features/chat/components/Messages.svelte';
+	import Navbar from '$lib/layout/Navbar.svelte';
 
 	import { getUserById } from '$lib/apis/users';
 	import { getModels } from '$lib/apis';

@@ -1,5 +1,5 @@
 <script>
-	import CreateKnowledgeBase from '$lib/components/workspace/Knowledge/CreateKnowledgeBase.svelte';
+	import CreateKnowledgeBase from '$lib/features/workspace/components/Knowledge/CreateKnowledgeBase.svelte';
 </script>
 
 <CreateKnowledgeBase />
