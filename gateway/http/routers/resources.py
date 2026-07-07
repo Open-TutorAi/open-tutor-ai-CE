@@ -33,6 +33,7 @@ from gateway.http.dependencies import (
     pagination,
     require_teacher,
 )
+from gateway.http.errors import http_from_domain as _http_from_domain
 
 # Class-scoped material routes live under /classrooms; the flat library + templates
 # live at the top level. Both register under /api/v1.
@@ -49,16 +50,6 @@ class TemplateRequest(BaseModel):
 class FromTemplateRequest(BaseModel):
     template_id: str = Field(..., min_length=1, max_length=64)
     due_date: Optional[str] = Field(None, max_length=40)
-
-
-def _http_from_domain(exc: Exception) -> HTTPException:
-    if isinstance(exc, NotFoundError):
-        return HTTPException(status.HTTP_404_NOT_FOUND, detail=exc.message)
-    if isinstance(exc, AuthorizationError):
-        return HTTPException(status.HTTP_403_FORBIDDEN, detail=exc.message)
-    if isinstance(exc, ValidationError):
-        return HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=exc.message)
-    raise exc
 
 
 # ── class materials ────────────────────────────────────────────────────────────

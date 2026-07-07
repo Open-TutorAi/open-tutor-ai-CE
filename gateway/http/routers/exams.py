@@ -9,7 +9,7 @@ accountability: each violation is recorded, counted, and delivered live to the t
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from common.exceptions import AuthorizationError, NotFoundError, ValidationError
@@ -19,6 +19,7 @@ from gateway.http.dependencies import (
     get_exams_service,
     require_teacher,
 )
+from gateway.http.errors import http_from_domain as _http_from_domain
 from learning.exams.service import ExamsService
 
 router = APIRouter(prefix="/classrooms", tags=["exams"])
@@ -35,16 +36,6 @@ class ExamConfigRequest(BaseModel):
 
 class ViolationRequest(BaseModel):
     type: str = Field(..., min_length=1, max_length=64)
-
-
-def _http_from_domain(exc: Exception) -> HTTPException:
-    if isinstance(exc, NotFoundError):
-        return HTTPException(status.HTTP_404_NOT_FOUND, detail=exc.message)
-    if isinstance(exc, AuthorizationError):
-        return HTTPException(status.HTTP_403_FORBIDDEN, detail=exc.message)
-    if isinstance(exc, ValidationError):
-        return HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=exc.message)
-    raise exc
 
 
 # ── teacher: configuration + proctoring ─────────────────────────────────────────

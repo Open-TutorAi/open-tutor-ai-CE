@@ -7,7 +7,7 @@ New messages are delivered live over the existing Socket.IO layer (`message:new`
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel, Field
 
 from common.exceptions import AuthorizationError, NotFoundError, ValidationError
@@ -19,6 +19,7 @@ from gateway.http.dependencies import (
     get_messaging_service,
     pagination,
 )
+from gateway.http.errors import http_from_domain as _http_from_domain
 from learning.messaging.service import MessagingService
 
 router = APIRouter(prefix="/conversations", tags=["messaging"])
@@ -31,16 +32,6 @@ class StartRequest(BaseModel):
 class SendRequest(BaseModel):
     body: Optional[str] = Field("", max_length=10000)
     attachment_id: Optional[str] = Field(None, max_length=64)
-
-
-def _http_from_domain(exc: Exception) -> HTTPException:
-    if isinstance(exc, NotFoundError):
-        return HTTPException(status.HTTP_404_NOT_FOUND, detail=exc.message)
-    if isinstance(exc, AuthorizationError):
-        return HTTPException(status.HTTP_403_FORBIDDEN, detail=exc.message)
-    if isinstance(exc, ValidationError):
-        return HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=exc.message)
-    raise exc
 
 
 @router.get("")

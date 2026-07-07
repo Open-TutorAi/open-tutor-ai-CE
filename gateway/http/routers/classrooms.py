@@ -18,6 +18,7 @@ from gateway.http.dependencies import (
     pagination,
     require_teacher,
 )
+from gateway.http.errors import http_from_domain as _http_from_domain
 from learning.classrooms.service import ClassroomsService
 
 router = APIRouter(prefix="/classrooms", tags=["classrooms"])
@@ -76,17 +77,6 @@ class ClassroomCreateRequest(BaseModel):
     term_start: Optional[str] = Field(None, max_length=40)
     term_end: Optional[str] = Field(None, max_length=40)
     meeting_days: Optional[List[str]] = Field(None, max_length=14)
-
-
-def _http_from_domain(exc: Exception) -> HTTPException:
-    """Map a domain exception to the matching HTTP error."""
-    if isinstance(exc, NotFoundError):
-        return HTTPException(status.HTTP_404_NOT_FOUND, detail=exc.message)
-    if isinstance(exc, AuthorizationError):
-        return HTTPException(status.HTTP_403_FORBIDDEN, detail=exc.message)
-    if isinstance(exc, ValidationError):
-        return HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=exc.message)
-    raise exc
 
 
 @router.get("")

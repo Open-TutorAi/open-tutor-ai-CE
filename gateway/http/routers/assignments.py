@@ -9,7 +9,7 @@ Thin HTTP layer only; domain exceptions are mapped to HTTP status here.
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
@@ -23,6 +23,7 @@ from gateway.http.dependencies import (
     pagination,
     require_teacher,
 )
+from gateway.http.errors import http_from_domain as _http_from_domain
 from learning.assignments.service import AssignmentsService
 
 # Teacher-facing authoring/grading lives under the /classrooms tree.
@@ -48,16 +49,6 @@ class GradeRequest(BaseModel):
 class SubmitRequest(BaseModel):
     content: Optional[str] = Field(None, max_length=20000)
     attachment_id: Optional[str] = Field(None, max_length=64)
-
-
-def _http_from_domain(exc: Exception) -> HTTPException:
-    if isinstance(exc, NotFoundError):
-        return HTTPException(status.HTTP_404_NOT_FOUND, detail=exc.message)
-    if isinstance(exc, AuthorizationError):
-        return HTTPException(status.HTTP_403_FORBIDDEN, detail=exc.message)
-    if isinstance(exc, ValidationError):
-        return HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=exc.message)
-    raise exc
 
 
 def _attachment_response(result: tuple) -> Response:
