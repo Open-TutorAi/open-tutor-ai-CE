@@ -20,7 +20,7 @@
 	function setView(view: string) {
 		currentView = view;
 		const isVideoMode = view === 'video-search' || view === 'video-player';
-		dispatch('videoMode', isVideoMode);
+		dispatch('videoMode', { active: isVideoMode, view });
 	}
 
 	const EXPLAIN_OVERRIDE = '⚠️ EXPLANATION REQUEST — Do NOT generate quiz questions for this message. Switch to TUTOR/EXPLANATION mode and respond with a clear educational explanation as requested below:\n\n';
@@ -96,7 +96,8 @@
 		setView('main');
 	}
 
-	async function launchVideoSearch() {
+	export async function launchVideoSearch(query?: string) {
+		if (typeof query === 'string') videoSearchQuery = query;
 		if (!videoSearchQuery.trim()) return;
 		videoLoading = true;
 		videoError = '';
@@ -122,57 +123,12 @@
 		}
 	}
 
-	function closeVideoPlayer() {
+	export function closeVideoPlayer() {
 		videoResults = [];
 		videoSearchQuery = '';
 		videoError = '';
 		videoLoading = false;
 		setView('main');
-	}
-	// ── Video search voice mic ──────────────────────────────────────────
-	let videoMicListening = false;
-	let videoMicRecognizer: any = null;
-
-	function startVideoMic() {
-		if (videoMicListening) {
-			// Stop
-			videoMicRecognizer?.stop();
-			videoMicListening = false;
-			return;
-		}
-		const SpeechRecognition =
-			(window as any).SpeechRecognition ||
-			(window as any).webkitSpeechRecognition;
-		if (!SpeechRecognition) {
-			alert($i18n.t('Reconnaissance vocale non supportée par ce navigateur.'));
-			return;
-		}
-		const lang =
-			($settings as any)?.quizLanguage === 'en' ? 'en-US' :
-			($settings as any)?.quizLanguage === 'fr' ? 'fr-FR' :
-			navigator.language || 'fr-FR';
-
-		videoMicRecognizer = new SpeechRecognition();
-		videoMicRecognizer.lang = lang;
-		videoMicRecognizer.interimResults = true;
-		videoMicRecognizer.continuous = false;
-
-		let finalTranscript = '';
-		videoMicRecognizer.onstart = () => { videoMicListening = true; };
-		videoMicRecognizer.onresult = (event: any) => {
-			let interim = '';
-			for (let i = event.resultIndex; i < event.results.length; i++) {
-				if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript + ' ';
-				else interim = event.results[i][0].transcript;
-			}
-			videoSearchQuery = (finalTranscript + interim).trimStart();
-		};
-		videoMicRecognizer.onend = () => {
-			videoMicListening = false;
-			videoSearchQuery = finalTranscript.trim() || videoSearchQuery.trim();
-		};
-		videoMicRecognizer.onerror = () => { videoMicListening = false; };
-		videoMicRecognizer.start();
 	}
 </script>
 
@@ -199,7 +155,7 @@
 				<span>🧠</span> {$i18n.t('Quiz')} <span class="chevron">›</span>
 			</button>
 
-			<button type="button" on:click={() => (setView('video-search'))} class="nav-button video-theme">
+			<button type="button" on:click={() => (setView('video-search'))} class="nav-button menu-theme">
 				<span>🎥</span> {$i18n.t('Vidéo')} <span class="chevron">›</span>
 			</button>
 		</div>
@@ -243,49 +199,6 @@
 					<span>{action.icon}</span> {action.label}
 				</button>
 			{/each}
-		</div>
-
-	{:else if currentView === 'video-search'}
-		<!-- Inline video search panel — no AI involved -->
-		<div class="video-search-panel pulse-animation">
-			<div class="video-search-header">
-				<span>🎥</span>
-				<span class="video-search-title">{$i18n.t('Rechercher une vidéo explicative')}</span>
-				<button type="button" class="close-btn" on:click={() => (setView('main'))}>✕</button>
-			</div>
-			<div class="video-search-body">
-				<input
-					type="text"
-					class="video-search-input"
-					placeholder={$i18n.t('Ex: algorithmes et pseudocode, protocole TCP...')}
-					bind:value={videoSearchQuery}
-					on:keydown={(e) => { if (e.key === 'Enter') launchVideoSearch(); }}
-					autofocus
-				/>
-				<!-- Mic button: fills videoSearchQuery with voice -->
-				<button
-					type="button"
-					class="video-mic-btn"
-					class:listening={videoMicListening}
-					on:click={startVideoMic}
-					title={videoMicListening ? $i18n.t('Arrêter l\'écoute') : $i18n.t('Dicter le sujet')}
-				>
-					{#if videoMicListening}
-						<!-- Animated stop/wave icon while listening -->
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="mic-icon">
-							<rect x="6" y="6" width="12" height="12" rx="2"/>
-						</svg>
-					{:else}
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="mic-icon">
-							<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-							<path d="M19 10v2a7 7 0 0 1-14 0v-2H3v2a9 9 0 0 0 8 8.94V22H9v2h6v-2h-2v-1.06A9 9 0 0 0 21 12v-2h-2z"/>
-						</svg>
-					{/if}
-				</button>
-				<button type="button" class="video-search-btn" on:click={launchVideoSearch}>
-					▶ {$i18n.t('Rechercher')}
-				</button>
-			</div>
 		</div>
 
 	{:else if currentView === 'video-player'}
@@ -439,17 +352,6 @@
         color: #60a5fa;
     }
 
-    .video-theme {
-        background: rgba(239, 68, 68, 0.08);
-        border-color: rgba(239, 68, 68, 0.25);
-        color: #dc2626;
-    }
-    :global(.dark) .video-theme {
-        background: rgba(239, 68, 68, 0.12);
-        border-color: rgba(239, 68, 68, 0.3);
-        color: #f87171;
-    }
-
     .back-button {
         background: transparent;
         border: 1px dashed rgba(0, 0, 0, 0.2);
@@ -467,29 +369,6 @@
         100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
     }
 
-    /* ── Video Search Panel ── */
-    .video-search-panel {
-        width: 100%;
-        border-radius: 16px;
-        border: 1px solid rgba(239, 68, 68, 0.3);
-        background: rgba(239, 68, 68, 0.05);
-        overflow: hidden;
-    }
-    :global(.dark) .video-search-panel {
-        background: rgba(239, 68, 68, 0.08);
-        border-color: rgba(239, 68, 68, 0.25);
-    }
-
-    .video-search-header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 14px;
-        background: linear-gradient(90deg, #dc2626, #ef4444);
-        color: white;
-        font-size: 13px;
-        font-weight: 600;
-    }
     .video-search-title {
         flex: 1;
         overflow: hidden;
@@ -512,74 +391,11 @@
     }
     .close-btn:hover { background: rgba(255,255,255,0.35); }
 
-    .video-search-body {
-        display: flex;
-        gap: 8px;
-        padding: 10px 12px;
-        align-items: center;
-    }
-    .video-search-input {
-        flex: 1;
-        padding: 8px 12px;
-        border-radius: 10px;
-        border: 1px solid rgba(0,0,0,0.15);
-        background: white;
-        color: #111;
-        font-size: 13px;
-        outline: none;
-        transition: border-color 0.2s;
-    }
-    :global(.dark) .video-search-input {
-        background: rgba(255,255,255,0.08);
-        border-color: rgba(255,255,255,0.15);
-        color: #eee;
-    }
-    .video-search-input:focus {
-        border-color: #ef4444;
-    }
-    .video-search-btn {
-        padding: 8px 16px;
-        background: #dc2626;
-        color: white;
-        border: none;
-        border-radius: 10px;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        white-space: nowrap;
-        transition: background 0.2s, transform 0.1s;
-    }
-    .video-search-btn:hover { background: #b91c1c; transform: scale(1.03); }
-
-    .video-mic-btn {
-        flex-shrink: 0;
-        width: 36px; height: 36px;
-        border: 1.5px solid rgba(239,68,68,0.4);
-        border-radius: 50%;
-        background: transparent;
-        color: #ef4444;
-        cursor: pointer;
-        display: flex; align-items: center; justify-content: center;
-        transition: background 0.2s, border-color 0.2s, transform 0.15s;
-    }
-    .video-mic-btn:hover { background: rgba(239,68,68,0.1); transform: scale(1.08); }
-    .video-mic-btn.listening {
-        background: #ef4444;
-        border-color: #ef4444;
-        color: white;
-        animation: mic-pulse 1s ease-in-out infinite;
-    }
-    @keyframes mic-pulse {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.5); }
-        50%       { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
-    }
-    .mic-icon { width: 16px; height: 16px; }
-
     /* ── Video Player Panel ── */
     .video-player-panel {
         width: 100%;
         border-radius: 16px;
-        border: 1px solid rgba(239, 68, 68, 0.3);
+        border: 1px solid rgba(59, 130, 246, 0.3);
         overflow: hidden;
         box-shadow: 0 8px 24px rgba(0,0,0,0.15);
     }
@@ -588,7 +404,7 @@
         align-items: center;
         gap: 8px;
         padding: 10px 14px;
-        background: linear-gradient(90deg, #dc2626, #ef4444);
+        background: linear-gradient(90deg, #2563eb, #3b82f6);
         color: white;
         font-size: 13px;
         font-weight: 600;
@@ -617,7 +433,7 @@
         background: #111;
     }
     .video-link {
-        color: #f87171;
+        color: #60a5fa;
         text-decoration: underline;
         cursor: pointer;
     }
@@ -655,7 +471,7 @@
     }
     .yt-play-btn {
         width: 60px; height: 60px;
-        background: rgba(220, 38, 38, 0.9);
+        background: rgba(37, 99, 235, 0.9);
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -664,7 +480,7 @@
         transition: transform 0.2s, background 0.2s;
     }
     .yt-thumb-btn:hover .yt-play-btn {
-        background: #dc2626;
+        background: #2563eb;
         transform: scale(1.1);
     }
     .yt-play-icon { width: 28px; height: 28px; margin-left: 3px; }
