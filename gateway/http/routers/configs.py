@@ -1,13 +1,14 @@
 """Configs router — /api/v1/configs/*"""
 
 from typing import Any, Dict, List
+
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from system.configs.service import ConfigsService
 from data.database import get_db
 from data.models import User
 from gateway.http.dependencies import get_current_user
+from system.configs.service import ConfigsService
 
 router = APIRouter(prefix="/configs", tags=["configs"])
 

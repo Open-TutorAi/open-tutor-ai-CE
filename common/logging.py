@@ -3,8 +3,8 @@
 
 import logging
 from typing import Optional
-from config import settings
 
+from config import settings
 
 # Cache configured loggers to avoid repeated handler setup
 _configured_loggers = {}

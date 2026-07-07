@@ -3,6 +3,7 @@
 ## Architecture recap
 
 The backend is a FastAPI application that:
+
 - Serves the SvelteKit frontend as static files at `/`
 - Exposes the REST API at `/api/v1/*`
 - Proxies Ollama traffic via `/api/v1/providers/ollama/*`
@@ -92,11 +93,11 @@ HTTPX_TIMEOUT=600   # seconds
 
 ## Port conflicts
 
-| Service | Default port | How to change |
-|---------|-------------|---------------|
-| Backend / frontend | `8080` | Edit `ports` in `docker-compose.yaml` |
-| Ollama | `11434` | Set `OLLAMA_WEBAPI_PORT=<port>` in `.env` and use the `docker-compose.api.yaml` overlay |
-| Frontend dev server | `5173` | `npm run dev -- --port 5174` |
+| Service             | Default port | How to change                                                                           |
+| ------------------- | ------------ | --------------------------------------------------------------------------------------- |
+| Backend / frontend  | `8080`       | Edit `ports` in `docker-compose.yaml`                                                   |
+| Ollama              | `11434`      | Set `OLLAMA_WEBAPI_PORT=<port>` in `.env` and use the `docker-compose.api.yaml` overlay |
+| Frontend dev server | `5173`       | `npm run dev -- --port 5174`                                                            |
 
 ---
 

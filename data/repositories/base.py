@@ -1,8 +1,9 @@
 """Base repository class with common CRUD operations."""
 
-from typing import TypeVar, Generic, Type, List, Optional
+from typing import Generic, List, Optional, Type, TypeVar
+
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+
 from common.exceptions import NotFoundError
 
 T = TypeVar("T")

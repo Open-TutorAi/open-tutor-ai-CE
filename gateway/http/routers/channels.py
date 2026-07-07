@@ -1,7 +1,9 @@
 """Channels router — /api/v1/channels/* matching channels/index.ts UI client."""
 
 from typing import Any, Dict
+
 from fastapi import APIRouter, Depends, Query
+
 from data.models import User
 from gateway.http.dependencies import get_current_user
 

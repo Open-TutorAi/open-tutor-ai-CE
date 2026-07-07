@@ -26,7 +26,6 @@ def _user_auth(client):
 
 
 class TestRetrievalApiV1:
-
     def test_get_config_admin(self, client):
         h = _admin_auth(client)
         r = client.get("/api/v1/retrieval/config", headers=h)

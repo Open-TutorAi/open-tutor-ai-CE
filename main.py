@@ -1,6 +1,5 @@
 """OpenTutorAI application entrypoint."""
 
-import os
 from gateway.http.app import create_app
 
 # Create FastAPI app
@@ -20,6 +19,7 @@ BANNER = r"""
 def main():
     """Console-script entry point — called by `open-tutorai` after pip install."""
     import uvicorn
+
     from config import settings
 
     print(BANNER)
