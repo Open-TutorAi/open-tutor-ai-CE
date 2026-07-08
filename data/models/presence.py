@@ -15,7 +15,6 @@ class PresenceStatus(str, enum.Enum):
     LATE = "LATE"
 
 
-
 class Presence(Base):
     __tablename__ = "presences"
 

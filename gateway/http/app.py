@@ -1,6 +1,5 @@
 """FastAPI application factory."""
 
-
 import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request

@@ -8,7 +8,7 @@ from data.database import Base
 
 
 class Enrollment(Base):
-    __tablename__ = "enrollments"  
+    __tablename__ = "enrollments"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     classroom_id = Column(String(36), ForeignKey("classrooms.id"), nullable=False)

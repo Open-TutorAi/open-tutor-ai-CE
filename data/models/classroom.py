@@ -8,7 +8,7 @@ from data.database import Base
 
 
 class Classroom(Base):
-    __tablename__ = "classrooms"  
+    __tablename__ = "classrooms"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     name = Column(String(255), nullable=False)

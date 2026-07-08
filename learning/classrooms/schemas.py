@@ -15,7 +15,7 @@ class ClassroomCreate(BaseModel):
     description: Optional[str] = Field(default=None, max_length=2000)
 
 
-class ClassroomUpdate(BaseModel): 
+class ClassroomUpdate(BaseModel):
     name: Optional[str] = Field(default=None, min_length=1, max_length=200)
     subject: Optional[str] = Field(default=None, max_length=200)
     course: Optional[str] = Field(default=None, max_length=200)

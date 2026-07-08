@@ -7,7 +7,6 @@ from sqlalchemy.orm import relationship
 from data.database import Base
 
 
-
 class Announcement(Base):
     __tablename__ = "announcements"
 

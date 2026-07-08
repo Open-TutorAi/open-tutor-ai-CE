@@ -6,7 +6,6 @@ from typing import List, Optional
 from pydantic import BaseModel, ConfigDict
 
 
-
 class SessionOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

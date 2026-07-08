@@ -7,7 +7,7 @@ from sqlalchemy.orm import relationship
 from data.database import Base
 
 
-class Invite(Base):  
+class Invite(Base):
     __tablename__ = "invites"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))

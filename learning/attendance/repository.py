@@ -11,7 +11,6 @@ from data.repositories import BaseRepository
 class AttendanceRepository(BaseRepository[ClassSession]):
     """Repository for class session and presence operations."""
 
-    
     def create_session(
         self,
         classroom_id: str,

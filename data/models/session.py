@@ -6,7 +6,6 @@ from sqlalchemy.orm import relationship
 from data.database import Base
 
 
-
 class ClassSession(Base):
     __tablename__ = "class_sessions"
 
