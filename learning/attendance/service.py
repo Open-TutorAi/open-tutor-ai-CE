@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
-from common.exceptions import NotFoundError, ValidationError
+from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from data.models import Classroom, ClassSession, Presence, PresenceStatus
 from learning.attendance.repository import AttendanceRepository
 from learning.classrooms.repository import ClassroomRepository
@@ -16,7 +16,6 @@ from learning.sessions.schemas import (
     SessionSummaryOut,
     StudentHistory,
 )
-
 
 
 def _to_presence_out(presence: Presence) -> PresenceOut:
@@ -40,7 +39,7 @@ class AttendanceService:
         if classroom is None:
             raise NotFoundError("Classroom", classroom_id)
         if classroom.owner_id != caller_id:
-            raise PermissionError("not_owner")
+            raise AuthorizationError("not_owner")
         return classroom
 
     def _require_session_classroom_owner(
@@ -108,7 +107,7 @@ class AttendanceService:
         if session_row.ended_at is not None:
             raise ValidationError("This session has ended")
         if not self.classroom_repo.is_enrolled(session_row.classroom_id, student_id):
-            raise PermissionError("not_enrolled")
+            raise AuthorizationError("not_enrolled")
 
         presence = self.repo.get_presence(session_id, student_id)
         if presence is None:
@@ -135,7 +134,7 @@ class AttendanceService:
         if classroom.owner_id != caller_id:
             presences = [p for p in presences if p.student_id == caller_id]
             if not presences:
-                raise PermissionError("not_authorized")
+                raise AuthorizationError("not_authorized")
         return [_to_presence_out(p) for p in presences]
 
     def update_presence_status(
@@ -230,7 +229,7 @@ class AttendanceService:
         if classroom is None:
             raise NotFoundError("Classroom", classroom_id)
         if classroom.owner_id != caller_id and caller_id != student_id:
-            raise PermissionError("not_authorized")
+            raise AuthorizationError("not_authorized")
 
         presences = self.repo.get_presences_by_student(classroom_id, student_id)
         presences_count = sum(

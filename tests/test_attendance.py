@@ -1,3 +1,4 @@
+from common.exceptions import AuthorizationError
 # tests/test_attendance.py
 """Failing tests for the attendance/session feature.
 
@@ -263,7 +264,7 @@ def test_only_classroom_owner_can_start_session(db):
     intruder = _make_user(db, "intruder8@t.com", "Intruder8")
     service = AttendanceService(db)
 
-    with pytest.raises(PermissionError):
+    with pytest.raises(AuthorizationError):
         service.start_session(classroom.id, intruder.id, scheduled_at=datetime.utcnow())
 
 
@@ -293,7 +294,7 @@ def test_session_presences_not_readable_by_other_student(db):
     _make_presence(db, session_row.id, student.id, PresenceStatus.PRESENT)
     service = AttendanceService(db)
 
-    with pytest.raises(PermissionError):
+    with pytest.raises(AuthorizationError):
         service.get_session_presences(session_row.id, outsider.id)
 
 
@@ -350,7 +351,7 @@ def test_join_session_rejects_non_enrolled_student(db):
         classroom.id, owner.id, scheduled_at=datetime.utcnow()
     )
 
-    with pytest.raises(PermissionError):
+    with pytest.raises(AuthorizationError):
         service.join_session(session_out.id, outsider.id)
 
 
@@ -390,7 +391,7 @@ def test_end_session_sets_ended_at_and_requires_ownership(db):
     )
     assert session_out.ended_at is None
 
-    with pytest.raises(PermissionError):
+    with pytest.raises(AuthorizationError):
         service.end_session(session_out.id, intruder.id)
 
     ended = service.end_session(session_out.id, owner.id)
@@ -407,7 +408,7 @@ def test_delete_session_requires_owner_and_ended_session(db):
         classroom.id, owner.id, scheduled_at=datetime.utcnow()
     )
 
-    with pytest.raises(PermissionError):
+    with pytest.raises(AuthorizationError):
         service.delete_session(session_out.id, intruder.id)
 
     with pytest.raises(ValidationError):

@@ -5,7 +5,6 @@ Routes span three resource families (/api/classrooms/*, /api/sessions/*,
 out its full path.
 """
 
-
 from datetime import datetime
 from typing import List, Optional
 
@@ -13,11 +12,11 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from common.exceptions import NotFoundError, ValidationError
+from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from data.database import get_db
 from data.models import PresenceStatus, User
 from gateway.http.dependencies import get_current_user
-from gateway.http.rate_limit import limiter
+from gateway.http.rate_limit import limiter, get_user_id_or_ip
 from learning.attendance.service import AttendanceService
 from learning.sessions.schemas import (
     AttendanceStats,
@@ -63,7 +62,7 @@ async def start_session(
             body.subject,
             body.objectives,
         )
-    except PermissionError:
+    except AuthorizationError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
@@ -81,7 +80,7 @@ async def list_sessions(
 ):
     try:
         return svc.get_session_summaries(classroom_id, current_user.id)
-    except PermissionError:
+    except AuthorizationError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
@@ -97,7 +96,7 @@ async def end_session(
 ):
     try:
         return svc.end_session(session_id, current_user.id)
-    except PermissionError:
+    except AuthorizationError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
@@ -113,7 +112,7 @@ async def delete_session(
 ):
     try:
         svc.delete_session(session_id, current_user.id)
-    except PermissionError:
+    except AuthorizationError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
@@ -125,7 +124,7 @@ async def delete_session(
 
 
 @router.post("/api/sessions/{session_id}/join", response_model=PresenceOut)
-@limiter.limit("20/minute")
+@limiter.limit("20/minute", key_func=get_user_id_or_ip)
 async def join_session(
     request: Request,
     session_id: str,
@@ -134,7 +133,7 @@ async def join_session(
 ):
     try:
         return svc.join_session(session_id, current_user.id)
-    except PermissionError:
+    except AuthorizationError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
@@ -152,7 +151,7 @@ async def get_session_presences(
 ):
     try:
         return svc.get_session_presences(session_id, current_user.id)
-    except PermissionError:
+    except AuthorizationError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
@@ -169,7 +168,7 @@ async def update_presence(
 ):
     try:
         return svc.update_presence(presence_id, current_user.id, body.status)
-    except PermissionError:
+    except AuthorizationError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
@@ -187,7 +186,7 @@ async def get_attendance_stats(
 ):
     try:
         return svc.get_attendance_stats(classroom_id, current_user.id)
-    except PermissionError:
+    except AuthorizationError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
@@ -207,7 +206,7 @@ async def get_student_history(
 ):
     try:
         return svc.get_student_history(classroom_id, student_id, current_user.id)
-    except PermissionError:
+    except AuthorizationError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )

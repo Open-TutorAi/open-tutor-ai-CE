@@ -5,7 +5,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
-from common.exceptions import NotFoundError, ValidationError
+from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from data.database import get_db
 from data.models import User
 from gateway.http.dependencies import get_current_user
@@ -72,7 +72,7 @@ async def get_classroom(
 ):
     try:
         return svc.get_classroom_detail(classroom_id, current_user.id)
-    except PermissionError:
+    except AuthorizationError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
@@ -89,7 +89,7 @@ async def update_classroom(
 ):
     try:
         return svc.update_classroom(classroom_id, current_user.id, body)
-    except PermissionError:
+    except AuthorizationError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
@@ -105,7 +105,7 @@ async def delete_classroom(
 ):
     try:
         svc.delete_classroom(classroom_id, current_user.id)
-    except PermissionError:
+    except AuthorizationError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
@@ -126,7 +126,7 @@ async def list_students(
         return svc.list_students(
             classroom_id, current_user.id, limit=limit, offset=offset
         )
-    except PermissionError:
+    except AuthorizationError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
@@ -147,7 +147,7 @@ async def add_student(
 ):
     try:
         return svc.add_student(classroom_id, current_user.id, body.email)
-    except PermissionError:
+    except AuthorizationError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
@@ -185,7 +185,7 @@ async def import_students(
         bio = BytesIO(content)
         text = TextIOWrapper(bio, encoding="utf-8")
         return svc.import_students_from_csv(classroom_id, current_user.id, text)
-    except PermissionError:
+    except AuthorizationError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
@@ -208,7 +208,7 @@ async def create_invite(
 ):
     try:
         return svc.create_invite(classroom_id, current_user.id, body)
-    except PermissionError:
+    except AuthorizationError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
@@ -243,7 +243,7 @@ async def remove_student(
 ):
     try:
         svc.remove_student(classroom_id, current_user.id, student_id)
-    except PermissionError:
+    except AuthorizationError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )

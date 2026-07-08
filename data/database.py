@@ -54,8 +54,12 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def init_database():
-    """Initialize database tables."""
-    Base.metadata.create_all(bind=engine)
+    """Initialize database tables and run pending Alembic migrations."""
+    from alembic.config import Config
+    from alembic import command
+
+    alembic_cfg = Config("alembic.ini")
+    command.upgrade(alembic_cfg, "head")
 
 
 def close_database():

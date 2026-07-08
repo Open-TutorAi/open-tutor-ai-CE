@@ -1,13 +1,12 @@
 """Classroom announcements (stream) router — /api/classrooms/{id}/announcements."""
 
-
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from common.exceptions import NotFoundError
+from common.exceptions import AuthorizationError, NotFoundError
 from data.database import get_db
 from data.models import User
 from gateway.http.dependencies import get_current_user
@@ -38,7 +37,7 @@ async def create_announcement(
 ):
     try:
         return svc.create_announcement(classroom_id, current_user.id, body.content)
-    except PermissionError:
+    except AuthorizationError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
@@ -57,7 +56,7 @@ async def list_announcements(
 ):
     try:
         return svc.list_announcements(classroom_id, current_user.id)
-    except PermissionError:
+    except AuthorizationError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
@@ -73,7 +72,7 @@ async def delete_announcement(
 ):
     try:
         svc.delete_announcement(announcement_id, current_user.id)
-    except PermissionError:
+    except AuthorizationError:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )

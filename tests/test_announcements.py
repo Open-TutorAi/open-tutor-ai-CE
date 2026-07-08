@@ -1,3 +1,4 @@
+from common.exceptions import AuthorizationError
 # tests/test_announcements.py
 """Tests for the classroom announcements (stream) feature."""
 
@@ -60,7 +61,7 @@ def test_non_owner_cannot_create_announcement(db):
     classroom = _make_classroom(db, owner.id)
     service = AnnouncementsService(db)
 
-    with pytest.raises(PermissionError):
+    with pytest.raises(AuthorizationError):
         service.create_announcement(classroom.id, intruder.id, "spam")
 
 
@@ -89,7 +90,7 @@ def test_non_enrolled_user_cannot_list_announcements(db):
     service = AnnouncementsService(db)
     service.create_announcement(classroom.id, owner.id, "Welcome!")
 
-    with pytest.raises(PermissionError):
+    with pytest.raises(AuthorizationError):
         service.list_announcements(classroom.id, outsider.id)
 
 
@@ -126,7 +127,7 @@ def test_non_owner_cannot_delete_announcement(db):
     service = AnnouncementsService(db)
     created = service.create_announcement(classroom.id, owner.id, "Keep me")
 
-    with pytest.raises(PermissionError):
+    with pytest.raises(AuthorizationError):
         service.delete_announcement(created.id, intruder.id)
 
 

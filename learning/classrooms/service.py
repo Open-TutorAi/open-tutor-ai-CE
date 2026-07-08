@@ -8,7 +8,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 from accounts.users.service import AccountService
-from common.exceptions import NotFoundError, ValidationError
+from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from data.models import Classroom
 from learning.attendance.repository import AttendanceRepository
 from learning.classrooms.repository import ClassroomRepository
@@ -25,7 +25,6 @@ from learning.classrooms.schemas import (
     InviteCreate,
     InviteOut,
     InviteRedeemResult,
-    
 )
 from data.models import ClassSession, Invite
 
@@ -63,7 +62,7 @@ class ClassroomsService:
         if classroom is None:
             raise NotFoundError("Classroom", classroom_id)
         if classroom.owner_id != caller_id:
-            raise PermissionError("not_owner")
+            raise AuthorizationError("not_owner")
         return classroom
 
     def create_classroom(self, owner_id: str, data: ClassroomCreate) -> ClassroomOut:

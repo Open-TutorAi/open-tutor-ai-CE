@@ -1,3 +1,4 @@
+from common.exceptions import AuthorizationError
 # tests/test_classrooms.py
 """Tests for the classroom repository, service, and HTTP layer."""
 
@@ -235,7 +236,7 @@ def test_get_classroom_detail_raises_403_if_not_owner(service, mocker):
     fake_classroom = mocker.Mock(id="classroom-1", owner_id="real-owner")
     mocker.patch.object(service.repo, "get_by_id", return_value=fake_classroom)
 
-    with pytest.raises(PermissionError):
+    with pytest.raises(AuthorizationError):
         service.get_classroom_detail("classroom-1", "someone-else")
 
 
@@ -244,7 +245,7 @@ def test_delete_classroom_raises_403_if_not_owner(service, mocker):
     fake_classroom = mocker.Mock(id="classroom-1", owner_id="real-owner")
     mocker.patch.object(service.repo, "get_by_id", return_value=fake_classroom)
 
-    with pytest.raises(PermissionError):
+    with pytest.raises(AuthorizationError):
         service.delete_classroom("classroom-1", "someone-else")
 
 

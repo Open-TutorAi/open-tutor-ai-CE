@@ -4,12 +4,11 @@ from typing import List
 
 from sqlalchemy.orm import Session
 
-from common.exceptions import NotFoundError
+from common.exceptions import AuthorizationError, NotFoundError
 from data.models import Announcement, Classroom
 from learning.announcements.repository import AnnouncementRepository
 from learning.announcements.schemas import AnnouncementOut
 from learning.classrooms.repository import ClassroomRepository
-
 
 
 def _to_announcement_out(announcement: Announcement) -> AnnouncementOut:
@@ -36,7 +35,7 @@ class AnnouncementsService:
         is_owner = classroom.owner_id == caller_id
         is_enrolled = self.classroom_repo.is_enrolled(classroom_id, caller_id)
         if not is_owner and not is_enrolled:
-            raise PermissionError("not_authorized")
+            raise AuthorizationError("not_authorized")
         return classroom
 
     def create_announcement(
@@ -46,7 +45,7 @@ class AnnouncementsService:
         if classroom is None:
             raise NotFoundError("Classroom", classroom_id)
         if classroom.owner_id != caller_id:
-            raise PermissionError("not_owner")
+            raise AuthorizationError("not_owner")
         announcement = self.repo.create(classroom_id, caller_id, content)
         return _to_announcement_out(announcement)
 
@@ -63,5 +62,5 @@ class AnnouncementsService:
             raise NotFoundError("Announcement", announcement_id)
         classroom = self.classroom_repo.get_by_id(announcement.classroom_id)
         if classroom is None or classroom.owner_id != caller_id:
-            raise PermissionError("not_owner")
+            raise AuthorizationError("not_owner")
         self.repo.delete(announcement_id)
