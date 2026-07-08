@@ -31,6 +31,8 @@ from ai.providers.proxy import (
     resolve_url_key,
 )
 from ai.providers.service import ProvidersService
+from ai.engagement.prompt import inject_engagement_directive
+from config import settings
 from data.database import get_db
 from data.models import User
 from gateway.http.dependencies import get_current_user
@@ -40,6 +42,23 @@ router = APIRouter(prefix="/providers", tags=["providers"])
 
 def get_providers_service(db: Session = Depends(get_db)) -> ProvidersService:
     return ProvidersService(db)
+
+
+def _apply_engagement(body: Dict[str, Any], user_id: str) -> None:
+    """Inject the live engagement directive into a chat body's system prompt.
+
+    Mutates ``body["messages"]`` in place. Guarded by a setting and fully
+    defensive — engagement adaptation must never break a chat completion.
+    """
+    if not settings.ENGAGEMENT_ADAPTIVE_PROMPT:
+        return
+    messages = body.get("messages")
+    if not isinstance(messages, list):
+        return
+    try:
+        body["messages"] = inject_engagement_directive(messages, user_id)
+    except Exception:  # pragma: no cover - never block a completion
+        pass
 
 
 def _require_admin(user: User) -> None:
@@ -185,6 +204,7 @@ async def openai_chat_completions(
     models_map = await svc.openai_models_map()
     url_idx = models_map.get(model_id)  # None → resolve_url_key defaults to index 0
     url, key = resolve_url_key(cfg, url_idx)
+    _apply_engagement(body, current_user.id)
     if body.get("stream"):
         return await proxy_stream(url, key, "POST", "chat/completions", body=body)
     return await proxy_json(url, key, "POST", "chat/completions", body=body)
@@ -373,6 +393,7 @@ async def ollama_chat(
     models_map = await svc.ollama_models_map()
     url_idx = models_map.get(model)
     url = resolve_ollama_url(cfg, url_idx)
+    _apply_engagement(body, current_user.id)
     if body.get("stream", True):
         return await proxy_stream(url, "", "POST", "api/chat", body=body)
     return await proxy_json(url, "", "POST", "api/chat", body=body)
@@ -421,6 +442,7 @@ async def ollama_chat_alias(
     models_map = await svc.ollama_models_map()
     url_idx = models_map.get(model)
     url = resolve_ollama_url(cfg, url_idx)
+    _apply_engagement(body, current_user.id)
     if body.get("stream", True):
         return await proxy_stream(url, "", "POST", "api/chat", body=body)
     return await proxy_json(url, "", "POST", "api/chat", body=body)

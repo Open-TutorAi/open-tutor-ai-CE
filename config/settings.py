@@ -67,6 +67,13 @@ class Settings:
     # Images generation configuration
     IMAGES_ENGINE: str = os.getenv("IMAGES_ENGINE", "")
 
+    # Adaptive tutoring: inject the learner's live engagement signal into the
+    # chat system prompt so the tutor adapts its pacing/tone. No-ops when there
+    # is no engagement data yet.
+    ENGAGEMENT_ADAPTIVE_PROMPT: bool = (
+        os.getenv("ENGAGEMENT_ADAPTIVE_PROMPT", "true").lower() == "true"
+    )
+
     @property
     def cors_origin_regex(self) -> Optional[str]:
         """Return regex pattern if using wildcard CORS.

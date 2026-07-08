@@ -11,6 +11,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from config import settings
 from data.database import init_database
+from ai.engagement.database import init_engagement_db
 from gateway.http.api_routes import register_api_routes
 from gateway.realtime.socket import socket_app
 
@@ -34,6 +35,9 @@ from .routers import (
 )
 from .routers import (
     configs as configs_router,
+)
+from .routers import (
+    engagement as engagement_router,
 )
 from .routers import (
     folders as folders_router,
@@ -93,6 +97,8 @@ class SPAStaticFiles(StaticFiles):
 async def _lifespan(app: FastAPI):
     try:
         init_database()
+        # Engagement metrics live in their own isolated database.
+        init_engagement_db()
         print(f"{settings.APP_NAME} v{settings.APP_VERSION} started successfully")
         if settings.BUILD_HASH != "dev-build":
             print(f"Build: {settings.BUILD_HASH}")
@@ -164,6 +170,7 @@ def create_app() -> FastAPI:
     app.include_router(groups_router.router, prefix="/api/v1")
     app.include_router(folders_router.router, prefix="/api/v1")
     app.include_router(tasks_router.router, prefix="/api/v1")
+    app.include_router(engagement_router.router, prefix="/api/v1")
 
     # Socket.IO — mounted at /realtime; client uses path='/realtime/socket.io'
     app.mount("/realtime", socket_app)

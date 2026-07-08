@@ -141,10 +141,9 @@
 			return null;
 		});
 
-		if (res) {
-			console.log(res);
-			dispatch('confirm', res);
-		}
+		// Return the transcription to the caller; the single confirm dispatch
+		// happens in onstop so text + raw audio travel together.
+		return res;
 	};
 
 	const saveRecording = (blob) => {
@@ -183,7 +182,27 @@
 				if (confirmed) {
 					const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
 
-					await transcribeHandler(audioBlob);
+					// Produce a base64 string so callers (engagement) can POST raw audio.
+					// Convert in chunks to avoid a call-stack overflow on large clips.
+					try {
+						const bytes = new Uint8Array(await audioBlob.arrayBuffer());
+						let binary = '';
+						const CHUNK = 0x8000;
+						for (let i = 0; i < bytes.length; i += CHUNK) {
+							binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+						}
+						const base64String = btoa(binary);
+						const res = await transcribeHandler(audioBlob);
+						dispatch('confirm', {
+							text: res?.text ?? '',
+							audio_base64: base64String,
+							duration_seconds: durationSeconds
+						});
+					} catch (e) {
+						console.warn('Failed to build audio base64', e);
+						const res = await transcribeHandler(audioBlob);
+						dispatch('confirm', { text: res?.text ?? '' });
+					}
 
 					confirmed = false;
 					loading = false;

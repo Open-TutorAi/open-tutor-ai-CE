@@ -1,4 +1,4 @@
-"""Audio router — /audio/* matching audio/index.ts UI client.
+"""Audio router
 
 Admin-only: config read/write with API key stored in config.
 Verified user: transcriptions, speech, models, voices.
@@ -8,6 +8,7 @@ from typing import Optional
 
 import httpx
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -37,7 +38,7 @@ class AudioConfigUpdate(BaseModel):
     speaker: Optional[str] = None
 
 
-# ── Admin-only: config ────────────────────────────────────────────────────────
+# ── Admin-only: config
 
 
 @router.get("/config")
@@ -58,7 +59,7 @@ def update_config(
     return svc.update_config(body.model_dump(exclude_none=True))
 
 
-# ── Verified user: transcriptions, speech, models, voices ────────────────────
+# Verified user: transcriptions, speech, models, voices
 
 
 @router.post("/transcriptions")
@@ -71,10 +72,17 @@ async def transcribe(
     url = (cfg.get("url") or "").rstrip("/")
     key = cfg.get("key") or ""
     if not url:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Audio STT URL not configured",
-        )
+        # No external STT configured — transcribe locally with faster-whisper.
+        from ai.media.whisper_stt import transcribe_bytes, WHISPER_AVAILABLE
+
+        if not WHISPER_AVAILABLE:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Audio STT URL not configured",
+            )
+        data = await file.read()
+        text = await run_in_threadpool(transcribe_bytes, data)
+        return {"text": text}
     async with httpx.AsyncClient(timeout=120) as client:
         r = await client.post(
             f"{url}/v1/audio/transcriptions",
