@@ -614,8 +614,11 @@
 								await tick();
 								document.getElementById('chat-input')?.focus();
 
-								// Voice messages send instantly.
-								dispatch('submit', prompt);
+								// Auto-send after transcription only when the user enabled it
+								// (Audio Settings: "Instant Auto-Send After Voice Transcription").
+								if ($settings?.speechAutoSend ?? false) {
+									dispatch('submit', prompt);
+								}
 							}}
 						/>
 					{:else}

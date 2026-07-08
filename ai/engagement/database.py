@@ -54,6 +54,15 @@ def init_engagement_db() -> None:
     if inspector.has_table("engagement_metrics"):
         columns = {c["name"] for c in inspector.get_columns("engagement_metrics")}
         if not {"user_id", "text_score", "created_at"}.issubset(columns):
+            allow_drop = (
+                os.environ.get("ENGAGEMENT_DB_ALLOW_DROP", "false").lower() == "true"
+            )
+            if not allow_drop:
+                raise RuntimeError(
+                    "Incompatible engagement_metrics table schema detected. "
+                    "Refusing to drop it automatically to avoid data loss. "
+                    "Set ENGAGEMENT_DB_ALLOW_DROP=true to drop and recreate it."
+                )
             print(
                 "[Engagement DB] Dropping incompatible legacy engagement_metrics "
                 "table and recreating with the current schema.",

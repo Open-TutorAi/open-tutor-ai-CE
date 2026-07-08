@@ -69,9 +69,20 @@
 				}
 			}
 			cameraStatus = 'starting';
-			captureInterval = window.setInterval(capture, captureMs);
+			// Guard against overlapping captures: if a capture (frame grab +
+			// network roundtrip) takes longer than captureMs, skip the tick
+			// instead of stacking concurrent requests.
+			let inFlight = false;
+			const tickCapture = () => {
+				if (inFlight) return;
+				inFlight = true;
+				Promise.resolve(capture()).finally(() => {
+					inFlight = false;
+				});
+			};
+			captureInterval = window.setInterval(tickCapture, captureMs);
 			// Grab a first frame quickly so a video score is available right away.
-			window.setTimeout(capture, 700);
+			window.setTimeout(tickCapture, 700);
 		} catch (e) {
 			cameraStatus = (e as Error)?.message || 'error';
 			toast.error(`Camera error: ${cameraStatus}`);
