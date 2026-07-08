@@ -1,17 +1,17 @@
 """FastAPI dependency injection — auth guard + service factories."""
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jwt import decode, InvalidTokenError
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jwt import InvalidTokenError, decode
 from sqlalchemy.orm import Session
 
+from accounts.users.service import AccountService
 from config import settings
+from content.files.service import FilesService
 from data.database import get_db
 from data.models import User
-from content.files.service import FilesService
-from accounts.users.service import AccountService
-from learning.supports.service import SupportsService
 from governance.self_regulation.service import SelfRegulationService
+from learning.supports.service import SupportsService
 
 security = HTTPBearer()
 

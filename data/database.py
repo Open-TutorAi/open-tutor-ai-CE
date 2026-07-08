@@ -2,9 +2,11 @@
 
 import os
 from typing import Generator
-from sqlalchemy import create_engine, event
-from sqlalchemy.orm import declarative_base, sessionmaker, Session
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, declarative_base, sessionmaker
 from sqlalchemy.pool import StaticPool
+
 from config import settings
 
 # Create declarative base for models (independent from open_webui)

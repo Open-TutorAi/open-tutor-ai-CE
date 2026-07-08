@@ -4,13 +4,13 @@ on:
   push:
     branches: [main, dev]
     paths:
-      - 'ui/**'
-      - '.github/workflows/ci-frontend.yaml'
+      - "ui/**"
+      - ".github/workflows/ci-frontend.yaml"
   pull_request:
     branches: [main, dev]
     paths:
-      - 'ui/**'
-      - '.github/workflows/ci-frontend.yaml'
+      - "ui/**"
+      - ".github/workflows/ci-frontend.yaml"
   workflow_dispatch:
 
 concurrency:
@@ -34,7 +34,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
           cache: npm
           cache-dependency-path: ui/package-lock.json
 
@@ -62,7 +62,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
           cache: npm
           cache-dependency-path: ui/package-lock.json
 
@@ -91,13 +91,15 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: "22"
           cache: npm
           cache-dependency-path: ui/package-lock.json
 
       - run: npm ci
 
       - name: Build SvelteKit (required before tests)
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
         run: npm run build
 
       - name: Run tests

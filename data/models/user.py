@@ -1,8 +1,10 @@
 """User domain model."""
 
 from datetime import datetime
-from sqlalchemy import Column, String, Boolean, DateTime, Integer, JSON
+
+from sqlalchemy import JSON, Boolean, Column, DateTime, String
 from sqlalchemy.orm import relationship
+
 from data.database import Base
 
 

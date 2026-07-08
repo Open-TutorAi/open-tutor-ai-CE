@@ -6,9 +6,9 @@ from typing import List, Optional
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
+from accounts.users.repository import UserRepository
 from common.exceptions import NotFoundError
 from data.models import User
-from accounts.users.repository import UserRepository
 
 _pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

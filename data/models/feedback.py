@@ -1,8 +1,10 @@
 """Feedback domain model - replaces response_feedbacks."""
 
 from datetime import datetime
-from sqlalchemy import Column, String, DateTime, Text, ForeignKey, Float
+
+from sqlalchemy import Column, DateTime, Float, ForeignKey, String, Text
 from sqlalchemy.orm import relationship
+
 from data.database import Base
 
 

@@ -4,14 +4,14 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
-from pydantic import BaseModel, EmailStr
 from jwt import encode
+from pydantic import BaseModel, EmailStr
 
+from accounts.users.service import AccountService
 from config import settings
 from data.models import User
 from gateway.http.dependencies import get_account_service, get_current_user
 from gateway.http.rate_limit import limiter
-from accounts.users.service import AccountService
 
 router = APIRouter(prefix="/auths", tags=["auth"])
 

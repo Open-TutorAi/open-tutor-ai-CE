@@ -90,7 +90,7 @@ def test_archive_chat(client):
     ).json()
     r = client.post(f"/api/v1/chats/{created['id']}/archive", headers=_auth(token))
     assert r.status_code == 200
-    assert r.json()["archived"] == True
+    assert r.json()["archived"] is True
 
 
 def test_pin_chat(client):

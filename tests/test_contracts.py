@@ -8,7 +8,6 @@ Convention:
   TUTOR_BASE_URL     = ""  (root)    (signup, user-count)
 """
 
-import pytest
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -105,7 +104,6 @@ class TestAuthApiV1:
 
 
 class TestSupportsApiV1:
-
     def test_create(self, client):
         """POST /api/v1/supports/create  ← createSupport() in supports/index.ts:66"""
         token = _signup(client)
@@ -196,7 +194,6 @@ class TestSupportsApiV1:
 
 
 class TestSelfRegulationApiV1:
-
     def test_get_config(self, client):
         """GET /api/v1/self_regulation/config  ← getConfig() in evaluations/index.ts:6"""
         token = _signup(client)
