@@ -1118,7 +1118,7 @@
 												}}
 											>
 												<svg
-													stroke="currentColor"
+													stroke="#10b981"
 													fill="none"
 													stroke-width="2.3"
 													viewBox="0 0 24 24"

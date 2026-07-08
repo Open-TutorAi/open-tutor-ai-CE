@@ -106,7 +106,8 @@
 		<div class="w-full">
 			<div class="flex justify-end items-start gap-3">
 				<div
-					class="flex items-start max-w-full bg-white dark:bg-gray-900 rounded-lg shadow-md py-2 px-4"
+					class="flex items-start max-w-full rounded-2xl py-2 px-4 text-white"
+					style="background: linear-gradient(135deg, #2563eb 0%, #06b6d4 100%); box-shadow: 0 6px 20px rgba(37, 99, 235, 0.28);"
 				>
 					{#if !readOnly}
 						<button

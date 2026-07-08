@@ -17,6 +17,10 @@
 	export let isSidebarOpen = true;
 	export let isDarkMode: boolean = false;
 
+	// Force the nav-item set for a role regardless of URL (needed for sections
+	// like /classrooms/* that intentionally live outside the /{role}/* prefix).
+	export let forceRole: string | null = null;
+
 	// Accept either a string or a Writable<string> for activePage
 	export let activePage: string | Writable<string> = 'dashboard';
 
@@ -49,61 +53,51 @@
 		window.addEventListener('resize', checkMobile);
 
 		// Set active page based on URL path when component mounts
-		const pathSegments = $page.url.pathname.split('/');
-		if (pathSegments.length >= 3) {
-			let pageFromUrl = pathSegments[2]; // student/dashboard -> "dashboard"
-
-			// Map chat routes to support
-			if (pageFromUrl === 'chat' || pageFromUrl === 'c') {
-				pageFromUrl = 'support';
-			}
-
-			// Mark support nav item as active for support pages
-			// Format: /student/support/ID, /student/support/ID/edit, /student/support/create
-			if (pageFromUrl === 'support') {
-				pageFromUrl = 'supports';
-			}
-
-			// Update the activePage store if it's a store
-			if (typeof activePage === 'object' && 'subscribe' in activePage) {
-				(activePage as Writable<string>).set(pageFromUrl);
-			} else {
-				currentActivePage = pageFromUrl;
-			}
-		}
+		updateActivePageFromUrl($page.url.pathname);
 
 		return () => {
 			window.removeEventListener('resize', checkMobile);
 		};
 	});
 
-	// Also update active page whenever the URL changes
-	$: {
-		const pathSegments = $page.url.pathname.split('/');
-		if (pathSegments.length >= 3) {
-			let pageFromUrl = pathSegments[2];
+	// Sections like /classrooms/* live outside the /{role}/* prefix the rest
+	// of this sidebar assumes, so they need an explicit path -> nav-id mapping.
+	function updateActivePageFromUrl(pathname: string) {
+		let pageFromUrl: string | null = null;
 
-			// Map chat routes to support
-			if (pageFromUrl === 'chat' || pageFromUrl === 'c') {
-				pageFromUrl = 'support';
-			}
+		if (pathname === '/teacher' || pathname.startsWith('/teacher/')) {
+			pageFromUrl = 'dashboard';
+		} else if (pathname.startsWith('/classrooms')) {
+			pageFromUrl = 'classrooms';
+		} else {
+			const pathSegments = pathname.split('/');
+			if (pathSegments.length >= 3) {
+				pageFromUrl = pathSegments[2]; // student/dashboard -> "dashboard"
 
-			// Mark support nav item as active for support pages
-			// Format: /student/support/ID, /student/support/ID/edit, /student/support/create
-			if (pageFromUrl === 'support') {
-				pageFromUrl = 'supports';
-			}
+				// Map chat routes to support
+				if (pageFromUrl === 'chat' || pageFromUrl === 'c') {
+					pageFromUrl = 'support';
+				}
 
-			// Only update if it has changed to avoid loops
-			if (currentActivePage !== pageFromUrl) {
-				if (typeof activePage === 'object' && 'subscribe' in activePage) {
-					(activePage as Writable<string>).set(pageFromUrl);
-				} else {
-					currentActivePage = pageFromUrl;
+				// Mark support nav item as active for support pages
+				// Format: /student/support/ID, /student/support/ID/edit, /student/support/create
+				if (pageFromUrl === 'support') {
+					pageFromUrl = 'supports';
 				}
 			}
 		}
+
+		if (pageFromUrl && currentActivePage !== pageFromUrl) {
+			if (typeof activePage === 'object' && 'subscribe' in activePage) {
+				(activePage as Writable<string>).set(pageFromUrl);
+			} else {
+				currentActivePage = pageFromUrl;
+			}
+		}
 	}
+
+	// Also update active page whenever the URL changes
+	$: updateActivePageFromUrl($page.url.pathname);
 
 	function checkMobile() {
 		isMobile = window.innerWidth < 768;
@@ -113,14 +107,14 @@
 		}
 	}
 
-	// Determine current role from the URL path
-	$: currentRole = $page.url.pathname.split('/')[1] || 'student';
+	// Determine current role from the URL path (or the forced override)
+	$: currentRole = forceRole ?? ($page.url.pathname.split('/')[1] || 'student');
 
 	function toggleSidebar() {
 		isSidebarOpen = !isSidebarOpen;
 	}
 
-	function setActivePage(role: string, page: string) {
+	function setActivePage(role: string, page: string, href?: string) {
 		// First close the sidebar on mobile to avoid black overlay issue
 		if (isMobile) {
 			isSidebarOpen = false;
@@ -135,7 +129,7 @@
 
 		// Add small delay to ensure sidebar is closed before navigation
 		setTimeout(() => {
-			goto(`/${role}/${page}`);
+			goto(href ?? `/${role}/${page}`);
 		}, 10);
 	}
 
@@ -144,6 +138,9 @@
 		id: string;
 		label: string;
 		icon: ComponentType;
+		// Overrides the default `/{role}/{id}` navigation target, for sections
+		// (like /classrooms/*) that don't live under the role's URL prefix.
+		href?: string;
 	};
 
 	type NavItems = Record<string, NavItem[]>;
@@ -158,7 +155,10 @@
 			{ id: 'messages', label: 'Messages', icon: Message },
 			{ id: 'settings', label: 'Profile & Settings', icon: Settings }
 		],
-		teacher: [],
+		teacher: [
+			{ id: 'dashboard', label: 'Dashboard', icon: Dashboard, href: '/teacher' },
+			{ id: 'classrooms', label: 'My Classrooms', icon: Classroom, href: '/classrooms' }
+		],
 		parent: []
 	};
 </script>
@@ -229,7 +229,7 @@
 					{#each navItems[currentRole] as item}
 						<li class="mb-1 px-2">
 							<button
-								on:click={() => setActivePage(currentRole, item.id)}
+								on:click={() => setActivePage(currentRole, item.id, item.href)}
 								class={`flex items-center px-4 py-3 rounded-full w-full text-left text-sm font-semibold transition duration-100 ${currentActivePage === item.id ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 dark:text-white dark:hover:bg-gray-200' : isDarkMode ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-800 hover:bg-gray-200'}`}
 								title={$i18n.t(item.label)}
 							>

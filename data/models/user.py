@@ -31,6 +31,15 @@ class User(Base):
     # Relationships
     supports = relationship("Support", back_populates="user")
     feedbacks = relationship("Feedback", back_populates="user")
+    classrooms = relationship("Classroom", back_populates="owner")
+    enrollments = relationship("Enrollment", back_populates="student")
+    enrolled_classrooms = relationship(
+        "Classroom",
+        secondary="enrollments",
+        viewonly=True,
+        back_populates="students",
+    )
+    presences = relationship("Presence", back_populates="student")
 
     def to_dict(self) -> dict:
         """Convert user to dictionary."""

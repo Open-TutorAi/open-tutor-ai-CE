@@ -335,3 +335,4 @@ eziane_docs.worktrees/
 
 # Superpowers plans/specs (local dev tooling, not part of the project)
 docs/superpowers/
+.Rhistory

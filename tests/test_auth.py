@@ -1,6 +1,28 @@
 # tests/test_auth.py
 """Tests for authentication endpoints."""
 
+import pytest
+
+
+@pytest.mark.integration
+def test_signin_is_rate_limited_after_repeated_attempts(client):
+    client.post(
+        "/auths/signup",
+        json={
+            "email": "ratelimit@example.com",
+            "name": "Rate Limit",
+            "password": "secure_password_123",
+        },
+    )
+
+    payload = {"email": "ratelimit@example.com", "password": "wrong_password"}
+    statuses = [
+        client.post("/auths/signin", json=payload).status_code for _ in range(11)
+    ]
+
+    assert statuses[:10] == [401] * 10
+    assert statuses[10] == 429
+
 
 def test_signup(client):
     response = client.post(

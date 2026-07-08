@@ -321,6 +321,8 @@ input[type='number'] {
 	@apply rounded-md dark:bg-gray-800 bg-gray-100 mx-0.5;
 }
 
+
+
 /* Code styling */
 .hljs-comment,
 .hljs-quote {
@@ -372,6 +374,7 @@ input[type='number'] {
 .hljs-strong {
 	font-weight: 700;
 }
+
 
 /* Fullscreen Avatar Mode Styles */
 :fullscreen {

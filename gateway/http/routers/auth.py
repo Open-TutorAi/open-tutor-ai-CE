@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from jwt import encode
 from pydantic import BaseModel, EmailStr
 
@@ -11,6 +11,7 @@ from accounts.users.service import AccountService
 from config import settings
 from data.models import User
 from gateway.http.dependencies import get_account_service, get_current_user
+from gateway.http.rate_limit import limiter
 
 router = APIRouter(prefix="/auths", tags=["auth"])
 
@@ -80,12 +81,14 @@ async def get_session_user(current_user: User = Depends(get_current_user)):
 
 
 @router.post("/signin")
+@limiter.limit("10/minute")
 async def sign_in(
-    request: SignInRequest,
+    request: Request,
+    body: SignInRequest,
     svc: AccountService = Depends(get_account_service),
 ):
     """Sign in — UI calls /auths/signin."""
-    user = svc.authenticate(request.email, request.password)
+    user = svc.authenticate(body.email, body.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
@@ -98,29 +101,40 @@ async def sign_in(
 
 
 @router.post("/login")
+@limiter.limit("10/minute")
 async def login(
-    request: SignInRequest,
+    request: Request,
+    body: SignInRequest,
     svc: AccountService = Depends(get_account_service),
 ):
     """Login alias — kept for internal/tool use."""
-    return await sign_in(request, svc)
+    return await sign_in(request, body, svc)
 
 
 @router.post("/signup")
+@limiter.limit("10/minute")
 async def signup(
-    request: SignUpRequest,
+    request: Request,
+    body: SignUpRequest,
     svc: AccountService = Depends(get_account_service),
 ):
-    """Sign up — first user becomes admin."""
+    """Sign up — first user becomes admin; role otherwise self-selected from an allowlist."""
     is_admin = svc.count_users() == 0
+    allowed_self_roles = {"user", "teacher", "parent"}
+    requested = body.role or "user"
+    role = (
+        "admin"
+        if is_admin
+        else (requested if requested in allowed_self_roles else "user")
+    )
     try:
         user = svc.create_user(
-            email=request.email,
-            name=request.name,
-            password_plain=request.password,
-            profile_image_url=request.profile_image_url,
+            email=body.email,
+            name=body.name,
+            password_plain=body.password,
+            profile_image_url=body.profile_image_url,
             is_admin=is_admin,
-            role=request.role or "user",
+            role=role,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
@@ -155,7 +169,7 @@ async def add_user(
             password_plain=request.password,
             profile_image_url=request.profile_image_url,
             is_admin=(request.role == "admin"),
-            role=request.role or "user",
+            role=request.role,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))

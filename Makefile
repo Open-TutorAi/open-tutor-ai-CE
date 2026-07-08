@@ -35,3 +35,14 @@ test:
 	cd ui && npm run test:frontend
 
 check: lint test
+
+# ── Teacher classroom feature ────────────────────────────────────────────────
+
+test-classrooms:
+	~/.pyenv/versions/tutorai-env/bin/pytest tests/test_classrooms.py tests/test_attendance.py tests/test_classrooms_integration.py -v
+
+test-ui-classrooms:
+	cd ui && npx vitest run src/tests/classrooms.test.ts src/tests/attendanceTab.test.ts
+
+e2e-classrooms:
+	cd ui && npx cypress run --spec "cypress/e2e/classrooms.cy.ts"

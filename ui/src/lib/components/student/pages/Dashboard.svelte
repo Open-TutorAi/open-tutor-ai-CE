@@ -12,6 +12,7 @@
 		type SupportResponse,
 		updateSupportChatId
 	} from '$lib/apis/supports';
+	import { ClassroomsAPI } from '$lib/apis/classrooms';
 	import { page } from '$app/stores';
 	import { fade, scale } from 'svelte/transition';
 	import { toast } from 'svelte-sonner';
@@ -370,6 +371,8 @@
 
 	// Course code input
 	let courseCode = '';
+	let joiningCourse = false;
+	let joinCourseError = '';
 
 	// Don't show again state
 	let dontShowAgain = false;
@@ -382,16 +385,26 @@
 		}
 	}
 
-	// Handle joining a course
-	function handleJoinCourse() {
-		if (courseCode === '0000') {
-			// Redirect to student chat component if code is 0000
-			goto('/student/chat');
+	// Handle joining a classroom via the teacher-provided invite code
+	async function handleJoinCourse() {
+		if (!courseCode.trim() || joiningCourse) return;
+
+		joiningCourse = true;
+		joinCourseError = '';
+		try {
+			const token = localStorage.getItem('token') ?? '';
+			const result = await ClassroomsAPI.redeemInvite(token, courseCode.trim());
 			showJoinCoursePopup = false;
-		} else if (courseCode.trim() !== '') {
-			// For other valid codes, you would implement the actual join logic here
-			// For now, just close the popup
-			showJoinCoursePopup = false;
+			courseCode = '';
+			toast.success(
+				result.enrolled
+					? $i18n.t('You joined the classroom!')
+					: $i18n.t("You're already enrolled in this classroom.")
+			);
+		} catch (err: any) {
+			joinCourseError = err?.detail || $i18n.t('Invalid or expired course code');
+		} finally {
+			joiningCourse = false;
 		}
 	}
 
@@ -580,15 +593,20 @@
 			</p>
 
 			<!-- Course Code Input -->
-			<div class="mb-6">
+			<div class="mb-2">
 				<input
 					type="text"
 					bind:value={courseCode}
 					placeholder={$i18n.t('Enter Course Code')}
+					disabled={joiningCourse}
 					class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
 					on:keydown={(e) => e.key === 'Enter' && handleJoinCourse()}
 				/>
 			</div>
+
+			{#if joinCourseError}
+				<p class="text-center text-sm text-red-600 dark:text-red-400 mb-4">{joinCourseError}</p>
+			{/if}
 
 			<!-- Help Text -->
 			<p class="text-center text-gray-500 dark:text-gray-400 mb-6">
@@ -598,10 +616,11 @@
 			<!-- Join Button -->
 			<div class="flex justify-center mb-4">
 				<button
-					class="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 text-white py-3 px-8 rounded-full font-medium"
+					disabled={!courseCode.trim() || joiningCourse}
+					class="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 text-white py-3 px-8 rounded-full font-medium disabled:opacity-50 disabled:cursor-not-allowed"
 					on:click={handleJoinCourse}
 				>
-					{$i18n.t('Join Course')}
+					{joiningCourse ? $i18n.t('Joining...') : $i18n.t('Join Course')}
 				</button>
 			</div>
 

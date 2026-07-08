@@ -6,6 +6,12 @@ from .knowledge import KnowledgeBase, KnowledgeFile
 from .model import ModelConfig
 from .support import Support, SupportFile
 from .user import User
+from .classroom import Classroom
+from .enrollment import Enrollment
+from .session import ClassSession
+from .presence import Presence, PresenceStatus
+from .invite import Invite
+from .announcement import Announcement
 
 __all__ = [
     "User",
@@ -18,4 +24,11 @@ __all__ = [
     "AppConfig",
     "KnowledgeBase",
     "KnowledgeFile",
+    "Classroom",
+    "Enrollment",
+    "ClassSession",
+    "Invite",
+    "Announcement",
+    "Presence",
+    "PresenceStatus",
 ]

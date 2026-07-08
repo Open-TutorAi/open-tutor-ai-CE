@@ -7,21 +7,26 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from config import settings
 from data.database import init_database
+from gateway.http.rate_limit import limiter
 from gateway.http.api_routes import register_api_routes
 from gateway.realtime.socket import socket_app
 
 from .routers import (
-    app_info,
-    auth,
-    files,
     health,
-    self_regulation,
+    auth,
     supports,
+    self_regulation,
+    files,
+    app_info,
     users,
+    classrooms as classrooms_router,
+    sessions as class_sessions_router,
+    announcements as announcements_router,
 )
 from .routers import (
     audio as audio_router,
@@ -112,6 +117,15 @@ def create_app() -> FastAPI:
         lifespan=_lifespan,
     )
 
+    app.state.limiter = limiter
+
+    @app.exception_handler(RateLimitExceeded)
+    async def _rate_limit_handler(request: Request, exc: RateLimitExceeded):
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "Too many requests. Please try again later."},
+        )
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins_list,
@@ -120,6 +134,27 @@ def create_app() -> FastAPI:
         allow_methods=settings.CORS_ALLOW_METHODS,
         allow_headers=settings.CORS_ALLOW_HEADERS,
     )
+
+    @app.middleware("http")
+    async def add_security_headers(request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = (
+            "geolocation=(), microphone=(), camera=()"
+        )
+        response.headers["X-XSS-Protection"] = "0"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data: blob:; "
+            "connect-src 'self' ws: wss:; "
+            "font-src 'self' data:; "
+            "frame-ancestors 'none';"
+        )
+        return response
 
     @app.middleware("http")
     async def reject_legacy_realtime_path(request: Request, call_next):
@@ -164,6 +199,15 @@ def create_app() -> FastAPI:
     app.include_router(groups_router.router, prefix="/api/v1")
     app.include_router(folders_router.router, prefix="/api/v1")
     app.include_router(tasks_router.router, prefix="/api/v1")
+
+    # Classrooms — router already declares its full "/api/classrooms" prefix
+    app.include_router(classrooms_router.router)
+
+    # Class sessions / attendance — router declares each route's full path
+    app.include_router(class_sessions_router.router)
+
+    # Classroom announcements — router declares each route's full path
+    app.include_router(announcements_router.router)
 
     # Socket.IO — mounted at /realtime; client uses path='/realtime/socket.io'
     app.mount("/realtime", socket_app)

@@ -2714,16 +2714,8 @@
 	input={eventConfirmationInput}
 	inputPlaceholder={eventConfirmationInputPlaceholder}
 	inputValue={eventConfirmationInputValue}
-	on:confirm={(e) => {
-		if (e.detail) {
-			eventCallback(e.detail);
-		} else {
-			eventCallback(true);
-		}
-	}}
-	on:cancel={() => {
-		eventCallback(false);
-	}}
+	on:confirm={(e) => { if (e.detail) { eventCallback(e.detail); } else { eventCallback(true); } }}
+	on:cancel={() => { eventCallback(false); }}
 />
 
 <div
@@ -2731,21 +2723,21 @@
 	!($isFullscreenAvatar && avatarActive)
 		? 'md:max-w-[calc(100%-260px)]'
 		: ''} w-full max-w-full flex flex-col shadow-md"
+
 	id="chat-container"
 >
 	{#if chatIdProp === '' || (!loading && chatIdProp)}
+
 		{#if $settings?.backgroundImageUrl ?? null}
 			<div
-				class="absolute {$showSidebar
-					? 'md:max-w-[calc(100%-260px)] md:translate-x-[260px]'
-					: ''} top-0 left-0 w-full h-full bg-cover bg-center bg-no-repeat"
-				style="background-image: url({$settings.backgroundImageUrl})  "
+				class="absolute top-0 left-0 w-full h-full bg-cover bg-center bg-no-repeat opacity-20 z-0
+				       {$showSidebar ? 'md:max-w-[calc(100%-260px)] md:translate-x-[260px]' : ''}"
+				style="background-image: url({$settings.backgroundImageUrl})"
 			/>
-
-			<div
-				class="absolute top-0 left-0 w-full h-full bg-linear-to-t from-white to-white/85 dark:from-gray-900 dark:to-gray-900/90 z-0"
-			/>
+			<div class="absolute top-0 left-0 w-full h-full bg-gradient-to-t
+			            from-white/90 to-white/60 dark:from-gray-900/90 dark:to-gray-900/60 z-0" />
 		{/if}
+
 
 		<!-- Hide navbar when in fullscreen avatar mode -->
 		{#if !($isFullscreenAvatar && avatarActive)}
@@ -2769,54 +2761,31 @@
 				{avatarActive}
 				{toggleAvatar}
 			/>
+
 		{/if}
 
-		<PaneGroup direction="horizontal" class="w-full h-full">
-			<Pane defaultSize={50} class="h-full flex w-full relative shadow-md">
+
+		<PaneGroup direction="horizontal" class="w-full h-full relative z-10">
+			<Pane defaultSize={50} class="h-full flex w-full relative">
+
+				<!-- Banners -->
 				{#if !history.currentId && !$chatId && selectedModels.length <= 1 && ($banners.length > 0 || ($config?.license_metadata?.type ?? null) === 'trial' || (($config?.license_metadata?.seats ?? null) !== null && $config?.user_count > $config?.license_metadata?.seats))}
-					<div class="absolute top-12 left-0 right-0 w-full z-30">
-						<div class=" flex flex-col gap-1 w-full">
+					<div class="absolute top-0 left-0 right-0 w-full z-30">
+						<div class="flex flex-col gap-1 w-full">
 							{#if ($config?.license_metadata?.type ?? null) === 'trial'}
-								<Banner
-									banner={{
-										type: 'info',
-										title: 'Trial License',
-										content: $i18n.t(
-											'You are currently using a trial license. Please contact support to upgrade your license.'
-										)
-									}}
-								/>
+								<Banner banner={{ type: 'info', title: 'Trial License', content: $i18n.t('You are currently using a trial license. Please contact support to upgrade your license.') }} />
 							{/if}
-
 							{#if ($config?.license_metadata?.seats ?? null) !== null && $config?.user_count > $config?.license_metadata?.seats}
-								<Banner
-									banner={{
-										type: 'error',
-										title: 'License Error',
-										content: $i18n.t(
-											'Exceeded the number of seats in your license. Please contact support to increase the number of seats.'
-										)
-									}}
-								/>
+								<Banner banner={{ type: 'error', title: 'License Error', content: $i18n.t('Exceeded the number of seats in your license. Please contact support to increase the number of seats.') }} />
 							{/if}
-
-							{#each $banners.filter( (b) => (b.dismissible ? !JSON.parse(localStorage.getItem('dismissedBannerIds') ?? '[]').includes(b.id) : true) ) as banner}
-								<Banner
-									{banner}
-									on:dismiss={(e) => {
-										const bannerId = e.detail;
-
-										localStorage.setItem(
-											'dismissedBannerIds',
-											JSON.stringify(
-												[
-													bannerId,
-													...JSON.parse(localStorage.getItem('dismissedBannerIds') ?? '[]')
-												].filter((id) => $banners.find((b) => b.id === id))
-											)
-										);
-									}}
-								/>
+							{#each $banners.filter((b) => (b.dismissible ? !JSON.parse(localStorage.getItem('dismissedBannerIds') ?? '[]').includes(b.id) : true)) as banner}
+								<Banner {banner} on:dismiss={(e) => {
+									const bannerId = e.detail;
+									localStorage.setItem('dismissedBannerIds', JSON.stringify(
+										[bannerId, ...JSON.parse(localStorage.getItem('dismissedBannerIds') ?? '[]')]
+										.filter((id) => $banners.find((b) => b.id === id))
+									));
+								}} />
 							{/each}
 						</div>
 					</div>
@@ -2824,9 +2793,11 @@
 
 				<div class="flex flex-col flex-auto z-10 w-full @container">
 					{#if $settings?.landingPageMode === 'chat' || createMessagesList(history, history.currentId).length > 0}
+
 						{#if avatarActive}
+							<!-- MODE AVATAR -->
 							<div class="flex flex-col w-full h-full flex-auto relative">
-								<div class="flex-1 overflow-hidden bg-transparent">
+								<div class="flex-1 overflow-hidden">
 									<AvatarChat
 										className="h-full flex"
 										{history}
@@ -2867,14 +2838,16 @@
 											}
 										}}
 									/>
+
 								</div>
 							</div>
+
 						{:else}
 							<div
 								class="flex flex-col w-full h-full flex-auto relative bg-[#F5F7F9] dark:bg-gray-900"
 							>
 								<div
-									class="pb-2.5 flex-1 flex flex-col w-full overflow-auto max-w-full z-10 scrollbar-hidden"
+									class="flex-1 overflow-y-auto scroll-smooth scrollbar-hidden"
 									id="messages-container"
 									bind:this={messagesContainerElement}
 									on:scroll={(e) => {
@@ -2883,98 +2856,79 @@
 											messagesContainerElement.clientHeight + 5;
 									}}
 								>
-									<div class="h-full w-full flex flex-col">
+									<div class="h-full w-full flex flex-col max-w-3xl mx-auto px-4 md:px-6 pt-6 pb-2">
 										<Messages
 											chatId={$chatId}
-											bind:history
-											bind:autoScroll
-											bind:prompt
-											{selectedModels}
-											{atSelectedModel}
-											{sendPrompt}
-											{showMessage}
-											{submitMessage}
-											{continueResponse}
-											{regenerateResponse}
-											{mergeResponses}
-											{chatActionHandler}
-											{addMessages}
+											bind:history bind:autoScroll bind:prompt
+											{selectedModels} {atSelectedModel} {sendPrompt} {showMessage}
+											{submitMessage} {continueResponse} {regenerateResponse}
+											{mergeResponses} {chatActionHandler} {addMessages}
 											bottomPadding={files.length > 0}
 										/>
+
+										{#if processing}
+											<div class="ai-typing-container mt-3">
+												<div class="ai-typing-bubble">
+													<div class="ai-typing-dots">
+														<div class="ai-typing-dot"></div>
+														<div class="ai-typing-dot"></div>
+														<div class="ai-typing-dot"></div>
+													</div>
+													<span class="ai-typing-text">Le tuteur réfléchit...</span>
+												</div>
+											</div>
+										{/if}
 									</div>
 								</div>
-								<div class="w-full pt-2 relative z-20">
-									<MessageInput
-										{history}
-										{selectedModels}
-										bind:files
-										bind:prompt
-										bind:autoScroll
-										bind:selectedToolIds
-										bind:imageGenerationEnabled
-										bind:codeInterpreterEnabled
-										bind:webSearchEnabled
-										bind:atSelectedModel
-										transparentBackground={$settings?.backgroundImageUrl ?? false}
-										{stopResponse}
-										on:submit={async (e) => {
-											if (e.detail || files.length > 0) {
-												await tick();
-												submitPrompt(
-													($settings?.richTextInput ?? true)
-														? e.detail.replaceAll('\n\n', '\n')
-														: e.detail
-												);
-											}
-										}}
-									/>
+
+								<div class="w-full px-4 md:px-8 py-4 relative z-20 input-float-zone">
+									<div class="max-w-3xl mx-auto">
+										<div class="input-card-wrapper group">
+											<div class="input-card-glow"></div>
+											<div class="input-card-inner">
+												<MessageInput
+													{history} {selectedModels}
+													bind:files bind:prompt bind:autoScroll
+													bind:selectedToolIds bind:imageGenerationEnabled
+													bind:codeInterpreterEnabled bind:webSearchEnabled bind:atSelectedModel
+													transparentBackground={true} {stopResponse}
+													on:submit={async (e) => {
+														if (e.detail || files.length > 0) {
+															await tick();
+															submitPrompt(($settings?.richTextInput ?? true) ? e.detail.replaceAll('\n\n', '\n') : e.detail);
+														}
+													}}
+												/>
+											</div>
+										</div>
+									</div>
 								</div>
+
 							</div>
 						{/if}
+
 					{:else}
-						<div class="overflow-auto w-full h-full flex items-center">
+						<!-- PLACEHOLDER -->
+						<div class="overflow-auto w-full h-full flex items-center justify-center px-4">
 							<Placeholder
-								{history}
-								{selectedModels}
-								bind:files
-								bind:prompt
-								bind:autoScroll
-								bind:selectedToolIds
-								bind:imageGenerationEnabled
-								bind:codeInterpreterEnabled
-								bind:webSearchEnabled
-								bind:atSelectedModel
+								{history} {selectedModels}
+								bind:files bind:prompt bind:autoScroll
+								bind:selectedToolIds bind:imageGenerationEnabled
+								bind:codeInterpreterEnabled bind:webSearchEnabled bind:atSelectedModel
 								transparentBackground={$settings?.backgroundImageUrl ?? false}
-								{stopResponse}
-								{createMessagePair}
+								{stopResponse} {createMessagePair}
 								on:upload={async (e) => {
 									const { type, data } = e.detail;
-
-									if (type === 'web') {
-										await uploadWeb(data);
-									} else if (type === 'youtube') {
-										await uploadYoutubeTranscription(data);
-									}
+									if (type === 'web') await uploadWeb(data);
+									else if (type === 'youtube') await uploadYoutubeTranscription(data);
 								}}
 								on:submit={async (e) => {
-									// This is triggered when the user selects a chat type
-									// Force chat creation even with empty/minimal content
 									if (e.detail || files.length > 0) {
 										await tick();
-										submitPrompt(
-											($settings?.richTextInput ?? true)
-												? e.detail.replaceAll('\n\n', '\n')
-												: e.detail
-										);
+										submitPrompt(($settings?.richTextInput ?? true) ? e.detail.replaceAll('\n\n', '\n') : e.detail);
 									} else {
-										// Even with no prompt, create a new chat with default state
 										await initNewChat();
-										// After a moment, navigate to ensure the chat interface appears
-										setTimeout(() => {
-											const initialMessage = 'Hello';
-											prompt = initialMessage;
-											submitPrompt(initialMessage);
-										}, 300);
+										setTimeout(() => { prompt = 'Hello'; submitPrompt('Hello'); }, 300);
 									}
 								}}
 							/>
@@ -2985,33 +2939,35 @@
 
 			<ChatControls
 				bind:this={controlPaneComponent}
-				bind:history
-				bind:chatFiles
-				bind:params
-				bind:files
-				bind:pane={controlPane}
+				bind:history bind:chatFiles bind:params bind:files bind:pane={controlPane}
 				chatId={$chatId}
 				modelId={selectedModelIds?.at(0) ?? null}
 				models={selectedModelIds.reduce((a, e, i, arr) => {
 					const model = $models.find((m) => m.id === e);
-					if (model) {
-						return [...a, model];
-					}
+					if (model) return [...a, model];
 					return a;
 				}, [])}
-				{submitPrompt}
-				{stopResponse}
-				{showMessage}
-				{eventTarget}
-				{avatarActive}
-				onAvatarToggle={toggleAvatar}
-				class="shadow-lg"
+				{submitPrompt} {stopResponse} {showMessage} {eventTarget}
+				{avatarActive} onAvatarToggle={toggleAvatar}
+				class="sidebar-panel"
 			/>
 		</PaneGroup>
+
 	{:else if loading}
-		<div class=" flex items-center justify-center h-full w-full">
-			<div class="m-auto">
-				<Spinner />
+		<div class="loading-bg flex items-center justify-center h-full w-full">
+			<div class="flex flex-col items-center gap-4">
+				<div class="loading-ring">
+					<svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+					     stroke="white" stroke-width="2.5" stroke-linecap="round">
+						<path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+					</svg>
+				</div>
+				<p class="loading-label">Préparation de votre session d'apprentissage...</p>
+				<div class="flex gap-2">
+					<span class="loading-dot"></span>
+					<span class="loading-dot"></span>
+					<span class="loading-dot"></span>
+				</div>
 			</div>
 		</div>
 	{/if}

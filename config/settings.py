@@ -6,6 +6,7 @@ for wildcard patterns and concrete origins.
 """
 
 import os
+import secrets
 
 from dotenv import load_dotenv
 
@@ -99,18 +100,29 @@ if not _jwt_secret:
             "SECRET_KEY environment variable is required in production. "
             "Do not use default development key in production environments."
         )
-    _jwt_secret = "dev-secret-key-change-in-production"
+    _jwt_secret = secrets.token_hex(32)
     Settings.JWT_SECRET_KEY = _jwt_secret
 
 # Create singleton instance with validation
 settings = Settings()
 
 # Validate production safety
-if (
-    not settings.DEBUG
-    and settings.JWT_SECRET_KEY == "dev-secret-key-change-in-production"
-):
+if not settings.DEBUG and not os.getenv("SECRET_KEY", ""):
     raise ValueError(
         "JWT_SECRET_KEY must be set via SECRET_KEY environment variable in production. "
         "Do not use default development key in production environments."
+    )
+
+# Guard against CORS wildcard + credentials combination (allows any origin to
+# send credentialed requests, which browsers treat as equivalent to disabling
+# the Same-Origin Policy for this server).
+if settings.CORS_ALLOW_CREDENTIALS and "*" in settings.CORS_ORIGINS:
+    if not settings.DEBUG:
+        raise ValueError(
+            "CORS_ALLOW_ORIGIN must not be '*' when CORS_ALLOW_CREDENTIALS is True. "
+            "Specify explicit allowed origins instead."
+        )
+    print(
+        "WARNING: CORS wildcard origin combined with allow_credentials=True is "
+        "insecure. Set explicit origins via CORS_ALLOW_ORIGIN in production."
     )

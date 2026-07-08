@@ -38,13 +38,22 @@
 	}
 </script>
 
+
+
 <!-- Progress Summary Card -->
+
+<!----
 <div class="flex flex-col items-center justify-center w-full h-full mx-auto p-4">
+
+
+	
 	<div
 		class="w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 mb-6"
 		role="region"
 		aria-label="Course progress summary"
 	>
+
+	
 		<div class="text">
 			<h2 class="text-gray-800 dark:text-white font-medium text-xl mb-4 text-center">
 				{$i18n.t('Program Completion')}
@@ -70,4 +79,53 @@
 			</div>
 		</div>
 	</div>
+
+
+
+</div>
+-->
+
+
+
+<div class="flex justify-center items-center w-full h-full p-4">
+
+	<div class="progress-card card-hover" role="region" aria-label="Course progress summary">
+
+		<!-- Title -->
+		<h2 class="progress-title mb-4">
+			{$i18n.t('Program Completion')}
+		</h2>
+
+		<!-- Percentage + badge -->
+		<div class="flex items-center justify-center gap-2 mb-3">
+			<span class="progress-value" aria-live="polite">
+				{courseCompletion}%
+			</span>
+
+			<span class="progress-badge">
+				{$i18n.t(courseCompletion < 50 ? 'In Progress' : 'Almost Done')}
+			</span>
+		</div>
+
+		<!-- Progress bar -->
+		<div
+			class="progress-bar-container"
+			role="progressbar"
+			aria-valuenow={courseCompletion}
+			aria-valuemin="0"
+			aria-valuemax="100"
+		>
+			<div
+				class="progress-bar-fill"
+				style="width: {animatedProgress}%"
+			></div>
+		</div>
+
+		<!-- Optional motivation text -->
+		<p class="text-center text-sm text-gray-500 dark:text-gray-400 mt-3">
+			{$i18n.t(courseCompletion < 50 ? 'Keep going' : "You're doing great")}
+		</p>
+
+	</div>
+
 </div>
