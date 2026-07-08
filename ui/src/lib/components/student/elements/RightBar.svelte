@@ -103,7 +103,7 @@
 			</span>
 
 			<span class="progress-badge">
-				{courseCompletion < 50 ? "In Progress" : "Almost Done"}
+				{$i18n.t(courseCompletion < 50 ? 'In Progress' : 'Almost Done')}
 			</span>
 		</div>
 
@@ -123,9 +123,7 @@
 
 		<!-- Optional motivation text -->
 		<p class="text-center text-sm text-gray-500 dark:text-gray-400 mt-3">
-			{courseCompletion < 50
-				? "Keep going 💪"
-				: "You're doing great 🚀"}
+			{$i18n.t(courseCompletion < 50 ? 'Keep going' : "You're doing great")}
 		</p>
 
 	</div>

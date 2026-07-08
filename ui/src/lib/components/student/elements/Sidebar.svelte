@@ -65,7 +65,9 @@
 	function updateActivePageFromUrl(pathname: string) {
 		let pageFromUrl: string | null = null;
 
-		if (pathname.startsWith('/classrooms')) {
+		if (pathname === '/teacher' || pathname.startsWith('/teacher/')) {
+			pageFromUrl = 'dashboard';
+		} else if (pathname.startsWith('/classrooms')) {
 			pageFromUrl = 'classrooms';
 		} else {
 			const pathSegments = pathname.split('/');

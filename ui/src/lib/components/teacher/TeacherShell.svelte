@@ -19,6 +19,7 @@
 	}
 
 	const isDarkMode = derived(theme, ($theme) => {
+		if (typeof window === 'undefined') return false;
 		return (
 			$theme === 'dark' ||
 			($theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
@@ -28,7 +29,9 @@
 	let currentIsDarkMode = false;
 	isDarkMode.subscribe((value) => {
 		currentIsDarkMode = value;
-		document.documentElement.classList.toggle('dark', value);
+		if (typeof document !== 'undefined') {
+			document.documentElement.classList.toggle('dark', value);
+		}
 	});
 
 	function toggleSidebar() {

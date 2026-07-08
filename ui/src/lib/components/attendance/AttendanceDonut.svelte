@@ -40,7 +40,7 @@
 				fill="none"
 				stroke={arc.color}
 				stroke-width={STROKE}
-				stroke-dasharray="{arc.length} {CIRCUMFERENCE - arc.length}"
+				stroke-dasharray={`${arc.length} ${CIRCUMFERENCE - arc.length}`}
 				stroke-dashoffset={-arc.offset}
 				transform="rotate(-90 50 50)"
 			/>
