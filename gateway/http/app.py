@@ -24,6 +24,9 @@ from .routers import (
     users,
 )
 from .routers import (
+    assignments as assignments_router,
+)
+from .routers import (
     audio as audio_router,
 )
 from .routers import (
@@ -33,7 +36,13 @@ from .routers import (
     chats as chats_router,
 )
 from .routers import (
+    classrooms as classrooms_router,
+)
+from .routers import (
     configs as configs_router,
+)
+from .routers import (
+    exams as exams_router,
 )
 from .routers import (
     folders as folders_router,
@@ -54,6 +63,9 @@ from .routers import (
     memories as memories_router,
 )
 from .routers import (
+    messaging as messaging_router,
+)
+from .routers import (
     models as models_router,
 )
 from .routers import (
@@ -61,6 +73,9 @@ from .routers import (
 )
 from .routers import (
     providers as providers_router,
+)
+from .routers import (
+    resources as resources_router,
 )
 from .routers import (
     retrieval as retrieval_router,
@@ -130,6 +145,31 @@ def create_app() -> FastAPI:
             )
         return await call_next(request)
 
+    @app.middleware("http")
+    async def security_headers(request: Request, call_next):
+        """Baseline hardening headers on every response. The CSP is intentionally
+        limited to directives that protect without breaking the SvelteKit SPA
+        (no script-src/style-src restriction, which would block its inline runtime):
+        clickjacking (frame-ancestors), plugin/object embedding, and <base> hijack."""
+        response = await call_next(request)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault(
+            "Referrer-Policy", "strict-origin-when-cross-origin"
+        )
+        response.headers.setdefault(
+            "Content-Security-Policy",
+            "frame-ancestors 'none'; object-src 'none'; base-uri 'self'",
+        )
+        return response
+
+    # Rate limiting on sensitive mutating endpoints — engaged only in real deployments;
+    # disabled under DEBUG (dev + the test suite) so it never throttles local work.
+    if not settings.DEBUG:
+        from gateway.http.rate_limit import add_rate_limiting
+
+        add_rate_limiting(app, max_requests=10, window_seconds=60)
+
     # Health — no version prefix, matches Docker healthcheck and compose
     app.include_router(health.router)
 
@@ -144,6 +184,18 @@ def create_app() -> FastAPI:
 
     # Supports, evaluations, files — only under /api/v1 (all UI calls use TUTOR_API_BASE_URL)
     app.include_router(supports.router, prefix="/api/v1")
+    app.include_router(classrooms_router.router, prefix="/api/v1")
+    app.include_router(classrooms_router.invitations_router, prefix="/api/v1")
+    app.include_router(classrooms_router.directory_router, prefix="/api/v1")
+    app.include_router(classrooms_router.contacts_router, prefix="/api/v1")
+    app.include_router(classrooms_router.me_router, prefix="/api/v1")
+    app.include_router(assignments_router.router, prefix="/api/v1")
+    app.include_router(assignments_router.student_router, prefix="/api/v1")
+    app.include_router(resources_router.router, prefix="/api/v1")
+    app.include_router(resources_router.library_router, prefix="/api/v1")
+    app.include_router(messaging_router.router, prefix="/api/v1")
+    app.include_router(exams_router.router, prefix="/api/v1")
+    app.include_router(exams_router.student_router, prefix="/api/v1")
     app.include_router(self_regulation.router, prefix="/api/v1")
     app.include_router(files.router, prefix="/api/v1")
     app.include_router(app_info.router, prefix="/api/v1")

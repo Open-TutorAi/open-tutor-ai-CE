@@ -1,6 +1,6 @@
-<!-- messages/+page.svelte -->
+<!-- messages/+page.svelte — real student ↔ teacher direct messaging -->
 <script lang="ts">
-	import Dashboard from '$lib/components/student/pages/Messages.svelte';
+	import Messages from '$lib/components/student/pages/StudentMessages.svelte';
 </script>
 
-<Dashboard />
+<Messages />

@@ -25,7 +25,9 @@
 		temporaryChatEnabled,
 		isLastActiveTab,
 		isApp,
-		appInfo
+		appInfo,
+		monitorLocked,
+		monitorAway
 	} from '$lib/stores';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
@@ -33,6 +35,7 @@
 
 	import { getBackendConfig } from '$lib/apis';
 	import { getSessionUser } from '$lib/apis/auths';
+	import { getMyMonitor } from '$lib/apis/classrooms';
 
 	import '../tailwind.css';
 	import '../app.css';
@@ -45,6 +48,7 @@
 	import { getAllTags, getChatList } from '$lib/apis/chats';
 	import NotificationToast from '$lib/components/NotificationToast.svelte';
 	import AppSidebar from '$lib/components/app/AppSidebar.svelte';
+	import MonitorLock from '$lib/components/MonitorLock.svelte';
 	import { chatCompletion } from '$lib/apis/openai';
 
 	setContext('i18n', i18n);
@@ -74,6 +78,14 @@
 
 		_socket.on('connect', () => {
 			console.log('connected', _socket.id);
+			// E6: re-apply the persisted screen-lock on (re)connect, in case a teacher
+			// toggled it while this client was offline (the live `monitor:set` event is
+			// only delivered to clients that were online at toggle time).
+			if (localStorage.token) {
+				getMyMonitor(localStorage.token)
+					.then((state) => monitorLocked.set(state?.enabled === false))
+					.catch((err) => console.log('monitor sync failed', err));
+			}
 		});
 
 		_socket.on('reconnect_attempt', (attempt) => {
@@ -496,6 +508,22 @@
 
 						$socket?.on('chat-events', chatEventHandler);
 						$socket?.on('channel-events', channelEventHandler);
+						// E6: teacher screen-lock command for this student.
+						$socket?.on('monitor:set', (data) => {
+							monitorLocked.set(data?.enabled === false);
+						});
+						// E6 (teacher view): a locked student left/returned to their screen.
+						$socket?.on('monitor:student-away', (data) => {
+							if (!data?.student_id) return;
+							monitorAway.update((m) => ({
+								...m,
+								[data.student_id]: {
+									away: !!data.away,
+									classroom_id: data.classroom_id,
+									at: Date.now()
+								}
+							}));
+						});
 
 						await user.set(sessionUser);
 						await config.set(await getBackendConfig());
@@ -591,6 +619,9 @@
 		<slot />
 	{/if}
 {/if}
+
+<!-- E6: teacher-initiated screen lock overlay (no-op unless monitorLocked) -->
+<MonitorLock />
 
 <Toaster
 	theme={$theme.includes('dark')

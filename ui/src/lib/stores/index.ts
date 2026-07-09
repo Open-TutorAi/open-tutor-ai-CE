@@ -23,6 +23,15 @@ export const mobile = writable(false);
 
 export const socket: Writable<null | Socket> = writable(null);
 export const activeUserIds: Writable<null | string[]> = writable(null);
+// E6 classroom control: true → the teacher has blanked/locked this student's screen.
+export const monitorLocked = writable(false);
+// E6 tab-away telemetry (teacher view): student_id → whether a locked student has
+// navigated away from the screen, with the class it relates to and when it changed.
+export const monitorAway: Writable<
+	Record<string, { away: boolean; classroom_id: string; at: number }>
+> = writable({});
+// Total unread direct messages across conversations (drives the sidebar badge).
+export const messagesUnread = writable(0);
 export const USAGE_POOL: Writable<null | string[]> = writable(null);
 
 export const theme = writable('system');

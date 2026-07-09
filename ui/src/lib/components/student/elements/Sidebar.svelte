@@ -3,12 +3,17 @@
 	import { TUTOR_FRONT_URL } from '$lib/constants';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { onMount, getContext } from 'svelte';
+	import { onMount, onDestroy, getContext } from 'svelte';
+	import { socket, messagesUnread } from '$lib/stores';
+	import { getConversations } from '$lib/apis/messaging';
 	import Settings from '$lib/components/icons/Settings.svelte';
 	import Dashboard from '$lib/components/icons/Dashboard.svelte';
 	import Classroom from '$lib/components/icons/Classroom.svelte';
 	import Assignment from '$lib/components/icons/Assignment.svelte';
 	import Message from '$lib/components/icons/Messages.svelte';
+	import UsersSolid from '$lib/components/icons/UsersSolid.svelte';
+	import Progress from '$lib/components/icons/Progress.svelte';
+	import FolderOpen from '$lib/components/icons/FolderOpen.svelte';
 	import type { ComponentType } from 'svelte';
 	import { writable, type Writable } from 'svelte/store';
 	const i18n = getContext('i18n');
@@ -40,6 +45,33 @@
 
 	// For mobile detection
 	let isMobile = false;
+
+	// ── unread message badge ────────────────────────────────────────────────
+	async function refreshUnread() {
+		const token = localStorage.getItem('token');
+		if (!token) return;
+		try {
+			const convs = await getConversations(token);
+			messagesUnread.set(convs.reduce((sum, c) => sum + (c.unread || 0), 0));
+		} catch (err) {
+			/* ignore — badge stays as-is */
+		}
+	}
+	const onIncomingMessage = () => refreshUnread();
+	let socketSubscribed = false;
+	// Subscribe once the socket is available (it connects asynchronously).
+	$: if ($socket && !socketSubscribed) {
+		$socket.on('message:new', onIncomingMessage);
+		socketSubscribed = true;
+	}
+	onMount(refreshUnread);
+	onDestroy(() => {
+		try {
+			$socket?.off('message:new', onIncomingMessage);
+		} catch (err) {
+			/* noop */
+		}
+	});
 
 	onMount(() => {
 		// Check if we're on mobile
@@ -155,10 +187,19 @@
 			{ id: 'classrooms', label: 'My Classrooms', icon: Classroom },
 			{ id: 'supports', label: 'Support', icon: Classroom },
 			{ id: 'assignments', label: 'Assignments', icon: Assignment },
+			{ id: 'resources', label: 'Resources', icon: FolderOpen },
 			{ id: 'messages', label: 'Messages', icon: Message },
 			{ id: 'settings', label: 'Profile & Settings', icon: Settings }
 		],
-		teacher: [],
+		teacher: [
+			{ id: 'dashboard', label: 'Dashboard', icon: Dashboard },
+			{ id: 'classes', label: 'Classes', icon: Classroom },
+			{ id: 'students', label: 'Students', icon: UsersSolid },
+			{ id: 'progress', label: 'Progress', icon: Progress },
+			{ id: 'messages', label: 'Messages', icon: Message },
+			{ id: 'resources', label: 'Resources', icon: FolderOpen },
+			{ id: 'settings', label: 'Profile & Settings', icon: Settings }
+		],
 		parent: []
 	};
 </script>
@@ -233,11 +274,25 @@
 								class={`flex items-center px-4 py-3 rounded-full w-full text-left text-sm font-semibold transition duration-100 ${currentActivePage === item.id ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 dark:text-white dark:hover:bg-gray-200' : isDarkMode ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-800 hover:bg-gray-200'}`}
 								title={$i18n.t(item.label)}
 							>
-								<span class="grid place-items-center w-6 h-6">
+								<span class="relative grid place-items-center w-6 h-6">
 									<svelte:component this={item.icon} />
+									{#if item.id === 'messages' && $messagesUnread > 0 && !isSidebarOpen}
+										<span
+											class="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 {isDarkMode
+												? 'ring-gray-900'
+												: 'ring-[#F5F7F9]'}"
+										></span>
+									{/if}
 								</span>
 								{#if isSidebarOpen}
 									<span class="ml-3 text-sm font-medium">{$i18n.t(item.label)}</span>
+									{#if item.id === 'messages' && $messagesUnread > 0}
+										<span
+											class={`ml-auto inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-xs font-semibold ${currentActivePage === item.id ? 'bg-white text-blue-600' : 'bg-red-500 text-white'}`}
+										>
+											{$messagesUnread > 99 ? '99+' : $messagesUnread}
+										</span>
+									{/if}
 								{/if}
 							</button>
 						</li>

@@ -1,6 +1,8 @@
 """FastAPI dependency injection — auth guard + service factories."""
 
-from fastapi import Depends, HTTPException, status
+from dataclasses import dataclass
+
+from fastapi import Depends, HTTPException, Query, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import InvalidTokenError, decode
 from sqlalchemy.orm import Session
@@ -8,9 +10,15 @@ from sqlalchemy.orm import Session
 from accounts.users.service import AccountService
 from config import settings
 from content.files.service import FilesService
+from content.resources.service import ResourcesService
 from data.database import get_db
 from data.models import User
 from governance.self_regulation.service import SelfRegulationService
+from learning.assignments.service import AssignmentsService
+from learning.classrooms.service import ClassroomsService
+from learning.exams.service import ExamsService
+from learning.guardians.service import GuardiansService
+from learning.messaging.service import MessagingService
 from learning.supports.service import SupportsService
 
 security = HTTPBearer()
@@ -66,11 +74,48 @@ def decode_jwt_token(token: str) -> dict | None:
         return None
 
 
+# ── Role guard ─────────────────────────────────────────────────────────────────
+
+
+async def require_teacher(current_user: User = Depends(get_current_user)) -> User:
+    """Authorize a teacher-only route. Caller must be authenticated AND role==teacher."""
+    if current_user.role != "teacher":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Teacher role required",
+        )
+    return current_user
+
+
 # ── Service factories ─────────────────────────────────────────────────────────
 
 
 def get_account_service(db: Session = Depends(get_db)) -> AccountService:
     return AccountService(db)
+
+
+def get_classrooms_service(db: Session = Depends(get_db)) -> ClassroomsService:
+    return ClassroomsService(db)
+
+
+def get_guardians_service(db: Session = Depends(get_db)) -> GuardiansService:
+    return GuardiansService(db)
+
+
+def get_assignments_service(db: Session = Depends(get_db)) -> AssignmentsService:
+    return AssignmentsService(db)
+
+
+def get_resources_service(db: Session = Depends(get_db)) -> ResourcesService:
+    return ResourcesService(db)
+
+
+def get_messaging_service(db: Session = Depends(get_db)) -> MessagingService:
+    return MessagingService(db)
+
+
+def get_exams_service(db: Session = Depends(get_db)) -> ExamsService:
+    return ExamsService(db)
 
 
 def get_supports_service(db: Session = Depends(get_db)) -> SupportsService:
@@ -83,3 +128,23 @@ def get_self_regulation_service(db: Session = Depends(get_db)) -> SelfRegulation
 
 def get_files_service(db: Session = Depends(get_db)) -> FilesService:
     return FilesService(db)
+
+
+@dataclass
+class Pagination:
+    """Bounded list window. `limit` is hard-capped at 100 (the team's max page size);
+    callers that omit the params get the first 100 items, preserving prior behaviour
+    for the small collections this app deals with today."""
+
+    limit: int
+    offset: int
+
+    def apply(self, items):
+        return items[self.offset : self.offset + self.limit]
+
+
+def pagination(
+    limit: int = Query(100, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+) -> Pagination:
+    return Pagination(limit=limit, offset=offset)

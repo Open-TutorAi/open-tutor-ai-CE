@@ -1,1 +1,1 @@
-"""Learning resource content boundary."""
+"""Resources bounded context — class materials + reusable assignment templates."""
