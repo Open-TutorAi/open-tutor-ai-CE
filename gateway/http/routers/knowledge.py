@@ -1,14 +1,16 @@
 """Knowledge router — /knowledge/* matching knowledge/index.ts UI client."""
 
 from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+
+from ai.retrieval.knowledge.service import KnowledgeService
 from common.exceptions import NotFoundError
 from data.database import get_db
 from data.models import User
 from gateway.http.dependencies import get_current_user
-from ai.retrieval.knowledge.service import KnowledgeService
 
 router = APIRouter(prefix="/knowledge", tags=["knowledge"])
 

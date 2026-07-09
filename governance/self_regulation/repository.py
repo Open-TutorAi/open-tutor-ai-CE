@@ -1,8 +1,6 @@
 """Feedback/self-regulation repository."""
 
-from typing import Any, Dict, List, Optional
-
-from sqlalchemy.orm import Session
+from typing import List
 
 from data.models import Feedback
 from data.repositories import BaseRepository

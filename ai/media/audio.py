@@ -1,6 +1,7 @@
 """Audio service — config + proxy to TTS/STT provider."""
 
 from sqlalchemy.orm import Session
+
 from data.models.config import AppConfig
 
 _KEY = "audio_config"

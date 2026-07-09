@@ -2,7 +2,7 @@
 name = "open-tutorai"
 description = "Open TutorAI"
 authors = [
-    { name = "Mohamed El hajji", email = "tim@opentutorai.com" }
+    { name = "Mohamed El hajji", email = "pr-elhajji@gmail.com" }
 ]
 license = { file = "LICENSE" }
 dependencies = [
@@ -88,7 +88,7 @@ dependencies = [
     "PyJWT[crypto]==2.10.1",
     "authlib==1.4.1",
 
-    "black==24.8.0",
+    "ruff==0.8.4",
     "langfuse==2.44.0",
     "youtube-transcript-api==0.6.3",
     "pytube==15.0.0",
@@ -162,6 +162,24 @@ exclude = [
 [tool.pytest.ini_options]
 addopts = "-q --tb=short"
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+extend-exclude = ["ui", ".venv", "venv", "var"]
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "F",  # pyflakes
+    "I",  # isort
+]
+ignore = [
+    "E501", # line length — handled by the formatter
+]
+
+[tool.ruff.lint.per-file-ignores]
+# load_dotenv() must run before the settings class body reads os.getenv
+"config/settings.py" = ["E402"]
 
 [tool.codespell]
 # Ref: https://github.com/codespell-project/codespell#using-a-config-file

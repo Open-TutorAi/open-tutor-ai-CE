@@ -6,5 +6,5 @@ services:
 
   open-tutorai:
     environment:
-      - 'RAG_WEB_LOADER_ENGINE=playwright'
-      - 'PLAYWRIGHT_WS_URI=ws://playwright:3000'
+      - "RAG_WEB_LOADER_ENGINE=playwright"
+      - "PLAYWRIGHT_WS_URI=ws://playwright:3000"
