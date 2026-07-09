@@ -34,6 +34,7 @@ student_router = APIRouter(prefix="/assignments", tags=["assignments"])
 
 class AssignmentCreateRequest(BaseModel):
     # Bounds are defence-in-depth; the service still enforces non-blank semantics.
+    # Also reused for edits (PUT) — same editable fields; exams are rejected server-side.
     title: str = Field(..., min_length=1, max_length=255)
     instructions: Optional[str] = Field(None, max_length=10000)
     attachment_id: Optional[str] = Field(None, max_length=64)
@@ -100,6 +101,22 @@ def get_assignment(
     try:
         return svc.get_assignment(assignment_id, teacher.id)
     except (NotFoundError, AuthorizationError) as exc:
+        raise _http_from_domain(exc)
+
+
+@router.put("/{id}/assignments/{assignment_id}")
+def update_assignment(
+    id: str,
+    assignment_id: str,
+    data: AssignmentCreateRequest,
+    teacher: User = Depends(require_teacher),
+    svc: AssignmentsService = Depends(get_assignments_service),
+):
+    """Edit a plain assignment (title/instructions/due date/attachment). Exams
+    are immutable — rejected with 422."""
+    try:
+        return svc.update(assignment_id, teacher.id, data.model_dump())
+    except (NotFoundError, AuthorizationError, ValidationError) as exc:
         raise _http_from_domain(exc)
 
 

@@ -14,6 +14,7 @@
 	} from '$lib/apis/assignments';
 	import { getExam, getProctoring, type ProctorRow } from '$lib/apis/exams';
 	import GradeModal from '$lib/components/teacher/elements/GradeModal.svelte';
+	import EditAssignmentModal from '$lib/components/teacher/elements/EditAssignmentModal.svelte';
 	import {
 		submissionStatusStyle as statusStyle,
 		submissionStatusLabel as statusLabel
@@ -90,6 +91,12 @@
 
 	let showDelete = false;
 	let deleting = false;
+	let showEdit = false;
+
+	async function onEdited() {
+		showEdit = false;
+		await load();
+	}
 	async function onDelete() {
 		deleting = true;
 		try {
@@ -150,14 +157,27 @@
 		<div>
 			<div class="flex items-start justify-between gap-3">
 				<h1 class="text-2xl font-bold text-gray-800 dark:text-white">{data.title}</h1>
-				<button
-					class="shrink-0 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full p-2"
-					title={$i18n.t('Delete assignment')}
-					aria-label={$i18n.t('Delete assignment')}
-					on:click={() => (showDelete = true)}
-				>
-					🗑
-				</button>
+				<div class="flex items-center gap-1 shrink-0">
+					{#if !isExam}
+						<!-- Exams are immutable, so editing is offered only for plain assignments. -->
+						<button
+							class="text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full p-2"
+							title={$i18n.t('Edit assignment')}
+							aria-label={$i18n.t('Edit assignment')}
+							on:click={() => (showEdit = true)}
+						>
+							✎
+						</button>
+					{/if}
+					<button
+						class="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full p-2"
+						title={$i18n.t('Delete assignment')}
+						aria-label={$i18n.t('Delete assignment')}
+						on:click={() => (showDelete = true)}
+					>
+						🗑
+					</button>
+				</div>
 			</div>
 			<p class="text-gray-500 dark:text-gray-400 mt-1">
 				{$i18n.t('Due')}
@@ -303,6 +323,15 @@
 		row={grading}
 		on:close={() => (grading = null)}
 		on:graded={onGraded}
+	/>
+{/if}
+
+{#if showEdit && data}
+	<EditAssignmentModal
+		{classId}
+		assignment={data}
+		on:updated={onEdited}
+		on:close={() => (showEdit = false)}
 	/>
 {/if}
 

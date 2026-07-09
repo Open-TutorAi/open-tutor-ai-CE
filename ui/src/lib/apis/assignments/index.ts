@@ -103,6 +103,16 @@ export const createAssignment = (
 ): Promise<AssignmentSummary> =>
 	_send(`${TUTOR_API_BASE_URL}/classrooms/${id}/assignments`, 'POST', token, data);
 
+// Edit a plain assignment (same editable fields as create). Exams are immutable
+// server-side; the UI only offers this for non-exam assignments.
+export const updateAssignment = (
+	token: string,
+	id: string,
+	assignmentId: string,
+	data: AssignmentCreateRequest
+): Promise<AssignmentSummary> =>
+	_send(`${TUTOR_API_BASE_URL}/classrooms/${id}/assignments/${assignmentId}`, 'PUT', token, data);
+
 export const getAssignment = (
 	token: string,
 	id: string,

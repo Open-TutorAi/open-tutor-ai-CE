@@ -14,10 +14,17 @@ from sqlalchemy.orm import Session
 from accounts.users.service import AccountService as IdentityService
 from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from content.files.service import FilesService
-from data.models import Assignment, Classroom, Enrollment, ExamSession, Submission
+from data.models import (
+    Assignment,
+    Classroom,
+    Enrollment,
+    ExamConfig,
+    ExamSession,
+    Submission,
+)
 from learning.assignments.repository import AssignmentRepository, SubmissionRepository
 from learning.classrooms.repository import ClassroomRepository, EnrollmentRepository
-from learning.exams.repository import ExamSessionRepository
+from learning.exams.repository import ExamConfigRepository, ExamSessionRepository
 
 
 class AssignmentsService:
@@ -32,6 +39,8 @@ class AssignmentsService:
         self.identity = IdentityService(session)
         self.files = FilesService(session)
         self.exam_sessions = ExamSessionRepository(session, ExamSession)
+        # Read-only: enforce the "exams are not editable" rule in update().
+        self.exam_configs = ExamConfigRepository(session, ExamConfig)
 
     # ── internal helpers ─────────────────────────────────────────────────────
 
@@ -178,6 +187,31 @@ class AssignmentsService:
                 }
             )
         return {**self._assignment_summary(assignment), "submissions": rows}
+
+    def update(
+        self, assignment_id: str, teacher_id: str, data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Edit a plain assignment's metadata: title, instructions, due date,
+        attachment. Exam assignments are immutable; existing submissions and
+        grades are left untouched (they remain answers to the same assignment)."""
+        assignment = self._owned_assignment(assignment_id, teacher_id)
+        if self.exam_configs.get_for_assignment(assignment_id):
+            raise ValidationError("Exam assignments cannot be edited")
+
+        title = data.get("title")
+        if not (isinstance(title, str) and title.strip()):
+            raise ValidationError("title is required")
+        due_date = self._parse_due(data.get("due_date"))
+        attachment_id = data.get("attachment_id") or None
+        self._validate_attachment(attachment_id, teacher_id)
+
+        assignment.title = title.strip()
+        assignment.instructions = data.get("instructions") or None
+        assignment.attachment_id = attachment_id
+        assignment.due_date = due_date
+        self.session.commit()
+        self.session.refresh(assignment)
+        return self._assignment_summary(assignment)
 
     def delete(self, assignment_id: str, teacher_id: str) -> None:
         self._owned_assignment(assignment_id, teacher_id)

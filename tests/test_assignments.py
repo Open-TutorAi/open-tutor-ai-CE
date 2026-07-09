@@ -508,3 +508,84 @@ def test_cannot_attach_a_file_you_do_not_own(client, db):
         client, teacher["token"], cls["id"], attachment_id=others_file
     )
     assert r.status_code == 403
+
+
+# ── teacher: editing (PUT) ──────────────────────────────────────────────────
+
+
+def _update(client, token, cid, aid, **over):
+    body = {"title": "Edited title", "instructions": "Edited."}
+    body.update(over)
+    return client.put(
+        f"/api/v1/classrooms/{cid}/assignments/{aid}", json=body, headers=_auth(token)
+    )
+
+
+def test_update_assignment_edits_fields(client, db):
+    teacher, _, cls = _setup(client, db)
+    aid = _create_assignment(client, teacher["token"], cls["id"]).json()["id"]
+    r = _update(
+        client,
+        teacher["token"],
+        cls["id"],
+        aid,
+        title="New title",
+        instructions="New instructions",
+        due_date="2030-01-01T10:00:00",
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["title"] == "New title"
+    assert body["instructions"] == "New instructions"
+    assert body["due_date"].startswith("2030-01-01")
+
+
+def test_update_assignment_keeps_submissions(client, db):
+    teacher, student, cls = _setup(client, db)
+    aid = _create_assignment(client, teacher["token"], cls["id"]).json()["id"]
+    _submit(client, student["token"], aid)
+    # Editing the assignment must not disturb the existing submission.
+    _update(client, teacher["token"], cls["id"], aid, title="Renamed")
+    detail = client.get(
+        f"/api/v1/classrooms/{cls['id']}/assignments/{aid}",
+        headers=_auth(teacher["token"]),
+    ).json()
+    assert detail["title"] == "Renamed"
+    assert detail["submitted_count"] == 1
+    row = next(r for r in detail["submissions"] if r["student_id"] == student["id"])
+    assert row["submission"]["content"] == "My answer"
+
+
+def test_update_exam_assignment_rejected(client, db):
+    teacher, _, cls = _setup(client, db)
+    aid = _create_assignment(client, teacher["token"], cls["id"]).json()["id"]
+    # Turn it into an exam, then editing must be refused.
+    client.post(
+        f"/api/v1/classrooms/{cls['id']}/assignments/{aid}/exam",
+        json={"require_fullscreen": True},
+        headers=_auth(teacher["token"]),
+    )
+    r = _update(client, teacher["token"], cls["id"], aid, title="nope")
+    assert r.status_code == 422
+    assert "Exam" in r.json()["detail"]
+
+
+def test_update_assignment_forbidden_for_other_teacher(client, db):
+    teacher, _, cls = _setup(client, db)
+    other = _make_teacher(client, db, "other@t.com")
+    aid = _create_assignment(client, teacher["token"], cls["id"]).json()["id"]
+    assert _update(client, other["token"], cls["id"], aid).status_code == 403
+
+
+def test_update_missing_assignment_404(client, db):
+    teacher, _, cls = _setup(client, db)
+    assert _update(client, teacher["token"], cls["id"], "nope").status_code == 404
+
+
+def test_update_assignment_requires_title(client, db):
+    teacher, _, cls = _setup(client, db)
+    aid = _create_assignment(client, teacher["token"], cls["id"]).json()["id"]
+    assert (
+        _update(client, teacher["token"], cls["id"], aid, title="   ").status_code
+        == 422
+    )
