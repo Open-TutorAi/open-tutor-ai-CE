@@ -2,6 +2,8 @@
 
 from typing import List, Optional
 
+from sqlalchemy import func
+
 from data.models import Assignment, Submission
 from data.repositories import BaseRepository
 
@@ -46,4 +48,19 @@ class SubmissionRepository(BaseRepository[Submission]):
             self.session.query(Submission)
             .filter(Submission.assignment_id == assignment_id)
             .all()
+        )
+
+    def count_ungraded_for_classrooms(self, classroom_ids: List[str]) -> int:
+        """Number of submissions still awaiting a grade across the given classes,
+        in one query (joins assignments; no rows materialised)."""
+        if not classroom_ids:
+            return 0
+        return (
+            self.session.query(func.count(Submission.id))
+            .join(Assignment, Submission.assignment_id == Assignment.id)
+            .filter(
+                Assignment.classroom_id.in_(classroom_ids),
+                Submission.grade.is_(None),
+            )
+            .scalar()
         )

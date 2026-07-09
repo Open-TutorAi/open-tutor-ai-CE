@@ -2,6 +2,8 @@
 
 from typing import List, Optional
 
+from sqlalchemy import func
+
 from data.models import (
     Classroom,
     Enrollment,
@@ -70,6 +72,19 @@ class EnrollmentRepository(BaseRepository[Enrollment]):
             .all()
         )
 
+    def count_distinct_students(self, classroom_ids: List[str]) -> int:
+        """Number of distinct active students across the given classes (one query)."""
+        if not classroom_ids:
+            return 0
+        return (
+            self.session.query(func.count(func.distinct(Enrollment.student_id)))
+            .filter(
+                Enrollment.classroom_id.in_(classroom_ids),
+                Enrollment.status == "active",
+            )
+            .scalar()
+        )
+
 
 class InvitationRepository(BaseRepository[Invitation]):
     """Data access for classroom invitations."""
@@ -83,6 +98,19 @@ class InvitationRepository(BaseRepository[Invitation]):
             .filter(Invitation.classroom_id == classroom_id)
             .order_by(Invitation.created_at.desc())
             .all()
+        )
+
+    def count_pending(self, classroom_ids: List[str]) -> int:
+        """Number of still-pending invitations across the given classes (one query)."""
+        if not classroom_ids:
+            return 0
+        return (
+            self.session.query(func.count(Invitation.id))
+            .filter(
+                Invitation.classroom_id.in_(classroom_ids),
+                Invitation.status == "pending",
+            )
+            .scalar()
         )
 
 

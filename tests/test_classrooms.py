@@ -1209,3 +1209,22 @@ def test_dashboard_only_counts_own_classes(client, db):
         ).json()["classes"]
         == 1
     )
+
+
+def test_dashboard_counts_students_across_classes_once(client, db):
+    """A student enrolled in two of the teacher's classes counts once
+    (COUNT DISTINCT), not twice."""
+    teacher = _make_teacher(client, db, "t@t.com")
+    _signup(client, "shared@t.com", "Shared")
+    tok = teacher["token"]
+    c1 = _create(client, tok, name="Class A").json()["id"]
+    c2 = _create(client, tok, name="Class B").json()["id"]
+    for cid in (c1, c2):
+        client.post(
+            f"/api/v1/classrooms/{cid}/students",
+            json={"email": "shared@t.com"},
+            headers=_auth(tok),
+        )
+    stats = client.get("/api/v1/classrooms/dashboard", headers=_auth(tok)).json()
+    assert stats["classes"] == 2
+    assert stats["students"] == 1  # distinct, not 2
