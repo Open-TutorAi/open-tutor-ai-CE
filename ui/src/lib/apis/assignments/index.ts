@@ -115,6 +115,21 @@ export const getAssignmentById = async (
 };
 
 /**
+ * Delete an assignment and its submissions (teacher only, must own the assignment)
+ */
+export const deleteAssignment = async (token: string, assignmentId: string): Promise<void> => {
+	const res = await fetch(`${TUTOR_API_BASE_URL}/assignments/${assignmentId}`, {
+		method: 'DELETE',
+		headers: {
+			Accept: 'application/json',
+			authorization: `Bearer ${token}`
+		}
+	});
+
+	if (!res.ok) throw (await res.json()).detail;
+};
+
+/**
  * Submit a student's work for an assignment (multipart file upload)
  */
 export const submitAssignmentWork = async (

@@ -886,3 +886,74 @@ def test_get_my_submission_does_not_leak_other_students_work(client, monkeypatch
 
     assert r.status_code == 200
     assert r.json() is None
+
+
+def test_delete_assignment_as_owning_teacher_succeeds(client):
+    teacher_token = _token(client, "teacher", "teacher19@t.com")
+    assignment = _create_assignment(client, teacher_token)
+
+    r = client.delete(
+        f"/api/v1/assignments/{assignment['id']}", headers=_auth(teacher_token)
+    )
+
+    assert r.status_code == 204
+    follow_up = client.get(
+        f"/api/v1/assignments/{assignment['id']}", headers=_auth(teacher_token)
+    )
+    assert follow_up.status_code == 404
+
+
+def test_delete_assignment_cascades_submissions(client, db, monkeypatch):
+    import learning.assignments.service as service_module
+
+    monkeypatch.setattr(service_module, "extract_pdf_text", lambda contents: "7/8")
+
+    teacher_token = _token(client, "teacher", "teacher20@t.com")
+    student_token = _token(client, "student", "student16@t.com")
+    assignment = _create_assignment(client, teacher_token)
+    client.post(
+        f"/api/v1/assignments/{assignment['id']}/submissions",
+        files={"file": ("answers.pdf", b"bytes", "application/pdf")},
+        headers=_auth(student_token),
+    )
+
+    r = client.delete(
+        f"/api/v1/assignments/{assignment['id']}", headers=_auth(teacher_token)
+    )
+
+    assert r.status_code == 204
+    remaining = _submission_repo(db).get_by_assignment(assignment["id"])
+    assert remaining == []
+
+
+def test_delete_assignment_as_student_forbidden(client):
+    teacher_token = _token(client, "teacher", "teacher21@t.com")
+    student_token = _token(client, "student", "student17@t.com")
+    assignment = _create_assignment(client, teacher_token)
+
+    r = client.delete(
+        f"/api/v1/assignments/{assignment['id']}", headers=_auth(student_token)
+    )
+
+    assert r.status_code == 403
+
+
+def test_delete_assignment_forbidden_for_non_owning_teacher(client):
+    teacher1_token = _token(client, "teacher", "teacher22@t.com")
+    teacher2_token = _token(client, "teacher", "teacher23@t.com")
+    assignment = _create_assignment(client, teacher1_token)
+
+    r = client.delete(
+        f"/api/v1/assignments/{assignment['id']}", headers=_auth(teacher2_token)
+    )
+
+    assert r.status_code == 403
+
+
+def test_delete_assignment_not_found(client):
+    teacher_token = _token(client, "teacher", "teacher24@t.com")
+
+    r = client.delete("/api/v1/assignments/missing-id", headers=_auth(teacher_token))
+
+    assert r.status_code == 404
+    assert r.json()["detail"] != "Not Found"

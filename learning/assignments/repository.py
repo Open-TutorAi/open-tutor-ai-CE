@@ -1,5 +1,6 @@
 """Assignment and submission repositories."""
 
+import os
 from typing import List, Optional
 
 from data.models import Assignment, Submission
@@ -40,3 +41,15 @@ class SubmissionRepository(BaseRepository[Submission]):
             )
             .first()
         )
+
+    def delete_by_assignment(self, assignment_id: str) -> None:
+        submissions = self.get_by_assignment(assignment_id)
+        for submission in submissions:
+            try:
+                if os.path.exists(submission.file_path):
+                    os.remove(submission.file_path)
+            except OSError:
+                pass
+        self.session.query(Submission).filter(
+            Submission.assignment_id == assignment_id
+        ).delete()

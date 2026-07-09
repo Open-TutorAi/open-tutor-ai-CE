@@ -1,14 +1,20 @@
 <!-- Assignments.svelte -->
 <script lang="ts">
 	import { getContext, onMount } from 'svelte';
+	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
-	import { getAssignments, type AssignmentResponse } from '$lib/apis/assignments';
+	import { getAssignments, deleteAssignment, type AssignmentResponse } from '$lib/apis/assignments';
+	import ConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
+	import GarbageBin from '$lib/components/icons/GarbageBin.svelte';
 
 	const i18n = getContext('i18n');
 
 	let assignments: AssignmentResponse[] = [];
 	let loading = true;
 	let error: string | null = null;
+
+	let showDeleteConfirm = false;
+	let assignmentToDelete: AssignmentResponse | null = null;
 
 	async function loadAssignments() {
 		const token = localStorage.getItem('token');
@@ -30,8 +36,43 @@
 		}
 	}
 
+	function confirmDelete(assignment: AssignmentResponse) {
+		assignmentToDelete = assignment;
+		showDeleteConfirm = true;
+	}
+
+	async function deleteHandler() {
+		const assignment = assignmentToDelete;
+		if (!assignment) return;
+
+		const token = localStorage.getItem('token');
+		if (!token) return;
+
+		try {
+			await deleteAssignment(token, assignment.id);
+			assignments = assignments.filter((a) => a.id !== assignment.id);
+			toast.success($i18n.t('Assignment deleted successfully.'));
+		} catch (err) {
+			toast.error(typeof err === 'string' ? err : $i18n.t('Failed to delete assignment'));
+		} finally {
+			assignmentToDelete = null;
+		}
+	}
+
 	onMount(loadAssignments);
 </script>
+
+<ConfirmDialog
+	bind:show={showDeleteConfirm}
+	title={$i18n.t('Delete Assignment')}
+	message={$i18n.t(
+		'This will permanently delete "{{title}}" and all of its submissions. This action cannot be undone.',
+		{ title: assignmentToDelete?.title ?? '' }
+	)}
+	confirmLabel={$i18n.t('Delete')}
+	on:confirm={deleteHandler}
+	on:cancel={() => (assignmentToDelete = null)}
+/>
 
 <div class="mb-6">
 	<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
@@ -83,22 +124,33 @@
 	{:else}
 		<div class="space-y-4">
 			{#each assignments as assignment (assignment.id)}
-				<button
-					on:click={() => goto(`/teacher/assignments/${assignment.id}/submissions`)}
-					class="w-full text-left bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
+				<div
+					class="flex items-start justify-between gap-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
 				>
-					<h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
-						{assignment.title}
-					</h3>
-					{#if assignment.description}
-						<p class="text-sm text-gray-600 dark:text-gray-400 mb-2">{assignment.description}</p>
-					{/if}
-					{#if assignment.due_date}
-						<span class="text-sm text-gray-500 dark:text-gray-400">
-							{$i18n.t('Due')}: {new Date(assignment.due_date).toLocaleDateString()}
-						</span>
-					{/if}
-				</button>
+					<button
+						on:click={() => goto(`/teacher/assignments/${assignment.id}/submissions`)}
+						class="flex-1 text-left"
+					>
+						<h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
+							{assignment.title}
+						</h3>
+						{#if assignment.description}
+							<p class="text-sm text-gray-600 dark:text-gray-400 mb-2">{assignment.description}</p>
+						{/if}
+						{#if assignment.due_date}
+							<span class="text-sm text-gray-500 dark:text-gray-400">
+								{$i18n.t('Due')}: {new Date(assignment.due_date).toLocaleDateString()}
+							</span>
+						{/if}
+					</button>
+					<button
+						on:click={() => confirmDelete(assignment)}
+						aria-label={$i18n.t('Delete Assignment')}
+						class="shrink-0 p-2 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 dark:text-gray-400 dark:hover:text-red-400 dark:hover:bg-red-950/30 transition-colors"
+					>
+						<GarbageBin className="size-4" />
+					</button>
+				</div>
 			{/each}
 		</div>
 	{/if}

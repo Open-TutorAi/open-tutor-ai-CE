@@ -132,6 +132,21 @@ async def get_assignment(
     return assignment
 
 
+@router.delete("/{assignment_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_assignment(
+    assignment_id: str,
+    current_user: User = Depends(get_current_user),
+    svc: AssignmentService = Depends(get_assignment_service),
+):
+    _require_teacher(current_user)
+    try:
+        svc.delete_assignment(current_user.id, assignment_id)
+    except NotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=exc.message)
+    except AuthorizationError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=exc.message)
+
+
 @router.post("/{assignment_id}/submissions", response_model=SubmissionResponse)
 async def submit_work(
     assignment_id: str,

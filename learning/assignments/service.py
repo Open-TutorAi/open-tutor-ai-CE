@@ -71,6 +71,11 @@ class AssignmentService:
             raise AuthorizationError("You do not own this assignment")
         return assignment
 
+    def delete_assignment(self, teacher_id: str, assignment_id: str) -> None:
+        self.verify_assignment_ownership(teacher_id, assignment_id)
+        self.submissions.delete_by_assignment(assignment_id)
+        self.assignments.delete(assignment_id)
+
     # ── Submissions ──────────────────────────────────────────────────────
     def submit_work(
         self,
