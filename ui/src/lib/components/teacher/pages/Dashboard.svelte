@@ -2,19 +2,24 @@
 	import { onMount, getContext } from 'svelte';
 	import { goto } from '$app/navigation';
 	import ClassCard from '$lib/components/teacher/elements/ClassCard.svelte';
-	import { getClassrooms, type Classroom } from '$lib/apis/classrooms';
+	import {
+		getClassrooms,
+		getDashboardStats,
+		type Classroom,
+		type DashboardStats
+	} from '$lib/apis/classrooms';
 
 	const i18n: any = getContext('i18n');
 
 	let classes: Classroom[] = [];
+	let counts: DashboardStats = { classes: 0, students: 0, pending_invites: 0, to_grade: 0 };
 	let loading = true;
 
-	$: studentTotal = classes.reduce((n, c) => n + (c.student_count ?? 0), 0);
 	$: stats = [
-		{ key: 'Classes', value: classes.length, accent: 'blue' },
-		{ key: 'Students', value: studentTotal, accent: 'emerald' },
-		{ key: 'Pending invites', value: 0, accent: 'amber' },
-		{ key: 'To grade', value: 0, accent: 'violet' }
+		{ key: 'Classes', value: counts.classes, accent: 'blue' },
+		{ key: 'Students', value: counts.students, accent: 'emerald' },
+		{ key: 'Pending invites', value: counts.pending_invites, accent: 'amber' },
+		{ key: 'To grade', value: counts.to_grade, accent: 'violet' }
 	];
 
 	const accentMap: Record<string, string> = {
@@ -25,8 +30,9 @@
 	};
 
 	onMount(async () => {
+		const token = localStorage.getItem('token') ?? '';
 		try {
-			classes = await getClassrooms(localStorage.getItem('token') ?? '');
+			[classes, counts] = await Promise.all([getClassrooms(token), getDashboardStats(token)]);
 		} catch (err) {
 			classes = [];
 		} finally {

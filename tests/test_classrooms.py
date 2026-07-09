@@ -1130,3 +1130,82 @@ def test_my_teachers_empty_when_not_enrolled(client, db):
     r = _my_teachers(client, loner["token"])
     assert r.status_code == 200
     assert r.json() == []
+
+
+# ── Dashboard stats aggregation ─────────────────────────────────────────────
+
+
+def test_dashboard_requires_teacher(client, db):
+    student = _signup(client, "s@t.com", "Student")
+    # Missing bearer → 403 (HTTPBearer auto_error); a non-teacher → 403 (role guard).
+    assert client.get("/api/v1/classrooms/dashboard").status_code == 403
+    r = client.get("/api/v1/classrooms/dashboard", headers=_auth(student["token"]))
+    assert r.status_code == 403
+
+
+def test_dashboard_stats_aggregates(client, db):
+    teacher = _make_teacher(client, db, "teach@t.com")
+    student = _signup(client, "stud@t.com", "Stud")
+    tok = teacher["token"]
+    cid = _create(client, tok).json()["id"]
+
+    # 1 enrolled student, 1 pending invitation.
+    client.post(
+        f"/api/v1/classrooms/{cid}/students",
+        json={"email": "stud@t.com"},
+        headers=_auth(tok),
+    )
+    client.post(
+        f"/api/v1/classrooms/{cid}/invitations",
+        json={"email": "invitee@t.com"},
+        headers=_auth(tok),
+    )
+
+    # An assignment with one ungraded submission → to_grade = 1.
+    aid = client.post(
+        f"/api/v1/classrooms/{cid}/assignments",
+        json={"title": "HW1"},
+        headers=_auth(tok),
+    ).json()["id"]
+    client.post(
+        f"/api/v1/assignments/{aid}/submit",
+        json={"content": "my answer"},
+        headers=_auth(student["token"]),
+    )
+
+    r = client.get("/api/v1/classrooms/dashboard", headers=_auth(tok))
+    assert r.status_code == 200, r.text
+    stats = r.json()
+    assert stats == {
+        "classes": 1,
+        "students": 1,
+        "pending_invites": 1,
+        "to_grade": 1,
+    }
+
+    # Grading the submission clears the to-grade count.
+    client.post(
+        f"/api/v1/classrooms/{cid}/assignments/{aid}/grade",
+        json={"student_id": student["id"], "grade": 8},
+        headers=_auth(tok),
+    )
+    assert (
+        client.get("/api/v1/classrooms/dashboard", headers=_auth(tok)).json()[
+            "to_grade"
+        ]
+        == 0
+    )
+
+
+def test_dashboard_only_counts_own_classes(client, db):
+    teacher = _make_teacher(client, db, "owner@t.com")
+    other = _make_teacher(client, db, "other@t.com")
+    _create(client, teacher["token"])
+    _create(client, other["token"])
+    # Each teacher sees only their own single class.
+    assert (
+        client.get(
+            "/api/v1/classrooms/dashboard", headers=_auth(teacher["token"])
+        ).json()["classes"]
+        == 1
+    )

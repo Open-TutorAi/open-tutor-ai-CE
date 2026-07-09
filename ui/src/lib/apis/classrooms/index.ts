@@ -166,6 +166,16 @@ const _send = async (url: string, method: string, token: string, body?: any) => 
 	return res;
 };
 
+export interface DashboardStats {
+	classes: number;
+	students: number;
+	pending_invites: number;
+	to_grade: number;
+}
+
+export const getDashboardStats = (token: string): Promise<DashboardStats> =>
+	_send(`${TUTOR_API_BASE_URL}/classrooms/dashboard`, 'GET', token);
+
 export const getRoster = (token: string, id: string): Promise<RosterEntry[]> =>
 	_send(`${TUTOR_API_BASE_URL}/classrooms/${id}/students`, 'GET', token);
 

@@ -101,6 +101,16 @@ def create_classroom(
         raise _http_from_domain(exc)
 
 
+@router.get("/dashboard")
+def dashboard_stats(
+    teacher: User = Depends(require_teacher),
+    svc: ClassroomsService = Depends(get_classrooms_service),
+):
+    """Headline counts for the teacher dashboard (classes, students, pending
+    invites, to-grade). Declared before `/{id}` so the literal path wins."""
+    return svc.dashboard_stats(teacher.id)
+
+
 @router.get("/{id}")
 def get_classroom(
     id: str,

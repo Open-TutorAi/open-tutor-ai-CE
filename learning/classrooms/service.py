@@ -14,13 +14,19 @@ from sqlalchemy.orm import Session
 from accounts.users.service import AccountService as IdentityService
 from common.exceptions import AuthorizationError, NotFoundError, ValidationError
 from data.models import (
+    Assignment,
     Classroom,
     Enrollment,
     Invitation,
     MonitorAwayEvent,
     MonitorState,
+    Submission,
 )
 from governance.self_regulation.service import SelfRegulationService
+from learning.assignments.repository import (
+    AssignmentRepository,
+    SubmissionRepository,
+)
 from learning.classrooms.repository import (
     ClassroomRepository,
     EnrollmentRepository,
@@ -60,6 +66,9 @@ class ClassroomsService:
         self.invitations = InvitationRepository(session, Invitation)
         self.monitors = MonitorStateRepository(session, MonitorState)
         self.away_events = MonitorAwayEventRepository(session, MonitorAwayEvent)
+        # Read-only aggregation for the dashboard (reuse, not duplicate).
+        self.assignments = AssignmentRepository(session, Assignment)
+        self.submissions = SubmissionRepository(session, Submission)
         self.identity = IdentityService(session)
         # Existing contexts read for the progress read model (reuse, not duplicate).
         self.supports = SupportsService(session)
@@ -158,6 +167,33 @@ class ClassroomsService:
         """All classes owned by a teacher, each with its active student count."""
         rooms = self.repo.get_by_teacher(teacher_id)
         return [self._with_count(room) for room in rooms]
+
+    def dashboard_stats(self, teacher_id: str) -> Dict[str, int]:
+        """Headline counts for the teacher dashboard, aggregated across the
+        teacher's own classes: number of classes, distinct enrolled students,
+        pending invitations, and submissions still awaiting a grade."""
+        rooms = self.repo.get_by_teacher(teacher_id)
+        students: set[str] = set()
+        pending_invites = 0
+        for room in rooms:
+            for enrollment in self.enrollments.list_active(room.id):
+                students.add(enrollment.student_id)
+            for invite in self.invitations.list_for_classroom(room.id):
+                if invite.status == "pending":
+                    pending_invites += 1
+
+        to_grade = 0
+        for assignment in self.assignments.list_for_classrooms([r.id for r in rooms]):
+            for submission in self.submissions.list_for_assignment(assignment.id):
+                if submission.grade is None:
+                    to_grade += 1
+
+        return {
+            "classes": len(rooms),
+            "students": len(students),
+            "pending_invites": pending_invites,
+            "to_grade": to_grade,
+        }
 
     def get(self, classroom_id: str, teacher_id: str) -> Dict[str, Any]:
         return self._with_count(self._owned(classroom_id, teacher_id))
