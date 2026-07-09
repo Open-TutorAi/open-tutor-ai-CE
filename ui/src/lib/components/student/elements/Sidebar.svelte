@@ -158,7 +158,7 @@
 			{ id: 'messages', label: 'Messages', icon: Message },
 			{ id: 'settings', label: 'Profile & Settings', icon: Settings }
 		],
-		teacher: [],
+		teacher: [{ id: 'assignments', label: 'Assignments', icon: Assignment }],
 		parent: []
 	};
 </script>

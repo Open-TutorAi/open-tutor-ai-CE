@@ -11,6 +11,7 @@ from content.files.service import FilesService
 from data.database import get_db
 from data.models import User
 from governance.self_regulation.service import SelfRegulationService
+from learning.assignments.service import AssignmentService
 from learning.supports.service import SupportsService
 
 security = HTTPBearer()
@@ -83,3 +84,7 @@ def get_self_regulation_service(db: Session = Depends(get_db)) -> SelfRegulation
 
 def get_files_service(db: Session = Depends(get_db)) -> FilesService:
     return FilesService(db)
+
+
+def get_assignment_service(db: Session = Depends(get_db)) -> AssignmentService:
+    return AssignmentService(db)
