@@ -3,115 +3,209 @@ Router FastAPI — Module Blockly.
 Endpoints : execute, test, submit, generate/stream,
             workspace/save, workspace/{id}
 
-Sécurité :
-  - Validation Pydantic stricte (Field avec contraintes)
-  - Liste blanche pour le champ `level`
-  - Taille max sur tous les champs texte
+Corrections apportées :
+  - Prefix /api/v1/blockly (conforme MIGRATION.md)
+  - Auth JWT via get_current_user sur tous les endpoints
+  - Score réel calculé via BlocklyService (suppression du hardcode 85.0)
+  - Génération exercice en vrai streaming token par token
+  - Workspace save/load avec persistance DB réelle
 """
 import json
 import uuid
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
+from sqlalchemy.orm import Session
 
+from data.database import get_db
+from data.models import User
+from gateway.http.dependencies import get_current_user
 from learning.blockly.sandbox import execute_python
+from learning.blockly.service import BlocklyService
 from learning.blockly.schemas import (
     VALID_LEVELS,
     ExecutionRequest,
     GenerateRequest,
     WorkspaceSaveRequest,
 )
-from ai.llm.blockly_generator import generate_exercise, get_feedback
+from ai.llm.blockly_generator import generate_exercise_stream, get_feedback_stream
 
-router = APIRouter(prefix="/api/blockly", tags=["blockly"])
+# FIX #2 : prefix /api/v1/blockly au lieu de /api/blockly
+router = APIRouter(prefix="/api/v1/blockly", tags=["blockly"])
 
 
 def _check_level(level: str | None) -> None:
-    """Valide le niveau contre la liste blanche."""
     if level and level not in VALID_LEVELS:
         raise HTTPException(status_code=422, detail=f"Niveau invalide : {level}")
 
 
-# ── US-B04 ───────────────────────────────────────────────────────────────────
+def get_blockly_service(db: Session = Depends(get_db)) -> BlocklyService:
+    return BlocklyService(db)
+
+
+# ── US-B04 : Exécution ───────────────────────────────────────────────────────
 
 @router.post("/execute")
-async def execute_code(req: ExecutionRequest):
-    """
-    Exécute du code Python dans le sandbox isolé.
-    Retourne stdout, stderr, error, timed_out, execution_time_ms.
-    """
+async def execute_code(
+    req: ExecutionRequest,
+    # FIX #3 : auth JWT requise
+    current_user: User = Depends(get_current_user),
+):
+    """Exécute du code Python dans le sandbox isolé (Piston)."""
     _check_level(req.level)
     return execute_python(req.python_code)
 
 
 @router.post("/test")
-async def test_code(req: ExecutionRequest):
+async def test_code(
+    req: ExecutionRequest,
+    current_user: User = Depends(get_current_user),
+):
     """Teste le code et retourne le résultat brut."""
     _check_level(req.level)
     result = execute_python(req.python_code)
     return {"result": result, "assignment_id": req.assignment_id}
 
 
-# ── US-B05 ───────────────────────────────────────────────────────────────────
+# ── US-B05 : Soumission ──────────────────────────────────────────────────────
 
 @router.post("/submit")
-async def submit(req: ExecutionRequest):
+async def submit(
+    req: ExecutionRequest,
+    current_user: User = Depends(get_current_user),
+    service: BlocklyService = Depends(get_blockly_service),
+):
     """
     Soumet une solution.
-    Retourne un stream SSE :
-      data: {"type":"score","value":85}
-      data: {"type":"feedback","content":"..."}
+    FIX #1 : score réel calculé via BlocklyService.
+    FIX #5 : feedback streamé token par token.
+
+    SSE events :
+      data: {"type":"score",    "value": 85}
+      data: {"type":"feedback", "content":"..."}
       data: {"type":"done"}
     """
     _check_level(req.level)
 
     async def _stream():
-        score = 85.0
+        # Exécuter le code dans le sandbox
+        exec_result = execute_python(req.python_code)
+
+        # Récupérer l'exercice pour avoir les test_cases
+        assignment = service.get_assignment(
+            req.assignment_id or "", current_user.id
+        )
+
+        # FIX #1 : calculer le vrai score
+        test_results = []
+        if assignment and assignment.get("test_cases"):
+            test_results = await service.run_test_cases(
+                req.python_code, assignment["test_cases"]
+            )
+        score = service.calculate_score(
+            assignment.get("test_cases", []) if assignment else [],
+            test_results
+        )
+
         yield f"data: {json.dumps({'type': 'score', 'value': score})}\n\n"
 
-        fb = await get_feedback(req.python_code, score, req.level or "beginner")
-        yield f"data: {json.dumps({'type': 'feedback', 'content': fb})}\n\n"
+        # FIX #5 : stream le feedback token par token
+        async for chunk in get_feedback_stream(
+            req.python_code, score, req.level or "beginner"
+        ):
+            yield f"data: {json.dumps({'type': 'feedback', 'content': chunk})}\n\n"
+
+        # Sauvegarder la soumission
+        try:
+            service.save_submission(
+                student_id=current_user.id,
+                assignment_id=req.assignment_id or str(uuid.uuid4()),
+                blocks_json=None,
+                python_code=req.python_code,
+                exec_result=exec_result,
+                test_results=test_results,
+                score=score,
+            )
+        except Exception:
+            pass
+
         yield 'data: {"type":"done"}\n\n'
 
     return StreamingResponse(_stream(), media_type="text/event-stream")
 
 
-# ── US-B02 ───────────────────────────────────────────────────────────────────
+# ── US-B02 : Génération exercice ─────────────────────────────────────────────
 
 @router.post("/generate/stream")
-async def generate_stream(req: GenerateRequest):
+async def generate_stream(
+    req: GenerateRequest,
+    current_user: User = Depends(get_current_user),
+):
     """
     Génère un exercice via l'IA Ollama.
-    Retourne un stream SSE :
-      data: {"type":"chunk","content":"...JSON..."}
+    FIX #5 : vrai streaming token par token au lieu d'un seul chunk.
+
+    SSE events :
+      data: {"type":"chunk","content":"...token..."}
       data: {"type":"done","assignment_id":"uuid"}
     """
     _check_level(req.level)
 
     async def _stream():
-        content = await generate_exercise(
-            req.level or "beginner",
-            req.course or "",
-            req.objectives or "",
-            req.prerequisites or "",
-        )
-        yield f"data: {json.dumps({'type': 'chunk', 'content': content})}\n\n"
-        aid = str(uuid.uuid4())
-        yield f"data: {json.dumps({'type': 'done', 'assignment_id': aid})}\n\n"
+        try:
+            # FIX #5 : génération streamée token par token
+            async for token in generate_exercise_stream(
+                req.level or "beginner",
+                req.course or "",
+                req.objectives or "",
+                req.prerequisites or "",
+            ):
+                yield f"data: {json.dumps({'type': 'chunk', 'content': token})}\n\n"
+
+            aid = str(uuid.uuid4())
+            yield f"data: {json.dumps({'type': 'done', 'assignment_id': aid})}\n\n"
+
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
 
     return StreamingResponse(_stream(), media_type="text/event-stream")
 
 
-# ── US-B07 ───────────────────────────────────────────────────────────────────
+# ── US-B07 : Workspace ───────────────────────────────────────────────────────
 
 @router.post("/workspace/save")
-async def save_workspace(req: WorkspaceSaveRequest):
-    """Sauvegarde le workspace XML Blockly (Sprint 2 : persistance DB)."""
-    return {"status": "saved", "id": req.assignment_id}
+async def save_workspace(
+    req: WorkspaceSaveRequest,
+    current_user: User = Depends(get_current_user),
+    service: BlocklyService = Depends(get_blockly_service),
+):
+    """
+    Sauvegarde le workspace XML Blockly en base de données.
+    FIX #6 : persistance DB réelle via BlocklyService.
+    """
+    assignment_id = req.assignment_id or str(uuid.uuid4())
+    service.save_workspace_draft(
+        student_id=current_user.id,
+        assignment_id=assignment_id,
+        blocks_json=req.workspace_xml or "",
+    )
+    return {"status": "saved", "id": assignment_id}
 
 
 @router.get("/workspace/{assignment_id}")
-async def load_workspace(assignment_id: str):
-    """Charge le workspace sauvegardé."""
+async def load_workspace(
+    assignment_id: str,
+    current_user: User = Depends(get_current_user),
+    service: BlocklyService = Depends(get_blockly_service),
+):
+    """
+    Charge le workspace sauvegardé depuis la base de données.
+    FIX #6 : lecture DB réelle au lieu de retourner None.
+    """
     if len(assignment_id) > 36:
         raise HTTPException(status_code=422, detail="ID invalide")
-    return {"assignment_id": assignment_id, "workspace_xml": None}
+
+    draft = service.get_workspace_draft(current_user.id, assignment_id)
+    return {
+        "assignment_id": assignment_id,
+        "workspace_xml": draft.get("blocks_json") if draft else None,
+    }

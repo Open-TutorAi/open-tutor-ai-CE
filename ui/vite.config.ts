@@ -80,8 +80,13 @@ export default defineConfig({
 		}
 	},
 	optimizeDeps: {
-		include: ['pyodide', 'onnxruntime-web'],
+		include: ['pyodide', 'onnxruntime-web','blockly', 'blockly/core', 'blockly/blocks', 'blockly/python'],
 		exclude: ['@sveltejs/kit', 'svelte']
 	},
+	resolve: {
+    alias: {
+        'blockly/core': 'blockly/core',
+    }
+},
 	assetsInclude: ['**/*.glb']
 });

@@ -1,813 +1,618 @@
-
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
-  import { browser } from '$app/environment';
-  import { goto } from '$app/navigation';
-  import * as Blockly from 'blockly';
-  import { pythonGenerator } from 'blockly/python';
-  import 'blockly/blocks';
+	import { onMount, onDestroy, tick, afterUpdate } from 'svelte';
+	import { browser } from '$app/environment';
+	import * as Blockly from 'blockly/core';
+	import * as BlocklyBlocks from 'blockly/blocks';
+	import { pythonGenerator } from 'blockly/python';
+	import { inject } from 'blockly/core';
+	import * as En from 'blockly/msg/en';
+	import { getContext } from 'svelte';
+	import {
+		executeCode,
+		submitSolution,
+		generateExercise,
+		saveWorkspace,
+		loadWorkspace,
+		parseSSE,
+		normalizeExercise
+	} from '$lib/apis/blockly';
 
-  // ── Types ─────────────────────────────────────────────────
-  interface Exercise {
-    title: string;
-    description: string;
-    test_cases: { expected_output: string }[];
-    hints: string[];
-  }
-
-  // ── Constantes ────────────────────────────────────────────
-  const LEVELS = ['beginner', 'intermediate', 'advanced'] as const;
-  type Level = typeof LEVELS[number];
-
-  const LEVEL_CONFIG: Record<Level, { label: string; emoji: string; colorClass: string }> = {
-    beginner:     { label: 'Débutant',      emoji: '🌱', colorClass: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' },
-    intermediate: { label: 'Intermédiaire', emoji: '🔥', colorClass: 'bg-orange-100  text-orange-700  dark:bg-orange-900/30  dark:text-orange-300'  },
-    advanced:     { label: 'Avancé',        emoji: '⚡', colorClass: 'bg-purple-100  text-purple-700  dark:bg-purple-900/30  dark:text-purple-300'  },
-  };
-
-  // ── État global ───────────────────────────────────────────
-  let ctx = {
-    course:        '',
-    objectives:    '',
-    prerequisites: '',
-    level:         'beginner' as Level,
-  };
-
-  // Vue active
-  let view: 'card' | 'editor' = 'card';
-
-  // Exercice
-  let exercise: Exercise | null = null;
-  let generatingExercise = false;
-  let generateError = '';
-
-  // Blockly
-  let blocklyDiv: HTMLDivElement;
-  let workspace: Blockly.WorkspaceSvg | null = null;
-  let generatedCode = '';
-
-  // Console
-  let consoleOutput = '';
-  let running = false;
-
-  // Feedback
-  let feedback = '';
-  let score: number | null = null;
-  let submitting = false;
-
-  // Progression (US-B06)
-  let consecutiveSuccesses = 0;
-  let levelUpMessage = '';
-
-  // ── Cycle de vie ──────────────────────────────────────────
-  onMount(async () => {
-    if (!browser) return;
-    const saved = localStorage.getItem('blocklyContext');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        ctx = { ...ctx, ...parsed };
-      } catch {}
-    }
-    await loadExercise();
-  });
-
-  onDestroy(() => {
-    if (workspace) {
-      try { workspace.dispose(); } catch {}
-    }
-  });
-
-  // ── Normalisation JSON Ollama ─────────────────────────────
-  function normalizeExercise(raw: Record<string, unknown>): Exercise {
-    return {
-      title:       String(raw.title || raw.titre || 'Exercice Python'),
-      description: String(raw.description || ''),
-      test_cases:  Array.isArray(raw.test_cases)   ? raw.test_cases   :
-                   Array.isArray(raw.testing_cases) ? raw.testing_cases : [],
-      hints:       Array.isArray(raw.hints)   ? raw.hints   :
-                   Array.isArray(raw.indices) ? raw.indices : [],
+	const _i18n: any = getContext('i18n');
+    const i18n = {
+         t: (s: string) => {
+        try { return _i18n?.t?.(s) ?? s; }
+        catch { return s; }
+        }
     };
-  }
 
-  // ── US-B02 : Génération exercice ─────────────────────────
-  async function loadExercise() {
-    generatingExercise = true;
-    generateError = '';
-    exercise = null;
-    view = 'card';
-    score = null;
-    feedback = '';
-    consoleOutput = '';
-    generatedCode = '';
+	// ── Types ──────────────────────────────────────────────────────────────────
+	interface Exercise {
+		title: string;
+		description: string;
+		test_cases: { expected_output: string }[];
+		hints: string[];
+	}
 
-    try {
-      const res = await fetch('/api/blockly/generate/stream', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({
-          level:         ctx.level,
-          course:        ctx.course,
-          objectives:    ctx.objectives,
-          prerequisites: ctx.prerequisites,
-        }),
-      });
+	// ── Constantes ─────────────────────────────────────────────────────────────
+	const LEVELS = ['beginner', 'intermediate', 'advanced'] as const;
+	type Level = (typeof LEVELS)[number];
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+	const LEVEL_CONFIG: Record<Level, { label: string; emoji: string }> = {
+		beginner: { label: 'Débutant', emoji: '🌱' },
+		intermediate: { label: 'Intermédiaire', emoji: '🔥' },
+		advanced: { label: 'Avancé', emoji: '⚡' }
+	};
 
-      const reader  = res.body!.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
+	// ── État ───────────────────────────────────────────────────────────────────
+	let ctx = {
+		course: '',
+		objectives: '',
+		prerequisites: '',
+		level: 'beginner' as Level
+	};
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+	let exercise: Exercise | null = null;
+	let generatingExercise = false;
+	let generateError = '';
 
-        for (const line of decoder.decode(value, { stream: true }).split('\n')) {
-          if (!line.startsWith('data: ')) continue;
-          try {
-            const event = JSON.parse(line.slice(6));
-            if (event.type === 'chunk') buffer += event.content;
-            if (event.type === 'done') {
-              const match = buffer.match(/\{[\s\S]*\}/);
-              if (match) exercise = normalizeExercise(JSON.parse(match[0]));
-            }
-          } catch {}
-        }
-      }
+	let blocklyDiv: HTMLDivElement;
+	let workspace: Blockly.WorkspaceSvg | null = null;
+	let generatedCode = '';
+	let blocklyInitialized = false;
 
-      if (!exercise) generateError = 'Impossible de générer. Réessayez.';
+	let consoleOutput = '';
+	let running = false;
 
-    } catch {
-      generateError = 'Erreur réseau. Vérifiez que le backend tourne sur :8080.';
-    }
+	let feedback = '';
+	let score: number | null = null;
+	let submitting = false;
 
-    generatingExercise = false;
-  }
+	let consecutiveSuccesses = 0;
+	let levelUpMessage = '';
+	let assignmentId = '';
 
-  // ── US-B03 : Ouvrir l'éditeur Blockly ────────────────────
-  async function openEditor() {
-    view = 'editor';
-    await new Promise(r => setTimeout(r, 150));
-    initWorkspace();
-  }
+	// ── Auth ───────────────────────────────────────────────────────────────────
+	function getToken(): string {
+		return localStorage.getItem('token') ?? '';
+	}
 
-  function getToolbox(level: Level): object {
-    const base = [
-      {
-        kind: 'category', name: 'Logique', colour: '#4F87C4',
+	// ── Cycle de vie ───────────────────────────────────────────────────────────
+	onMount(async () => {
+		if (!browser) return;
+		const saved = localStorage.getItem('blocklyContext');
+		if (saved) {
+			try {
+				const parsed = JSON.parse(saved);
+				ctx = { ...ctx, ...parsed };
+			} catch {}
+		}
+		await loadExercise();
+	});
+
+	onDestroy(() => {
+		if (workspace) {
+			try {
+				workspace.dispose();
+			} catch {}
+			workspace = null;
+		}
+	});
+
+	// afterUpdate : initialise Blockly dès que le div est dans le DOM
+	afterUpdate(() => {
+		if (blocklyDiv && !workspace && !blocklyInitialized) {
+			blocklyInitialized = true;
+			initBlockly();
+		}
+	});
+
+	// ── US-B02 : Génération exercice ───────────────────────────────────────────
+	async function loadExercise() {
+		generatingExercise = true;
+		generateError = '';
+		exercise = null;
+		score = null;
+		feedback = '';
+		consoleOutput = '';
+		generatedCode = '';
+		assignmentId = '';
+
+		// Réinitialiser Blockly pour le prochain exercice
+		if (workspace) {
+			workspace.dispose();
+			workspace = null;
+		}
+		blocklyInitialized = false;
+
+		let fullJson = '';
+
+		try {
+			const response = await generateExercise(getToken(), ctx);
+
+			for await (const ev of parseSSE(response)) {
+				if (ev.type === 'chunk' && ev.content) {
+					fullJson += ev.content;
+				} else if (ev.type === 'done') {
+					assignmentId = ev.assignment_id ?? '';
+				} else if (ev.type === 'error') {
+					throw new Error(ev.message ?? 'Erreur génération');
+				}
+			}
+
+			// Nettoyer les backticks markdown qu'Ollama peut ajouter
+			const cleanJson = fullJson
+				.replace(/^```json\s*/i, '')
+				.replace(/^```\s*/i, '')
+				.replace(/```\s*$/i, '')
+				.trim();
+
+			const raw = JSON.parse(cleanJson);
+			exercise = normalizeExercise(raw);
+
+		} catch (e: unknown) {
+			generateError = e instanceof Error ? e.message : String(e);
+		} finally {
+			generatingExercise = false;
+		}
+	}
+
+	// ── US-B03 : Éditeur Blockly ───────────────────────────────────────────────
+	async function initBlockly() {
+		await tick();
+		await new Promise((r) => setTimeout(r, 100));
+
+		if (!blocklyDiv || workspace) return;
+
+		blocklyDiv.style.position = 'relative';
+		blocklyDiv.style.height = '100%';
+		blocklyDiv.style.width = '100%';
+        Blockly.setLocale(En);
+		workspace = inject(blocklyDiv, {
+			toolbox: {
+        kind: 'categoryToolbox',
         contents: [
-          { kind: 'block', type: 'controls_if' },
-          { kind: 'block', type: 'controls_ifelse' },
-          { kind: 'block', type: 'logic_compare' },
-          { kind: 'block', type: 'logic_operation' },
-          { kind: 'block', type: 'logic_boolean' },
-          { kind: 'block', type: 'logic_negate' },
-        ],
-      },
-      {
-        kind: 'category', name: 'Boucles', colour: '#5BA55B',
-        contents: [
-          {
-            kind: 'block', type: 'controls_repeat_ext',
-            inputs: { TIMES: { block: { type: 'math_number', fields: { NUM: 10 } } } },
-          },
-          { kind: 'block', type: 'controls_whileUntil' },
-          {
-            kind: 'block', type: 'controls_for',
-            inputs: {
-              FROM: { block: { type: 'math_number', fields: { NUM: 1  } } },
-              TO:   { block: { type: 'math_number', fields: { NUM: 10 } } },
-              BY:   { block: { type: 'math_number', fields: { NUM: 1  } } },
+            { kind: 'category', name: '🔢 Variables', colour: '#555', custom: 'VARIABLE' },
+            {
+                kind: 'category', name: '➕ Math', colour: '#555',
+                contents: [
+                    { kind: 'block', type: 'math_number' },
+                    { kind: 'block', type: 'math_arithmetic' },
+                    { kind: 'block', type: 'math_round' },
+                    { kind: 'block', type: 'math_single' },
+                    { kind: 'block', type: 'math_random_int' }
+                ]
             },
-          },
-        ],
-      },
-      {
-        kind: 'category', name: 'Maths', colour: '#5B67A5',
-        contents: [
-          { kind: 'block', type: 'math_number',     fields: { NUM: 0 } },
-          { kind: 'block', type: 'math_arithmetic' },
-          { kind: 'block', type: 'math_single'     },
-          { kind: 'block', type: 'math_modulo'     },
-          { kind: 'block', type: 'math_round'      },
-        ],
-      },
-      {
-        kind: 'category', name: 'Texte', colour: '#5BA58C',
-        contents: [
-          { kind: 'block', type: 'text',       fields: { TEXT: 'bonjour' } },
-          { kind: 'block', type: 'text_print'  },
-          { kind: 'block', type: 'text_join'   },
-          { kind: 'block', type: 'text_length' },
-        ],
-      },
-      { kind: 'category', name: 'Variables', colour: '#A55B80', custom: 'VARIABLE' },
-    ];
+            {
+                kind: 'category', name: '📝 Text', colour: '#555',
+                contents: [
+                    { kind: 'block', type: 'text_print' },
+                    { kind: 'block', type: 'text' }
+                ]
+            },
+            {
+                kind: 'category', name: '⚡ Logic', colour: '#555',
+                contents: [
+                    { kind: 'block', type: 'controls_if' },
+                    { kind: 'block', type: 'logic_compare' },
+                    { kind: 'block', type: 'logic_operation' },
+                    { kind: 'block', type: 'logic_negate' },
+                    { kind: 'block', type: 'logic_boolean' }
+                ]
+            },
+            {
+                kind: 'category', name: '🔄 Loops', colour: '#555',
+                contents: [
+                    { kind: 'block', type: 'controls_repeat_ext' },
+                    { kind: 'block', type: 'controls_whileUntil' },
+                    { kind: 'block', type: 'controls_for' },
+                    { kind: 'block', type: 'controls_forEach' }
+                ]
+            },
+            {
+                kind: 'category', name: '📋 Lists', colour: '#555',
+                contents: [
+                    { kind: 'block', type: 'lists_create_empty' },
+                    { kind: 'block', type: 'lists_create_with' },
+                    { kind: 'block', type: 'lists_length' },
+                    { kind: 'block', type: 'lists_getIndex' },
+                    { kind: 'block', type: 'lists_setIndex' }
+                ]
+            },
+            { kind: 'category', name: '🔧 Functions', colour: '#555', custom: 'PROCEDURE' }
+        ]
+    },
+    grid: { spacing: 20, length: 3, colour: '#ddd', snap: true },
+    zoom: { controls: true, wheel: true, startScale: 1.0, maxScale: 3, minScale: 0.3 },
+    trashcan: true,
+    sounds: false,
+    move: { scrollbars: true, drag: true, wheel: true }
+});
 
-    const lists = level !== 'beginner'
-      ? [{
-          kind: 'category', name: 'Listes', colour: '#745CA6',
-          contents: [
-            { kind: 'block', type: 'lists_create_with' },
-            { kind: 'block', type: 'lists_repeat'      },
-            { kind: 'block', type: 'lists_length'      },
-            { kind: 'block', type: 'lists_getIndex'    },
-            { kind: 'block', type: 'lists_setIndex'    },
-          ],
-        }]
-      : [];
+		// Générer le code Python à chaque changement de workspace
+		workspace.addChangeListener(() => {
+			try {
+				generatedCode = pythonGenerator.workspaceToCode(workspace!);
+			} catch {
+				// ignorer les erreurs de génération temporaires
+			}
+		});
 
-    const functions = level === 'advanced'
-      ? [{ kind: 'category', name: 'Fonctions', colour: '#9A5CA6', custom: 'PROCEDURE' }]
-      : [];
+		// Charger le workspace sauvegardé si disponible
+		if (assignmentId) {
+			try {
+				const xml = await loadWorkspace(getToken(), assignmentId);
+				if (xml) {
+					const dom = Blockly.utils.xml.textToDom(xml);
+					Blockly.Xml.domToWorkspace(dom, workspace);
+				}
+			} catch {
+				// pas de workspace sauvegardé, c'est normal
+			}
+		}
+	}
 
-    return { kind: 'categoryToolbox', contents: [...base, ...lists, ...functions] };
-  }
+	function resetWorkspace() {
+		if (!workspace) return;
+		workspace.clear();
+		generatedCode = '';
+		consoleOutput = '';
+		score = null;
+		feedback = '';
+	}
 
-  function initWorkspace() {
-    if (!blocklyDiv) return;
-    if (workspace) { workspace.dispose(); workspace = null; }
+	// ── US-B04 : Exécution ─────────────────────────────────────────────────────
+	async function runCode() {
+		if (!generatedCode.trim() || running) return;
+		running = true;
+		consoleOutput = '';
 
-    workspace = Blockly.inject(blocklyDiv, {
-      toolbox:    getToolbox(ctx.level),
-      grid:       { spacing: 20, length: 3, colour: '#e5e7eb', snap: true },
-      zoom:       { controls: true, wheel: true, startScale: 1.0, maxScale: 2.5, minScale: 0.4 },
-      trashcan:   true,
-      scrollbars: true,
-      sounds:     false,
-    });
+		try {
+			const result = await executeCode(getToken(), generatedCode);
+			if (result.error) {
+				consoleOutput = `❌ ${result.error}`;
+			} else {
+				consoleOutput = result.stdout ?? '(aucune sortie)';
+			}
+		} catch (e: unknown) {
+			consoleOutput = `Erreur réseau : ${e instanceof Error ? e.message : String(e)}`;
+		} finally {
+			running = false;
+		}
+	}
 
-    workspace.addChangeListener(() => {
-      try {
-        generatedCode = pythonGenerator.workspaceToCode(workspace!) || '';
-      } catch {}
-    });
-  }
+	// ── US-B05 : Soumission ────────────────────────────────────────────────────
+	async function submitCode() {
+		if (!generatedCode.trim() || submitting) return;
+		submitting = true;
+		feedback = '';
+		score = null;
 
-  // ── US-B04 : Exécuter le code ─────────────────────────────
-  async function runCode() {
-    if (!generatedCode.trim()) {
-      consoleOutput = '⚠️ Glissez des blocs depuis la toolbox !';
-      return;
-    }
-    running = true;
-    consoleOutput = '⏳ Exécution...';
+		try {
+			const response = await submitSolution(
+				getToken(),
+				generatedCode,
+				ctx.level,
+				assignmentId
+			);
 
-    try {
-      const res = await fetch('/api/blockly/execute', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ python_code: generatedCode }),
-      });
-      const data = await res.json();
+			for await (const ev of parseSSE(response)) {
+				if (ev.type === 'score' && ev.value !== undefined) {
+					score = ev.value;
+				} else if (ev.type === 'feedback' && ev.content) {
+					feedback += ev.content;
+				}
+			}
 
-      if (data.timed_out) {
-        consoleOutput = '⏰ Délai dépassé (boucle infinie ?)';
-      } else if (data.error && !data.stdout) {
-        consoleOutput = `❌ Erreur :\n${data.error}`;
-      } else {
-        consoleOutput = data.stdout || '(aucune sortie)';
-        if (data.stderr) consoleOutput += `\n⚠️ ${data.stderr}`;
-      }
-    } catch {
-      consoleOutput = '❌ Service indisponible';
-    }
+			// US-B06 : progression automatique
+			if (score !== null && score >= 70) {
+				consecutiveSuccesses += 1;
+				if (consecutiveSuccesses >= 2) {
+					const idx = LEVELS.indexOf(ctx.level);
+					if (idx < LEVELS.length - 1) {
+						ctx.level = LEVELS[idx + 1];
+						consecutiveSuccesses = 0;
+						levelUpMessage = `🎉 Niveau suivant : ${LEVEL_CONFIG[ctx.level].label} !`;
+						setTimeout(() => (levelUpMessage = ''), 4000);
+					}
+				}
+			} else {
+				consecutiveSuccesses = 0;
+			}
 
-    running = false;
-  }
-
-  // ── US-B05 : Soumettre + feedback ────────────────────────
-  async function submitCode() {
-    if (!generatedCode.trim()) {
-      consoleOutput = '⚠️ Ajoutez des blocs avant de soumettre !';
-      return;
-    }
-    submitting = true;
-    feedback = '';
-    score   = null;
-
-    try {
-      const res = await fetch('/api/blockly/submit', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ python_code: generatedCode, level: ctx.level }),
-      });
-
-      const reader  = res.body!.getReader();
-      const decoder = new TextDecoder();
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        for (const line of decoder.decode(value, { stream: true }).split('\n')) {
-          if (!line.startsWith('data: ')) continue;
-          try {
-            const event = JSON.parse(line.slice(6));
-            if (event.type === 'score') {
-              score = event.value;
-              handleScore(score!);
-            }
-            if (event.type === 'feedback') feedback += event.content;
-          } catch {}
-        }
-      }
-    } catch {
-      feedback = 'Erreur lors de la soumission.';
-    }
-
-    submitting = false;
-  }
-
-  // ── US-B06 : Progression ─────────────────────────────────
-  function handleScore(s: number) {
-    if (s >= 70) {
-      consecutiveSuccesses += 1;
-      if (consecutiveSuccesses >= 2) checkLevelUp();
-    } else {
-      consecutiveSuccesses = 0;
-    }
-  }
-
-  function checkLevelUp() {
-    const idx = LEVELS.indexOf(ctx.level);
-    if (idx < LEVELS.length - 1) {
-      const next = LEVELS[idx + 1];
-      ctx.level = next;
-      consecutiveSuccesses = 0;
-      levelUpMessage = `🎉 Niveau suivant : ${LEVEL_CONFIG[next].emoji} ${LEVEL_CONFIG[next].label} !`;
-
-      if (browser) {
-        const saved = JSON.parse(localStorage.getItem('blocklyContext') || '{}');
-        saved.level = next;
-        localStorage.setItem('blocklyContext', JSON.stringify(saved));
-      }
-
-      if (workspace) workspace.updateToolbox(getToolbox(next));
-
-      setTimeout(() => {
-        levelUpMessage = '';
-        loadExercise();
-      }, 3500);
-    } else {
-      levelUpMessage = '🏆 Niveau maximum atteint ! Vous êtes expert Python !';
-      setTimeout(() => { levelUpMessage = ''; }, 5000);
-    }
-  }
-
-  function resetWorkspace() {
-    if (workspace) workspace.clear();
-    generatedCode = '';
-    consoleOutput = '';
-  }
-
-  // ── Réactivité ────────────────────────────────────────────
-  $: currentLvl = LEVEL_CONFIG[ctx.level];
+			// Sauvegarder le workspace après soumission
+			if (workspace && assignmentId) {
+				try {
+					const xml = Blockly.Xml.workspaceToDom(workspace);
+					const xmlText = Blockly.utils.xml.domToText(xml);
+					await saveWorkspace(getToken(), assignmentId, xmlText);
+				} catch {
+					// sauvegarde optionnelle, ignorer les erreurs
+				}
+			}
+		} catch (e: unknown) {
+			feedback = `Erreur : ${e instanceof Error ? e.message : String(e)}`;
+		} finally {
+			submitting = false;
+		}
+	}
 </script>
 
-<!--
-  ════════════════════════════════════════════════════
-  VUE 1 — Carte exercice
-  ════════════════════════════════════════════════════
--->
-{#if view === 'card'}
-<div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50
-            dark:from-gray-900 dark:to-gray-800
-            flex items-start justify-center pt-10 px-4">
+{#if generatingExercise}
+	<!-- ── Chargement ─────────────────────────────────────────────────────────── -->
+	<div class="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
+		<div class="flex flex-col items-center gap-4 text-center">
+			<div
+				class="h-10 w-10 animate-spin rounded-full border-4
+				border-gray-300 border-t-gray-800
+				dark:border-gray-700 dark:border-t-gray-100"
+			></div>
+			<p class="text-sm font-medium text-gray-600 dark:text-gray-400">
+				{i18n.t('The AI is preparing your exercise...')}
+			</p>
+		</div>
+	</div>
 
-  <div class="w-full max-w-2xl">
+{:else if generateError}
+	<!-- ── Erreur de génération ───────────────────────────────────────────────── -->
+	<div class="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-950 p-8">
+		<div
+			class="max-w-md rounded-xl border border-gray-200 dark:border-gray-700
+			bg-white dark:bg-gray-900 p-6 text-center"
+		>
+			<p class="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-100">
+				{i18n.t('Generation failed')}
+			</p>
+			<p class="mb-4 font-mono text-xs text-gray-500 dark:text-gray-400">
+				{generateError}
+			</p>
+			<button
+				on:click={loadExercise}
+				class="rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold
+				text-white transition hover:bg-gray-700
+				dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-300"
+			>
+				↺ {i18n.t('Retry')}
+			</button>
+		</div>
+	</div>
 
-    <!-- Navigation -->
-    <div class="flex items-center gap-3 mb-6">
-      <button
-        on:click={() => goto('/student/dashboard')}
-        class="p-2 rounded-xl bg-white dark:bg-gray-800 shadow
-               hover:shadow-md transition text-gray-500 hover:text-gray-800
-               dark:text-gray-400 dark:hover:text-white border
-               border-gray-100 dark:border-gray-700"
-        aria-label="Retour"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
-             fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round"
-                stroke-width="2" d="M15 19l-7-7 7-7"/>
-        </svg>
-      </button>
-      <div>
-        <h1 class="text-xl font-bold text-gray-900 dark:text-white">
-          🧩 {ctx.course || 'Exercice Blockly'}
-        </h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          Programmation visuelle Python
-        </p>
-      </div>
-    </div>
+{:else if exercise}
+	<!-- ── Interface principale ──────────────────────────────────────────────── -->
+	<div class="flex h-screen flex-col bg-gray-50 dark:bg-gray-950 overflow-hidden">
 
-    <!-- Carte principale -->
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden
-                border border-gray-100 dark:border-gray-700">
+		<!-- Header -->
+		<header
+			class="flex flex-shrink-0 items-center justify-between
+			border-b border-gray-200 dark:border-gray-800
+			bg-white dark:bg-gray-900 px-4 py-2"
+		>
+			<div class="flex items-center gap-3">
+				<span
+					class="rounded-full border border-gray-200 dark:border-gray-700
+					bg-gray-100 dark:bg-gray-800
+					px-2.5 py-0.5 text-xs font-semibold
+					text-gray-700 dark:text-gray-300"
+				>
+					{LEVEL_CONFIG[ctx.level].emoji}
+					{LEVEL_CONFIG[ctx.level].label}
+				</span>
+				<h1 class="truncate text-sm font-semibold text-gray-800 dark:text-gray-100">
+					{exercise.title}
+				</h1>
+			</div>
 
-      <!-- Barre de couleur niveau -->
-      <div class="h-1.5 {
-        ctx.level === 'beginner'
-          ? 'bg-gradient-to-r from-emerald-400 to-teal-400'
-          : ctx.level === 'intermediate'
-          ? 'bg-gradient-to-r from-orange-400 to-amber-400'
-          : 'bg-gradient-to-r from-purple-500 to-indigo-500'
-      }"></div>
+			<div class="flex items-center gap-2">
+				{#if levelUpMessage}
+					<span class="text-xs font-semibold text-gray-700 dark:text-gray-300 animate-pulse">
+						{levelUpMessage}
+					</span>
+				{/if}
+				<button
+					on:click={loadExercise}
+					class="rounded-full border border-gray-200 dark:border-gray-700
+					bg-gray-100 dark:bg-gray-800
+					px-3 py-1.5 text-xs font-semibold
+					text-gray-700 dark:text-gray-300
+					transition hover:bg-gray-200 dark:hover:bg-gray-700"
+				>
+					🔄 {i18n.t('New exercise')}
+				</button>
+			</div>
+		</header>
 
-      <div class="p-6">
+		<!-- Corps : 2 colonnes -->
+		<main class="flex flex-1 overflow-hidden">
 
-        <!-- Chargement -->
-        {#if generatingExercise}
-          <div class="flex flex-col items-center py-14 gap-4">
-            <div class="w-12 h-12 border-4 border-blue-500
-                        border-t-transparent rounded-full animate-spin"></div>
-            <p class="font-semibold text-gray-700 dark:text-gray-200 text-lg">
-              L'IA génère votre exercice...
-            </p>
-            <p class="text-sm text-gray-400">📚 {ctx.course || 'Python'}</p>
-          </div>
+			<!-- ── Colonne gauche : énoncé + Blockly ──────────────────────────── -->
+			<section
+				class="flex flex-col overflow-hidden
+				border-r border-gray-200 dark:border-gray-800"
+				style="width: 50%;"
+			>
+				<!-- Énoncé -->
+				<div
+					class="flex-shrink-0 border-b border-gray-200 dark:border-gray-700
+					bg-gray-50 dark:bg-gray-900 px-4 py-3"
+				>
+					<p class="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+						{exercise.description}
+					</p>
+					{#if exercise.hints?.length}
+						<details class="mt-2">
+							<summary
+								class="cursor-pointer text-xs font-medium
+								text-gray-500 dark:text-gray-400 select-none"
+							>
+								💡 {i18n.t('Hints')}
+							</summary>
+							<ul class="mt-1 space-y-0.5 pl-2">
+								{#each exercise.hints as h}
+									<li class="text-xs text-gray-500 dark:text-gray-400">• {h}</li>
+								{/each}
+							</ul>
+						</details>
+					{/if}
+				</div>
 
-        <!-- Erreur -->
-        {:else if generateError}
-          <div class="text-center py-10">
-            <p class="text-4xl mb-4">😕</p>
-            <p class="text-red-500 dark:text-red-400 mb-6 font-medium">
-              {generateError}
-            </p>
-            <button
-              on:click={loadExercise}
-              class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700
-                     text-white font-semibold rounded-xl transition shadow-sm"
-            >
-              🔄 Réessayer
-            </button>
-          </div>
+				<!-- Workspace Blockly -->
+				<div
+					class="flex-1 overflow-hidden bg-white dark:bg-gray-800"
+					bind:this={blocklyDiv}
+				></div>
+			</section>
 
-        <!-- Exercice prêt -->
-        {:else if exercise}
+			<!-- ── Colonne droite : code + console + feedback ─────────────────── -->
+			<section class="flex flex-col overflow-hidden" style="width: 50%;">
 
-          <!-- Titre + badge -->
-          <div class="flex items-start justify-between gap-4 mb-4">
-            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
-              {exercise.title}
-            </h2>
-            <span class="flex-shrink-0 px-3 py-1 rounded-full
-                         text-xs font-bold {currentLvl.colorClass}">
-              {currentLvl.emoji} {currentLvl.label}
-            </span>
-          </div>
+				<!-- Code Python généré -->
+				<div
+					class="flex flex-shrink-0 flex-col border-b border-gray-700"
+					style="height: 35%;"
+				>
+					<div
+						class="flex flex-shrink-0 items-center justify-between
+						bg-gray-900 px-3 py-2"
+					>
+						<span class="font-mono text-xs text-gray-400">
+							{i18n.t('Generated Python')}
+						</span>
+						<button
+							on:click={resetWorkspace}
+							class="text-xs text-gray-500 transition hover:text-gray-200"
+							title="Réinitialiser le workspace"
+						>
+							🗑 {i18n.t('Reset')}
+						</button>
+					</div>
+					<pre
+						class="flex-1 overflow-auto whitespace-pre-wrap
+						bg-gray-900 p-3 font-mono text-xs
+						leading-relaxed text-gray-100 select-all"
+					>{generatedCode || '# ' + i18n.t('Drag blocks to generate Python code...')}</pre>
+				</div>
 
-          <!-- Description -->
-          <div class="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 mb-4">
-            <p class="text-gray-700 dark:text-gray-200 leading-relaxed text-sm">
-              {exercise.description}
-            </p>
-          </div>
+				<!-- Console -->
+				<div
+					class="flex flex-shrink-0 flex-col border-b border-gray-700"
+					style="height: 25%;"
+				>
+					<div
+						class="flex flex-shrink-0 items-center justify-between
+						bg-gray-800 px-3 py-2"
+					>
+						<span class="flex items-center gap-1.5 text-xs font-semibold text-gray-300">
+							<span
+								class="inline-block h-2 w-2 rounded-full
+								{running ? 'bg-gray-400 animate-pulse' : 'bg-gray-500'}"
+							></span>
+							{i18n.t('Console')}
+						</span>
+						<div class="flex gap-2">
+							<button
+								on:click={runCode}
+								disabled={running || !generatedCode.trim()}
+								class="flex items-center gap-1 rounded-full px-3 py-1
+								text-xs font-bold transition
+								{running || !generatedCode.trim()
+									? 'cursor-not-allowed bg-gray-700 text-gray-500'
+									: 'bg-gray-600 text-gray-100 hover:bg-gray-500'}"
+							>
+								{#if running}
+									<div
+										class="h-3 w-3 animate-spin rounded-full
+										border border-current border-t-transparent"
+									></div>
+								{:else}
+									▶
+								{/if}
+								{i18n.t('Run')}
+							</button>
+							<button
+								on:click={() => (consoleOutput = '')}
+								class="px-1 text-xs text-gray-400 transition hover:text-white"
+								title="Vider la console"
+							>✕</button>
+						</div>
+					</div>
+					<pre
+						class="flex-1 overflow-auto whitespace-pre-wrap
+						bg-gray-800 p-3 font-mono text-xs text-gray-100"
+					>{consoleOutput || '// ' + i18n.t('Click ▶ to run your code')}</pre>
+				</div>
 
-          <!-- Objectifs -->
-          {#if ctx.objectives}
-            <div class="bg-blue-50 dark:bg-blue-900/20
-                        border border-blue-100 dark:border-blue-800
-                        rounded-xl p-3 mb-4">
-              <p class="text-xs font-bold text-blue-700 dark:text-blue-300 mb-1">
-                🎯 Objectifs
-              </p>
-              <p class="text-xs text-blue-600 dark:text-blue-400">
-                {ctx.objectives}
-              </p>
-            </div>
-          {/if}
+				<!-- Feedback IA -->
+				<div class="flex flex-1 flex-col overflow-hidden bg-white dark:bg-gray-900">
+					<div
+						class="flex flex-shrink-0 items-center justify-between
+						border-b border-gray-100 dark:border-gray-800 px-3 py-2"
+					>
+						<span class="flex items-center gap-2 text-xs font-semibold text-gray-700 dark:text-gray-300">
+							🤖 {i18n.t('AI Feedback')}
+							{#if score !== null}
+								<span
+									class="rounded-full border border-gray-200 dark:border-gray-700
+									bg-gray-100 dark:bg-gray-800
+									px-2 py-0.5 font-mono text-xs font-bold
+									text-gray-700 dark:text-gray-300"
+								>
+									{score >= 70 ? '✅' : '❌'} {score}/100
+								</span>
+							{/if}
+						</span>
 
-          <!-- Indices -->
-          {#if exercise.hints?.length}
-            <details class="mb-6 bg-amber-50 dark:bg-amber-900/20
-                           border border-amber-100 dark:border-amber-800
-                           rounded-xl overflow-hidden">
-              <summary class="px-4 py-3 cursor-pointer select-none
-                             text-sm font-semibold
-                             text-amber-700 dark:text-amber-300
-                             hover:bg-amber-100 dark:hover:bg-amber-900/30
-                             transition">
-                💡 Indices ({exercise.hints.length})
-              </summary>
-              <ul class="px-4 pb-3 space-y-1.5">
-                {#each exercise.hints as hint, i}
-                  <li class="text-sm text-amber-600 dark:text-amber-400">
-                    {i + 1}. {hint}
-                  </li>
-                {/each}
-              </ul>
-            </details>
-          {/if}
+						<button
+							on:click={submitCode}
+							disabled={submitting || !generatedCode.trim()}
+							class="flex items-center gap-1.5 rounded-full px-3 py-1.5
+							text-xs font-bold transition
+							{submitting || !generatedCode.trim()
+								? 'cursor-not-allowed bg-gray-200 text-gray-400 dark:bg-gray-800 dark:text-gray-600'
+								: 'bg-gray-900 text-white hover:bg-gray-700 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-300'}"
+						>
+							{#if submitting}
+								<div
+									class="h-3 w-3 animate-spin rounded-full
+									border border-current border-t-transparent"
+								></div>
+								{i18n.t('Analysing...')}
+							{:else}
+								📤 {i18n.t('Submit')}
+							{/if}
+						</button>
+					</div>
 
-          <!-- Boutons -->
-          <div class="flex gap-3">
-            <button
-              on:click={openEditor}
-              class="flex-1 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600
-                     hover:from-blue-700 hover:to-indigo-700
-                     text-white font-bold rounded-xl shadow-md
-                     hover:shadow-lg transition-all
-                     flex items-center justify-center gap-2"
-            >
-              🧩 Ouvrir l'éditeur Blockly
-            </button>
-            <button
-              on:click={loadExercise}
-              class="px-5 py-3.5 bg-gray-100 dark:bg-gray-700
-                     hover:bg-gray-200 dark:hover:bg-gray-600
-                     text-gray-700 dark:text-gray-300
-                     font-semibold rounded-xl transition"
-            >
-              🔄 Autre
-            </button>
-          </div>
-
-        {/if}
-      </div>
-    </div>
-  </div>
-</div>
-
-<!--
-  ════════════════════════════════════════════════════
-  VUE 2 — Éditeur Blockly complet
-  ════════════════════════════════════════════════════
--->
-{:else}
-<div class="flex flex-col h-screen overflow-hidden
-            bg-gray-50 dark:bg-gray-900">
-
-  <!-- ── Barre de navigation éditeur ── -->
-  <header class="flex items-center justify-between px-4 py-2.5
-                 bg-white dark:bg-gray-800
-                 border-b border-gray-200 dark:border-gray-700
-                 shadow-sm flex-shrink-0">
-
-    <div class="flex items-center gap-3">
-      <button
-        on:click={() => (view = 'card')}
-        class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700
-               transition text-gray-500 dark:text-gray-400"
-        aria-label="Retour"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
-             fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round"
-                stroke-width="2" d="M15 19l-7-7 7-7"/>
-        </svg>
-      </button>
-      <div>
-        <p class="font-bold text-gray-900 dark:text-white text-sm leading-tight">
-          {exercise?.title || 'Exercice'}
-        </p>
-        <p class="text-xs text-gray-500 dark:text-gray-400">
-          {ctx.course || 'Python'}
-        </p>
-      </div>
-    </div>
-
-    <div class="flex items-center gap-2">
-
-      <!-- Message de niveau -->
-      {#if levelUpMessage}
-        <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400
-                     bg-emerald-50 dark:bg-emerald-900/30 px-3 py-1
-                     rounded-full border border-emerald-200
-                     dark:border-emerald-800 animate-pulse">
-          {levelUpMessage}
-        </span>
-      {/if}
-
-      <!-- Indicateur de progression (points) -->
-      <div class="flex items-center gap-1" aria-label="Progression">
-        {#each LEVELS as lvl}
-          <div class="rounded-full transition-all {
-            ctx.level === lvl
-              ? 'w-3 h-3 bg-blue-600'
-              : LEVELS.indexOf(lvl) < LEVELS.indexOf(ctx.level)
-              ? 'w-2 h-2 bg-blue-300'
-              : 'w-2 h-2 bg-gray-300 dark:bg-gray-600'
-          }"></div>
-        {/each}
-      </div>
-
-      <!-- Badge niveau -->
-      <span class="text-xs font-semibold px-2.5 py-1
-                   rounded-full {currentLvl.colorClass}">
-        {currentLvl.emoji} {currentLvl.label}
-      </span>
-
-      <!-- Succès consécutifs -->
-      {#if consecutiveSuccesses > 0}
-        <span class="text-xs font-semibold text-orange-600 dark:text-orange-400
-                     bg-orange-50 dark:bg-orange-900/20 px-2 py-1
-                     rounded-full border border-orange-200 dark:border-orange-800">
-          🔥 {consecutiveSuccesses}/2
-        </span>
-      {/if}
-
-      <!-- Nouvel exercice -->
-      <button
-        on:click={loadExercise}
-        class="px-3 py-1.5 text-xs font-bold
-               bg-gradient-to-r from-blue-600 to-indigo-600
-               hover:from-blue-700 hover:to-indigo-700
-               text-white rounded-full transition shadow-sm"
-      >
-        🔄 Nouvel exercice
-      </button>
-    </div>
-  </header>
-
-  <!-- ── Corps principal : 2 colonnes ── -->
-  <main class="flex flex-1 overflow-hidden">
-
-    <!-- ── COLONNE GAUCHE : Énoncé + Blockly ── -->
-    <section class="flex flex-col w-1/2 border-r
-                    border-gray-200 dark:border-gray-700 overflow-hidden">
-
-      <!-- Énoncé compact -->
-      <div class="px-4 py-3 flex-shrink-0
-                  bg-blue-50 dark:bg-blue-900/20
-                  border-b border-blue-100 dark:border-blue-800">
-        <div class="flex items-start gap-2">
-          <span class="text-lg mt-0.5 flex-shrink-0">📝</span>
-          <div class="min-w-0">
-            <p class="text-sm font-bold text-blue-900 dark:text-blue-100 truncate">
-              {exercise?.title}
-            </p>
-            <p class="text-xs text-blue-700 dark:text-blue-300
-                      mt-0.5 leading-relaxed line-clamp-2">
-              {exercise?.description}
-            </p>
-            {#if exercise?.hints?.length}
-              <details class="mt-1">
-                <summary class="text-xs text-amber-600 dark:text-amber-400
-                               cursor-pointer font-medium">
-                  💡 Indices
-                </summary>
-                <ul class="mt-1 space-y-0.5">
-                  {#each exercise.hints as h}
-                    <li class="text-xs text-amber-600 dark:text-amber-400">
-                      • {h}
-                    </li>
-                  {/each}
-                </ul>
-              </details>
-            {/if}
-          </div>
-        </div>
-      </div>
-
-      <!-- Workspace Blockly (US-B03) -->
-      <div class="flex-1 overflow-hidden bg-white dark:bg-gray-800"
-           bind:this={blocklyDiv}>
-      </div>
-    </section>
-
-    <!-- ── COLONNE DROITE : Code + Console + Feedback ── -->
-    <section class="flex flex-col w-1/2 overflow-hidden">
-
-      <!-- Code Python généré (US-B03) -->
-      <div class="flex flex-col border-b border-gray-700" style="height:35%">
-        <div class="flex items-center justify-between px-3 py-2
-                    bg-gray-800 dark:bg-gray-900 flex-shrink-0">
-          <div class="flex items-center gap-2">
-            <!-- macOS dots -->
-            <div class="flex gap-1.5">
-              <div class="w-2.5 h-2.5 rounded-full bg-red-400"></div>
-              <div class="w-2.5 h-2.5 rounded-full bg-yellow-400"></div>
-              <div class="w-2.5 h-2.5 rounded-full bg-green-400"></div>
-            </div>
-            <span class="text-xs text-gray-400 font-mono ml-1">
-              Python généré
-            </span>
-          </div>
-          <button
-            on:click={resetWorkspace}
-            class="text-xs text-gray-500 hover:text-gray-200 transition"
-          >
-            🗑 Reset
-          </button>
-        </div>
-        <pre class="flex-1 overflow-auto p-3 text-xs font-mono
-                    bg-gray-900 text-green-300 leading-relaxed whitespace-pre-wrap"
-        >{generatedCode || '# Glissez des blocs depuis la toolbox gauche...'}</pre>
-      </div>
-
-      <!-- Console d'exécution (US-B04) -->
-      <div class="flex flex-col border-b border-gray-700" style="height:25%">
-        <div class="flex items-center justify-between px-3 py-2
-                    bg-gray-700 dark:bg-gray-800 flex-shrink-0">
-          <span class="text-xs font-semibold text-gray-300
-                       flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full inline-block {
-              running ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'
-            }"></span>
-            Console
-          </span>
-          <div class="flex gap-2">
-            <button
-              on:click={runCode}
-              disabled={running}
-              class="px-3 py-1 text-xs font-bold rounded-full
-                     transition flex items-center gap-1 {
-                running
-                  ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                  : 'bg-emerald-600 hover:bg-emerald-500 text-white'
-              }"
-            >
-              {#if running}
-                <div class="w-3 h-3 border border-white
-                            border-t-transparent rounded-full animate-spin">
-                </div>
-              {:else}▶{/if}
-              Exécuter
-            </button>
-            <button
-              on:click={() => (consoleOutput = '')}
-              class="text-xs text-gray-400 hover:text-white transition px-1"
-            >✕</button>
-          </div>
-        </div>
-        <pre class="flex-1 overflow-auto p-3 text-xs font-mono
-                    bg-gray-800 text-gray-100 whitespace-pre-wrap"
-        >{consoleOutput || '// Cliquez ▶ pour exécuter votre code'}</pre>
-      </div>
-
-      <!-- Feedback IA (US-B05) -->
-      <div class="flex flex-col flex-1 overflow-hidden
-                  bg-white dark:bg-gray-800">
-
-        <div class="flex items-center justify-between px-3 py-2
-                    border-b border-gray-100 dark:border-gray-700
-                    flex-shrink-0">
-
-          <span class="text-xs font-semibold text-gray-700 dark:text-gray-300
-                       flex items-center gap-2">
-            🤖 Feedback IA
-            {#if score !== null}
-              <span class="px-2 py-0.5 rounded-full text-xs font-bold {
-                score >= 70
-                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
-                  : 'bg-red-100    text-red-700    dark:bg-red-900/30    dark:text-red-300'
-              }">
-                {score >= 70 ? '✅' : '❌'} {score}/100
-              </span>
-            {/if}
-          </span>
-
-          <button
-            on:click={submitCode}
-            disabled={submitting}
-            class="px-3 py-1.5 text-xs font-bold rounded-full
-                   transition shadow-sm flex items-center gap-1.5 {
-              submitting
-                ? 'bg-gray-200 text-gray-400 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed'
-                : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white'
-            }"
-          >
-            {#if submitting}
-              <div class="w-3 h-3 border border-current
-                          border-t-transparent rounded-full animate-spin">
-              </div>
-              Analyse...
-            {:else}
-              📤 Soumettre
-            {/if}
-          </button>
-        </div>
-
-        <div class="flex-1 overflow-auto p-4">
-          {#if submitting && !feedback}
-            <div class="flex items-center gap-2 text-gray-400 dark:text-gray-500">
-              <div class="w-4 h-4 border-2 border-blue-500
-                          border-t-transparent rounded-full animate-spin">
-              </div>
-              <span class="text-xs">Analyse de votre code...</span>
-            </div>
-          {:else if feedback}
-            <div class="bg-blue-50 dark:bg-blue-900/20
-                        border border-blue-100 dark:border-blue-800
-                        rounded-xl p-3">
-              <p class="text-xs text-gray-700 dark:text-gray-300
-                        leading-relaxed whitespace-pre-wrap">{feedback}</p>
-            </div>
-          {:else}
-            <p class="text-xs text-gray-400 dark:text-gray-500
-                      italic text-center mt-8">
-              Glissez des blocs → ▶ Exécutez → 📤 Soumettez<br>
-              pour recevoir un feedback personnalisé de l'IA
-            </p>
-          {/if}
-        </div>
-      </div>
-
-    </section>
-  </main>
-</div>
+					<div class="flex-1 overflow-auto p-4">
+						{#if submitting && !feedback}
+							<div class="flex items-center gap-2 text-gray-400 dark:text-gray-500">
+								<div
+									class="h-4 w-4 animate-spin rounded-full
+									border-2 border-gray-300 border-t-gray-700"
+								></div>
+								<span class="text-xs">{i18n.t('Analysing...')}</span>
+							</div>
+						{:else if feedback}
+							<div
+								class="rounded-xl border border-gray-100 dark:border-gray-800
+								bg-gray-50 dark:bg-gray-800 p-3"
+							>
+								<p
+									class="whitespace-pre-wrap text-xs leading-relaxed
+									text-gray-700 dark:text-gray-300"
+								>
+									{feedback}
+								</p>
+							</div>
+						{:else}
+							<p
+								class="mt-8 text-center text-xs italic
+								text-gray-400 dark:text-gray-600"
+							>
+								{i18n.t('Drag blocks → ▶ Run → 📤 Submit to get AI feedback')}
+							</p>
+						{/if}
+					</div>
+				</div>
+			</section>
+		</main>
+	</div>
 {/if}
