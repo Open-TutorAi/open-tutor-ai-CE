@@ -90,21 +90,14 @@ async def submit(
         # Exécuter le code dans le sandbox
         exec_result = execute_python(req.python_code)
 
-        # Récupérer l'exercice pour avoir les test_cases
-        assignment = service.get_assignment(
-            req.assignment_id or "", current_user.id
-        )
-
         # FIX #1 : calculer le vrai score
-        test_results = []
-        if assignment and assignment.get("test_cases"):
-            test_results = await service.run_test_cases(
-                req.python_code, assignment["test_cases"]
-            )
-        score = service.calculate_score(
-            assignment.get("test_cases", []) if assignment else [],
-            test_results
+        # Récupérer l'exercice depuis DB — sécurisé par student_id
+        exercise = service.get_exercise(
+        req.assignment_id or "", current_user.id
         )
+        test_cases = exercise.get("test_cases", []) if exercise else []
+        test_results = await service.run_test_cases(req.python_code, test_cases)
+        score = service.calculate_score(test_cases, test_results)
 
         yield f"data: {json.dumps({'type': 'score', 'value': score})}\n\n"
 
@@ -119,11 +112,9 @@ async def submit(
             service.save_submission(
                 student_id=current_user.id,
                 assignment_id=req.assignment_id or str(uuid.uuid4()),
-                blocks_json=None,
                 python_code=req.python_code,
-                exec_result=exec_result,
-                test_results=test_results,
                 score=score,
+                level=req.level or "beginner",
             )
         except Exception:
             pass
@@ -139,6 +130,7 @@ async def submit(
 async def generate_stream(
     req: GenerateRequest,
     current_user: User = Depends(get_current_user),
+    service: BlocklyService = Depends(get_blockly_service),
 ):
     """
     Génère un exercice via l'IA Ollama.
@@ -151,21 +143,32 @@ async def generate_stream(
     _check_level(req.level)
 
     async def _stream():
-        try:
-            # FIX #5 : génération streamée token par token
-            async for token in generate_exercise_stream(
-                req.level or "beginner",
-                req.course or "",
-                req.objectives or "",
-                req.prerequisites or "",
-            ):
-                yield f"data: {json.dumps({'type': 'chunk', 'content': token})}\n\n"
+       try:
+          full_json = ""
+          async for token in generate_exercise_stream(
+              req.level or "beginner",
+              req.course or "",
+              req.objectives or "",
+              req.prerequisites or "",
+          ):
+              full_json += token
+              yield f"data: {json.dumps({'type': 'chunk', 'content': token})}\n\n"
 
-            aid = str(uuid.uuid4())
-            yield f"data: {json.dumps({'type': 'done', 'assignment_id': aid})}\n\n"
+        # Nettoyer et parser le JSON
+          clean = full_json.replace("```json", "").replace("```", "").strip()
+          exercise = json.loads(clean)
 
-        except Exception as e:
-            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+        # Sauvegarder l'exercice en DB — retourner l'ID sécurisé
+          aid = service.save_exercise(
+              student_id=current_user.id,
+              level=req.level or "beginner",
+              exercise=exercise,
+          )
+
+          yield f"data: {json.dumps({'type': 'done', 'assignment_id': aid})}\n\n"
+
+       except Exception as e:
+           yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
 
     return StreamingResponse(_stream(), media_type="text/event-stream")
 

@@ -45,68 +45,50 @@ async def generate_exercise_stream(
     prerequisites: str = "",
 ) -> AsyncGenerator[str, None]:
     """
-    Génère un exercice Python via Ollama en streaming réel.
-    Yield chaque token au fur et à mesure — pas de blocage 60s.
-
-    Ancienne version : stream=False → attendait la réponse complète
-    Nouvelle version : stream=True  → yield token par token
+    Génère un exercice via Ollama.
+    Utilise stream=False pour fiabilité puis yield le JSON par morceaux.
     """
     topics = LEVEL_TOPICS.get(level, LEVEL_TOPICS["beginner"])
-    # Construire le contexte pédagogique
     ctx_parts = []
-    if course:        ctx_parts.append(f"Cours / Sujet : {course}")
-    if objectives:    ctx_parts.append(f"Objectifs d'apprentissage : {objectives}")
+    if course:        ctx_parts.append(f"Cours : {course}")
+    if objectives:    ctx_parts.append(f"Objectifs : {objectives}")
     if prerequisites: ctx_parts.append(f"Prérequis : {prerequisites}")
-    ctx_str = "\n".join(ctx_parts) if ctx_parts else f"Thèmes généraux niveau {level} : {topics}"
+    ctx_str = "\n".join(ctx_parts) if ctx_parts else f"Thèmes : {topics}"
 
     prompt = (
-         f"Tu es professeur Python. Génère UN exercice de programmation Python.\n\n"
-         f"CONTEXTE PÉDAGOGIQUE (respecte-le strictement) :\n"
-         f"{ctx_str}\n\n"
-         f"NIVEAU : {level}\n\n"
-         f"CONTRAINTES STRICTES :\n"
-         f"- L'exercice DOIT porter exactement sur le contexte fourni ci-dessus\n"
-         f"- N'invente pas de thème différent\n"
-         f"- La description doit être claire et précise\n"
-         f"- Génère exactement 1 cas de test avec expected_output\n\n"
-         f"Réponds UNIQUEMENT avec ce JSON valide, rien d'autre :\n"
-         f'{{"title":"titre court précis",'
-         f'"description":"description claire en 2 phrases basée sur le contexte",'
-         f'"test_cases":[{{"expected_output":"valeur attendue"}}],'
-         f'"hints":["indice 1 lié au contexte","indice 2 lié au contexte"]}}'
+        f"Tu es professeur Python. Génère UN exercice niveau {level}.\n"
+        f"CONTEXTE : {ctx_str}\n\n"
+        f"L'exercice doit demander à l'étudiant d'afficher UN résultat précis avec print().\n"
+        f"Tu dois choisir toi-même quelle valeur sera affichée et mettre cette valeur dans expected_output.\n\n"
+        f"EXEMPLE CORRECT :\n"
+        f'{{"title":"Addition simple",'
+        f'"description":"Calculez 3 + 5 et affichez le résultat.",'
+        f'"test_cases":[{{"expected_output":"8"}}],'
+        f'"hints":["Utilisez le bloc print","Utilisez le bloc addition"]}}\n\n'
+        f"Génère maintenant un exercice similaire sur le thème : {ctx_str}\n"
+        f"Réponds UNIQUEMENT avec un JSON valide, rien d'autre."
     )
 
     try:
         async with httpx.AsyncClient(timeout=120.0) as client:
-            # FIX : stream=True au lieu de stream=False
-            async with client.stream(
-                "POST",
+            # stream=False pour fiabilité
+            resp = await client.post(
                 f"{OLLAMA_URL}/api/generate",
                 json={
                     "model": MODEL,
                     "prompt": prompt,
-                    "stream": True,           # ← FIX
-                    "options": {
-                        "temperature": 0.7,
-                        "num_predict": 400,
-                    },
+                    "stream": False,
+                    "options": {"temperature": 0.7, "num_predict": 400},
                 },
-            ) as response:
-                async for line in response.aiter_lines():
-                    if not line:
-                        continue
-                    try:
-                        data = json.loads(line)
-                        token = data.get("response", "")
-                        if token:
-                            yield token
-                        if data.get("done"):
-                            break
-                    except json.JSONDecodeError:
-                        continue
+            )
+            full_response = resp.json().get("response", FALLBACK_EXERCISE)
+
+        # Yield par chunks de 10 caractères pour simuler le streaming
+        chunk_size = 10
+        for i in range(0, len(full_response), chunk_size):
+            yield full_response[i:i + chunk_size]
 
     except Exception:
-        # Fallback : on yield le JSON complet en un seul token
         yield FALLBACK_EXERCISE
 
 
