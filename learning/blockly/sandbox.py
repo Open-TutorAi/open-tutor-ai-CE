@@ -17,6 +17,7 @@ Configuration :
   Local dev  → PISTON_URL=http://localhost:2000 (défaut)
   Docker     → PISTON_URL=http://piston:2000 (via env var)
 """
+
 import os
 import time
 

@@ -1,4 +1,5 @@
 """Service métier — Module Blockly."""
+
 import json
 from learning.blockly.sandbox import execute_python
 from learning.blockly.models import BlocklyExercise, BlocklySubmission, BlocklyWorkspace
@@ -20,9 +21,9 @@ class BlocklyService:
         if not test_cases:
             return 0.0
         passed = sum(
-            1 for tc, r in zip(test_cases, results)
-            if (r.get("stdout") or "").strip()
-            == tc.get("expected_output", "").strip()
+            1
+            for tc, r in zip(test_cases, results)
+            if (r.get("stdout") or "").strip() == tc.get("expected_output", "").strip()
         )
         return round((passed / len(test_cases)) * 100, 1)
 
@@ -61,10 +62,14 @@ class BlocklyService:
         """
         if not self.db or not assignment_id:
             return None
-        ex = self.db.query(BlocklyExercise).filter_by(
-            id=assignment_id,
-            student_id=student_id  # sécurité : un étudiant ne peut pas accéder aux exercices d'un autre
-        ).first()
+        ex = (
+            self.db.query(BlocklyExercise)
+            .filter_by(
+                id=assignment_id,
+                student_id=student_id,  # sécurité : un étudiant ne peut pas accéder aux exercices d'un autre
+            )
+            .first()
+        )
         if not ex:
             return None
         return {
@@ -76,8 +81,14 @@ class BlocklyService:
             "level": ex.level,
         }
 
-    def save_submission(self, student_id: str, assignment_id: str,
-                        python_code: str, score: float, level: str) -> None:
+    def save_submission(
+        self,
+        student_id: str,
+        assignment_id: str,
+        python_code: str,
+        score: float,
+        level: str,
+    ) -> None:
         if not self.db:
             return
         sub = BlocklySubmission(
@@ -90,13 +101,16 @@ class BlocklyService:
         self.db.add(sub)
         self.db.commit()
 
-    def save_workspace_draft(self, student_id: str, assignment_id: str,
-                             blocks_json: str) -> None:
+    def save_workspace_draft(
+        self, student_id: str, assignment_id: str, blocks_json: str
+    ) -> None:
         if not self.db:
             return
-        draft = self.db.query(BlocklyWorkspace).filter_by(
-            student_id=student_id, assignment_id=assignment_id
-        ).first()
+        draft = (
+            self.db.query(BlocklyWorkspace)
+            .filter_by(student_id=student_id, assignment_id=assignment_id)
+            .first()
+        )
         if draft:
             draft.workspace_xml = blocks_json
         else:
@@ -111,9 +125,11 @@ class BlocklyService:
     def get_workspace_draft(self, student_id: str, assignment_id: str) -> dict | None:
         if not self.db:
             return None
-        draft = self.db.query(BlocklyWorkspace).filter_by(
-            student_id=student_id, assignment_id=assignment_id
-        ).first()
+        draft = (
+            self.db.query(BlocklyWorkspace)
+            .filter_by(student_id=student_id, assignment_id=assignment_id)
+            .first()
+        )
         if not draft:
             return None
         return {"blocks_json": draft.workspace_xml}

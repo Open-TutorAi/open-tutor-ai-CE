@@ -10,6 +10,7 @@ Corrections apportées :
   - Génération exercice en vrai streaming token par token
   - Workspace save/load avec persistance DB réelle
 """
+
 import json
 import uuid
 from fastapi import APIRouter, Depends, HTTPException
@@ -44,6 +45,7 @@ def get_blockly_service(db: Session = Depends(get_db)) -> BlocklyService:
 
 # ── US-B04 : Exécution ───────────────────────────────────────────────────────
 
+
 @router.post("/execute")
 async def execute_code(
     req: ExecutionRequest,
@@ -67,6 +69,7 @@ async def test_code(
 
 
 # ── US-B05 : Soumission ──────────────────────────────────────────────────────
+
 
 @router.post("/submit")
 async def submit(
@@ -92,9 +95,7 @@ async def submit(
 
         # FIX #1 : calculer le vrai score
         # Récupérer l'exercice depuis DB — sécurisé par student_id
-        exercise = service.get_exercise(
-        req.assignment_id or "", current_user.id
-        )
+        exercise = service.get_exercise(req.assignment_id or "", current_user.id)
         test_cases = exercise.get("test_cases", []) if exercise else []
         test_results = await service.run_test_cases(req.python_code, test_cases)
         score = service.calculate_score(test_cases, test_results)
@@ -126,6 +127,7 @@ async def submit(
 
 # ── US-B02 : Génération exercice ─────────────────────────────────────────────
 
+
 @router.post("/generate/stream")
 async def generate_stream(
     req: GenerateRequest,
@@ -143,37 +145,38 @@ async def generate_stream(
     _check_level(req.level)
 
     async def _stream():
-       try:
-          full_json = ""
-          async for token in generate_exercise_stream(
-              req.level or "beginner",
-              req.course or "",
-              req.objectives or "",
-              req.prerequisites or "",
-          ):
-              full_json += token
-              yield f"data: {json.dumps({'type': 'chunk', 'content': token})}\n\n"
+        try:
+            full_json = ""
+            async for token in generate_exercise_stream(
+                req.level or "beginner",
+                req.course or "",
+                req.objectives or "",
+                req.prerequisites or "",
+            ):
+                full_json += token
+                yield f"data: {json.dumps({'type': 'chunk', 'content': token})}\n\n"
 
-        # Nettoyer et parser le JSON
-          clean = full_json.replace("```json", "").replace("```", "").strip()
-          exercise = json.loads(clean)
+            # Nettoyer et parser le JSON
+            clean = full_json.replace("```json", "").replace("```", "").strip()
+            exercise = json.loads(clean)
 
-        # Sauvegarder l'exercice en DB — retourner l'ID sécurisé
-          aid = service.save_exercise(
-              student_id=current_user.id,
-              level=req.level or "beginner",
-              exercise=exercise,
-          )
+            # Sauvegarder l'exercice en DB — retourner l'ID sécurisé
+            aid = service.save_exercise(
+                student_id=current_user.id,
+                level=req.level or "beginner",
+                exercise=exercise,
+            )
 
-          yield f"data: {json.dumps({'type': 'done', 'assignment_id': aid})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'assignment_id': aid})}\n\n"
 
-       except Exception as e:
-           yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
 
     return StreamingResponse(_stream(), media_type="text/event-stream")
 
 
 # ── US-B07 : Workspace ───────────────────────────────────────────────────────
+
 
 @router.post("/workspace/save")
 async def save_workspace(
