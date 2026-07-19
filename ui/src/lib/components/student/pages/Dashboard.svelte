@@ -220,7 +220,7 @@
 		<div class="flex gap-3">
 			<!-- 🧩 Bouton Blockly -->
 			<button
-				class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-full transition shadow-md"
+				class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full transition shadow-md"
 				on:click={toggleBlocklyPopup}
 			>
 				<span class="text-base">🧩</span>
@@ -291,7 +291,7 @@
 
 		<!-- Header -->
 		<div class="flex items-center gap-3 mb-6">
-			<div class="w-12 h-12 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-xl flex items-center justify-center text-2xl shadow-md">🧩</div>
+			<div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-2xl shadow-sm">🧩</div>
 			<div>
 				<h2 class="text-xl font-bold text-gray-900 dark:text-white">Exercice Blockly</h2>
 				<p class="text-sm text-gray-500 dark:text-gray-400">Apprenez à programmer avec des blocs visuels</p>
@@ -309,7 +309,7 @@
 					type="text"
 					bind:value={blocklyForm.course}
 					placeholder="Ex: Structures de contrôle, Boucles, Variables..."
-					class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+					class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
 				/>
 			</div>
 
@@ -322,7 +322,7 @@
 					bind:value={blocklyForm.objectives}
 					placeholder="Ex: Comprendre les boucles for, savoir afficher des résultats..."
 					rows="2"
-					class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+					class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
 				></textarea>
 			</div>
 
@@ -335,7 +335,7 @@
 					type="text"
 					bind:value={blocklyForm.prerequisites}
 					placeholder="Ex: Je connais les variables et print()"
-					class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+					class="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
 				/>
 			</div>
 
@@ -345,7 +345,7 @@
 				<div class="grid grid-cols-3 gap-2">
 					{#each [['beginner','🌱','Débutant'],['intermediate','🔥','Intermédiaire'],['advanced','⚡','Avancé']] as [val, emoji, label]}
 						<button
-							class="py-2 px-3 rounded-xl border-2 text-sm font-medium transition-all {blocklyForm.level === val ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-emerald-300'}"
+							class="py-2 px-3 rounded-xl border-2 text-sm font-medium transition-all {blocklyForm.level === val ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-blue-400'}"
 							on:click={() => blocklyForm.level = val}
 						>
 							{emoji} {label}
@@ -357,7 +357,7 @@
 
 		<!-- Bouton démarrer -->
 		<button
-			class="mt-6 w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold rounded-xl shadow-md transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+			class="mt-6 w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-sm transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
 			on:click={handleStartBlockly}
 			disabled={blocklyLoading || !blocklyForm.course.trim()}
 		>
